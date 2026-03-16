@@ -157,6 +157,10 @@ export class ActionModule implements IActionModule {
                 didAttemptCompletion
             }, 'Action phase failed with error');
 
+            // Push error to turn memory store for potential retry
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.turnMemoryStore.pushErrors([new Error(`Action phase failed: ${errorMessage}`)]);
+
             // Re-throw the error for the caller to handle
             throw error;
         }
@@ -173,14 +177,28 @@ export class ActionModule implements IActionModule {
         tools: ChatCompletionTool[]
     ): Promise<ApiResponse> {
         try {
+            // Handle errors from previous attempts
+            const errors = this.turnMemoryStore.popErrors()
+            let errorPrompt = ''
+            if (errors.length > 0) {
+                errorPrompt = `=== PREVIOUS ERRORS (to learn from) ===
+${errors.map((e, i) => `Error ${i + 1}: ${e.message}`).join('\n')}
+
+Please take these errors into consideration and avoid repeating the same mistakes.
+`
+            }
+
             // Convert conversation history to memory context format
             const memoryContext = this.convertConversationHistoryToMemoryContext(conversationHistory);
+
+            // Prepend error context if there are errors
+            const fullContext = errorPrompt ? [errorPrompt, ...memoryContext] : memoryContext;
 
             // Use the injected ApiClient to make the request
             const response = await this.apiClient.makeRequest(
                 systemPrompt,
                 workspaceContext,
-                memoryContext,
+                fullContext,
                 { timeout: this.config.apiRequestTimeout },
                 tools
             );
@@ -327,6 +345,10 @@ export class ActionModule implements IActionModule {
                 return { toolResult, userMessageContentItem, didAttempt };
             } catch (error) {
                 this.logger.error({ toolName: toolCall.name, error }, `Tool execution failed: ${toolCall.name}`);
+                // Push error to turn memory store for potential retry
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                this.turnMemoryStore.pushErrors([new Error(`Tool ${toolCall.name} failed: ${errorMessage}`)]);
+
                 // Get component key for the tool (for logging/display purposes)
                 const toolSourceInfo = this.toolManager.getToolSource(toolCall.name);
                 const componentKey = toolSourceInfo?.componentKey;

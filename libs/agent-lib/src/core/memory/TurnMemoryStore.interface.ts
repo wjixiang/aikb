@@ -22,12 +22,20 @@ import {
 
 export interface ITurnMemoryStore {
     /**
+     * Push errors to be saved for later retrieval
+     * @param errors - Array of Error objects to store
+     */
+    pushErrors(errors: Error[]): void;
+
+    popErrors(): Error[];
+
+    /**
      * Create a new turn with the given context
      * @param workspaceContext - The workspace context for this turn
      * @param taskContext - Optional user's initial goal/query
      * @returns The newly created Turn
      */
-    createTurn(workspaceContext: string, taskContext?: string): Turn;
+    createTurn(workspaceContext: string): Turn;
 
     /**
      * Update the status of a turn

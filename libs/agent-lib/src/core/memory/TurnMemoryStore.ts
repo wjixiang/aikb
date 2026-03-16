@@ -21,11 +21,25 @@ export class TurnMemoryStore implements ITurnMemoryStore {
     private turns: Map<string, Turn> = new Map();
     private turnNumberToId: Map<number, string> = new Map();
     private currentTurnNumber: number = 0;
+    private savedErrors: Error[] = [];
+    /**
+     * Push errors to be saved for later retrieval
+     * @param errors - Array of Error objects to store
+     */
+    pushErrors(errors: Error[]): void {
+        this.savedErrors.push(...errors)
+    }
+
+    popErrors(): Error[] {
+        const errors = [...this.savedErrors]
+        this.savedErrors = []
+        return errors
+    }
 
     /**
      * Create a new turn
      */
-    createTurn(workspaceContext: string, taskContext?: string): Turn {
+    createTurn(workspaceContext: string): Turn {
         this.currentTurnNumber++;
 
         const turn: Turn = {
@@ -35,7 +49,6 @@ export class TurnMemoryStore implements ITurnMemoryStore {
             status: TurnStatus.PENDING,
             messages: [],
             workspaceContext,  // Immutable after creation
-            taskContext,       // User's initial goal/query
             toolCalls: [],
             tokenUsage: {
                 thinking: 0,

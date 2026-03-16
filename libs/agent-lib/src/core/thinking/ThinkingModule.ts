@@ -124,8 +124,7 @@ export class ThinkingModule implements IThinkingModule {
      */
     async performThinkingPhase(
         workspaceContext: string,
-        taskContext?: string,
-        previousRounds: ThinkingRound[] = [],
+        // previousRounds: ThinkingRound[] = [],
         lastToolResults?: ToolCallResult[]
     ): Promise<ThinkingPhaseResult> {
         // Reset sequential state for new thinking phase
@@ -150,7 +149,6 @@ export class ThinkingModule implements IThinkingModule {
             const round = await this.performSingleThinkingRound(
                 currentRound,
                 workspaceContext,
-                taskContext,
                 accumulatedSummaries,
                 rounds
             );
@@ -175,7 +173,6 @@ export class ThinkingModule implements IThinkingModule {
             // Fallback: generate summary using separate API call
             summary = await this.generateSummary(
                 workspaceContext,
-                taskContext,
                 accumulatedSummaries,
                 rounds,
                 lastToolResults
@@ -218,7 +215,6 @@ export class ThinkingModule implements IThinkingModule {
      */
     async performSequentialThinkingPhase(
         workspaceContext: string,
-        taskContext?: string,
         initialState?: any
     ): Promise<ThinkingPhaseResult & { sequentialState: any }> {
         // Reset or initialize sequential state
@@ -231,7 +227,6 @@ export class ThinkingModule implements IThinkingModule {
         // Perform thinking phase with sequential mode enabled
         const result = await this.performThinkingPhase(
             workspaceContext,
-            taskContext
         );
 
         return {
@@ -247,7 +242,6 @@ export class ThinkingModule implements IThinkingModule {
     private async performSingleThinkingRound(
         roundNumber: number,
         workspaceContext: string,
-        taskContext: string | undefined,
         accumulatedSummaries: string,
         previousRounds: ThinkingRound[]
     ): Promise<ThinkingRound> {
@@ -259,7 +253,6 @@ export class ThinkingModule implements IThinkingModule {
             const prompt = this.buildThinkingPrompt(
                 roundNumber,
                 workspaceContext,
-                taskContext,
                 accumulatedSummaries,
                 previousRounds,
                 attempt,
@@ -267,9 +260,20 @@ export class ThinkingModule implements IThinkingModule {
             );
 
             try {
+                // Handle errors from previous attempts
+                const errors = this.turnMemoryStore.popErrors()
+                let errorPrompt = ''
+                if (errors.length > 0) {
+                    errorPrompt = `=== PREVIOUS ERRORS (to learn from) ===
+${errors.map((e, i) => `Error ${i + 1}: ${e.message}`).join('\n')}
+
+Please take these errors into consideration and avoid repeating the same mistakes.
+`
+                }
+
                 const response = await this.apiClient.makeRequest(
                     prompt.systemPrompt,
-                    prompt.context,
+                    errorPrompt + prompt.context,
                     prompt.history,
                     { timeout: this.config.apiRequestTimeout },
                     tools
@@ -289,6 +293,8 @@ export class ThinkingModule implements IThinkingModule {
                         roundNumber,
                         'No required tool was called. You MUST call "continue_thinking" to indicate your decision'
                     );
+
+                    this.turnMemoryStore.pushErrors([lastError])
 
                     this.logger.warn(
                         { roundNumber, attempt: attempt + 1, maxRetries: this.config.maxRetriesPerRound },
@@ -416,7 +422,7 @@ export class ThinkingModule implements IThinkingModule {
     private buildThinkingPrompt(
         roundNumber: number,
         workspaceContext: string,
-        taskContext: string | undefined,
+        // taskContext: string | undefined,
         accumulatedSummaries: string,
         previousRounds: ThinkingRound[],
         retryAttempt: number = 0,
@@ -565,10 +571,6 @@ Current thinking round: ${roundNumber}/${this.config.maxThinkingRounds}
 Current thought number: ${this.sequentialState.thoughtNumber}
 Estimated total thoughts: ${this.sequentialState.totalThoughts}${this.buildRetryWarning(retryAttempt, lastError)}`;
 
-        // Get task context if available
-        const taskContextSection = taskContext
-            ? `\n=== TASK CONTEXT ===\nUser's Goal: ${taskContext}\n`
-            : '';
 
         // Build previous rounds display with all ThinkingRound properties
         const previousRoundsText = previousRounds.map(r => {
@@ -622,7 +624,7 @@ Estimated total thoughts: ${this.sequentialState.totalThoughts}${this.buildRetry
             return parts.join('\n');
         }).join('\n\n');
 
-        const context = `${taskContextSection}
+        const context = `
 === WORKSPACE CONTEXT ===
 ${workspaceContext}
 
@@ -888,7 +890,6 @@ ${summaryText}
      */
     private async generateSummary(
         workspaceContext: string,
-        taskContext: string | undefined,
         previousSummaries: string,
         thinkingRounds: ThinkingRound[],
         toolResults?: ToolCallResult[]
@@ -900,7 +901,6 @@ ${previousSummaries}
 WORKSPACE CONTEXT:
 ${workspaceContext}
 
-${taskContext ? `TASK CONTEXT:\nUser's Goal: ${taskContext}\n` : ''}
 THINKING ROUNDS:
 ${thinkingRounds.map(r => `Round ${r.roundNumber}: ${r.content}`).join('\n\n')}
 

@@ -95,12 +95,12 @@ export type MessageAddedCallback = (
  * Note: Thinking-related configuration has been moved to ThinkingModuleConfig
  */
 export interface MemoryModuleConfig {
-    /** Enable context recall */
-    enableRecall: boolean;
-    /** Maximum contexts to recall per request */
-    maxRecallContexts: number;
-    /** Maximum recalled conversation messages to inject (default: 20) */
-    maxRecalledMessages: number;
+  /** Enable context recall */
+  enableRecall: boolean;
+  /** Maximum contexts to recall per request */
+  maxRecallContexts: number;
+  /** Maximum recalled conversation messages to inject (default: 20) */
+  maxRecalledMessages: number;
 }
 
 /**
@@ -114,43 +114,53 @@ export type ThinkingPhaseResult = import('../thinking/types.js').ThinkingPhaseRe
  * Defines the contract for turn-based memory management
  */
 export interface IMemoryModule {
-    /**
-     * Start a new turn
-     */
-    startTurn(workspaceContext: string, taskContext?: string): Turn;
+  /**
+   * 
+   * @param toolName 
+   * @param success 
+   * @param result 
+   */
+  recordToolCall(toolName: string, success: boolean, result: any): void;
 
-    /**
-     * Complete current turn
-     */
-    completeTurn(): void;
+  getHistoryForPrompt(): ApiMessage[];
 
-    /**
-     * Perform thinking phase (updates current turn)
-     */
-    performThinkingPhase(workspaceContext: string, toolResults?: ToolCallResult[]): Promise<ThinkingPhaseResult>;
+  /**
+   * Start a new turn
+   */
+  startTurn(workspaceContext: string, taskContext?: string): Turn;
 
-    /**
-     * Add message to current turn
-     */
-    addMessage(message: ApiMessage): ApiMessage;
+  /**
+   * Complete current turn
+   */
+  completeTurn(): void;
 
-    /**
-     * Get all historical messages (flattened from all turns)
-     */
-    getAllMessages(): ApiMessage[];
+  /**
+   * Perform thinking phase (updates current turn)
+   */
+  performThinkingPhase(workspaceContext: string, toolResults?: ToolCallResult[]): Promise<ThinkingPhaseResult>;
 
-    /**
-     * Get current turn
-     */
-    getCurrentTurn(): Turn | null;
+  /**
+   * Add message to current turn
+   */
+  addMessage(message: ApiMessage): ApiMessage;
 
-    /**
-     * Get the turn store
-     */
-    getTurnStore(): ITurnMemoryStore;
+  /**
+   * Get all historical messages (flattened from all turns)
+   */
+  getAllMessages(): ApiMessage[];
 
-    /**
-     * Get current configuration
-     */
-    getConfig(): MemoryModuleConfig;
+  /**
+   * Get current turn
+   */
+  getCurrentTurn(): Turn | null;
+
+  /**
+   * Get the turn store
+   */
+  getTurnStore(): ITurnMemoryStore;
+
+  /**
+   * Get current configuration
+   */
+  getConfig(): MemoryModuleConfig;
 }

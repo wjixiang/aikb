@@ -1,7 +1,7 @@
 import { injectable, inject, optional } from 'inversify';
 import Anthropic from "@anthropic-ai/sdk";
 import { ApiMessage, MessageBuilder, ExtendedContentBlock } from "../memory/types.js";
-import type { TaskStatus } from "../common/types.js";
+import type { AgentStatus } from "../common/types.js";
 import { MessageTokenUsage, ToolUsage } from "../types/index.js";
 import { VirtualWorkspace } from "../statefulContext/index.js";
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from "../types/index.js";
@@ -9,6 +9,7 @@ import type { ApiResponse, ToolCall } from '../api-client/index.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
 import { ErrorHandlerPrompt } from '../common/ErrorHandlerPrompt.js';
 import {
+    AgentError,
     ConsecutiveMistakeError,
     NoApiResponseError,
     NoToolsUsedError,
@@ -49,6 +50,12 @@ export const defaultAgentConfig: AgentConfig = {
     consecutiveMistakeLimit: DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 };
 
+export class NullCurrentTurnError extends AgentError {
+    override code: string = 'NullCurrentTurnError'
+    constructor(message: string) {
+        super(message)
+    }
+}
 
 /**
  * Agent class that uses VirtualWorkspace for context management
@@ -92,9 +99,8 @@ export interface AgentPrompt {
 @injectable()
 export class Agent {
     workspace: VirtualWorkspace;
-    private _status: TaskStatus = 'idle';
+    private _status: AgentStatus = 'idle';
     private _taskId: string;
-    private _initialQuery: string | null = null;  // Store initial user query for task context
     private _tokenUsage: MessageTokenUsage = {
         totalTokensIn: 0,
         totalTokensOut: 0,
@@ -107,13 +113,9 @@ export class Agent {
     private _collectedErrors: string[] = [];
     private _abortInfo: AbortInfo | null = null;
 
-    private cachedModel?: { id: string; info: any };
-
-    // API client (dependency injected)
-    private apiClient: ApiClient;
 
     // Memory module (dependency injected, always present)
-    private memoryModule: MemoryModule;
+    private memoryModule: IMemoryModule;
 
     // Thinking module (dependency injected, always present)
     private thinkingModule: IThinkingModule;
@@ -121,16 +123,12 @@ export class Agent {
     // Action module (dependency injected, always present)
     private actionModule: IActionModule;
 
-    // Tool manager (dependency injected, obtained from workspace)
-    private toolManager: IToolManager;
-
     private agentPrompt: AgentPrompt;
 
     constructor(
         @inject(TYPES.AgentConfig) @optional() public config: AgentConfig = defaultAgentConfig,
         @inject(TYPES.IVirtualWorkspace) workspace: IVirtualWorkspace,
         @inject(TYPES.AgentPrompt) agentPrompt: AgentPrompt,
-        @inject(TYPES.ApiClient) apiClient: ApiClient,
         @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
         @inject(TYPES.IThinkingModule) thinkingModule: IThinkingModule,
         @inject(TYPES.IActionModule) actionModule: IActionModule,
@@ -142,13 +140,9 @@ export class Agent {
         this.agentPrompt = agentPrompt;
 
         // Use injected dependencies
-        this.apiClient = apiClient;
         this.memoryModule = memoryModule as MemoryModule;
         this.thinkingModule = thinkingModule;
         this.actionModule = actionModule;
-
-        // Get IToolManager from workspace (which has it injected)
-        this.toolManager = this.workspace.getToolManager();
     }
 
     // ==================== Public API ====================
@@ -156,7 +150,7 @@ export class Agent {
     /**
      * Getter for task status
      */
-    public get status(): TaskStatus {
+    public get status(): AgentStatus {
         return this._status;
     }
 
@@ -186,15 +180,6 @@ export class Agent {
      */
     public get conversationHistory(): ApiMessage[] {
         return this.memoryModule.getAllMessages();
-    }
-
-    /**
-     * Setter for conversation history (not supported in Turn-based architecture)
-     * @deprecated Turn-based architecture doesn't support setting history directly
-     */
-    public set conversationHistory(history: ApiMessage[]) {
-        this.logger.warn('Setting conversation history is not supported in Turn-based architecture');
-        // For backward compatibility, do nothing
     }
 
     /**
@@ -228,7 +213,7 @@ export class Agent {
     /**
      * Get memory module (always available)
      */
-    public getMemoryModule(): MemoryModule {
+    public getMemoryModule(): IMemoryModule {
         return this.memoryModule;
     }
 
@@ -241,13 +226,13 @@ export class Agent {
     }
 
     // ==================== Lifecycle Methods ====================
+    // Lifecycle status: running / completed / idle / aborted
 
     /**
      * Start agent with a user query
      */
     async start(query: string): Promise<Agent> {
         this._status = 'running';
-        this._initialQuery = query;  // Save initial query for task context
 
         // Note: Initial user message will be added in requestLoop after startTurn()
         // This ensures the message is properly associated with a Turn
@@ -318,7 +303,7 @@ export class Agent {
      * Core method for making recursive API requests to the LLM
      * Implements stack-based retry mechanism with error handling
      */
-    protected async requestLoop(query: string): Promise<boolean> {
+    protected async requestLoop(query: string): Promise<void> {
         // Reset collected errors for this new operation
         this.resetCollectedErrors();
 
@@ -332,149 +317,27 @@ export class Agent {
         // Track if we need to start a new turn
         let needsNewTurn = true;
 
-        while (stack.length > 0) {
-            const currentItem = stack.pop()!;
-            const currentUserContent = currentItem.content;
-            let didEndLoop = false;
+        while (needsNewTurn) {
 
-            if (this.isAborted()) {
-                stack.length = 0;
-                return false;
-            }
+            // Create new turn 
+            // Notice: now workspace context will include Mail component, which has the information 
+            // about task. The system do not need to pass Task or user message anymore, instead agent 
+            // should analysis and extract task from mail component automatically.
 
-            if (
-                this._consecutiveMistakeCount > 0 &&
-                this._consecutiveMistakeCount >= this.config.consecutiveMistakeLimit
-            ) {
-                this._consecutiveMistakeCount = 0;
-                throw new Error(`Consecutive mistake limit reached`);
-            }
-
-            // Get current workspace context
-            const currentWorkspaceContext = await this.workspace.render();
-
-            // Start new turn if needed
-            if (needsNewTurn) {
-                // Pass task context only for the first turn
-                const taskContext = this.memoryModule.getTurnStore().getCurrentTurnNumber() === 0
-                    ? this._initialQuery || undefined
-                    : undefined;
-
-                this.memoryModule.startTurn(currentWorkspaceContext, taskContext);
-                needsNewTurn = false;
-            }
-
-            // Add user message to conversation history if needed
-            const isEmptyUserContent = currentUserContent.length === 0;
-
-            const shouldAddUserMessage =
-                (((currentItem.retryAttempt ?? 0) === 0 && !isEmptyUserContent) ||
-                    currentItem.userMessageWasRemoved) && currentItem.sender === 'user';
-
-            if (shouldAddUserMessage) {
-                // Use the appropriate method based on content type
-                if (currentUserContent.length === 1 && currentUserContent[0].type === 'text') {
-                    const message = MessageBuilder.user((currentUserContent[0] as any).text);
-                    this.memoryModule.addMessage(message);
-                } else {
-                    const message = MessageBuilder.custom('user', currentUserContent);
-                    this.memoryModule.addMessage(message);
-                }
-            }
+            const currentWorkspaceContext = await this.workspace.render()
+            this.memoryModule.startTurn(currentWorkspaceContext);
 
             try {
-                // THINKING PHASE: Use ThinkingModule directly
-                const currentTurn = this.memoryModule.getCurrentTurn();
-                const thinkingResult = await this.thinkingModule.performThinkingPhase(
-                    currentWorkspaceContext,
-                    currentTurn?.taskContext,
-                    [],  // previousRounds - empty for new phase
+                // EXECUTE THINKING PHASE
+                const thinkingResult = await this.executeThinkingPhase(
                     lastToolResults
                 );
 
-                const thinkingTokens = thinkingResult.tokensUsed;
-
-                // Store thinking phase in turn
-                if (currentTurn) {
-                    this.memoryModule.getTurnStore().storeThinkingPhase(
-                        currentTurn.id,
-                        thinkingResult.rounds,
-                        thinkingResult.tokensUsed
-                    );
-
-                    // Store summary if available
-                    if (thinkingResult.summary) {
-                        this.memoryModule.getTurnStore().storeSummary(
-                            currentTurn.id,
-                            thinkingResult.summary,
-                            []  // insights - extracted by ThinkingModule
-                        );
-                    }
-                }
-
-                // // Debug: Log raw thinking result
-                // console.log('\n=== DEBUG: Raw Thinking Result ===');
-                // console.log('Rounds:', JSON.stringify(thinkingResult.rounds, null, 2));
-                // console.log('=== END DEBUG ===\n');
-
-                // Add thinking summary to history for observability
-                if (thinkingResult.rounds.length > 0) {
-                    const thinkingSummary = this.formatMemoryThinkingSummary(thinkingResult);
-                    const message = MessageBuilder.system(thinkingSummary);
-                    this.memoryModule.addMessage(message);
-                }
-
-                // Track thinking tokens
-                this._tokenUsage.contextTokens += thinkingTokens;
-
-                // ACTION PHASE: Use ActionModule
-                const systemPrompt = await this.getSystemPrompt();
-                const conversationHistory = this.memoryModule.getHistoryForPrompt();
-
-                // Convert tools to OpenAI format (inline utility)
-                const allTools = this.workspace.getAllTools();
-                const tools = allTools.map((t: { tool: any }) => t.tool);
-                const converter = new DefaultToolCallConverter();
-                const openaiTools = converter.convertTools(tools);
-
-                // Generate action phase guidance with thinking summary
-                const thinkingSummary = thinkingResult.rounds.length > 0
-                    ? this.formatMemoryThinkingSummary(thinkingResult)
-                    : undefined;
-                const actionPhaseGuidance = generateActionPhaseGuidance(thinkingSummary);
-
-                // Prepend action phase guidance to system prompt
-                const enhancedSystemPrompt = `${actionPhaseGuidance}\n\n${systemPrompt}`;
-
-                const actionResult: ActionPhaseResult = await this.actionModule.performActionPhase(
-                    currentWorkspaceContext,
-                    enhancedSystemPrompt,
-                    conversationHistory,
-                    openaiTools,
-                    () => this.isAborted(),
-                    this.workspace.getToolManager()  // Use workspace's toolManager to ensure tools are available
+                // EXECUTE ACTION PHASE
+                const actionResult = await this.executeActionPhase(
+                    thinkingResult,
+                    lastToolResults
                 );
-                this.logger.info(`Action phase successfully proformed`);
-
-                // Update agent state from action result
-                this._tokenUsage.totalTokensOut += actionResult.tokensUsed;
-                this._toolUsage = { ...this._toolUsage, ...actionResult.toolUsage };
-
-                // Add messages to memory
-                this.memoryModule.addMessage(actionResult.assistantMessage);
-                if (actionResult.userMessageContent.length > 0) {
-                    const message = MessageBuilder.custom('system', actionResult.userMessageContent);
-                    this.memoryModule.addMessage(message);
-                }
-
-                // Record tool calls to turn
-                actionResult.toolResults.forEach(result => {
-                    this.memoryModule.recordToolCall(
-                        result.toolName,
-                        result.success,
-                        result.result
-                    );
-                });
 
                 // Store tool results for next thinking phase
                 lastToolResults = actionResult.toolResults;
@@ -482,32 +345,26 @@ export class Agent {
                 // Trigger workspace re-render after tool execution
                 // This ensures the next iteration gets the UPDATED workspace context
                 // rather than the context that was captured BEFORE tool execution
-                this.logger.info(`Tool-calling has been executed successfully`);
+                this.logger.info(`Tool-calling has been executed successfully`, {
+                    toolCallResult: lastToolResults
+                });
 
-                // Re-render workspace to capture updated component states
-                // Note: Tool call logging is handled via notifyToolExecuted callback
-                // in ComponentToolProvider, which is set up when the workspace is initialized
-                const updatedWorkspaceContext = await this.workspace.render();
+                // // Re-render workspace to capture updated component states
+                // // Note: Tool call logging is handled via notifyToolExecuted callback
+                // // in ComponentToolProvider, which is set up when the workspace is initialized
+                // const updatedWorkspaceContext = await this.workspace.render();
 
                 if (!actionResult.didAttemptCompletion) {
                     // Complete current turn and prepare for next turn
                     this.memoryModule.completeTurn();
                     needsNewTurn = true;
 
-                    stack.push({
-                        sender: 'system',
-                        content: [{
-                            type: 'text',
-                            text: 'WORKSPACE STATE UPDATED'
-                        }],
-                    });
+
                 } else {
                     // Task completed, complete the turn
                     this.memoryModule.completeTurn();
+                    needsNewTurn = false;
                 }
-
-                // For debugging: avoid stuck in loop for some tests
-                // didEndLoop = true;
             } catch (error) {
                 // Properly serialize error to extract message, name, and stack
                 const errorObj: Record<string, unknown> = error instanceof Error
@@ -519,46 +376,134 @@ export class Agent {
                     : { message: String(error), original: error };
                 // Add cause if it exists
                 if (error instanceof Error && (error as any).cause) {
-                    errorObj['cause'] = (error as any).cause;
+                    this.memoryModule.getTurnStore().pushErrors([error])
                 }
-                this.logger.error(JSON.stringify(errorObj))
-                const currentRetryAttempt = currentItem.retryAttempt ?? 0;
+                this.logger.error('Agent loop error', {
+                    ...errorObj
+                })
 
-                // Handle error using error handler logic
-                const shouldAbort = this.handleError(error, currentRetryAttempt);
-
-                // Format error as prompt and add to user content
-                const errorPrompt = ErrorHandlerPrompt.formatErrorPrompt(error as any, currentRetryAttempt);
-
-                if (shouldAbort) {
-                    const errorMessage = error instanceof Error ? error.message : String(error);
-                    this.abort(`Max retry attempts exceeded or non-retryable error: ${errorMessage}`, 'error', {
-                        retryAttempt: currentRetryAttempt,
-                        originalError: errorMessage
-                    });
+                if (this._status === 'aborted') {
+                    needsNewTurn = false
                 } else {
-                    // Push the same content with error prompt back onto the stack to retry
-                    stack.push({
-                        sender: 'user',
-                        content: [
-                            {
-                                type: 'text',
-                                text: errorPrompt,
-                            },
-                            ...currentUserContent,
-                        ],
-                        retryAttempt: currentRetryAttempt + 1,
-                    });
+                    needsNewTurn = true
                 }
-            }
-
-            if (didEndLoop) {
-                return true;
             }
         }
 
         this.complete();
-        return false;
+    }
+
+    /**
+     * Execute the thinking phase using ThinkingModule
+     * @param currentWorkspaceContext - Current workspace context
+     * @param lastToolResults - Results from previous tool executions
+     * @returns ThinkingPhaseResult from the thinking module
+     */
+    private async executeThinkingPhase(
+        lastToolResults: ToolResult[]
+    ): Promise<ThinkingPhaseResult> {
+        const currentTurn = this.memoryModule.getCurrentTurn();
+        const currentWorkspaceContext = await this.workspace.render()
+        const thinkingResult = await this.thinkingModule.performThinkingPhase(
+            currentWorkspaceContext,
+            lastToolResults
+        );
+
+        const thinkingTokens = thinkingResult.tokensUsed;
+
+        // Store thinking phase in turn
+        if (!currentTurn) throw new NullCurrentTurnError(`Store thinking message failed: current turn is null`)
+        this.memoryModule.getTurnStore().storeThinkingPhase(
+            currentTurn.id,
+            thinkingResult.rounds,
+            thinkingResult.tokensUsed
+        );
+
+        // Store summary if available
+        if (thinkingResult.summary) {
+            this.memoryModule.getTurnStore().storeSummary(
+                currentTurn.id,
+                thinkingResult.summary,
+                []  // insights - extracted by ThinkingModule
+            );
+        }
+
+        // Add thinking summary to history for observability
+        if (thinkingResult.rounds.length > 0) {
+            const thinkingSummary = this.formatMemoryThinkingSummary(thinkingResult);
+            const message = MessageBuilder.system(thinkingSummary);
+            this.memoryModule.addMessage(message);
+        }
+
+        // Track thinking tokens
+        this._tokenUsage.contextTokens += thinkingTokens;
+
+        return thinkingResult;
+    }
+
+    /**
+     * Execute the action phase using ActionModule
+     * @param currentWorkspaceContext - Current workspace context
+     * @param thinkingResult - Result from thinking phase
+     * @param lastToolResults - Results from previous tool executions
+     * @returns ActionPhaseResult from the action module
+     */
+    private async executeActionPhase(
+        thinkingResult: ThinkingPhaseResult,
+        lastToolResults: ToolResult[]
+    ): Promise<ActionPhaseResult> {
+        const systemPrompt = await this.getSystemPrompt();
+        const conversationHistory = this.memoryModule.getHistoryForPrompt();
+
+        // Convert tools to OpenAI format (inline utility)
+        const allTools = this.workspace.getAllTools();
+        const tools = allTools.map((t: { tool: any }) => t.tool);
+        const converter = new DefaultToolCallConverter();
+        const openaiTools = converter.convertTools(tools);
+
+        // Generate action phase guidance with thinking summary
+        const thinkingSummary = thinkingResult.rounds.length > 0
+            ? this.formatMemoryThinkingSummary(thinkingResult)
+            : undefined;
+        const actionPhaseGuidance = generateActionPhaseGuidance(thinkingSummary);
+
+        // Prepend action phase guidance to system prompt
+        const enhancedSystemPrompt = `${actionPhaseGuidance}\n\n${systemPrompt}`;
+
+        // Get current workspace context
+        const currentWorkspaceContext = await this.workspace.render()
+
+        const actionResult: ActionPhaseResult = await this.actionModule.performActionPhase(
+            currentWorkspaceContext,
+            enhancedSystemPrompt,
+            conversationHistory,
+            openaiTools,
+            () => this.isAborted(),
+            this.workspace.getToolManager()  // Use workspace's toolManager to ensure tools are available
+        );
+        this.logger.info(`Action phase successfully proformed`);
+
+        // Update agent state from action result
+        this._tokenUsage.totalTokensOut += actionResult.tokensUsed;
+        this._toolUsage = { ...this._toolUsage, ...actionResult.toolUsage };
+
+        // Add messages to memory
+        this.memoryModule.addMessage(actionResult.assistantMessage);
+        if (actionResult.userMessageContent.length > 0) {
+            const message = MessageBuilder.custom('system', actionResult.userMessageContent);
+            this.memoryModule.addMessage(message);
+        }
+
+        // Record tool calls to turn
+        actionResult.toolResults.forEach(result => {
+            this.memoryModule.recordToolCall(
+                result.toolName,
+                result.success,
+                result.result
+            );
+        });
+
+        return actionResult;
     }
 
     // ==================== Message Processing (Deprecated - Now handled by ActionModule) ====================

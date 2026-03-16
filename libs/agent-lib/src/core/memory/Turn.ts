@@ -73,8 +73,8 @@ export interface Turn {
     timestamp: number;                   // Creation timestamp
     status: TurnStatus;                  // Current status
 
-    // Task context (user's initial goal/query for this turn)
-    taskContext?: string;
+    // // Task context (user's initial goal/query for this turn)
+    // taskContext?: string;
 
     // Messages in this turn (user → assistant → tool_result)
     messages: ApiMessage[];

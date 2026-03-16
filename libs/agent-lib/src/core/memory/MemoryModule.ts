@@ -58,6 +58,7 @@ export class MemoryModule implements IMemoryModule {
         this.thinkingModule = thinkingModule;
     }
 
+
     /**
      * Get the turn store
      */
@@ -83,6 +84,8 @@ export class MemoryModule implements IMemoryModule {
 
     /**
      * Start a new turn
+     * This method will create a new turn memory. Memory module was designed to
+     * use `turn` as basic memory unit. 
      */
     startTurn(workspaceContext: string, taskContext?: string): Turn {
         // Complete previous turn if exists
@@ -92,7 +95,7 @@ export class MemoryModule implements IMemoryModule {
         }
 
         // Create new turn with current workspace context and optional task context
-        const turn = this.turnStore.createTurn(workspaceContext, taskContext);
+        const turn = this.turnStore.createTurn(workspaceContext);
         this.currentTurn = turn;
 
         return turn;
@@ -230,8 +233,6 @@ ${summaryText}
         // - conversation history (via getAllMessages())
         const result = await this.thinkingModule.performThinkingPhase(
             workspaceContext,
-            this.currentTurn.taskContext,  // Pass task context
-            [],  // previousRounds - empty for new phase
             lastToolResults
         );
 

@@ -151,8 +151,8 @@ export interface IThinkingModule {
      */
     performThinkingPhase(
         workspaceContext: string,
-        taskContext?: string,
-        previousRounds?: ThinkingRound[],
+        // taskContext?: string,
+        // previousRounds?: ThinkingRound[],
         lastToolResults?: ToolCallResult[]
     ): Promise<ThinkingPhaseResult>;
 
@@ -164,7 +164,7 @@ export interface IThinkingModule {
      */
     performSequentialThinkingPhase(
         workspaceContext: string,
-        taskContext?: string,
+        // taskContext?: string,
         initialState?: SequentialThinkingState
     ): Promise<ThinkingPhaseResult & { sequentialState: SequentialThinkingState }>;
 
