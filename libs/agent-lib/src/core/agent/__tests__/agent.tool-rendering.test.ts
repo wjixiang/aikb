@@ -12,12 +12,10 @@ import type { Logger } from 'pino';
 import type { ILogger } from '../../utils/logging/types.js';
 import type { IThinkingModule } from '../../thinking/types.js';
 import type { ThinkingPhaseResult } from '../../thinking/types.js';
-import type { ITaskModule } from '../../task/types.js';
-import { TaskModule } from '../../task/TaskModule.js';
 import type { IToolManager } from '../../tools/index.js';
 import { ToolManager } from '../../tools/index.js';
 import { ComponentToolProvider } from '../../tools/providers/ComponentToolProvider.js';
-import { MessageBuilder } from '../../task/task.type.js';
+import { MessageBuilder } from '../../memory/types.js';
 
 // Mock Logger for MemoryModule (pino Logger)
 const mockPinoLogger: Logger = {
@@ -170,7 +168,6 @@ describe('Agent Tool Description Rendering', () => {
     let workspace: VirtualWorkspace;
     let testComponent: TestToolComponent;
     let memoryModule: MemoryModule;
-    let taskModule: ITaskModule;
 
     const agentPrompt: AgentPrompt = {
         capability: 'Test agent capability - can verify tool rendering',
@@ -202,9 +199,6 @@ describe('Agent Tool Description Rendering', () => {
         const turnStore = new TurnMemoryStore();
         memoryModule = new MemoryModule(mockPinoLogger, {}, turnStore, mockThinkingModule);
 
-        // Create task module
-        taskModule = new TaskModule();
-
         // Create agent
         agent = new Agent(
             agentConfig,
@@ -214,7 +208,6 @@ describe('Agent Tool Description Rendering', () => {
             memoryModule,
             mockThinkingModule,
             mockActionModule,
-            taskModule,
             mockLogger
         );
     });

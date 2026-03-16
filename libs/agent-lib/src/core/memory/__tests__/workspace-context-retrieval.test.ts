@@ -3,9 +3,8 @@ import { MemoryModule } from '../MemoryModule';
 import { TurnMemoryStore } from '../TurnMemoryStore';
 import type { Logger } from 'pino';
 import type { IThinkingModule, ThinkingPhaseResult } from '../../thinking/types';
-import { MessageBuilder } from '../../task/task.type';
+import { MessageBuilder, type ApiMessage } from '../types';
 import type { Turn } from '../Turn';
-import type { ApiMessage } from '../../task/task.type';
 
 // Mock Logger
 const mockLogger: Logger = {

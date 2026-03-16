@@ -5,7 +5,7 @@ import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from '..
 import { TurnMemoryStore } from '../TurnMemoryStore';
 import type { Logger } from 'pino';
 import type { IThinkingModule, ThinkingPhaseResult } from '../../thinking/types';
-import { MessageBuilder } from '../../task/task.type';
+import { MessageBuilder } from '../types';
 
 // Mock API Client for testing
 class MockApiClient implements ApiClient {

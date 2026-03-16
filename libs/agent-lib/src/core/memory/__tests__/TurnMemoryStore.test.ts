@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TurnMemoryStore } from '../TurnMemoryStore';
 import { TurnStatus } from '../Turn';
-import { MessageBuilder } from '../../task/task.type';
+import { MessageBuilder } from '../types';
 
 describe('TurnMemoryStore', () => {
     let store: TurnMemoryStore;

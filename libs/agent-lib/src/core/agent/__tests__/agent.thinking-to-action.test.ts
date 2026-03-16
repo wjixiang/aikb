@@ -11,7 +11,6 @@ import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
 import type { Logger } from 'pino';
 import type { ILogger } from '../../utils/logging/types.js';
 import { ThinkingModule } from '../../thinking/ThinkingModule.js';
-import { TaskModule } from '../../task/TaskModule.js';
 import { TYPES } from '../../di/types.js';
 import { Container } from 'inversify';
 import { ToolManager } from '../../tools/index.js';
@@ -114,7 +113,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
     let testComponent: TestToolComponent;
     let memoryModule: MemoryModule;
     let thinkingModule: ThinkingModule;
-    let taskModule: TaskModule;
     let mockApiClientWithToolCalls: ApiClient;
     const agentPrompt: AgentPrompt = {
         capability: 'Base agent capability - can perform general tasks',
@@ -144,9 +142,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
         const turnStore = new TurnMemoryStore();
         thinkingModule = new ThinkingModule(mockApiClient, mockPinoLogger, {}, turnStore);
         memoryModule = new MemoryModule(mockPinoLogger, {}, turnStore, thinkingModule);
-
-        // Create task module
-        taskModule = new TaskModule();
 
         // Create mock API client with tool calls for action phase
         // This tracks call count to return different responses
@@ -279,7 +274,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
             memoryModule,
             thinkingModule,
             mockActionModule,
-            taskModule,
             mockLogger
         );
     });
@@ -422,7 +416,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
             const turnStore = new TurnMemoryStore();
             const newThinkingModule = new ThinkingModule(mockApiClient, mockPinoLogger, {}, turnStore);
             const newMemoryModule = new MemoryModule(mockPinoLogger, {}, turnStore, newThinkingModule);
-            const newTaskModule = new TaskModule();
 
             // Get toolManager from workspace
             const toolManager = workspace.getToolManager();
@@ -508,7 +501,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                 newMemoryModule,
                 newThinkingModule,
                 mockActionModule,
-                newTaskModule,
                 mockLogger
             );
 
@@ -599,7 +591,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
             const turnStore = new TurnMemoryStore();
             const newThinkingModule = new ThinkingModule(mockApiClient, mockPinoLogger, {}, turnStore);
             const newMemoryModule = new MemoryModule(mockPinoLogger, {}, turnStore, newThinkingModule);
-            const newTaskModule = new TaskModule();
 
             // Get toolManager from workspace
             const toolManager = workspace.getToolManager();
@@ -685,7 +676,6 @@ describe('Agent Thinking to Action Phase Transition', () => {
                 newMemoryModule,
                 newThinkingModule,
                 mockActionModule,
-                newTaskModule,
                 mockLogger
             );
 

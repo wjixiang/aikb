@@ -6,14 +6,13 @@ import {
     observeAgent,
     type ObservableAgentCallbacks,
 } from '../ObservableAgent.js';
-import { TaskStatus } from '../../task/task.type.js';
+import { TaskStatus } from '../../common/types.js';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
 import { ToolManager } from '../../tools/index.js';
 import { OpenaiCompatibleApiClient } from '../../api-client/OpenaiCompatibleApiClient.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
 import { ThinkingModule } from '../../thinking/ThinkingModule.js';
-import { TaskModule } from '../../task/TaskModule.js';
 
 // Mock VirtualWorkspace
 vi.mock('statefulContext', () => ({
@@ -63,7 +62,6 @@ describe('ObservableAgent', () => {
         const turnStore = new TurnMemoryStore();
         const thinkingModule = new ThinkingModule(apiClient, mockLogger, {}, turnStore);
         const memoryModule = createMockMemoryModule(apiClient, thinkingModule);
-        const taskModule = new TaskModule();
         const actionModule = {
             performActionPhase: vi.fn().mockResolvedValue({ toolResults: [] }),
         } as any;
@@ -75,7 +73,6 @@ describe('ObservableAgent', () => {
             memoryModule,
             thinkingModule,
             actionModule,
-            taskModule,
             mockLogger
         );
     });
@@ -245,7 +242,6 @@ describe('ObservableAgent', () => {
             const errorApiClient = createMockApiClient();
             const errorTurnStore = new TurnMemoryStore();
             const errorThinkingModule = new ThinkingModule(errorApiClient, mockLogger, {}, errorTurnStore);
-            const errorTaskModule = new TaskModule();
             const errorActionModule = {
                 performActionPhase: vi.fn().mockResolvedValue({ toolResults: [] }),
             } as any;
@@ -257,7 +253,6 @@ describe('ObservableAgent', () => {
                 createMockMemoryModule(errorApiClient, errorThinkingModule),
                 errorThinkingModule,
                 errorActionModule,
-                errorTaskModule,
                 mockLogger
             ) as any;
             errorAgent.throwError = () => {

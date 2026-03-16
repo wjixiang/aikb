@@ -4,7 +4,7 @@ import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from "..
 import { ThinkingRound } from "../Turn";
 import { Logger } from "pino";
 import { TurnMemoryStore } from "../TurnMemoryStore";
-import { MessageBuilder } from "../../task/task.type";
+import { MessageBuilder } from "../types";
 import { vi } from "vitest";
 
 // Mock API Client for testing
