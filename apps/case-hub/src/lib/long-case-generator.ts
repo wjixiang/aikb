@@ -9,6 +9,7 @@ import {
     randomName,
     randomAge,
     randomChoice,
+    randomAddress,
     getRandomTemplate
 } from "./case-templates.js";
 import {
@@ -54,10 +55,12 @@ export class LongCaseGenerator {
         // 确定参数
         const department = options.department;
         const disease = options.disease;
+        const patientName = options.patientName || randomName();
         const age = options.ageRange
             ? randomAge(options.ageRange.min, options.ageRange.max)
             : randomAge(18, 75);
         const gender = options.gender || randomChoice(["男", "女"] as const);
+        const address = randomAddress();
         const caseType = options.caseType || randomCaseType();
 
         // 获取模板
@@ -71,7 +74,9 @@ export class LongCaseGenerator {
             disease: finalDisease,
             diseaseInfo: template.disease,
             age,
-            gender
+            gender,
+            patientName,
+            address
         }));
 
         console.log("正在生成第二部分（既往史+个人史+家族史）...");
