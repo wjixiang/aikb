@@ -7,6 +7,7 @@ import { GlobalToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
 import { ComponentRegistry, type ComponentRegistration } from '../../components/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
+import chalk from 'chalk';
 
 /**
  * Tool call summary for the LOG section
@@ -205,27 +206,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
 
     /**
-     * Set tool call log for rendering in the LOG section
-     * @param toolCalls Array of tool call results to display
-     */
-    setToolCallLog(toolCalls: Array<{ toolName: string; success: boolean; result: any; timestamp: number; componentKey?: string }>): void {
-        const maxCount = this.config.toolCallLogCount ?? 3;
-        if (maxCount <= 0) {
-            this.toolCallLog = [];
-            return;
-        }
-
-        // Convert tool results to summaries
-        this.toolCallLog = toolCalls.slice(-maxCount).map(tc => ({
-            toolName: tc.toolName,
-            success: tc.success,
-            summary: this.summarizeToolResult(tc.toolName, tc.result, tc.componentKey),
-            timestamp: tc.timestamp,
-            componentKey: tc.componentKey
-        }));
-    }
-
-    /**
      * Generate a brief summary of tool result for the LOG section
      * @param toolName The name of the tool
      * @param result The result from the tool execution
@@ -392,6 +372,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
             const isLatest = index === logEntries.length - 1;
             const prefix = isLatest ? '**>**' : '-';
             const status = entry.success ? '`OK`' : '`FAIL`';
+            // console.debug(chalk.yellow(JSON.stringify(entry)))
 
             container.addChild(new MdParagraph({
                 content: `${prefix} ${status} \`${entry.toolName}\`: ${entry.summary}`

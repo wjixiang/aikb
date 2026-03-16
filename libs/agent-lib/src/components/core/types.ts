@@ -61,11 +61,6 @@ export interface IVirtualWorkspace {
      * Get workspace configuration
      */
     getConfig(): VirtualWorkspaceConfig;
-
-    /**
-     * Set tool call log for rendering in the LOG section
-     */
-    setToolCallLog?(toolCalls: Array<{ toolName: string; success: boolean; result: any; timestamp: number }>): void;
 }
 
 /**
