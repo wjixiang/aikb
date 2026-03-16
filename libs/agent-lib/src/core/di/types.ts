@@ -255,4 +255,18 @@ export const TYPES = {
      * ActionModuleConfig - Configuration for ActionModule
      */
     ActionModuleConfig: Symbol('ActionModuleConfig'),
+
+    // ==================== Message Bus ====================
+
+    /**
+     * IMessageBus - Message routing for multi-agent communication
+     * @scope Singleton - Shared across all agents
+     */
+    IMessageBus: Symbol('IMessageBus'),
+
+    /**
+     * MessageBusConfig - Configuration for MessageBus
+     * @scope Singleton - Shared configuration
+     */
+    MessageBusConfig: Symbol('MessageBusConfig'),
 } as const;
