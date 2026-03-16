@@ -1,16 +1,14 @@
 /**
- * Multi-Agent System - Core Module
+ * Multi-Agent System - Core Module (Email-style)
  *
- * Provides message-driven multi-agent communication infrastructure
+ * Provides email-style message-driven multi-agent communication infrastructure
  * with support for Expert-to-Expert and MC-to-Expert messaging.
  *
  * Main exports:
- * - TaskMessage, TaskResult: Core communication types
- * - TaskSource, TaskTarget: Address types
- * - IMessageBus: Message routing interface
- * - MessageBus: Message routing implementation
- * - IExpertAdapter, IMCAdapter: Integration adapters
- * - Helper functions: createTaskMessage, createTaskResult, etc.
+ * - MailAddress, MailMessage, OutgoingMail: Email-style types
+ * - IMailListener: Event listener for new mail notifications
+ * - MessageBus: Email-style message router
+ * - ExpertAdapter: Bridge between MessageBus and Expert system
  */
 
 // Types
@@ -18,4 +16,6 @@ export * from './types.js';
 
 // Message Bus
 export { MessageBus } from './MessageBus.js';
-export { MessageQueue } from './MessageQueue.js';
+
+// Adapters
+export { ExpertAdapter } from './ExpertAdapter.js';

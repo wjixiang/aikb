@@ -1,545 +1,490 @@
 /**
- * MessageBus - Core message routing implementation for multi-agent system
+ * MessageBus - Email-style Message Router for Multi-Agent System
  *
- * Responsibilities:
- * - Manage message queues
- * - Route messages to appropriate subscribers
- * - Handle message acknowledgment and dead letters
+ * 设计原则：
+ * - 类似电子邮件系统：每个 Expert/MC 有自己的收件箱
+ * - 事件驱动：新邮件到达时立即触发回调（不是轮询）
+ * - 异步通信：发送邮件后立即返回，由接收者异步处理
  */
 
 import { injectable } from 'inversify';
 import type {
-  TaskMessage,
-  TaskResult,
-  TaskTarget,
-  QueueConfig,
-  QueueStatus,
+  MailAddress,
+  MailMessage,
+  OutgoingMail,
+  IMailListener,
+  SubscriptionId,
   Subscription,
-  SubscriptionOptions,
-  MessageHandler,
-  MessageBusConfig,
-  MessageBusStats,
-  MessageType,
-  MessagePriority,
+  MailPriority,
 } from './types.js';
-import { MessageQueue } from './MessageQueue.js';
-import { generateMessageId } from './types.js';
 
 /**
- * Default MessageBus configuration
+ * Generate unique ID
  */
-const DEFAULT_CONFIG: Required<MessageBusConfig> = {
-  enableDeadLetter: true,
-  deadLetterPrefix: 'dlq.',
-  defaultTtl: 3600000,  // 1 hour
-  maxRetries: 3,
-  retryDelay: 1000,
-};
-
-/**
- * Subscription entry with ID mapping
- */
-interface SubscriptionEntry extends Subscription {
-  queueName: string;
+function generateId(): string {
+  return `mail_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
 /**
- * MessageBus Implementation
+ * 将 MailAddress 转换为字符串键
+ */
+function addressToKey(address: MailAddress): string {
+  if (address.type === 'broadcast') {
+    return 'broadcast';
+  }
+  return `${address.type}:${address.type === 'mc' ? address.mcId : address.expertId}`;
+}
+
+/**
+ * MessageBus - 邮件风格消息路由器
  */
 @injectable()
-export class MessageBus {
-  private readonly config: Required<MessageBusConfig>;
-  private readonly queues: Map<string, MessageQueue> = new Map();
-  private readonly subscriptions: Map<string, SubscriptionEntry> = new Map();
-  private readonly subscriptionIndex: Map<string, Set<string>> = new Map();  // target -> subscription IDs
-  private deadLetterQueue: MessageQueue | undefined;
+export class MessageBus implements IMessageBus {
+  // 内存存储：address -> 邮件列表
+  private readonly mailboxes: Map<string, MailMessage[]> = new Map();
+
+  // 订阅：address -> 订阅者列表
+  private readonly subscriptions: Map<string, Map<SubscriptionId, IMailListener>> = new Map();
+
+  // 订阅 ID 管理
+  private subscriptionIds: Set<SubscriptionId> = new Set();
+
+  // 初始化状态
   private initialized: boolean = false;
-  private shuttingDown: boolean = false;
-
-  // Statistics
-  private stats: MessageBusStats = {
-    totalSent: 0,
-    totalReceived: 0,
-    totalFailed: 0,
-    totalDeadLetter: 0,
-    activeSubscriptions: 0,
-    queueStats: {
-      totalQueues: 0,
-      totalPending: 0,
-      totalProcessing: 0,
-      totalFailed: 0,
-    },
-  };
-
-  constructor(config?: Partial<MessageBusConfig>) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
-  }
-
-  // ==================== Lifecycle ====================
 
   /**
-   * Initialize the message bus
+   * 初始化 MessageBus
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
       return;
     }
-
-    // Create dead letter queue if enabled
-    if (this.config.enableDeadLetter) {
-      this.deadLetterQueue = new MessageQueue(
-        `${this.config.deadLetterPrefix}default`,
-        {
-          durable: true,
-          messageTtl: this.config.defaultTtl * 24,  // Keep DLQ messages longer
-        }
-      );
-      this.queues.set(this.deadLetterQueue.getName(), this.deadLetterQueue);
-    }
-
     this.initialized = true;
   }
 
   /**
-   * Shutdown the message bus
+   * 关闭 MessageBus
    */
   async shutdown(): Promise<void> {
-    if (this.shuttingDown) {
+    this.mailboxes.clear();
+    this.subscriptions.clear();
+    this.subscriptionIds.clear();
+    this.initialized = false;
+  }
+
+  /**
+   * 检查是否已初始化
+   */
+  isReady(): boolean {
+    return this.initialized;
+  }
+
+  // ==================== 发送邮件 ====================
+
+  /**
+   * 发送邮件 - 类似 SMTP 发送
+   *
+   * 流程：
+   * 1. 创建邮件
+   * 2. 写入收件人收件箱
+   * 3. 触发收件人的回调
+   */
+  async send(mail: OutgoingMail): Promise<MailMessage> {
+    this.ensureReady();
+
+    const recipients = Array.isArray(mail.to) ? mail.to : [mail.to];
+
+    // 为每个收件人创建邮件副本
+    const createdMails: MailMessage[] = [];
+
+    for (const recipient of recipients) {
+      const mailMessage: MailMessage = {
+        messageId: generateId(),
+        subject: mail.subject,
+        body: mail.body,
+        from: mail.from,
+        to: recipient,
+        cc: mail.cc,
+        bcc: mail.bcc,
+        attachments: mail.attachments,
+        payload: mail.payload,
+        priority: mail.priority || 'normal',
+        sentAt: new Date(),
+        read: false,
+        starred: false,
+        deleted: false,
+        inReplyTo: mail.inReplyTo,
+        taskId: mail.taskId,
+      };
+
+      // 写入收件人收件箱
+      const inboxKey = addressToKey(recipient);
+      if (!this.mailboxes.has(inboxKey)) {
+        this.mailboxes.set(inboxKey, []);
+      }
+      this.mailboxes.get(inboxKey)!.push(mailMessage);
+
+      // 触发收件人的回调（新邮件到达通知）
+      await this.notifyNewMail(recipient, mailMessage);
+
+      createdMails.push(mailMessage);
+    }
+
+    // 返回第一封邮件（如果是群发，返回第一封的副本）
+    return createdMails[0];
+  }
+
+  /**
+   * 发送邮件给广播地址（所有订阅者）
+   */
+  async broadcast(mail: OutgoingMail): Promise<MailMessage[]> {
+    this.ensureReady();
+
+    // 获取所有已订阅的地址
+    const allAddresses: MailAddress[] = [];
+    for (const [key] of this.subscriptions) {
+      if (key === 'broadcast') {
+        allAddresses.push({ type: 'broadcast' });
+      } else if (key.startsWith('expert:')) {
+        allAddresses.push({ type: 'expert', expertId: key.replace('expert:', '') });
+      } else if (key.startsWith('mc:')) {
+        allAddresses.push({ type: 'mc', mcId: key.replace('mc:', '') });
+      }
+    }
+
+    // 发送给所有地址
+    const broadcastMail: OutgoingMail = {
+      ...mail,
+      to: allAddresses,
+    };
+
+    return this.send(broadcastMail);
+  }
+
+  // ==================== 订阅机制 ====================
+
+  /**
+   * 订阅地址 - 类似 IMAP 订阅
+   *
+   * 当新邮件到达该地址时，会立即触发 listener.onNewMail()
+   */
+  subscribe(address: MailAddress, listener: IMailListener): SubscriptionId {
+    this.ensureReady();
+
+    const key = addressToKey(address);
+
+    if (!this.subscriptions.has(key)) {
+      this.subscriptions.set(key, new Map());
+    }
+
+    const subscriptionId = generateId();
+    this.subscriptions.get(key)!.set(subscriptionId, listener);
+    this.subscriptionIds.add(subscriptionId);
+
+    return subscriptionId;
+  }
+
+  /**
+   * 取消订阅
+   */
+  unsubscribe(subscriptionId: SubscriptionId): void {
+    if (!this.subscriptionIds.has(subscriptionId)) {
       return;
     }
 
-    this.shuttingDown = true;
+    for (const [key, listeners] of this.subscriptions.entries()) {
+      if (listeners.has(subscriptionId)) {
+        listeners.delete(subscriptionId);
+        this.subscriptionIds.delete(subscriptionId);
 
-    // Clear all subscriptions
-    this.subscriptions.clear();
-    this.subscriptionIndex.clear();
-
-    // Clear all queues
-    for (const queue of this.queues.values()) {
-      queue.clear();
-    }
-    this.queues.clear();
-
-    this.initialized = false;
-    this.shuttingDown = false;
-  }
-
-  /**
-   * Check if message bus is ready
-   */
-  isReady(): boolean {
-    return this.initialized && !this.shuttingDown;
-  }
-
-  // ==================== Queue Management ====================
-
-  /**
-   * Create a new queue
-   */
-  async createQueue(config: QueueConfig): Promise<void> {
-    if (this.queues.has(config.name)) {
-      throw new Error(`Queue '${config.name}' already exists`);
-    }
-
-    const queue = new MessageQueue(config.name, {
-      ...config,
-      messageTtl: config.messageTtl || this.config.defaultTtl,
-    });
-
-    this.queues.set(config.name, queue);
-    this.stats.queueStats.totalQueues = this.queues.size;
-  }
-
-  /**
-   * Delete a queue
-   */
-  async deleteQueue(name: string): Promise<void> {
-    const queue = this.queues.get(name);
-    if (!queue) {
-      throw new Error(`Queue '${name}' does not exist`);
-    }
-
-    // Don't delete dead letter queue
-    if (this.deadLetterQueue && name === this.deadLetterQueue.getName()) {
-      throw new Error('Cannot delete dead letter queue');
-    }
-
-    queue.clear();
-    this.queues.delete(name);
-
-    // Clean up subscriptions
-    for (const [subId, sub] of this.subscriptions.entries()) {
-      if (sub.queueName === name) {
-        this.subscriptions.delete(subId);
-      }
-    }
-
-    this.stats.queueStats.totalQueues = this.queues.size;
-  }
-
-  /**
-   * Get queue status
-   */
-  getQueueStatus(name: string): QueueStatus | undefined {
-    return this.queues.get(name)?.getStatus();
-  }
-
-  /**
-   * Get all queue statuses
-   */
-  getAllQueueStatuses(): QueueStatus[] {
-    return Array.from(this.queues.values()).map(q => q.getStatus());
-  }
-
-  // ==================== Subscription Management ====================
-
-  /**
-   * Get queue name for a target
-   */
-  private getQueueNameForTarget(target: TaskTarget): string {
-    if (target.type === 'expert') {
-      return `expert-${target.expertId}-input`;
-    }
-    if (target.type === 'mc') {
-      return `mc-${target.mcId}-input`;
-    }
-    return 'broadcast';
-  }
-
-  /**
-   * Subscribe to messages for a target
-   */
-  async subscribe(
-    target: TaskTarget,
-    handler: MessageHandler,
-    options?: SubscriptionOptions
-  ): Promise<Subscription> {
-    const queueName = this.getQueueNameForTarget(target);
-
-    // Ensure queue exists
-    if (!this.queues.has(queueName)) {
-      await this.createQueue({
-        name: queueName,
-        durable: true,
-        messageTtl: this.config.defaultTtl,
-      });
-    }
-
-    const subscriptionId = generateMessageId();
-    const subscription: SubscriptionEntry = {
-      subscriptionId,
-      target,
-      handler,
-      filter: this.createFilter(options),
-      active: true,
-      createdAt: new Date(),
-      queueName,
-    };
-
-    this.subscriptions.set(subscriptionId, subscription);
-
-    // Index by target for fast lookup
-    const targetKey = this.getTargetKey(target);
-    if (!this.subscriptionIndex.has(targetKey)) {
-      this.subscriptionIndex.set(targetKey, new Set());
-    }
-    this.subscriptionIndex.get(targetKey)!.add(subscriptionId);
-
-    this.stats.activeSubscriptions = this.subscriptions.size;
-
-    return subscription;
-  }
-
-  /**
-   * Create filter function from options
-   */
-  private createFilter(options?: SubscriptionOptions): ((message: TaskMessage) => boolean) | undefined {
-    if (!options) return undefined;
-
-    return (message: TaskMessage) => {
-      // Filter by message type
-      if (options.messageTypes && options.messageTypes.length > 0) {
-        if (!options.messageTypes.includes(message.type)) {
-          return false;
+        // 如果没有订阅者了，清理空 Map
+        if (listeners.size === 0) {
+          this.subscriptions.delete(key);
         }
-      }
-
-      // Filter by sender
-      if (options.senderFilter && options.senderFilter.length > 0) {
-        const senderMatch = options.senderFilter.some(s => {
-          if (s.type !== message.sender.type) return false;
-          if (s.type === 'mc' && message.sender.type === 'mc') {
-            return s.mcId === message.sender.mcId;
-          }
-          if (s.type === 'expert' && message.sender.type === 'expert') {
-            return s.expertId === message.sender.expertId;
-          }
-          return false;
-        });
-        if (!senderMatch) return false;
-      }
-
-      // Filter by priority
-      if (options.minPriority) {
-        const priorityOrder: MessagePriority[] = ['low', 'normal', 'high', 'urgent'];
-        const minIndex = priorityOrder.indexOf(options.minPriority);
-        const msgIndex = priorityOrder.indexOf(message.priority || 'normal');
-        if (msgIndex < minIndex) return false;
-      }
-
-      return true;
-    };
-  }
-
-  /**
-   * Get target key for indexing
-   */
-  private getTargetKey(target: TaskTarget): string {
-    if (target.type === 'broadcast') {
-      return 'broadcast';
-    }
-    return `${target.type}:${target.type === 'mc' ? target.mcId : target.expertId}`;
-  }
-
-  /**
-   * Unsubscribe from messages
-   */
-  async unsubscribe(subscriptionId: string): Promise<void> {
-    const subscription = this.subscriptions.get(subscriptionId);
-    if (!subscription) {
-      throw new Error(`Subscription '${subscriptionId}' not found`);
-    }
-
-    // Remove from index
-    const targetKey = this.getTargetKey(subscription.target);
-    this.subscriptionIndex.get(targetKey)?.delete(subscriptionId);
-
-    // Remove subscription
-    this.subscriptions.delete(subscriptionId);
-    this.stats.activeSubscriptions = this.subscriptions.size;
-  }
-
-  /**
-   * Get all active subscriptions
-   */
-  getSubscriptions(): Subscription[] {
-    return Array.from(this.subscriptions.values()).filter(s => s.active);
-  }
-
-  // ==================== Message Operations ====================
-
-  /**
-   * Get queue name for a receiver
-   */
-  private getQueueNameForReceiver(receiver: TaskTarget): string {
-    return this.getQueueNameForTarget(receiver);
-  }
-
-  /**
-   * Send a task message
-   */
-  async sendTask(message: TaskMessage): Promise<void> {
-    this.ensureInitialized();
-
-    const queueName = this.getQueueNameForReceiver(message.receiver);
-
-    // Create queue if it doesn't exist
-    if (!this.queues.has(queueName)) {
-      await this.createQueue({
-        name: queueName,
-        durable: true,
-        messageTtl: this.config.defaultTtl,
-      });
-    }
-
-    const queue = this.queues.get(queueName)!;
-    queue.enqueue(message);
-    this.stats.totalSent++;
-
-    // Trigger processing if there are subscribers
-    await this.processQueue(queueName);
-  }
-
-  /**
-   * Send a result message
-   */
-  async sendResult(result: TaskResult): Promise<void> {
-    this.ensureInitialized();
-
-    // Results go to the sender's queue (who requested the result)
-    const queueName = this.getQueueNameForReceiver(result.receiver);
-
-    // Create queue if it doesn't exist
-    if (!this.queues.has(queueName)) {
-      await this.createQueue({
-        name: queueName,
-        durable: true,
-        messageTtl: this.config.defaultTtl,
-      });
-    }
-
-    // Convert result to a message for routing
-    const message: TaskMessage = {
-      messageId: result.resultId,
-      taskId: result.taskId,
-      type: 'result',
-      sender: result.sender,
-      receiver: result.receiver,
-      summary: result.summary,
-      inputFiles: result.outputFiles,  // Results can be treated as "output files" from the sender
-      payload: result.data,
-      status: 'pending',
-      retryCount: 0,
-      createdAt: result.createdAt,
-    };
-
-    const queue = this.queues.get(queueName)!;
-    queue.enqueue(message);
-    this.stats.totalSent++;
-
-    // Trigger processing
-    await this.processQueue(queueName);
-  }
-
-  /**
-   * Process messages in a queue
-   */
-  private async processQueue(queueName: string): Promise<void> {
-    const queue = this.queues.get(queueName);
-    if (!queue) return;
-
-    // Find subscriptions for this queue
-    const matchingSubs: SubscriptionEntry[] = [];
-
-    for (const sub of this.subscriptions.values()) {
-      if (!sub.active) continue;
-      if (sub.queueName !== queueName) continue;
-      matchingSubs.push(sub);
-    }
-
-    // Process messages
-    let message = queue.dequeue();
-    while (message && matchingSubs.length > 0) {
-      this.stats.totalReceived++;
-
-      // Find matching subscriptions
-      for (const sub of matchingSubs) {
-        // Apply filter if exists
-        if (sub.filter && !sub.filter(message)) {
-          continue;
-        }
-
-        try {
-          await sub.handler(message);
-        } catch (error) {
-          console.error(`Error in message handler:`, error);
-          this.stats.totalFailed++;
-        }
-      }
-
-      // Mark as completed
-      queue.markCompleted(message.messageId);
-
-      // Get next message
-      message = queue.dequeue();
-    }
-  }
-
-  /**
-   * Acknowledge message processing
-   */
-  async ack(messageId: string): Promise<void> {
-    this.ensureInitialized();
-
-    // Find message in any queue and mark as completed
-    for (const queue of this.queues.values()) {
-      if (queue.get(messageId)) {
-        queue.markCompleted(messageId);
         return;
       }
     }
   }
 
   /**
-   * Reject message
+   * 获取所有订阅
    */
-  async reject(messageId: string, requeue: boolean = false): Promise<void> {
-    this.ensureInitialized();
+  getSubscriptions(): Subscription[] {
+    const result: Subscription[] = [];
 
-    // Find message in any queue
-    for (const queue of this.queues.values()) {
-      const queued = queue.getWithMeta(messageId);
-      if (!queued) continue;
-
-      if (requeue && queued.message.retryCount < this.config.maxRetries) {
-        // Retry the message
-        queue.retryFailed(messageId);
-      } else {
-        // Send to dead letter queue
-        queue.markFailed(messageId);
-
-        if (this.deadLetterQueue) {
-          const failed = queue.getFailed(messageId);
-          if (failed) {
-            this.deadLetterQueue.enqueue({
-              ...failed.message,
-              type: 'error',
-              error: {
-                code: 'DEAD_LETTER',
-                message: failed.error.message,
-              },
-            });
-          }
-        }
-
-        queue.markCompleted(messageId);
-        this.stats.totalDeadLetter++;
+    for (const [key, listeners] of this.subscriptions.entries()) {
+      const address = this.parseAddress(key);
+      for (const [id, listener] of listeners.entries()) {
+        result.push({
+          subscriptionId: id,
+          address,
+          listener,
+          createdAt: new Date(),
+        });
       }
+    }
 
+    return result;
+  }
+
+  // ==================== 收件箱操作 ====================
+
+  /**
+   * 获取收件箱 - 类似 IMAP FETCH
+   */
+  getInbox(address: MailAddress): MailMessage[] {
+    this.ensureReady();
+
+    const key = addressToKey(address);
+    const messages = this.mailboxes.get(key) || [];
+
+    // 返回未删除的消息
+    return messages.filter(m => !m.deleted);
+  }
+
+  /**
+   * 获取未读邮件
+   */
+  getUnreadMail(address: MailAddress): MailMessage[] {
+    return this.getInbox(address).filter(m => !m.read);
+  }
+
+  /**
+   * 获取未读数量
+   */
+  getUnreadCount(address: MailAddress): number {
+    return this.getUnreadMail(address).length;
+  }
+
+  // ==================== 邮件状态操作 ====================
+
+  /**
+   * 标记为已读
+   */
+  async markAsRead(messageId: string): Promise<void> {
+    this.ensureReady();
+    this.updateMessage(messageId, { read: true });
+  }
+
+  /**
+   * 标记为未读
+   */
+  async markAsUnread(messageId: string): Promise<void> {
+    this.ensureReady();
+    this.updateMessage(messageId, { read: false });
+  }
+
+  /**
+   * 星标邮件
+   */
+  async starMessage(messageId: string): Promise<void> {
+    this.ensureReady();
+    this.updateMessage(messageId, { starred: true });
+  }
+
+  /**
+   * 取消星标
+   */
+  async unstarMessage(messageId: string): Promise<void> {
+    this.ensureReady();
+    this.updateMessage(messageId, { starred: false });
+  }
+
+  /**
+   * 删除邮件（软删除）
+   */
+  async deleteMessage(messageId: string): Promise<void> {
+    this.ensureReady();
+    this.updateMessage(messageId, { deleted: true });
+  }
+
+  /**
+   * 永久删除邮件
+   */
+  async permanentlyDeleteMessage(messageId: string): Promise<void> {
+    this.ensureReady();
+
+    for (const [key, messages] of this.mailboxes.entries()) {
+      const index = messages.findIndex(m => m.messageId === messageId);
+      if (index !== -1) {
+        messages.splice(index, 1);
+        return;
+      }
+    }
+  }
+
+  // ==================== 搜索（可选）====================
+
+  /**
+   * 搜索邮件
+   */
+  search(query: {
+    from?: MailAddress;
+    to?: MailAddress;
+    subject?: string;
+    body?: string;
+    unread?: boolean;
+  }): MailMessage[] {
+    this.ensureReady();
+
+    const results: MailMessage[] = [];
+
+    for (const messages of this.mailboxes.values()) {
+      for (const mail of messages) {
+        if (mail.deleted) continue;
+
+        // 过滤条件
+        if (query.from && !this.addressesEqual(mail.from, query.from)) continue;
+        if (query.to && !this.addressesEqual(mail.to, query.to)) continue;
+        if (query.subject && !mail.subject.toLowerCase().includes(query.subject.toLowerCase())) continue;
+        if (query.body && (!mail.body || !mail.body.toLowerCase().includes(query.body.toLowerCase()))) continue;
+        if (query.unread && mail.read) continue;
+
+        results.push(mail);
+      }
+    }
+
+    return results;
+  }
+
+  // ==================== 内部方法 ====================
+
+  /**
+   * 新邮件到达通知 - 事件驱动核心
+   */
+  private async notifyNewMail(address: MailAddress, mail: MailMessage): Promise<void> {
+    const key = addressToKey(address);
+    const listeners = this.subscriptions.get(key);
+
+    if (!listeners || listeners.size === 0) {
       return;
     }
 
-    throw new Error(`Message '${messageId}' not found`);
-  }
-
-  // ==================== Utility ====================
-
-  /**
-   * Get message bus statistics
-   */
-  getStats(): MessageBusStats {
-    // Update queue stats
-    let totalPending = 0;
-    let totalProcessing = 0;
-    let totalFailed = 0;
-
-    for (const queue of this.queues.values()) {
-      const status = queue.getStatus();
-      totalPending += status.pending;
-      totalProcessing += status.processing;
-      totalFailed += status.failed;
+    // 通知所有订阅者
+    const promises: Promise<void>[] = [];
+    for (const [id, listener] of listeners.entries()) {
+      promises.push(
+        listener.onNewMail(mail).catch(async (error) => {
+          if (listener.onError) {
+            listener.onError(error);
+          } else {
+            console.error(`[MessageBus] Listener ${id} error:`, error);
+          }
+        })
+      );
     }
 
-    this.stats.queueStats = {
-      totalQueues: this.queues.size,
-      totalPending,
-      totalProcessing,
-      totalFailed,
-    };
-    this.stats.activeSubscriptions = this.subscriptions.size;
-
-    return { ...this.stats };
+    // 等待所有回调完成（不阻塞发送流程）
+    await Promise.allSettled(promises);
   }
 
   /**
-   * Ensure message bus is initialized
+   * 更新邮件状态
    */
-  private ensureInitialized(): void {
+  private updateMessage(messageId: string, updates: Partial<MailMessage>): void {
+    for (const messages of this.mailboxes.values()) {
+      const mail = messages.find(m => m.messageId === messageId);
+      if (mail) {
+        Object.assign(mail, updates);
+        return;
+      }
+    }
+  }
+
+  /**
+   * 解析地址字符串
+   */
+  private parseAddress(key: string): MailAddress {
+    if (key === 'broadcast') {
+      return { type: 'broadcast' };
+    }
+    const [type, id] = key.split(':');
+    if (type === 'expert') {
+      return { type: 'expert', expertId: id };
+    }
+    return { type: 'mc', mcId: id };
+  }
+
+  /**
+   * 比较地址是否相等
+   */
+  private addressesEqual(a: MailAddress, b: MailAddress): boolean {
+    return addressToKey(a) === addressToKey(b);
+  }
+
+  /**
+   * 确保已初始化
+   */
+  private ensureReady(): void {
     if (!this.initialized) {
       throw new Error('MessageBus is not initialized. Call initialize() first.');
     }
-    if (this.shuttingDown) {
-      throw new Error('MessageBus is shutting down.');
-    }
   }
+
+  // ==================== 兼容旧接口 ====================
+
+  /**
+   * 发送任务（兼容旧接口）
+   * @deprecated 使用 send() 代替
+   */
+  async sendTask(message: {
+    taskId: string;
+    summary: string;
+    from: MailAddress;
+    to: MailAddress;
+    payload?: Record<string, unknown>;
+    attachments?: string[];
+    priority?: MailPriority;
+  }): Promise<MailMessage> {
+    return this.send({
+      from: message.from,
+      to: message.to,
+      subject: message.summary,
+      body: message.summary,
+      payload: message.payload,
+      attachments: message.attachments,
+      priority: message.priority,
+      taskId: message.taskId,
+    });
+  }
+}
+
+/**
+ * IMessageBus 接口 - 邮件风格
+ */
+export interface IMessageBus {
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  isReady(): boolean;
+
+  // 发送邮件
+  send(mail: OutgoingMail): Promise<MailMessage>;
+  broadcast(mail: OutgoingMail): Promise<MailMessage[]>;
+
+  // 订阅
+  subscribe(address: MailAddress, listener: IMailListener): SubscriptionId;
+  unsubscribe(subscriptionId: SubscriptionId): void;
+  getSubscriptions(): Subscription[];
+
+  // 收件箱
+  getInbox(address: MailAddress): MailMessage[];
+  getUnreadMail(address: MailAddress): MailMessage[];
+  getUnreadCount(address: MailAddress): number;
+
+  // 状态管理
+  markAsRead(messageId: string): Promise<void>;
+  markAsUnread(messageId: string): Promise<void>;
+  starMessage(messageId: string): Promise<void>;
+  unstarMessage(messageId: string): Promise<void>;
+  deleteMessage(messageId: string): Promise<void>;
+  permanentlyDeleteMessage(messageId: string): Promise<void>;
+
+  // 搜索
+  search(query: {
+    from?: MailAddress;
+    to?: MailAddress;
+    subject?: string;
+    body?: string;
+    unread?: boolean;
+  }): MailMessage[];
 }

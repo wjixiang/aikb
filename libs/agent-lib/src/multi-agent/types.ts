@@ -628,6 +628,108 @@ export function getTargetDisplayName(target: TaskTarget): string {
 }
 
 // =============================================================================
+// Email-Style Mail System - 邮件风格消息系统
+// =============================================================================
+
+/**
+ * Mail Address - 类似电子邮件地址
+ * - expert:expertId → "expert:pubmed"
+ * - mc:mcId → "mc:main"
+ * - broadcast → "broadcast"
+ */
+export type MailAddress =
+  | { type: 'expert'; expertId: string }
+  | { type: 'mc'; mcId: string }
+  | { type: 'broadcast' };
+
+/**
+ * Mail priority
+ */
+export type MailPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+/**
+ * Mail message - 邮件消息
+ */
+export interface MailMessage {
+  /** 唯一邮件 ID */
+  messageId: string;
+  /** 邮件主题 */
+  subject: string;
+  /** 邮件正文 */
+  body?: string;
+  /** 发件人 */
+  from: MailAddress;
+  /** 收件人 */
+  to: MailAddress;
+  /** 抄送 */
+  cc?: MailAddress[];
+  /** 密送 */
+  bcc?: MailAddress[];
+  /** 附件 S3 keys */
+  attachments?: string[];
+  /** 额外数据 */
+  payload?: Record<string, unknown>;
+  /** 优先级 */
+  priority?: MailPriority;
+  /** 发送时间 */
+  sentAt: Date;
+  /** 已读状态 */
+  read: boolean;
+  /** 星标 */
+  starred: boolean;
+  /** 已删除 */
+  deleted: boolean;
+  /** 回复的邮件 ID */
+  inReplyTo?: string;
+  /** 邮件引用链 */
+  references?: string[];
+  /** 关联的任务 ID */
+  taskId?: string;
+}
+
+/**
+ * 发送邮件参数
+ */
+export interface OutgoingMail {
+  from: MailAddress;
+  to: MailAddress | MailAddress[];
+  subject: string;
+  body?: string;
+  cc?: MailAddress[];
+  bcc?: MailAddress[];
+  attachments?: string[];
+  payload?: Record<string, unknown>;
+  priority?: MailPriority;
+  inReplyTo?: string;
+  taskId?: string;
+}
+
+/**
+ * 邮件监听器 - Expert 实现此接口来处理新邮件
+ */
+export interface IMailListener {
+  /** 新邮件到达时立即调用 */
+  onNewMail(mail: MailMessage): Promise<void>;
+  /** 处理错误时调用 */
+  onError?(error: Error): void;
+}
+
+/**
+ * 订阅 ID
+ */
+export type SubscriptionId = string;
+
+/**
+ * 订阅信息
+ */
+export interface Subscription {
+  subscriptionId: SubscriptionId;
+  address: MailAddress;
+  listener: IMailListener;
+  createdAt: Date;
+}
+
+// =============================================================================
 // Re-exports for convenience
 // =============================================================================
 

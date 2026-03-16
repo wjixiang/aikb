@@ -32,8 +32,7 @@ import type { IActionModule } from '../action/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { createObservableAgent } from '../agent/ObservableAgent.js';
 import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
-import { MessageBus } from '../multi-agent/MessageBus.js';
-import type { MessageBusConfig } from '../multi-agent/types.js';
+import { MessageBus } from '../../multi-agent/MessageBus.js';
 import pino from 'pino';
 
 // Define Logger type locally to avoid pino ESM import issues
@@ -177,15 +176,10 @@ export class AgentContainer {
         // Strategy management is now integrated into ToolManager
         this.container.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inSingletonScope();
 
-        // Message Bus - Singleton scope for multi-agent communication
-        this.container.bind<MessageBusConfig>(TYPES.MessageBusConfig).toConstantValue({
-            enableDeadLetter: true,
-            deadLetterPrefix: 'dlq.',
-            defaultTtl: 3600000,
-            maxRetries: 3,
-            retryDelay: 1000,
-        });
-        this.container.bind<MessageBus>(TYPES.IMessageBus).to(MessageBus).inSingletonScope();
+        // Message Bus - Email-style Singleton scope for multi-agent communication
+        this.container.bind<MessageBus>(TYPES.IMessageBus)
+            .to(MessageBus)
+            .inSingletonScope();
 
         // Tool Components moved to componentHub
         // Users who need these components should install componentHub separately

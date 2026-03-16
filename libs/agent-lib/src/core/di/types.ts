@@ -256,6 +256,24 @@ export const TYPES = {
      */
     ActionModuleConfig: Symbol('ActionModuleConfig'),
 
+    /**
+     * IExpertExecutor - Expert creation and execution
+     * @scope Singleton - Shared across all agents
+     */
+    IExpertExecutor: Symbol('IExpertExecutor'),
+
+    /**
+     * IExpertAdapter - Bridge between MessageBus and Expert system
+     * @scope Transient - New instance per expert
+     */
+    IExpertAdapter: Symbol('IExpertAdapter'),
+
+    /**
+     * IMCAdapter - Bridge between MessageBus and Main Controller
+     * @scope Singleton - Shared across all MCs
+     */
+    IMCAdapter: Symbol('IMCAdapter'),
+
     // ==================== Message Bus ====================
 
     /**

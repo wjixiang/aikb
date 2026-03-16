@@ -1,9 +1,12 @@
 /**
  * Global test setup file for agent-lib
- * 
+ *
  * This file is executed before all tests run and sets up the test environment,
  * including loading environment variables and configuring global test behavior.
  */
+
+// Import reflect-metadata first for InversifyJS decorator support
+import 'reflect-metadata';
 
 import { beforeAll, afterAll, vi } from 'vitest';
 import { config } from 'dotenv'
