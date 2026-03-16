@@ -44,6 +44,16 @@ export interface StampOptions {
   textGapRatio?: number;
   /** Font family */
   fontFamily?: StampFontFamily;
+  /** Center text vertical scale (1 = normal, >1 = stretch taller, <1 = compress shorter) */
+  centerTextScaleY?: number;
+  /** Center text horizontal scale (1 = normal, >1 = stretch wider, <1 = compress narrower) */
+  centerTextScaleX?: number;
+  /** Bottom text vertical scale (1 = normal, >1 = stretch taller, <1 = compress shorter) */
+  bottomTextScaleY?: number;
+  /** Bottom text horizontal scale (1 = normal, >1 = stretch wider, <1 = compress narrower) */
+  bottomTextScaleX?: number;
+  /** Center text spread factor (1 = normal 180°, >1 = more spread, <1 = more concentrated) */
+  centerTextSpread?: number;
 }
 
 const DEFAULT_OPTIONS: Required<StampOptions> = {
@@ -62,6 +72,11 @@ const DEFAULT_OPTIONS: Required<StampOptions> = {
   textDirection: 1,
   textGapRatio: 0.18,
   fontFamily: StampFontFamily.SimHei,
+  centerTextScaleY: 1,
+  centerTextScaleX: 1,
+  bottomTextScaleY: 1,
+  bottomTextScaleX: 1,
+  centerTextSpread: 1,
 };
 
 /**
@@ -118,6 +133,7 @@ function generateArcPath(
 
 /**
  * Generate text on arc using SVG
+ * Text is evenly distributed symmetrically around the top center (-90°)
  */
 function generateTextOnArc(
   text: string,
@@ -127,12 +143,20 @@ function generateTextOnArc(
   fontSize: number,
   fontFamily: StampFontFamily,
   color: string,
-  direction: 1 | -1
+  direction: 1 | -1,
+  scaleX: number = 1,
+  scaleY: number = 1,
+  spread: number = 1
 ): string {
   const charCount = text.length;
-  const totalAngle = Math.PI;
+  const totalAngle = Math.PI * spread;
+
+  // Center around -90° (top of circle) for true left-right symmetry
+  // For spread=1 (180°): from -180° (left) to 0° (right)
+  // For spread=0.5 (90°): from -135° to -45° (centered at top)
+  const centerAngle = -Math.PI / 2;  // -90°, top center
+  const startAngle = centerAngle - totalAngle / 2;
   const angleStep = totalAngle / Math.max(charCount - 1, 1);
-  const startAngle = direction === 1 ? Math.PI : 0;
 
   let svg = '';
 
@@ -150,8 +174,11 @@ function generateTextOnArc(
     // 相对自身再旋转180度
     rotation += 180;
 
-    svg += `<text x="${x}" y="${y}" font-size="${fontSize}" font-family="${fontFamily}" fill="${color}" `;
-    svg += `text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotation}, ${x}, ${y})">${text[i]}</text>`;
+    // Use g element with transform for scale (scale applies after rotation)
+    svg += `<g transform="translate(${x}, ${y}) rotate(${rotation}) scale(${scaleX}, ${scaleY})">`;
+    svg += `<text x="0" y="0" font-size="${fontSize}" font-family="${fontFamily}" fill="${color}" `;
+    svg += `text-anchor="middle" dominant-baseline="middle">${text[i]}</text>`;
+    svg += `</g>`;
   }
 
   return svg;
@@ -165,7 +192,9 @@ export function generateStamp(options: StampOptions): string {
   const {
     size, centerText, bottomText, color, borderWidth, innerBorderWidth,
     centerFontSize, bottomFontSize, showStar, starSizeRatio, borderCircles,
-    showInnerCircle, textDirection, textGapRatio, fontFamily
+    showInnerCircle, textDirection, textGapRatio, fontFamily,
+    centerTextScaleX, centerTextScaleY, bottomTextScaleX, bottomTextScaleY,
+    centerTextSpread
   } = opts;
 
   const cx = size / 2;
@@ -202,7 +231,11 @@ export function generateStamp(options: StampOptions): string {
     const centerTextSize = centerFontSize < 1 ? size * centerFontSize : centerFontSize;
     const textRadius = mainRadius * (1 - textGapRatio) - centerTextSize;
     svg += `  <g>\n`;
-    svg += generateTextOnArc(centerText, cx, cy, textRadius, centerTextSize, fontFamily, color, textDirection);
+    svg += generateTextOnArc(
+      centerText, cx, cy, textRadius, centerTextSize,
+      fontFamily, color, textDirection, centerTextScaleX, centerTextScaleY,
+      centerTextSpread
+    );
     svg += `  </g>\n`;
   }
 
@@ -210,8 +243,11 @@ export function generateStamp(options: StampOptions): string {
   if (bottomText) {
     const bottomTextSize = bottomFontSize < 1 ? size * bottomFontSize : bottomFontSize;
     const bottomY = cy + mainRadius * 0.55;
-    svg += `  <text x="${cx}" y="${bottomY}" font-size="${bottomTextSize}" font-family="${fontFamily}" fill="${color}" `;
-    svg += `text-anchor="middle" dominant-baseline="middle" font-weight="bold">${bottomText}</text>\n`;
+    // Apply scale transform for stretch effect
+    svg += `  <g transform="translate(${cx}, ${bottomY}) scale(${bottomTextScaleX}, ${bottomTextScaleY})">`;
+    svg += `    <text x="0" y="0" font-size="${bottomTextSize}" font-family="${fontFamily}" fill="${color}" `;
+    svg += `text-anchor="middle" dominant-baseline="middle" font-weight="bold">${bottomText}</text>`;
+    svg += `  </g>\n`;
   }
 
   svg += `</svg>`;
@@ -302,6 +338,11 @@ Options:
   --font <name>        Font family (e.g., FangSong, SimHei, KaiTi)
   --center-font-size <n>   Center text font size (absolute or ratio, e.g., 44 or 0.11)
   --bottom-font-size <n>  Bottom text font size (absolute or ratio, e.g., 28 or 0.07)
+  --center-scale-y <n>    Center text vertical scale (default: 1, >1 = taller, <1 = shorter)
+  --center-scale-x <n>    Center text horizontal scale (default: 1, >1 = wider, <1 = narrower)
+  --center-spread <n>    Center text spread factor (default: 1, 1 = 180°, 1.5 = 270°, 2 = 360°)
+  --bottom-scale-y <n>   Bottom text vertical scale (default: 1, >1 = taller, <1 = shorter)
+  --bottom-scale-x <n>   Bottom text horizontal scale (default: 1, >1 = wider, <1 = narrower)
   --output <path>       Output file path (default: stamp.svg)
   --no-star            Hide the star in center
   --no-inner-circle   Hide the inner thin circle
@@ -309,6 +350,7 @@ Options:
 Example:
   pnpm start --center "北京科技有限公司" --bottom "110101" --output ./stamp.svg
   pnpm start --center "COMPANY LTD" --bottom "123456" --output ./stamp.svg
+  pnpm start --center "测试公司" --bottom "123456" --center-scale-y 1.5 --bottom-scale-y 1.2
 `);
   process.exit(0);
 }
@@ -323,6 +365,11 @@ const parseArgs = () => {
     fontFamily: StampFontFamily.SimHei,
     centerFontSize: 44,
     bottomFontSize: 28,
+    centerTextScaleY: 1,
+    centerTextScaleX: 1,
+    bottomTextScaleY: 1,
+    bottomTextScaleX: 1,
+    centerTextSpread: 1,
   };
   let centerText = '';
   let bottomText = '';
@@ -371,6 +418,26 @@ const parseArgs = () => {
         break;
       case '--bottom-font-size':
         result.bottomFontSize = parseFloat(next || '28');
+        i++;
+        break;
+      case '--center-scale-y':
+        result.centerTextScaleY = parseFloat(next || '1');
+        i++;
+        break;
+      case '--center-scale-x':
+        result.centerTextScaleX = parseFloat(next || '1');
+        i++;
+        break;
+      case '--center-spread':
+        result.centerTextSpread = parseFloat(next || '1');
+        i++;
+        break;
+      case '--bottom-scale-y':
+        result.bottomTextScaleY = parseFloat(next || '1');
+        i++;
+        break;
+      case '--bottom-scale-x':
+        result.bottomTextScaleX = parseFloat(next || '1');
         i++;
         break;
       case '--output':
