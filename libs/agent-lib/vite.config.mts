@@ -65,6 +65,10 @@ export default defineConfig(() => ({
     coverage: {
       reportsDirectory: '../../coverage/libs/agent-lib',
       provider: 'v8' as const,
+      reporter: ['text', 'html', 'json'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/test-setup.ts'],
+      all: true,
     },
   },
   integrate: {

@@ -489,10 +489,18 @@ describe('Agent Phase Context Isolation', () => {
                 })
             };
 
+            // Create a turn in the turnStore so recall_context has something to recall
+            const turn = turnStore.createTurn('test workspace context');
+            turnStore.addMessageToTurn(turn.id, {
+                role: 'user',
+                content: [{ type: 'text', text: 'Test message' }],
+                ts: Date.now()
+            });
+
             const thinkingModule = new ThinkingModule(mockApiClient, mockLogger as any, {}, turnStore);
 
-            // Should NOT throw
-            const result = await thinkingModule.performThinkingPhase('test context', 'test task');
+            // Should NOT throw - pass undefined as second argument (lastToolResults is optional)
+            const result = await thinkingModule.performThinkingPhase('test context');
             expect(result).toBeDefined();
         });
     });

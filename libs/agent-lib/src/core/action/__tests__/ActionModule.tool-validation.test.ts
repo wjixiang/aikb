@@ -47,6 +47,8 @@ describe('ActionModule - Tool Validation', () => {
             getTurnByNumber: vi.fn(),
             getRecentMessages: vi.fn(),
             getAllMessages: vi.fn(),
+            pushErrors: vi.fn(),
+            popErrors: vi.fn().mockReturnValue([]),
         } as any;
 
         // Bind dependencies
@@ -58,6 +60,11 @@ describe('ActionModule - Tool Validation', () => {
             enableRecall: true,
             maxRecallContexts: 3,
             maxRecalledMessages: 20,
+        });
+        container.bind(TYPES.ActionModuleConfig).toConstantValue({
+            apiRequestTimeout: 60000,
+            maxToolRetryAttempts: 3,
+            enableParallelExecution: true,
         });
         container.bind(TYPES.IActionModule).to(ActionModule);
 

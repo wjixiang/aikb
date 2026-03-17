@@ -134,7 +134,9 @@ describe('ThinkingModule', () => {
         getAllSummaries: vi.fn(() => []),
         export: vi.fn(() => ({ turns: [], currentTurnNumber: 0 })),
         import: vi.fn(),
-        clear: vi.fn()
+        clear: vi.fn(),
+        pushErrors: vi.fn(),
+        popErrors: vi.fn(() => [])
     }
 
     let thinkingModule: ThinkingModule
@@ -167,12 +169,10 @@ describe('ThinkingModule', () => {
             textResponse: 'Test response text 2'
         })
 
-        // Mock the makeRequest to return the mockedResponse
-        vi.mocked(mockedApiClient.makeRequest)
+        // Create spy first, then configure mock return values
+        const spy = vi.spyOn(mockedApiClient, 'makeRequest')
             .mockResolvedValueOnce(mockedResponse)
             .mockResolvedValueOnce(mockedResponse2)
-
-        const spy = vi.spyOn(mockedApiClient, 'makeRequest')
 
         const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
         console.log(thinkingResult)
@@ -185,6 +185,8 @@ describe('ThinkingModule', () => {
         expect(thinkingResult.rounds[1].continueThinking).toBe(false)
         expect(thinkingResult.rounds[1].summary).toBe('Test summary')
         expect(thinkingResult.summary).toBe('Test summary')
+
+        spy.mockRestore()
     })
 
     describe('handleRecall', () => {
@@ -225,12 +227,11 @@ describe('ThinkingModule', () => {
                 textResponse: 'Recalling previous turns'
             })
 
-            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
-            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+            // Create spy first, then configure mock return values
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest').mockResolvedValue(mockedResponse)
 
             // Perform thinking phase which will trigger handleRecall
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
-            console.log(spy.mock.calls[1])
 
             // Verify that the recalled contexts are included in the thinking rounds
             expect(thinkingResult.rounds.length).toBeGreaterThan(0)
@@ -277,7 +278,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'Searching for relevant turns'
             })
 
-            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+            // Create spy first, then configure mock return values
+            vi.spyOn(mockedApiClient, 'makeRequest').mockResolvedValue(mockedResponse)
 
             // Perform thinking phase which will trigger handleRecall
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
@@ -298,7 +300,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'Empty recall request'
             })
 
-            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+            // Create spy first, then configure mock return values
+            vi.spyOn(mockedApiClient, 'makeRequest').mockResolvedValue(mockedResponse)
 
             // Perform thinking phase which will trigger handleRecall
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
@@ -322,7 +325,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'Recalling non-existent turns'
             })
 
-            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+            // Create spy first, then configure mock return values
+            vi.spyOn(mockedApiClient, 'makeRequest').mockResolvedValue(mockedResponse)
 
             // Perform thinking phase which will trigger handleRecall
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
@@ -404,7 +408,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'Recalling previous turns with both turnNumbers and keywords'
             })
 
-            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
+            // Create spy first, then configure mock return values
+            vi.spyOn(mockedApiClient, 'makeRequest').mockResolvedValue(mockedResponse)
 
             // Perform thinking phase which will trigger handleRecall
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
@@ -434,8 +439,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'Thinking completed'
             })
 
-            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponse)
-            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+            // Create spy first, then configure mock return values
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest').mockResolvedValue(mockedResponse)
 
             // Perform thinking phase
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
@@ -448,6 +453,8 @@ describe('ThinkingModule', () => {
             expect(thinkingResult.rounds.length).toBe(1)
             expect(thinkingResult.rounds[0].continueThinking).toBe(false)
             expect(thinkingResult.summary).toContain('Analysis completed')
+
+            spy.mockRestore()
         })
 
         it('should continue thinking when continueThinking is true and exit when false', async () => {
@@ -469,11 +476,10 @@ describe('ThinkingModule', () => {
                 textResponse: 'Thinking completed'
             })
 
-            vi.mocked(mockedApiClient.makeRequest)
+            // Create spy first, then configure mock return values
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
                 .mockResolvedValueOnce(mockedResponse1)
                 .mockResolvedValueOnce(mockedResponse2)
-
-            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
 
             // Perform thinking phase
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
@@ -488,6 +494,8 @@ describe('ThinkingModule', () => {
 
             // Verify the summary is from the last round
             expect(thinkingResult.summary).toContain('Completed skill evaluation')
+
+            spy.mockRestore()
         })
     })
 
@@ -502,11 +510,10 @@ describe('ThinkingModule', () => {
                 textResponse: 'Now I call the tool'
             })
 
-            vi.mocked(mockedApiClient.makeRequest)
+            // Create spy first, then configure mock return values
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
                 .mockResolvedValueOnce(mockedResponseNoTool)
                 .mockResolvedValueOnce(mockedResponseWithTool)
-
-            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
 
             // Perform thinking phase
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
@@ -518,6 +525,8 @@ describe('ThinkingModule', () => {
             expect(thinkingResult.rounds.length).toBe(1)
             expect(thinkingResult.rounds[0].continueThinking).toBe(false)
             expect(thinkingResult.summary).toBe('Corrected response with tool call')
+
+            spy.mockRestore()
         })
 
         it('should use fallback when max retries exceeded without tool call', async () => {
@@ -532,13 +541,12 @@ describe('ThinkingModule', () => {
             // All responses: LLM returns text but no tool call
             const mockedResponseNoTool = createNoToolCallResponse('I am not using the tool')
 
+            // Create spy first, then configure mock return values
             // Mock 3 responses (original + 2 retries = 3 total attempts with default config)
-            vi.mocked(mockedApiClient.makeRequest)
-                .mockResolvedValueOnce(mockedResponseNoTool)
-                .mockResolvedValueOnce(mockedResponseNoTool)
-                .mockResolvedValueOnce(mockedResponseNoTool)
-
             const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+                .mockResolvedValueOnce(mockedResponseNoTool)
+                .mockResolvedValueOnce(mockedResponseNoTool)
+                .mockResolvedValueOnce(mockedResponseNoTool)
 
             // Perform thinking phase
             const thinkingResult = await noSummaryThinkingModule.performThinkingPhase('workspace context')
@@ -550,6 +558,8 @@ describe('ThinkingModule', () => {
             expect(thinkingResult.rounds.length).toBe(1)
             expect(thinkingResult.rounds[0].continueThinking).toBe(false)
             expect(thinkingResult.rounds[0].content).toContain('I am not using the tool')
+
+            spy.mockRestore()
         })
 
         it('should include retry warning in prompt on retry attempts', async () => {
@@ -562,42 +572,35 @@ describe('ThinkingModule', () => {
                 textResponse: 'Tool called'
             })
 
-            vi.mocked(mockedApiClient.makeRequest)
+            // Create spy first, then configure mock return values
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
                 .mockResolvedValueOnce(mockedResponseNoTool)
                 .mockResolvedValueOnce(mockedResponseWithTool)
-
-            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
 
             await thinkingModule.performThinkingPhase('workspace context')
 
             // Verify second call includes retry warning
             const secondCallArgs = spy.mock.calls[1]
+            expect(secondCallArgs).toBeDefined()
             const systemPrompt = secondCallArgs[0] as string
             expect(systemPrompt).toContain('RETRY ATTEMPT')
             expect(systemPrompt).toContain('No required tool was called')
+
+            spy.mockRestore()
         })
 
         it('should retry on API errors', async () => {
-            // First response: API error
-            vi.mocked(mockedApiClient.makeRequest)
-                .mockRejectedValueOnce(new Error('Network timeout'))
-
             // Second response: Success
             const mockedResponseSuccess = createEndThinkingResponse({
                 summary: 'Success after error retry',
                 textResponse: 'Success'
             })
 
-            vi.mocked(mockedApiClient.makeRequest)
-                .mockResolvedValueOnce(mockedResponseSuccess)
-
-            // We need to reset and re-setup since we used mockRejectedValueOnce
-            vi.clearAllMocks()
-            vi.mocked(mockedApiClient.makeRequest)
+            // Create spy first, then configure mock return values
+            // First call rejects, second call succeeds
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
                 .mockRejectedValueOnce(new Error('Network timeout'))
                 .mockResolvedValueOnce(mockedResponseSuccess)
-
-            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
 
             // Perform thinking phase
             const thinkingResult = await thinkingModule.performThinkingPhase('workspace context')
@@ -608,6 +611,8 @@ describe('ThinkingModule', () => {
             // Verify success
             expect(thinkingResult.rounds.length).toBe(1)
             expect(thinkingResult.rounds[0].continueThinking).toBe(false)
+
+            spy.mockRestore()
         })
 
         it('should return failure round after max retries on API errors', async () => {
@@ -650,14 +655,15 @@ describe('ThinkingModule', () => {
             // All responses: No tool call
             const mockedResponseNoTool = createNoToolCallResponse('No tool')
 
-            vi.mocked(mockedApiClient.makeRequest).mockResolvedValue(mockedResponseNoTool)
-
-            const spy = vi.spyOn(mockedApiClient, 'makeRequest')
+            // Create spy first, then configure mock return values
+            const spy = vi.spyOn(mockedApiClient, 'makeRequest').mockResolvedValue(mockedResponseNoTool)
 
             await customConfigThinkingModule.performThinkingPhase('workspace context')
 
             // Verify that only 2 API calls were made (maxRetriesPerRound=1 + 1 original)
             expect(spy).toHaveBeenCalledTimes(2)
+
+            spy.mockRestore()
         })
     })
 
@@ -690,7 +696,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'Third thought: Finalizing the action plan'
             })
 
-            vi.mocked(mockedApiClient.makeRequest)
+            // Create spy first, then configure mock return values
+            vi.spyOn(mockedApiClient, 'makeRequest')
                 .mockResolvedValueOnce(mockedResponse1)
                 .mockResolvedValueOnce(mockedResponse2)
                 .mockResolvedValueOnce(mockedResponse3)
@@ -730,7 +737,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'First phase thought'
             })
 
-            vi.mocked(mockedApiClient.makeRequest)
+            // Create spy first, then configure mock return values
+            vi.spyOn(mockedApiClient, 'makeRequest')
                 .mockResolvedValueOnce(mockedResponse1)
 
             // Perform first thinking phase
@@ -746,7 +754,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'Second phase thought'
             })
 
-            vi.mocked(mockedApiClient.makeRequest)
+            // Create spy first, then configure mock return values
+            vi.spyOn(mockedApiClient, 'makeRequest')
                 .mockResolvedValueOnce(mockedResponse2)
 
             // Perform second thinking phase
@@ -780,7 +789,8 @@ describe('ThinkingModule', () => {
                 textResponse: 'Third thought'
             })
 
-            vi.mocked(mockedApiClient.makeRequest)
+            // Create spy first, then configure mock return values
+            vi.spyOn(mockedApiClient, 'makeRequest')
                 .mockResolvedValueOnce(mockedResponse1)
                 .mockResolvedValueOnce(mockedResponse2)
                 .mockResolvedValueOnce(mockedResponse3)
