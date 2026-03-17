@@ -19,80 +19,175 @@ import { ProviderSettings } from '../types/provider-settings.js';
  * ```
  */
 export class ApiClientFactory {
-    /**
-     * Create an ApiClient instance based on provider configuration
-     *
-     * @param config - The provider settings
-     * @returns An OpenaiCompatibleApiClient instance
-     * @throws Error if required configuration is missing
-     */
-    static create(config: ProviderSettings): ApiClient {
-        console.log('[ApiClientFactory.create] Creating API client for provider:', config.apiProvider);
+  /**
+   * Create an ApiClient instance based on provider configuration
+   *
+   * @param config - The provider settings
+   * @returns An OpenaiCompatibleApiClient instance
+   * @throws Error if required configuration is missing
+   */
+  static create(config: ProviderSettings): ApiClient {
+    console.log(
+      '[ApiClientFactory.create] Creating API client for provider:',
+      config.apiProvider,
+    );
 
-        const apiKey = config.apiKey;
-        if (!apiKey) {
-            throw new Error('API key is required');
-        }
-
-        const model = config.apiModelId;
-        if (!model) {
-            throw new Error('Model ID is required');
-        }
-
-        // Determine base URL based on provider
-        let baseURL: string | undefined;
-        const provider = config.apiProvider || 'openai';
-
-        switch (provider) {
-            case 'openai':
-            case 'openai-native':
-                baseURL = config.openAiBaseUrl || config.openAiNativeBaseUrl || 'https://api.openai.com/v1';
-                break;
-            case 'anthropic':
-                baseURL = config.anthropicBaseUrl || 'https://api.anthropic.com/v1';
-                break;
-            case 'ollama':
-                baseURL = config.ollamaBaseUrl || 'http://localhost:11434/v1';
-                break;
-            case 'lmstudio':
-                baseURL = config.lmStudioBaseUrl || 'http://localhost:1234/v1';
-                break;
-            case 'zai':
-                // ZAI uses different endpoints based on line
-                const line = config.zaiApiLine || 'china_coding';
-                baseURL = line === 'international_coding'
-                    ? 'https://open.bigmodel.cn/api/paas/v4'
-                    : 'https://open.bigmodel.cn/api/coding/paas/v4';
-                break;
-            case 'minimax':
-                // MiniMax API - uses the MiniMax base URL
-                // MiniMax API endpoint format: https://api.minimax.chat/v1/text/chatcompletion_v2
-                baseURL = config.minimaxBaseUrl || 'https://api.minimax.chat/v1';
-                break;
-            default:
-                baseURL = undefined;
-        }
-
-        // Create appropriate client based on provider
-        if (provider === 'anthropic') {
-            console.log('[ApiClientFactory.create] Creating AnthropicCompatibleApiClient with model:', model, 'baseURL:', baseURL);
-            return new AnthropicCompatibleApiClient({
-                apiKey,
-                model,
-                baseURL,
-                temperature: config.modelTemperature ?? undefined,
-                maxTokens: config.modelMaxTokens,
-            });
-        }
-
-        console.log('[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:', model, 'baseURL:', baseURL);
-
-        return new OpenaiCompatibleApiClient({
-            apiKey,
-            model,
-            baseURL,
-            temperature: config.modelTemperature ?? undefined,
-            maxTokens: config.modelMaxTokens,
-        });
+    const apiKey = config.apiKey;
+    if (!apiKey) {
+      throw new Error('API key is required');
     }
+
+    const model = config.apiModelId;
+    if (!model) {
+      throw new Error('Model ID is required');
+    }
+
+    const provider = config.apiProvider || 'openai';
+
+    switch (provider) {
+      case 'anthropic': {
+        const baseURL =
+          config.anthropicBaseUrl || 'https://api.anthropic.com/v1';
+        console.log(
+          '[ApiClientFactory.create] Creating AnthropicCompatibleApiClient with model:',
+          model,
+          'baseURL:',
+          baseURL,
+        );
+        return new AnthropicCompatibleApiClient({
+          apiKey,
+          model,
+          baseURL,
+          temperature: config.modelTemperature ?? undefined,
+          maxTokens: config.modelMaxTokens,
+        });
+      }
+      case 'openai':
+      case 'openai-native': {
+        const baseURL =
+          config.openAiBaseUrl ||
+          config.openAiNativeBaseUrl ||
+          'https://api.openai.com/v1';
+        console.log(
+          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
+          model,
+          'baseURL:',
+          baseURL,
+        );
+        return new OpenaiCompatibleApiClient({
+          apiKey,
+          model,
+          baseURL,
+          temperature: config.modelTemperature ?? undefined,
+          maxTokens: config.modelMaxTokens,
+        });
+      }
+      case 'ollama': {
+        const baseURL = config.ollamaBaseUrl || 'http://localhost:11434/v1';
+        console.log(
+          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
+          model,
+          'baseURL:',
+          baseURL,
+        );
+        return new OpenaiCompatibleApiClient({
+          apiKey,
+          model,
+          baseURL,
+          temperature: config.modelTemperature ?? undefined,
+          maxTokens: config.modelMaxTokens,
+        });
+      }
+      case 'lmstudio': {
+        const baseURL = config.lmStudioBaseUrl || 'http://localhost:1234/v1';
+        console.log(
+          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
+          model,
+          'baseURL:',
+          baseURL,
+        );
+        return new OpenaiCompatibleApiClient({
+          apiKey,
+          model,
+          baseURL,
+          temperature: config.modelTemperature ?? undefined,
+          maxTokens: config.modelMaxTokens,
+        });
+      }
+      case 'zai': {
+        // ZAI uses different endpoints based on line
+        const line = config.zaiApiLine || 'china_coding';
+        const baseURL =
+          line === 'international_coding'
+            ? 'https://open.bigmodel.cn/api/paas/v4'
+            : 'https://open.bigmodel.cn/api/coding/paas/v4';
+        console.log(
+          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
+          model,
+          'baseURL:',
+          baseURL,
+        );
+        return new OpenaiCompatibleApiClient({
+          apiKey,
+          model,
+          baseURL,
+          temperature: config.modelTemperature ?? undefined,
+          maxTokens: config.modelMaxTokens,
+        });
+      }
+      case 'moonshot': {
+        // Moonshot uses different endpoints based on api line
+        const line = config.moonshotApiLine || 'standard';
+        const baseURL =
+          config.moonshotBaseUrl ||
+          (line === 'coding'
+            ? 'https://api.kimi.com/coding/'
+            : 'https://api.moonshot.cn/v1');
+        console.log(
+          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
+          model,
+          'baseURL:',
+          baseURL,
+        );
+        return new OpenaiCompatibleApiClient({
+          apiKey,
+          model,
+          baseURL,
+          temperature: config.modelTemperature ?? undefined,
+          maxTokens: config.modelMaxTokens,
+        });
+      }
+      case 'minimax': {
+        // MiniMax API - uses the MiniMax base URL
+        // MiniMax API endpoint format: https://api.minimax.chat/v1/text/chatcompletion_v2
+        const baseURL = config.minimaxBaseUrl || 'https://api.minimax.chat/v1';
+        console.log(
+          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
+          model,
+          'baseURL:',
+          baseURL,
+        );
+        return new OpenaiCompatibleApiClient({
+          apiKey,
+          model,
+          baseURL,
+          temperature: config.modelTemperature ?? undefined,
+          maxTokens: config.modelMaxTokens,
+        });
+      }
+      default: {
+        console.log(
+          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
+          model,
+          'baseURL: undefined',
+        );
+        return new OpenaiCompatibleApiClient({
+          apiKey,
+          model,
+          temperature: config.modelTemperature ?? undefined,
+          maxTokens: config.modelMaxTokens,
+        });
+      }
+    }
+  }
 }

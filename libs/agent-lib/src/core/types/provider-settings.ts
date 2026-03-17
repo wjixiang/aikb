@@ -15,6 +15,7 @@ export const providerNames = [
   'openai',
   'openai-native',
   'zai',
+  'moonshot',
   'ollama',
   'lmstudio',
   'vscode-lm',
@@ -48,6 +49,13 @@ const zaiSchema = baseProviderSettingsSchema.extend({
   apiKey: z.string().optional(),
   apiModelId: z.string().optional(),
   zaiApiLine: z.enum(['international_coding', 'china_coding']).optional(),
+});
+
+const moonshotSchema = baseProviderSettingsSchema.extend({
+  apiKey: z.string().optional(),
+  apiModelId: z.string().optional(),
+  moonshotBaseUrl: z.string().optional(),
+  moonshotApiLine: z.enum(['standard', 'coding']).optional(),
 });
 
 const anthropicSchema = baseProviderSettingsSchema.extend({
@@ -99,6 +107,7 @@ const minimaxSchema = baseProviderSettingsSchema.extend({
 export const providerSettingsSchema = z.object({
   apiProvider: providerNamesSchema.optional(),
   ...zaiSchema.shape,
+  ...moonshotSchema.shape,
   ...anthropicSchema.shape,
   ...openAiSchema.shape,
   ...openAiNativeSchema.shape,
