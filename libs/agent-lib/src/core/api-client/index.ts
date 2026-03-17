@@ -11,6 +11,9 @@ export * from './ApiClient.interface.js';
 // Export the OpenAI-compatible implementation
 export * from './OpenaiCompatibleApiClient.js';
 
+// Export the Anthropic-compatible implementation
+export * from './AnthropicCompatibleApiClient.js';
+
 // Export error types and utilities
 export * from './errors.js';
 

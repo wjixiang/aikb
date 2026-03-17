@@ -1,5 +1,6 @@
 import { ApiClient } from './ApiClient.interface.js';
 import { OpenaiCompatibleApiClient } from './OpenaiCompatibleApiClient.js';
+import { AnthropicCompatibleApiClient } from './AnthropicCompatibleApiClient.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 
 /**
@@ -70,6 +71,18 @@ export class ApiClientFactory {
                 break;
             default:
                 baseURL = undefined;
+        }
+
+        // Create appropriate client based on provider
+        if (provider === 'anthropic') {
+            console.log('[ApiClientFactory.create] Creating AnthropicCompatibleApiClient with model:', model, 'baseURL:', baseURL);
+            return new AnthropicCompatibleApiClient({
+                apiKey,
+                model,
+                baseURL,
+                temperature: config.modelTemperature ?? undefined,
+                maxTokens: config.modelMaxTokens,
+            });
         }
 
         console.log('[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:', model, 'baseURL:', baseURL);
