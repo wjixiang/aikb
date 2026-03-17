@@ -119,27 +119,27 @@ export class MailComponent extends ToolComponent {
     try {
       switch (toolName) {
         case 'sendMail':
-          return await this.handleSendMail(params);
+          return await this.handleSendMail(params as SendMailParams);
         case 'getInbox':
-          return await this.handleGetInbox(params);
+          return await this.handleGetInbox(params as GetInboxParams);
         case 'getUnreadCount':
-          return await this.handleGetUnreadCount(params);
+          return await this.handleGetUnreadCount(params as GetUnreadCountParams);
         case 'markAsRead':
-          return await this.handleMarkAsRead(params);
+          return await this.handleMarkAsRead(params as MessageIdParams);
         case 'markAsUnread':
-          return await this.handleMarkAsUnread(params);
+          return await this.handleMarkAsUnread(params as MessageIdParams);
         case 'starMessage':
-          return await this.handleStarMessage(params);
+          return await this.handleStarMessage(params as MessageIdParams);
         case 'unstarMessage':
-          return await this.handleUnstarMessage(params);
+          return await this.handleUnstarMessage(params as MessageIdParams);
         case 'deleteMessage':
-          return await this.handleDeleteMessage(params);
+          return await this.handleDeleteMessage(params as MessageIdParams);
         case 'searchMessages':
-          return await this.handleSearchMessages(params);
+          return await this.handleSearchMessages(params as SearchMessagesParams);
         case 'replyToMessage':
-          return await this.handleReplyToMessage(params);
+          return await this.handleReplyToMessage(params as ReplyToMessageParams);
         case 'registerAddress':
-          return await this.handleRegisterAddress(params);
+          return await this.handleRegisterAddress(params as RegisterAddressParams);
         default:
           return {
             data: { error: `Unknown tool: ${toolName}` },
@@ -156,8 +156,16 @@ export class MailComponent extends ToolComponent {
   };
 
   private async handleSendMail(params: SendMailParams): Promise<ToolCallResult> {
+    const from = this.config.defaultAddress;
+    if (!from) {
+      return {
+        data: { error: 'No default address configured' },
+        summary: '[Mail] Error: No default address configured',
+      };
+    }
+
     const mail: OutgoingMail = {
-      from: this.config.defaultAddress || params.from,
+      from,
       to: params.to,
       subject: params.subject,
       body: params.body,
@@ -358,7 +366,7 @@ export class MailComponent extends ToolComponent {
     if (query?.sortBy) queryParams.set('sortBy', query.sortBy);
     if (query?.sortOrder) queryParams.set('sortOrder', query.sortOrder);
 
-    const response = await this.fetchApi<InboxResult>(`/inbox/${encodeURIComponent(address)}?${queryParams}`);
+    const response = await this.fetchApi<InboxResult>(`/inbox/${encodeURIComponent(address)}?${queryParams.toString()}`);
     return response;
   }
 
@@ -440,8 +448,15 @@ export class MailComponent extends ToolComponent {
     const url = `${this.config.baseUrl}/api/v1/mail${path}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
     };
+
+    // Merge custom headers if provided
+    if (options.headers) {
+      const customHeaders = options.headers as Record<string, string>;
+      Object.entries(customHeaders).forEach(([key, value]) => {
+        headers[key] = value;
+      });
+    }
 
     if (this.config.apiKey) {
       headers['Authorization'] = `Bearer ${this.config.apiKey}`;
@@ -464,7 +479,7 @@ export class MailComponent extends ToolComponent {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      return await response.json();
+      return (await response.json()) as T;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error(`Request timeout after ${this.config.timeout}ms`);
