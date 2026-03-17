@@ -1,0 +1,73 @@
+// Case Hub Database Schema
+// Medical case management and generation system
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ Case (病历) ============
+model Case {
+  id          String  @id @default(cuid())
+  caseNumber  String  @unique // 病历编号
+  patientName String? // 患者姓名
+  gender      String? // 性别: male, female, other
+  age         Int? // 年龄
+  department  String // 科室
+  disease     String // 疾病名称
+  content     Json // 病历内容 (JSON格式)
+  caseType    String // 病历类型: initial, followup, discharge, etc.
+  metadata    Json? // 额外元数据
+  status      String  @default("active") // active, archived, deleted
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // 创建者
+  updatedBy String? // 更新者
+
+  @@index([caseNumber])
+  @@index([department])
+  @@index([disease])
+  @@index([caseType])
+  @@index([status])
+  @@index([createdAt])
+  @@index([createdBy])
+  @@index([department, disease])
+}
+
+// ============ CaseTemplate (病历模板) ============
+model CaseTemplate {
+  id          String  @id @default(cuid())
+  name        String // 模板名称
+  department  String // 适用科室
+  disease     String? // 适用疾病
+  template    String  @db.Text // 模板内容
+  description String? // 模板描述
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([department])
+  @@index([disease])
+  @@index([department, disease])
+}
+
+// ============ GenerationJob (生成任务) ============
+model GenerationJob {
+  id          String    @id @default(cuid())
+  status      String // pending, processing, completed, failed
+  params      Json // 生成参数
+  result      String?   @db.Text // 生成结果
+  error       String? // 错误信息
+  createdAt   DateTime  @default(now())
+  completedAt DateTime? // 完成时间
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([completedAt])
+  @@index([status, createdAt])
+}
