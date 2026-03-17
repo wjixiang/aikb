@@ -1,7 +1,7 @@
 [project]
 name = "file-renderer"
 version = "0.1.0"
-description = "Add your description here"
+description = "File Renderer Service"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -9,10 +9,107 @@ dependencies = [
     "docling>=2.80.0",
     "fastapi[standard]>=0.135.1",
     "pydantic>=2.12.5",
-    "pytest>=9.0.2",
+    "pydantic-settings>=2.0.0",
     "sqlalchemy>=2.0.0",
     "asyncpg>=0.30.0",
     "psycopg2-binary>=2.9.0",
     "alembic>=1.14.0",
     "requests>=2.32.0",
 ]
+
+[dependency-groups]
+dev = [
+    "black>=24.0.0",
+    "ruff>=0.6.0",
+    "mypy>=1.11.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "types-requests>=2.32.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "N",
+    "W",
+    "UP",
+    "B",
+    "C4",
+    "SIM",
+    "ARG",
+]
+ignore = [
+    "E501",
+    "B008",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["lib", "models", "repositories", "routers", "services"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+show_column_numbers = true
+
+[[tool.mypy.overrides]]
+module = [
+    "boto3.*",
+    "botocore.*",
+    "docling.*",
+    "docling_core.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers"
+testpaths = [
+    "tests",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+]
+
+[tool.uv.pip]
+migrate-create = "alembic revision --autogenerate -m"
+migrate-upgrade = "alembic upgrade head"
+migrate-downgrade = "alembic downgrade -1"
+migrate-history = "alembic history --verbose"
+migrate-current = "alembic current"
+migrate-stamp = "alembic stamp"

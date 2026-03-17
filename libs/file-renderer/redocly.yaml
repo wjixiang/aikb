@@ -1,0 +1,182 @@
+# Redocly Configuration
+# https://redocly.com/docs/cli/configuration/
+
+# API 定义配置
+apis:
+  file-renderer@v1:
+    root: ./openapi.json
+    rules:
+      operation-operationId: warn
+      operation-description: warn
+      tag-description: warn
+
+# 主题配置
+theme:
+  openapi:
+    # 页面标题
+    htmlTemplate: ./docs/redoc-template.html
+    # 主题选项
+    theme:
+      colors:
+        primary:
+          main: "#1976d2"
+          light: "#42a5f5"
+          dark: "#1565c0"
+        success:
+          main: "#2e7d32"
+        error:
+          main: "#d32f2f"
+        warning:
+          main: "#ed6c02"
+        text:
+          primary: "#212121"
+          secondary: "#757575"
+      typography:
+        fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif"
+        fontSize: "16px"
+        headings:
+          fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif"
+          fontWeight: "600"
+      sidebar:
+        backgroundColor: "#fafafa"
+        textColor: "#212121"
+        activeTextColor: "#1976d2"
+      rightPanel:
+        backgroundColor: "#263238"
+        textColor: "#ffffff"
+    # 扩展选项
+    expandDefaultServerVariables: true
+    expandResponses: "200,201"
+    jsonSampleExpandLevel: 2
+    hideDownloadButton: false
+    hideHostname: false
+    noAutoAuth: false
+    pathInMiddlePanel: false
+    requiredPropsFirst: true
+    sortPropsAlphabetically: false
+    showExtensions: true
+    showWebhooks: true
+    disableSearch: false
+    minCharacterLengthToInitSearch: 3
+    menuToggle: true
+    onlyRequiredInSamples: false
+    payloadSampleIdx: 0
+    requestBodySnippetSelector: true
+    responseSnippetSelector: true
+    scalarProjection: false
+    simpleOneOfTypeLabel: false
+    sortEnumValuesAlphabetically: false
+    sortOperationsAlphabetically: false
+    sortTagsAlphabetically: false
+    unstable_ignoreMimeParameters: false
+    generatedPayloadSamplesMaxDepth: 10
+    maxDisplayedEnumValues: 10
+    nonce: ""
+
+# 代码生成配置
+# https://redocly.com/docs/cli/commands/generate/
+generate:
+  # Python 客户端
+  python:
+    output: ./generated/python
+    packageName: file_renderer_client
+    packageVersion: 1.0.0
+    projectName: file-renderer-client
+    templateDir: ./templates/python
+  # TypeScript 客户端
+  typescript:
+    output: ./generated/typescript
+    npmName: file-renderer-client
+    npmVersion: 1.0.0
+    supportsES6: true
+    modelPropertyNaming: original
+  # Java 客户端
+  java:
+    output: ./generated/java
+    artifactId: file-renderer-client
+    groupId: io.aikb
+    artifactVersion: 1.0.0
+    library: okhttp-gson
+    dateLibrary: java8
+  # Go 客户端
+  go:
+    output: ./generated/go
+    packageName: filerenderer
+    packageVersion: 1.0.0
+  # C# 客户端
+  csharp:
+    output: ./generated/csharp
+    packageName: FileRenderer.Client
+    packageVersion: 1.0.0
+    targetFramework: net6.0
+
+# Lint 规则配置
+# https://redocly.com/docs/cli/rules/
+rules:
+  # 操作规则
+  operation-operationId: error
+  operation-description: warn
+  operation-summary: warn
+  operation-tags: error
+  operation-tag-defined: error
+
+  # 参数规则
+  parameter-description: warn
+  parameter-name-regex: warn
+
+  # 响应规则
+  operation-2xx-response: error
+  operation-4xx-response: warn
+  operation-401-403-response: warn
+
+  # Schema 规则
+  schema-description: warn
+  schema-examples: warn
+
+  # Tag 规则
+  tag-description: warn
+
+  # 安全规则
+  operation-security-defined: warn
+  no-unresolved-refs: error
+  no-unused-components: warn
+
+  # 自定义规则
+  assert/operation-summary-length:
+    subject: Operation
+    property: summary
+    assertions:
+      minLength: 5
+      maxLength: 100
+
+# 插件配置
+plugins:
+  - './plugins/custom-rules.js'
+
+# 预处理配置
+preprocessors:
+  filter-internal-operations:
+    operationIds:
+      - internalHealthCheck
+
+# 特性标志
+features.openapi:
+  # 显示模式验证示例
+  schemaExpansionLevel: 2
+  # 显示请求示例
+  generateCodeSamples:
+    languages:
+      - lang: curl
+        label: cURL
+      - lang: Python
+        label: Python
+      - lang: JavaScript
+        label: JavaScript
+      - lang: Go
+        label: Go
+      - lang: Java
+        label: Java
+  # 显示响应示例
+  responseSamplesMaxDepth: 5
+  # 显示请求体示例
+  requestBodySamplesMaxDepth: 5
