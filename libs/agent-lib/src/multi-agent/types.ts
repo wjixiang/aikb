@@ -976,6 +976,25 @@ export interface IMailStorage {
 }
 
 // =============================================================================
+// Client/Component Types - 客户端/组件类型
+// =============================================================================
+
+/**
+ * MailComponent Configuration
+ * Used by client components to connect to the mailbox service
+ */
+export interface MailComponentConfig {
+  /** Mailbox service base URL */
+  baseUrl: string;
+  /** Default sender address for this agent */
+  defaultAddress?: string;
+  /** API key for authentication (if required) */
+  apiKey?: string;
+  /** Request timeout in milliseconds */
+  timeout?: number;
+}
+
+// =============================================================================
 // Re-exports for convenience
 // =============================================================================
 

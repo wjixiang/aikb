@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
   Tool,
   ToolCallResult,
@@ -6,7 +7,6 @@ import {
   tdiv,
   th,
   tp,
-  ttext,
 } from 'agent-lib/components/ui';
 import {
   type MailAddress,
@@ -15,21 +15,15 @@ import {
   type InboxQuery,
   type InboxResult,
   type SearchQuery,
+  type MailComponentConfig,
 } from 'agent-lib/multi-agent';
+import { mailToolSchemas } from './mailSchemas';
 
 /**
  * MailComponent Configuration
+ * (Re-exported from mailSchemas.ts for backward compatibility)
  */
-export interface MailComponentConfig {
-  /** Mailbox service base URL */
-  baseUrl: string;
-  /** Default sender address for this agent */
-  defaultAddress?: MailAddress;
-  /** API key for authentication (if required) */
-  apiKey?: string;
-  /** Request timeout in milliseconds */
-  timeout?: number;
-}
+export type { MailComponentConfig } from './mailSchemas';
 
 /**
  * MailComponent - Email-style messaging component for agent communication
@@ -67,15 +61,6 @@ export class MailComponent extends ToolComponent {
   private currentInbox: InboxResult | null = null;
   private selectedMessage: MailMessage | null = null;
 
-  // Default query parameters
-  private inboxQuery: InboxQuery = {
-    pagination: { limit: 20, offset: 0 },
-    unreadOnly: false,
-    starredOnly: false,
-    sortBy: 'sentAt',
-    sortOrder: 'desc',
-  };
-
   constructor(config: MailComponentConfig) {
     super();
     this.config = {
@@ -90,247 +75,23 @@ export class MailComponent extends ToolComponent {
   private initializeToolSet(): Map<string, Tool> {
     const tools = new Map<string, Tool>();
 
-    tools.set('sendMail', {
-      name: 'sendMail',
-      description: 'Send an email message to another agent or expert. Example: { "to": "pubmed@expert", "subject": "Search request", "body": "Find papers about...", "priority": "normal" }',
-      parameters: {
-        type: 'object',
-        properties: {
-          to: {
-            type: 'string',
-            description: 'Recipient address (e.g., "pubmed@expert", "analysis@expert")',
-          },
-          subject: {
-            type: 'string',
-            description: 'Email subject line',
-          },
-          body: {
-            type: 'string',
-            description: 'Email body content',
-          },
-          priority: {
-            type: 'string',
-            enum: ['low', 'normal', 'high', 'urgent'],
-            description: 'Message priority',
-            default: 'normal',
-          },
-          taskId: {
-            type: 'string',
-            description: 'Associated task ID',
-          },
-          attachments: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'S3 keys of attachments',
-          },
-          payload: {
-            type: 'object',
-            description: 'Additional JSON payload data',
-          },
-        },
-        required: ['to', 'subject', 'body'],
-      },
-    });
+    // Import tool schemas from mailSchemas
+    const toolEntries: [string, Tool][] = [
+      ['sendMail', mailToolSchemas.sendMail],
+      ['getInbox', mailToolSchemas.getInbox],
+      ['getUnreadCount', mailToolSchemas.getUnreadCount],
+      ['markAsRead', mailToolSchemas.markAsRead],
+      ['markAsUnread', mailToolSchemas.markAsUnread],
+      ['starMessage', mailToolSchemas.starMessage],
+      ['unstarMessage', mailToolSchemas.unstarMessage],
+      ['deleteMessage', mailToolSchemas.deleteMessage],
+      ['searchMessages', mailToolSchemas.searchMessages],
+      ['replyToMessage', mailToolSchemas.replyToMessage],
+      ['registerAddress', mailToolSchemas.registerAddress],
+    ];
 
-    tools.set('getInbox', {
-      name: 'getInbox',
-      description: 'Get inbox messages with optional filtering. Returns messages, total count, and unread count.',
-      parameters: {
-        type: 'object',
-        properties: {
-          address: {
-            type: 'string',
-            description: 'Mailbox address to query (defaults to component defaultAddress)',
-          },
-          limit: {
-            type: 'number',
-            description: 'Maximum number of messages to return',
-            default: 20,
-          },
-          offset: {
-            type: 'number',
-            description: 'Number of messages to skip',
-            default: 0,
-          },
-          unreadOnly: {
-            type: 'boolean',
-            description: 'Filter to show only unread messages',
-            default: false,
-          },
-          starredOnly: {
-            type: 'boolean',
-            description: 'Filter to show only starred messages',
-            default: false,
-          },
-        },
-      },
-    });
-
-    tools.set('getUnreadCount', {
-      name: 'getUnreadCount',
-      description: 'Get the count of unread messages for an address',
-      parameters: {
-        type: 'object',
-        properties: {
-          address: {
-            type: 'string',
-            description: 'Mailbox address (defaults to component defaultAddress)',
-          },
-        },
-      },
-    });
-
-    tools.set('markAsRead', {
-      name: 'markAsRead',
-      description: 'Mark a message as read',
-      parameters: {
-        type: 'object',
-        properties: {
-          messageId: {
-            type: 'string',
-            description: 'ID of the message to mark as read',
-          },
-        },
-        required: ['messageId'],
-      },
-    });
-
-    tools.set('markAsUnread', {
-      name: 'markAsUnread',
-      description: 'Mark a message as unread',
-      parameters: {
-        type: 'object',
-        properties: {
-          messageId: {
-            type: 'string',
-            description: 'ID of the message to mark as unread',
-          },
-        },
-        required: ['messageId'],
-      },
-    });
-
-    tools.set('starMessage', {
-      name: 'starMessage',
-      description: 'Star a message',
-      parameters: {
-        type: 'object',
-        properties: {
-          messageId: {
-            type: 'string',
-            description: 'ID of the message to star',
-          },
-        },
-        required: ['messageId'],
-      },
-    });
-
-    tools.set('unstarMessage', {
-      name: 'unstarMessage',
-      description: 'Unstar a message',
-      parameters: {
-        type: 'object',
-        properties: {
-          messageId: {
-            type: 'string',
-            description: 'ID of the message to unstar',
-          },
-        },
-        required: ['messageId'],
-      },
-    });
-
-    tools.set('deleteMessage', {
-      name: 'deleteMessage',
-      description: 'Delete a message (soft delete)',
-      parameters: {
-        type: 'object',
-        properties: {
-          messageId: {
-            type: 'string',
-            description: 'ID of the message to delete',
-          },
-        },
-        required: ['messageId'],
-      },
-    });
-
-    tools.set('searchMessages', {
-      name: 'searchMessages',
-      description: 'Search messages across mailboxes by subject, body, sender, etc.',
-      parameters: {
-        type: 'object',
-        properties: {
-          query: {
-            type: 'string',
-            description: 'Search text for subject or body',
-          },
-          from: {
-            type: 'string',
-            description: 'Filter by sender address',
-          },
-          to: {
-            type: 'string',
-            description: 'Filter by recipient address',
-          },
-          unread: {
-            type: 'boolean',
-            description: 'Filter by unread status',
-          },
-          starred: {
-            type: 'boolean',
-            description: 'Filter by starred status',
-          },
-          priority: {
-            type: 'string',
-            enum: ['low', 'normal', 'high', 'urgent'],
-            description: 'Filter by priority',
-          },
-        },
-      },
-    });
-
-    tools.set('replyToMessage', {
-      name: 'replyToMessage',
-      description: 'Reply to an existing message',
-      parameters: {
-        type: 'object',
-        properties: {
-          messageId: {
-            type: 'string',
-            description: 'ID of the message to reply to',
-          },
-          body: {
-            type: 'string',
-            description: 'Reply body content',
-          },
-          attachments: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'S3 keys of attachments',
-          },
-          payload: {
-            type: 'object',
-            description: 'Additional JSON payload data',
-          },
-        },
-        required: ['messageId', 'body'],
-      },
-    });
-
-    tools.set('registerAddress', {
-      name: 'registerAddress',
-      description: 'Register a new mailbox address',
-      parameters: {
-        type: 'object',
-        properties: {
-          address: {
-            type: 'string',
-            description: 'Address to register (e.g., "myagent@expert")',
-          },
-        },
-        required: ['address'],
-      },
+    toolEntries.forEach(([name, tool]) => {
+      tools.set(name, tool);
     });
 
     return tools;

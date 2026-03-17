@@ -34,6 +34,18 @@ export {
   type MailComponentConfig,
 } from './mailComponent.js';
 
+// Export schema types for external use
+export {
+  mailToolSchemas,
+  sendMailParamsSchema,
+  getInboxParamsSchema,
+  getUnreadCountParamsSchema,
+  messageIdParamsSchema,
+  searchMessagesParamsSchema,
+  replyToMessageParamsSchema,
+  registerAddressParamsSchema,
+} from './mailSchemas.js';
+
 // Re-export mail-related types from agent-lib for convenience
 export type {
   MailAddress,
@@ -51,4 +63,5 @@ export type {
   SendResult,
   StorageResult,
   IMailStorage,
+  MailComponentConfig,
 } from 'agent-lib/multi-agent';
