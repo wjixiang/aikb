@@ -10,6 +10,16 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from config import settings
+from lib.exceptions import (
+    FileNotFoundException,
+    StorageDeleteException,
+    StorageDownloadException,
+    StorageException,
+    StorageUploadException,
+)
+from lib.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class StorageService:
@@ -29,27 +39,41 @@ class StorageService:
                 },
                 signature_version="s3v4",
             )
-            self._client = boto3.client(
-                "s3",
-                endpoint_url=f"http://{settings.s3.endpoint}",
-                aws_access_key_id=settings.s3.access_key_id,
-                aws_secret_access_key=settings.s3.access_key_secret,
-                region_name=settings.s3.region,
-                config=config,
-            )
+            try:
+                self._client = boto3.client(
+                    "s3",
+                    endpoint_url=f"http://{settings.s3.endpoint}",
+                    aws_access_key_id=settings.s3.access_key_id,
+                    aws_secret_access_key=settings.s3.access_key_secret,
+                    region_name=settings.s3.region,
+                    config=config,
+                )
+            except Exception as e:
+                logger.error(f"Failed to create S3 client: {e}", exc_info=True)
+                raise StorageException(
+                    message=f"Failed to initialize S3 client: {str(e)}",
+                    details={"endpoint": settings.s3.endpoint, "region": settings.s3.region},
+                )
         return self._client
 
     @property
     def resource(self):
         """获取S3资源对象"""
         if self._resource is None:
-            self._resource = boto3.resource(
-                "s3",
-                endpoint_url=f"http://{settings.s3.endpoint}",
-                aws_access_key_id=settings.s3.access_key_id,
-                aws_secret_access_key=settings.s3.access_key_secret,
-                region_name=settings.s3.region,
-            )
+            try:
+                self._resource = boto3.resource(
+                    "s3",
+                    endpoint_url=f"http://{settings.s3.endpoint}",
+                    aws_access_key_id=settings.s3.access_key_id,
+                    aws_secret_access_key=settings.s3.access_key_secret,
+                    region_name=settings.s3.region,
+                )
+            except Exception as e:
+                logger.error(f"Failed to create S3 resource: {e}", exc_info=True)
+                raise StorageException(
+                    message=f"Failed to initialize S3 resource: {str(e)}",
+                    details={"endpoint": settings.s3.endpoint},
+                )
         return self._resource
 
     def upload(
@@ -68,17 +92,41 @@ class StorageService:
 
         Returns:
             文件的公开访问URL
+
+        Raises:
+            StorageUploadException: 上传失败
         """
         if isinstance(data, str):
             data = data.encode("utf-8")
 
         key = self._normalize_key(key)
-        self.client.put_object(
-            Bucket=settings.s3.bucket,
-            Key=key,
-            Body=data,
-            ContentType=content_type,
-        )
+
+        try:
+            self.client.put_object(
+                Bucket=settings.s3.bucket,
+                Key=key,
+                Body=data,
+                ContentType=content_type,
+            )
+            logger.info(f"File uploaded successfully: {key}", extra={"s3_key": key, "size": len(data)})
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            error_message = e.response.get("Error", {}).get("Message", str(e))
+            logger.error(
+                f"Failed to upload file: {error_code} - {error_message}",
+                extra={"s3_key": key, "error_code": error_code},
+                exc_info=True,
+            )
+            raise StorageUploadException(
+                message=f"Failed to upload file: {error_message}",
+                details={"s3_key": key, "error_code": error_code},
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during upload: {e}", extra={"s3_key": key}, exc_info=True)
+            raise StorageUploadException(
+                message=f"Unexpected error during upload: {str(e)}",
+                details={"s3_key": key},
+            )
 
         return self._generate_url(key)
 
@@ -91,13 +139,44 @@ class StorageService:
 
         Returns:
             文件内容
+
+        Raises:
+            FileNotFoundException: 文件不存在
+            StorageDownloadException: 下载失败
         """
         key = self._normalize_key(key)
-        response = self.client.get_object(
-            Bucket=settings.s3.bucket,
-            Key=key,
-        )
-        return response["Body"].read()
+
+        try:
+            response = self.client.get_object(
+                Bucket=settings.s3.bucket,
+                Key=key,
+            )
+            data = response["Body"].read()
+            logger.debug(f"File downloaded successfully: {key}", extra={"s3_key": key, "size": len(data)})
+            return data
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            error_message = e.response.get("Error", {}).get("Message", str(e))
+
+            if error_code == "NoSuchKey":
+                logger.warning(f"File not found in storage: {key}", extra={"s3_key": key})
+                raise FileNotFoundException(s3_key=key)
+
+            logger.error(
+                f"Failed to download file: {error_code} - {error_message}",
+                extra={"s3_key": key, "error_code": error_code},
+                exc_info=True,
+            )
+            raise StorageDownloadException(
+                message=f"Failed to download file: {error_message}",
+                details={"s3_key": key, "error_code": error_code},
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during download: {e}", extra={"s3_key": key}, exc_info=True)
+            raise StorageDownloadException(
+                message=f"Unexpected error during download: {str(e)}",
+                details={"s3_key": key},
+            )
 
     def delete(self, key: str) -> bool:
         """
@@ -108,13 +187,37 @@ class StorageService:
 
         Returns:
             是否删除成功
+
+        Raises:
+            StorageDeleteException: 删除失败
         """
         key = self._normalize_key(key)
-        self.client.delete_object(
-            Bucket=settings.s3.bucket,
-            Key=key,
-        )
-        return True
+
+        try:
+            self.client.delete_object(
+                Bucket=settings.s3.bucket,
+                Key=key,
+            )
+            logger.info(f"File deleted successfully: {key}", extra={"s3_key": key})
+            return True
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            error_message = e.response.get("Error", {}).get("Message", str(e))
+            logger.error(
+                f"Failed to delete file: {error_code} - {error_message}",
+                extra={"s3_key": key, "error_code": error_code},
+                exc_info=True,
+            )
+            raise StorageDeleteException(
+                message=f"Failed to delete file: {error_message}",
+                details={"s3_key": key, "error_code": error_code},
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during delete: {e}", extra={"s3_key": key}, exc_info=True)
+            raise StorageDeleteException(
+                message=f"Unexpected error during delete: {str(e)}",
+                details={"s3_key": key},
+            )
 
     def get_presigned_url(self, key: str, expires_in: int = 3600) -> str:
         """
@@ -126,15 +229,31 @@ class StorageService:
 
         Returns:
             预签名URL
+
+        Raises:
+            StorageException: 生成失败
         """
-        return self.client.generate_presigned_url(
-            "get_object",
-            Params={
-                "Bucket": settings.s3.bucket,
-                "Key": key,
-            },
-            ExpiresIn=expires_in,
-        )
+        key = self._normalize_key(key)
+
+        try:
+            return self.client.generate_presigned_url(
+                "get_object",
+                Params={
+                    "Bucket": settings.s3.bucket,
+                    "Key": key,
+                },
+                ExpiresIn=expires_in,
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to generate presigned URL: {e}",
+                extra={"s3_key": key, "expires_in": expires_in},
+                exc_info=True,
+            )
+            raise StorageException(
+                message=f"Failed to generate presigned URL: {str(e)}",
+                details={"s3_key": key, "expires_in": expires_in},
+            )
 
     def get_presigned_upload_url(
         self, key: str, content_type: str = "application/octet-stream", expires_in: int = 3600
@@ -149,16 +268,32 @@ class StorageService:
 
         Returns:
             预签名上传URL
+
+        Raises:
+            StorageException: 生成失败
         """
-        return self.client.generate_presigned_url(
-            "put_object",
-            Params={
-                "Bucket": settings.s3.bucket,
-                "Key": key,
-                "ContentType": content_type,
-            },
-            ExpiresIn=expires_in,
-        )
+        key = self._normalize_key(key)
+
+        try:
+            return self.client.generate_presigned_url(
+                "put_object",
+                Params={
+                    "Bucket": settings.s3.bucket,
+                    "Key": key,
+                    "ContentType": content_type,
+                },
+                ExpiresIn=expires_in,
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to generate presigned upload URL: {e}",
+                extra={"s3_key": key, "content_type": content_type, "expires_in": expires_in},
+                exc_info=True,
+            )
+            raise StorageException(
+                message=f"Failed to generate presigned upload URL: {str(e)}",
+                details={"s3_key": key, "content_type": content_type, "expires_in": expires_in},
+            )
 
     def exists(self, key: str) -> bool:
         """
@@ -177,7 +312,17 @@ class StorageService:
                 Key=key,
             )
             return True
-        except ClientError:
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code == "NoSuchKey":
+                return False
+            logger.warning(
+                f"Error checking file existence: {error_code}",
+                extra={"s3_key": key, "error_code": error_code},
+            )
+            return False
+        except Exception as e:
+            logger.error(f"Error checking file existence: {e}", extra={"s3_key": key})
             return False
 
     def _normalize_key(self, key: str) -> str:
@@ -193,13 +338,29 @@ class StorageService:
 
         Returns:
             文件大小（字节）
+
+        Raises:
+            FileNotFoundException: 文件不存在
+            StorageException: 获取失败
         """
         key = self._normalize_key(key)
-        response = self.client.head_object(
-            Bucket=settings.s3.bucket,
-            Key=key,
-        )
-        return response["ContentLength"]
+
+        try:
+            response = self.client.head_object(
+                Bucket=settings.s3.bucket,
+                Key=key,
+            )
+            return response["ContentLength"]
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code == "NoSuchKey":
+                raise FileNotFoundException(s3_key=key)
+
+            error_message = e.response.get("Error", {}).get("Message", str(e))
+            raise StorageException(
+                message=f"Failed to get file size: {error_message}",
+                details={"s3_key": key, "error_code": error_code},
+            )
 
     def get_modified_time(self, key: str) -> int:
         """
@@ -210,14 +371,29 @@ class StorageService:
 
         Returns:
             文件修改时间戳（秒）
+
+        Raises:
+            FileNotFoundException: 文件不存在
+            StorageException: 获取失败
         """
         key = self._normalize_key(key)
-        response = self.client.head_object(
-            Bucket=settings.s3.bucket,
-            Key=key,
-        )
-        # 转换为时间戳
-        return int(response["LastModified"].timestamp())
+
+        try:
+            response = self.client.head_object(
+                Bucket=settings.s3.bucket,
+                Key=key,
+            )
+            return int(response["LastModified"].timestamp())
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code == "NoSuchKey":
+                raise FileNotFoundException(s3_key=key)
+
+            error_message = e.response.get("Error", {}).get("Message", str(e))
+            raise StorageException(
+                message=f"Failed to get file modification time: {error_message}",
+                details={"s3_key": key, "error_code": error_code},
+            )
 
     def list_objects(self, prefix: str = "") -> list[str]:
         """
@@ -228,12 +404,26 @@ class StorageService:
 
         Returns:
             文件key列表
+
+        Raises:
+            StorageException: 列出失败
         """
-        response = self.client.list_objects_v2(
-            Bucket=settings.s3.bucket,
-            Prefix=prefix,
-        )
-        return [obj["Key"] for obj in response.get("Contents", [])]
+        try:
+            response = self.client.list_objects_v2(
+                Bucket=settings.s3.bucket,
+                Prefix=prefix,
+            )
+            return [obj["Key"] for obj in response.get("Contents", [])]
+        except Exception as e:
+            logger.error(
+                f"Failed to list objects: {e}",
+                extra={"prefix": prefix},
+                exc_info=True,
+            )
+            raise StorageException(
+                message=f"Failed to list objects: {str(e)}",
+                details={"prefix": prefix},
+            )
 
     def bucket_exists(self) -> bool:
         """检查存储桶是否存在"""
@@ -241,6 +431,9 @@ class StorageService:
             self.client.head_bucket(Bucket=settings.s3.bucket)
             return True
         except ClientError:
+            return False
+        except Exception as e:
+            logger.error(f"Error checking bucket existence: {e}")
             return False
 
     def _generate_url(self, key: str) -> str:
