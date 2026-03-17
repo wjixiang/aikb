@@ -4,29 +4,9 @@ import {
   ToolComponent,
   TUIElement,
   tdiv,
-  tspan,
-  tbutton,
-  tinput,
-  ttextarea,
-  tselect,
-  tlabel,
-  th2,
-  th3,
-  ttable,
-  tthead,
-  ttbody,
-  ttr,
-  tth,
-  ttd,
-  tbadge,
-  tcard,
-  tform,
-  tcheckbox,
-  tpagination,
-  tempty,
-  tloading,
-  tdialog,
-  talert,
+  th,
+  tp,
+  ttext,
 } from 'agent-lib/components/ui';
 import {
   type MailAddress,
@@ -35,7 +15,6 @@ import {
   type InboxQuery,
   type InboxResult,
   type SearchQuery,
-  type MailPriority,
 } from 'agent-lib/multi-agent';
 
 /**
@@ -56,13 +35,28 @@ export interface MailComponentConfig {
  * MailComponent - Email-style messaging component for agent communication
  *
  * Features:
- * - Send emails to other agents/experts
+ * - Send emails to other agents/experts via REST API
  * - View inbox with filtering and pagination
  * - Mark messages as read/unread/starred
  * - Search messages
  * - Reply to messages
  *
  * This component communicates with the agent-mailbox service via REST API.
+ *
+ * @example
+ * ```typescript
+ * const mail = new MailComponent({
+ *   baseUrl: 'http://localhost:3000',
+ *   defaultAddress: 'myagent@expert',
+ * });
+ *
+ * // Send a message
+ * await mail.handleToolCall('sendMail', {
+ *   to: 'other@expert',
+ *   subject: 'Hello',
+ *   body: 'World',
+ * });
+ * ```
  */
 export class MailComponent extends ToolComponent {
   override componentId = 'mail';
@@ -72,8 +66,6 @@ export class MailComponent extends ToolComponent {
   private config: MailComponentConfig;
   private currentInbox: InboxResult | null = null;
   private selectedMessage: MailMessage | null = null;
-  private isLoading = false;
-  private error: string | null = null;
 
   // Default query parameters
   private inboxQuery: InboxQuery = {
@@ -90,17 +82,17 @@ export class MailComponent extends ToolComponent {
       timeout: 30000,
       ...config,
     };
-    this.initializeTools();
+    this.toolSet = this.initializeToolSet();
   }
 
   // ==================== Tool Definitions ====================
 
-  override toolSet = new Map<string, Tool>();
+  private initializeToolSet(): Map<string, Tool> {
+    const tools = new Map<string, Tool>();
 
-  private initializeTools(): void {
-    this.toolSet.set('sendMail', {
+    tools.set('sendMail', {
       name: 'sendMail',
-      description: 'Send an email message to another agent or expert',
+      description: 'Send an email message to another agent or expert. Example: { "to": "pubmed@expert", "subject": "Search request", "body": "Find papers about...", "priority": "normal" }',
       parameters: {
         type: 'object',
         properties: {
@@ -140,9 +132,9 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('getInbox', {
+    tools.set('getInbox', {
       name: 'getInbox',
-      description: 'Get inbox messages with optional filtering',
+      description: 'Get inbox messages with optional filtering. Returns messages, total count, and unread count.',
       parameters: {
         type: 'object',
         properties: {
@@ -174,7 +166,7 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('getUnreadCount', {
+    tools.set('getUnreadCount', {
       name: 'getUnreadCount',
       description: 'Get the count of unread messages for an address',
       parameters: {
@@ -188,7 +180,7 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('markAsRead', {
+    tools.set('markAsRead', {
       name: 'markAsRead',
       description: 'Mark a message as read',
       parameters: {
@@ -203,7 +195,7 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('markAsUnread', {
+    tools.set('markAsUnread', {
       name: 'markAsUnread',
       description: 'Mark a message as unread',
       parameters: {
@@ -218,7 +210,7 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('starMessage', {
+    tools.set('starMessage', {
       name: 'starMessage',
       description: 'Star a message',
       parameters: {
@@ -233,7 +225,7 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('unstarMessage', {
+    tools.set('unstarMessage', {
       name: 'unstarMessage',
       description: 'Unstar a message',
       parameters: {
@@ -248,7 +240,7 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('deleteMessage', {
+    tools.set('deleteMessage', {
       name: 'deleteMessage',
       description: 'Delete a message (soft delete)',
       parameters: {
@@ -263,9 +255,9 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('searchMessages', {
+    tools.set('searchMessages', {
       name: 'searchMessages',
-      description: 'Search messages across mailboxes',
+      description: 'Search messages across mailboxes by subject, body, sender, etc.',
       parameters: {
         type: 'object',
         properties: {
@@ -298,7 +290,7 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('replyToMessage', {
+    tools.set('replyToMessage', {
       name: 'replyToMessage',
       description: 'Reply to an existing message',
       parameters: {
@@ -326,7 +318,7 @@ export class MailComponent extends ToolComponent {
       },
     });
 
-    this.toolSet.set('registerAddress', {
+    tools.set('registerAddress', {
       name: 'registerAddress',
       description: 'Register a new mailbox address',
       parameters: {
@@ -340,7 +332,11 @@ export class MailComponent extends ToolComponent {
         required: ['address'],
       },
     });
+
+    return tools;
   }
+
+  override toolSet = this.initializeToolSet();
 
   // ==================== Tool Handlers ====================
 
@@ -374,14 +370,15 @@ export class MailComponent extends ToolComponent {
           return await this.handleRegisterAddress(params);
         default:
           return {
-            success: false,
-            error: `Unknown tool: ${toolName}`,
+            data: { error: `Unknown tool: ${toolName}` },
+            summary: `[Mail] Unknown tool: ${toolName}`,
           };
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
+        data: { error: errorMessage },
+        summary: `[Mail] Error: ${errorMessage}`,
       };
     }
   };
@@ -401,11 +398,10 @@ export class MailComponent extends ToolComponent {
     const result = await this.sendMail(mail);
 
     return {
-      success: result.success,
       data: result,
       summary: result.success
-        ? `📧 Sent mail to ${params.to} with subject "${params.subject}"`
-        : `❌ Failed to send mail: ${result.error}`,
+        ? `[Mail] Sent to ${params.to}: "${params.subject}"`
+        : `[Mail] Failed to send: ${result.error}`,
     };
   }
 
@@ -413,8 +409,8 @@ export class MailComponent extends ToolComponent {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
-        success: false,
-        error: 'No address specified and no default address configured',
+        data: { error: 'No address specified and no default address configured' },
+        summary: '[Mail] Error: No address configured',
       };
     }
 
@@ -428,11 +424,11 @@ export class MailComponent extends ToolComponent {
     };
 
     const result = await this.getInbox(address, query);
+    this.currentInbox = result;
 
     return {
-      success: true,
       data: result,
-      summary: `📥 Retrieved ${result.messages.length} messages for ${address} (total: ${result.total}, unread: ${result.unread})`,
+      summary: `[Mail] Inbox for ${address}: ${result.messages.length}/${result.total} messages (${result.unread} unread)`,
     };
   }
 
@@ -440,72 +436,66 @@ export class MailComponent extends ToolComponent {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
-        success: false,
-        error: 'No address specified and no default address configured',
+        data: { error: 'No address specified and no default address configured' },
+        summary: '[Mail] Error: No address configured',
       };
     }
 
     const count = await this.getUnreadCount(address);
 
     return {
-      success: true,
       data: { count, address },
-      summary: `📬 ${address} has ${count} unread messages`,
+      summary: `[Mail] ${address} has ${count} unread messages`,
     };
   }
 
   private async handleMarkAsRead(params: any): Promise<ToolCallResult> {
     const result = await this.markAsRead(params.messageId);
     return {
-      success: result.success,
       data: result,
       summary: result.success
-        ? `✉️ Marked message ${params.messageId} as read`
-        : `❌ Failed to mark as read: ${result.error}`,
+        ? `[Mail] Marked ${params.messageId} as read`
+        : `[Mail] Failed to mark as read: ${result.error}`,
     };
   }
 
   private async handleMarkAsUnread(params: any): Promise<ToolCallResult> {
     const result = await this.markAsUnread(params.messageId);
     return {
-      success: result.success,
       data: result,
       summary: result.success
-        ? `✉️ Marked message ${params.messageId} as unread`
-        : `❌ Failed to mark as unread: ${result.error}`,
+        ? `[Mail] Marked ${params.messageId} as unread`
+        : `[Mail] Failed to mark as unread: ${result.error}`,
     };
   }
 
   private async handleStarMessage(params: any): Promise<ToolCallResult> {
     const result = await this.starMessage(params.messageId);
     return {
-      success: result.success,
       data: result,
       summary: result.success
-        ? `⭐ Starred message ${params.messageId}`
-        : `❌ Failed to star message: ${result.error}`,
+        ? `[Mail] Starred ${params.messageId}`
+        : `[Mail] Failed to star: ${result.error}`,
     };
   }
 
   private async handleUnstarMessage(params: any): Promise<ToolCallResult> {
     const result = await this.unstarMessage(params.messageId);
     return {
-      success: result.success,
       data: result,
       summary: result.success
-        ? `☆ Unstarred message ${params.messageId}`
-        : `❌ Failed to unstar message: ${result.error}`,
+        ? `[Mail] Unstarred ${params.messageId}`
+        : `[Mail] Failed to unstar: ${result.error}`,
     };
   }
 
   private async handleDeleteMessage(params: any): Promise<ToolCallResult> {
     const result = await this.deleteMessage(params.messageId);
     return {
-      success: result.success,
       data: result,
       summary: result.success
-        ? `🗑️ Deleted message ${params.messageId}`
-        : `❌ Failed to delete message: ${result.error}`,
+        ? `[Mail] Deleted ${params.messageId}`
+        : `[Mail] Failed to delete: ${result.error}`,
     };
   }
 
@@ -523,19 +513,20 @@ export class MailComponent extends ToolComponent {
     const results = await this.searchMessages(query);
 
     return {
-      success: true,
       data: results,
-      summary: `🔍 Found ${results.length} messages matching "${params.query}"`,
+      summary: `[Mail] Found ${results.length} messages matching "${params.query}"`,
     };
   }
 
   private async handleReplyToMessage(params: any): Promise<ToolCallResult> {
     // First get the original message to find the sender
-    const originalMessage = await this.getMessage(params.messageId);
+    const messages = await this.searchMessages({ subject: params.messageId });
+    const originalMessage = messages.find(m => m.messageId === params.messageId);
+
     if (!originalMessage) {
       return {
-        success: false,
-        error: `Message ${params.messageId} not found`,
+        data: { error: `Message ${params.messageId} not found` },
+        summary: '[Mail] Error: Original message not found',
       };
     }
 
@@ -553,22 +544,20 @@ export class MailComponent extends ToolComponent {
     const result = await this.sendMail(reply);
 
     return {
-      success: result.success,
       data: result,
       summary: result.success
-        ? `↩️ Replied to "${originalMessage.subject}" from ${originalMessage.from}`
-        : `❌ Failed to send reply: ${result.error}`,
+        ? `[Mail] Replied to "${originalMessage.subject}"`
+        : `[Mail] Failed to send reply: ${result.error}`,
     };
   }
 
   private async handleRegisterAddress(params: any): Promise<ToolCallResult> {
     const result = await this.registerAddress(params.address);
     return {
-      success: result.success,
       data: result,
       summary: result.success
-        ? `📫 Registered address ${params.address}`
-        : `❌ Failed to register address: ${result.error}`,
+        ? `[Mail] Registered ${params.address}`
+        : `[Mail] Failed to register: ${result.error}`,
     };
   }
 
@@ -613,7 +602,6 @@ export class MailComponent extends ToolComponent {
    * Get a single message by ID
    */
   async getMessage(messageId: string): Promise<MailMessage | null> {
-    // Note: This endpoint may need to be added to the server
     const messages = await this.searchMessages({ subject: messageId });
     return messages.find(m => m.messageId === messageId) || null;
   }
@@ -720,70 +708,55 @@ export class MailComponent extends ToolComponent {
 
     // Header
     elements.push(
-      th2({}, 'Mail Component'),
-      tdiv({ styles: { marginBottom: '16px' } }, [
-        tspan({ styles: { color: 'text.secondary' } },
-          `Connected to: ${this.config.baseUrl}`),
-        this.config.defaultAddress && tspan({}, ` | Default Address: ${this.config.defaultAddress}`),
-      ]),
+      new th({
+        content: 'Mail Component',
+        styles: { align: 'center' },
+      }),
     );
 
-    // Error display
-    if (this.error) {
-      elements.push(talert({ type: 'error', message: this.error }));
+    // Connection info
+    const infoTexts: string[] = [`Server: ${this.config.baseUrl}`];
+    if (this.config.defaultAddress) {
+      infoTexts.push(`Address: ${this.config.defaultAddress}`);
     }
 
-    // Loading state
-    if (this.isLoading) {
-      elements.push(tloading({ message: 'Loading...' }));
-    }
+    elements.push(
+      new tdiv({
+        content: infoTexts.join(' | '),
+        styles: {
+          align: 'center',
+          padding: { vertical: 1 },
+        },
+      }),
+    );
 
     // Quick stats
     if (this.config.defaultAddress) {
       try {
         const unreadCount = await this.getUnreadCount(this.config.defaultAddress);
         elements.push(
-          tdiv({ styles: { display: 'flex', gap: '12px', marginBottom: '16px' } }, [
-            tbadge({ variant: 'primary', label: `Unread: ${unreadCount}` }),
-            this.currentInbox && tbadge({ variant: 'secondary', label: `Total: ${this.currentInbox.total}` }),
-          ]),
+          new tdiv({
+            content: `Unread: ${unreadCount}${this.currentInbox ? ` | Total: ${this.currentInbox.total}` : ''}`,
+            styles: {
+              align: 'center',
+              showBorder: true,
+              padding: { vertical: 1 },
+            },
+          }),
         );
       } catch (e) {
         // Ignore error in rendering
       }
     }
 
-    // Compose button
-    elements.push(
-      tdiv({ styles: { marginBottom: '16px' } }, [
-        tbutton({
-          label: '✉️ Compose',
-          variant: 'primary',
-          onClick: () => this.showComposeDialog(),
-        }),
-      ]),
-    );
-
     // Inbox view
     if (this.currentInbox) {
-      elements.push(...this.renderInbox());
+      elements.push(this.renderInbox());
     } else {
-      // Load inbox button
       elements.push(
-        tbutton({
-          label: '📥 Load Inbox',
-          onClick: async () => {
-            if (this.config.defaultAddress) {
-              this.isLoading = true;
-              try {
-                this.currentInbox = await this.getInbox(this.config.defaultAddress, this.inboxQuery);
-              } catch (e) {
-                this.error = String(e);
-              } finally {
-                this.isLoading = false;
-              }
-            }
-          },
+        new tp({
+          content: 'Use getInbox tool to load messages.',
+          indent: 1,
         }),
       );
     }
@@ -791,190 +764,130 @@ export class MailComponent extends ToolComponent {
     return elements;
   };
 
-  private renderInbox(): TUIElement[] {
-    if (!this.currentInbox) return [];
+  private renderInbox(): TUIElement {
+    if (!this.currentInbox) {
+      return new tdiv({ content: 'No inbox data' });
+    }
 
-    const elements: TUIElement[] = [];
+    const container = new tdiv({
+      styles: { showBorder: true, padding: { vertical: 1 } },
+    });
 
-    // Filters
-    elements.push(
-      tdiv({ styles: { display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' } }, [
-        tlabel({}, 'Filters:'),
-        tcheckbox({
-          label: 'Unread only',
-          checked: this.inboxQuery.unreadOnly || false,
-          onChange: (checked) => {
-            this.inboxQuery.unreadOnly = checked;
-            this.refreshInbox();
-          },
-        }),
-        tcheckbox({
-          label: 'Starred only',
-          checked: this.inboxQuery.starredOnly || false,
-          onChange: (checked) => {
-            this.inboxQuery.starredOnly = checked;
-            this.refreshInbox();
-          },
-        }),
-        tselect({
-          value: this.inboxQuery.sortBy || 'sentAt',
-          options: [
-            { value: 'sentAt', label: 'Date' },
-            { value: 'subject', label: 'Subject' },
-            { value: 'priority', label: 'Priority' },
-          ],
-          onChange: (value) => {
-            this.inboxQuery.sortBy = value as InboxQuery['sortBy'];
-            this.refreshInbox();
-          },
-        }),
-      ]),
+    // Title
+    container.addChild(
+      new th({
+        content: `Inbox: ${this.currentInbox.address}`,
+        level: 2,
+        styles: { align: 'center' },
+      }),
     );
 
-    // Messages table
+    // Stats
+    container.addChild(
+      new tp({
+        content: `Messages: ${this.currentInbox.messages.length}/${this.currentInbox.total} | Unread: ${this.currentInbox.unread} | Starred: ${this.currentInbox.starred}`,
+        indent: 1,
+        textStyle: { bold: true },
+      }),
+    );
+
+    // Messages list
     if (this.currentInbox.messages.length === 0) {
-      elements.push(tempty({ message: 'No messages found' }));
+      container.addChild(new tp({ content: 'No messages found.', indent: 2 }));
     } else {
-      const rows = this.currentInbox.messages.map(msg =>
-        ttr({
-          styles: {
-            fontWeight: msg.status.read ? 'normal' : 'bold',
-            backgroundColor: this.selectedMessage?.messageId === msg.messageId ? 'primary.light' : undefined,
-            cursor: 'pointer',
-          },
-          onClick: () => {
-            this.selectedMessage = msg;
-            if (!msg.status.read) {
-              this.markAsRead(msg.messageId);
-            }
-          },
-        }, [
-          ttd({}, msg.status.starred ? '⭐' : '☆'),
-          ttd({}, msg.priority === 'urgent' ? '🔴' : msg.priority === 'high' ? '🟡' : '⚪'),
-          ttd({}, msg.from),
-          ttd({}, msg.subject),
-          ttd({}, new Date(msg.sentAt).toLocaleString()),
-          ttd({}, [
-            tbutton({
-              label: 'Reply',
-              size: 'small',
-              onClick: (e) => {
-                e.stopPropagation();
-                this.showReplyDialog(msg);
-              },
-            }),
-            tbutton({
-              label: 'Delete',
-              size: 'small',
-              variant: 'danger',
-              onClick: (e) => {
-                e.stopPropagation();
-                this.deleteMessage(msg.messageId).then(() => this.refreshInbox());
-              },
-            }),
-          ]),
-        ]),
-      );
+      container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
 
-      elements.push(
-        ttable({}, [
-          tthead({}, [
-            ttr({}, [
-              tth({}, ''),
-              tth({}, ''),
-              tth({}, 'From'),
-              tth({}, 'Subject'),
-              tth({}, 'Date'),
-              tth({}, 'Actions'),
-            ]),
-          ]),
-          ttbody({}, rows),
-        ]),
-      );
+      this.currentInbox.messages.forEach((msg, index) => {
+        const starMarker = msg.status.starred ? '⭐ ' : '';
+        const readMarker = msg.status.read ? '  ' : '● ';
+        const priorityMarker = msg.priority === 'urgent' ? ' [URGENT]' : msg.priority === 'high' ? ' [HIGH]' : '';
 
-      // Pagination
-      const totalPages = Math.ceil(this.currentInbox.total / (this.inboxQuery.pagination?.limit || 20));
-      const currentPage = Math.floor((this.inboxQuery.pagination?.offset || 0) / (this.inboxQuery.pagination?.limit || 20)) + 1;
+        container.addChild(
+          new tp({
+            content: `${readMarker}${starMarker}${index + 1}. ${msg.subject}${priorityMarker}`,
+            indent: 1,
+            textStyle: { bold: !msg.status.read },
+          }),
+        );
 
-      elements.push(
-        tpagination({
-          currentPage,
-          totalPages,
-          onPageChange: (page) => {
-            this.inboxQuery.pagination = {
-              ...this.inboxQuery.pagination,
-              offset: (page - 1) * (this.inboxQuery.pagination?.limit || 20),
-            };
-            this.refreshInbox();
-          },
-        }),
-      );
+        container.addChild(
+          new tp({
+            content: `   From: ${msg.from} | ${new Date(msg.sentAt).toLocaleString()}`,
+            indent: 2,
+          }),
+        );
+
+        if (msg.body) {
+          const preview = msg.body.length > 100 ? msg.body.substring(0, 100) + '...' : msg.body;
+          container.addChild(new tp({ content: `   ${preview}`, indent: 2 }));
+        }
+
+        container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
+      });
     }
 
-    // Message detail view
+    // Selected message detail
     if (this.selectedMessage) {
-      elements.push(this.renderMessageDetail(this.selectedMessage));
+      container.addChild(this.renderMessageDetail(this.selectedMessage));
     }
 
-    return elements;
+    return container;
   }
 
   private renderMessageDetail(message: MailMessage): TUIElement {
-    return tcard({
-      title: message.subject,
-      styles: { marginTop: '16px' },
-    }, [
-      tdiv({ styles: { marginBottom: '12px' } }, [
-        tdiv({}, [
-          tspan({ styles: { fontWeight: 'bold' } }, 'From: '),
-          tspan({}, message.from),
-        ]),
-        tdiv({}, [
-          tspan({ styles: { fontWeight: 'bold' } }, 'To: '),
-          tspan({}, Array.isArray(message.to) ? message.to.join(', ') : message.to),
-        ]),
-        tdiv({}, [
-          tspan({ styles: { fontWeight: 'bold' } }, 'Date: '),
-          tspan({}, new Date(message.sentAt).toLocaleString()),
-        ]),
-        message.taskId && tdiv({}, [
-          tspan({ styles: { fontWeight: 'bold' } }, 'Task ID: '),
-          tspan({}, message.taskId),
-        ]),
-      ]),
-      tdiv({ styles: { borderTop: '1px solid #eee', paddingTop: '12px', whiteSpace: 'pre-wrap' } },
-        message.body || '(No content)'),
-      message.attachments && message.attachments.length > 0 && tdiv({ styles: { marginTop: '12px' } }, [
-        th3({}, 'Attachments:'),
-        ...message.attachments.map(att => tdiv({}, att)),
-      ]),
-      message.payload && tdiv({ styles: { marginTop: '12px' } }, [
-        th3({}, 'Payload:'),
-        tdiv({ styles: { fontFamily: 'monospace', fontSize: '12px' } }, JSON.stringify(message.payload, null, 2)),
-      ]),
-    ]);
-  }
+    const container = new tdiv({
+      styles: {
+        showBorder: true,
+        padding: { vertical: 1 },
+        margin: { top: 1 },
+      },
+    });
 
-  private showComposeDialog(): void {
-    // This would typically open a dialog - simplified version
-    console.log('[MailComponent] Opening compose dialog');
-  }
+    container.addChild(
+      new th({
+        content: 'Message Detail',
+        level: 3,
+        styles: { align: 'center' },
+      }),
+    );
 
-  private showReplyDialog(message: MailMessage): void {
-    // This would typically open a reply dialog
-    console.log('[MailComponent] Opening reply dialog for message:', message.messageId);
-  }
+    container.addChild(new tp({ content: `Subject: ${message.subject}`, indent: 1, textStyle: { bold: true } }));
+    container.addChild(new tp({ content: `From: ${message.from}`, indent: 1 }));
+    container.addChild(new tp({ content: `To: ${Array.isArray(message.to) ? message.to.join(', ') : message.to}`, indent: 1 }));
+    container.addChild(new tp({ content: `Date: ${new Date(message.sentAt).toLocaleString()}`, indent: 1 }));
+    container.addChild(new tp({ content: `Priority: ${message.priority}`, indent: 1 }));
 
-  private async refreshInbox(): Promise<void> {
-    if (!this.config.defaultAddress) return;
-    this.isLoading = true;
-    try {
-      this.currentInbox = await this.getInbox(this.config.defaultAddress, this.inboxQuery);
-    } catch (e) {
-      this.error = String(e);
-    } finally {
-      this.isLoading = false;
+    if (message.taskId) {
+      container.addChild(new tp({ content: `Task ID: ${message.taskId}`, indent: 1 }));
     }
+
+    container.addChild(new tp({ content: '', indent: 1 }));
+
+    if (message.body) {
+      container.addChild(new th({ content: 'Body:', level: 4 }));
+      container.addChild(new tp({ content: message.body, indent: 1 }));
+    }
+
+    if (message.attachments && message.attachments.length > 0) {
+      container.addChild(new tp({ content: '', indent: 1 }));
+      container.addChild(new th({ content: 'Attachments:', level: 4 }));
+      message.attachments.forEach(att => {
+        container.addChild(new tp({ content: `  • ${att}`, indent: 1 }));
+      });
+    }
+
+    if (message.payload) {
+      container.addChild(new tp({ content: '', indent: 1 }));
+      container.addChild(new th({ content: 'Payload:', level: 4 }));
+      container.addChild(
+        new tp({
+          content: JSON.stringify(message.payload, null, 2),
+          indent: 1,
+        }),
+      );
+    }
+
+    return container;
   }
 }
 
