@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="File Renderer Service API Documentation" />
+  <title>File Renderer API Documentation</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a1a1a1;
+    }
+
+    /* Loading animation */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #1976d2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      margin-top: 20px;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="redoc-container">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading API Documentation...</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@redocly/redoc@2.1.3/bundles/redoc.standalone.js"></script>
+  <script>
+    Redoc.init(
+      './openapi.json',
+      {
+        // Theme configuration
+        theme: {
+          colors: {
+            primary: {
+              main: '#1976d2',
+              light: '#42a5f5',
+              dark: '#1565c0',
+              contrastText: '#fff'
+            },
+            success: {
+              main: '#2e7d32',
+              light: '#4caf50',
+              dark: '#1b5e20',
+              contrastText: '#fff'
+            },
+            error: {
+              main: '#d32f2f',
+              light: '#ef5350',
+              dark: '#c62828',
+              contrastText: '#fff'
+            },
+            warning: {
+              main: '#ed6c02',
+              light: '#ff9800',
+              dark: '#e65100',
+              contrastText: '#fff'
+            },
+            text: {
+              primary: '#212121',
+              secondary: '#757575'
+            },
+            background: {
+              default: '#ffffff',
+              paper: '#fafafa'
+            },
+            border: {
+              dark: '#e0e0e0',
+              light: '#eeeeee'
+            }
+          },
+          typography: {
+            fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+            fontSize: '16px',
+            fontWeightRegular: '400',
+            fontWeightBold: '600',
+            fontWeightLight: '300',
+            headings: {
+              fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+              fontWeight: '600'
+            },
+            code: {
+              fontFamily: "'Fira Code', 'Monaco', 'Consolas', monospace",
+              fontSize: '14px',
+              fontWeight: '400',
+              color: '#d32f2f',
+              backgroundColor: '#f5f5f5',
+              wrap: true
+            },
+            links: {
+              color: '#1976d2',
+              visited: '#7b1fa2',
+              hover: '#1565c0'
+            }
+          },
+          sidebar: {
+            backgroundColor: '#fafafa',
+            textColor: '#212121',
+            activeTextColor: '#1976d2',
+            separatorLineColor: '#e0e0e0',
+            width: '280px'
+          },
+          rightPanel: {
+            backgroundColor: '#263238',
+            textColor: '#ffffff',
+            width: '40%'
+          },
+          schema: {
+            linesColor: '#e0e0e0',
+            defaultDetailsWidth: '75%',
+            typeNameColor: '#1976d2',
+            typeTitleColor: '#212121'
+          },
+          codeBlock: {
+            backgroundColor: '#263238'
+          }
+        },
+
+        // Functional options
+        expandDefaultServerVariables: true,
+        expandResponses: '200,201',
+        jsonSampleExpandLevel: 2,
+        hideDownloadButton: false,
+        hideHostname: false,
+        noAutoAuth: false,
+        pathInMiddlePanel: false,
+        requiredPropsFirst: true,
+        sortPropsAlphabetically: false,
+        showExtensions: true,
+        showWebhooks: true,
+        disableSearch: false,
+        minCharacterLengthToInitSearch: 3,
+        menuToggle: true,
+        onlyRequiredInSamples: false,
+        payloadSampleIdx: 0,
+        requestBodySnippetSelector: true,
+        responseSnippetSelector: true,
+        scalarProjection: false,
+        simpleOneOfTypeLabel: false,
+        sortEnumValuesAlphabetically: false,
+        sortOperationsAlphabetically: false,
+        sortTagsAlphabetically: false,
+        unstable_ignoreMimeParameters: false,
+        generatedPayloadSamplesMaxDepth: 10,
+        maxDisplayedEnumValues: 10,
+
+        // Code samples
+        generateCodeSamples: {
+          languages: [
+            { lang: 'curl', label: 'cURL' },
+            { lang: 'Python', label: 'Python' },
+            { lang: 'JavaScript', label: 'JavaScript' },
+            { lang: 'Go', label: 'Go' },
+            { lang: 'Java', label: 'Java' }
+          ]
+        },
+
+        // Routing
+        routingStrategy: 'hash',
+        scrollYOffset: 0,
+
+        // Native scrollbars
+        nativeScrollbars: false,
+
+        // Hide schema titles
+        hideSchemaTitles: false,
+
+        // Simple oneOf type label
+        simpleOneOfTypeLabel: false,
+
+        // Suppress warnings
+        suppressWarnings: false,
+
+        // Hide single request sample tab
+        hideSingleRequestSampleTab: false,
+
+        // Schema expansion level
+        schemaExpansionLevel: 2,
+
+        // Response samples max depth
+        responseSamplesMaxDepth: 5,
+
+        // Request body samples max depth
+        requestBodySamplesMaxDepth: 5
+      },
+      document.getElementById('redoc-container'),
+      function() {
+        console.log('Redoc loaded successfully');
+      }
+    );
+  </script>
+
+  <!-- Google Analytics (optional) -->
+  <!--
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'GA_MEASUREMENT_ID');
+  </script>
+  -->
+</body>
+</html>
