@@ -31,6 +31,13 @@ export type { ExclusionReason, IdentificationSources, RecordsRemoved, ScreeningP
 // Paper Analysis
 export { PaperAnalysisComponent } from './paperAnalysis/paperAnalysisComponent.js';
 
+// Mail
+export {
+  MailComponent,
+  createMailComponent,
+  type MailComponentConfig,
+} from './mail/index.js';
+
 // Bookshelf
 export { BookViewerComponent, WorkspaceInfoComponent } from './bookshelfComponents.js';
 

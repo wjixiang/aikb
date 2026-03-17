@@ -1,0 +1,37 @@
+{
+  "name": "agent-mailbox",
+  "version": "1.0.0",
+  "description": "Email-style message system for multi-agent communication",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.7.0",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.6",
+    "prisma": "^5.22.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "@fastify/swagger": "^9.7.0",
+    "@fastify/swagger-ui": "^5.2.5",
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^5.22.0",
+    "agent-lib": "workspace:*",
+    "dotenv": "^17.3.1",
+    "fastify": "^5.8.2",
+    "fastify-plugin": "^4.5.1",
+    "pg": "^8.16.3"
+  }
+}

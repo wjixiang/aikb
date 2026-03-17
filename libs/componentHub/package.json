@@ -25,6 +25,10 @@
     "./PRISMA": {
       "import": "./dist/PRISMA/index.js",
       "types": "./src/PRISMA/index.ts"
+    },
+    "./mail": {
+      "import": "./dist/mail/index.js",
+      "types": "./src/mail/index.ts"
     }
   },
   "scripts": {

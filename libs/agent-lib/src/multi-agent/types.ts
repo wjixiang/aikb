@@ -632,15 +632,40 @@ export function getTargetDisplayName(target: TaskTarget): string {
 // =============================================================================
 
 /**
- * Mail Address - 类似电子邮件地址
- * - expert:expertId → "expert:pubmed"
- * - mc:mcId → "mc:main"
- * - broadcast → "broadcast"
+ * Mail Address - Unified email-style address
+ * Examples: "pubmed@expert", "analysis@expert", "main@mc", "broadcast"
+ * Format: "user@domain" or just "name" for simple addresses
  */
-export type MailAddress =
-  | { type: 'expert'; expertId: string }
-  | { type: 'mc'; mcId: string }
-  | { type: 'broadcast' };
+export type MailAddress = string;
+
+/**
+ * Parse address string to get domain and user parts
+ */
+export function parseMailAddress(address: MailAddress): { user: string; domain: string } {
+  if (address.includes('@')) {
+    const [user, domain] = address.split('@');
+    return { user, domain };
+  }
+  // No domain specified, treat as simple address
+  return { user: address, domain: '' };
+}
+
+/**
+ * Check if address is a broadcast
+ */
+export function isBroadcast(address: MailAddress): boolean {
+  return address === 'broadcast' || address === '@broadcast';
+}
+
+/**
+ * Create a MailAddress from user and domain
+ */
+export function createMailAddress(user: string, domain?: string): MailAddress {
+  if (!domain) {
+    return user;
+  }
+  return `${user}@${domain}`;
+}
 
 /**
  * Mail priority
@@ -648,43 +673,52 @@ export type MailAddress =
 export type MailPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 /**
+ * Mail message status
+ */
+export interface MailMessageStatus {
+  read: boolean;
+  starred: boolean;
+  deleted: boolean;
+}
+
+/**
  * Mail message - 邮件消息
  */
 export interface MailMessage {
-  /** 唯一邮件 ID */
+  /** Unique message identifier */
   messageId: string;
-  /** 邮件主题 */
+  /** Message subject */
   subject: string;
-  /** 邮件正文 */
+  /** Message body/content */
   body?: string;
-  /** 发件人 */
+  /** Sender address */
   from: MailAddress;
-  /** 收件人 */
-  to: MailAddress;
-  /** 抄送 */
+  /** Recipient address(es) */
+  to: MailAddress | MailAddress[];
+  /** Carbon copy recipients */
   cc?: MailAddress[];
-  /** 密送 */
+  /** Blind carbon copy recipients */
   bcc?: MailAddress[];
-  /** 附件 S3 keys */
+  /** Attachment URLs or S3 keys */
   attachments?: string[];
-  /** 额外数据 */
+  /** Custom payload data */
   payload?: Record<string, unknown>;
-  /** 优先级 */
-  priority?: MailPriority;
-  /** 发送时间 */
-  sentAt: Date;
-  /** 已读状态 */
-  read: boolean;
-  /** 星标 */
-  starred: boolean;
-  /** 已删除 */
-  deleted: boolean;
-  /** 回复的邮件 ID */
-  inReplyTo?: string;
-  /** 邮件引用链 */
-  references?: string[];
-  /** 关联的任务 ID */
+  /** Message priority */
+  priority: MailPriority;
+  /** Message status */
+  status: MailMessageStatus;
+  /** Task ID associated with this message */
   taskId?: string;
+  /** Timestamp when message was sent (ISO string) */
+  sentAt: string;
+  /** Timestamp when message was received (ISO string) */
+  receivedAt: string;
+  /** Timestamp when message was last modified (ISO string) */
+  updatedAt: string;
+  /** Reply to message ID */
+  inReplyTo?: string;
+  /** Message reference chain */
+  references?: string[];
 }
 
 /**
@@ -720,13 +754,225 @@ export interface IMailListener {
 export type SubscriptionId = string;
 
 /**
- * 订阅信息
+ * 邮件订阅信息
  */
-export interface Subscription {
+export interface MailSubscription {
   subscriptionId: SubscriptionId;
   address: MailAddress;
   listener: IMailListener;
   createdAt: Date;
+}
+
+// =============================================================================
+// Query Types - 查询类型
+// =============================================================================
+
+/**
+ * Pagination options for inbox queries
+ */
+export interface PaginationOptions {
+  /** Maximum number of results to return */
+  limit: number;
+  /** Number of results to skip */
+  offset: number;
+}
+
+/**
+ * Inbox query options
+ */
+export interface InboxQuery {
+  /** Filter by unread status only */
+  unreadOnly?: boolean;
+  /** Filter by star status */
+  starredOnly?: boolean;
+  /** Filter by sender */
+  from?: MailAddress;
+  /** Filter by subject contains */
+  subject?: string;
+  /** Filter by body contains */
+  body?: string;
+  /** Sort field */
+  sortBy?: 'sentAt' | 'receivedAt' | 'subject' | 'priority';
+  /** Sort order */
+  sortOrder?: 'asc' | 'desc';
+  /** Pagination options */
+  pagination?: PaginationOptions;
+}
+
+/**
+ * Search query options
+ */
+export interface SearchQuery {
+  /** Filter by sender */
+  from?: MailAddress;
+  /** Filter by recipient */
+  to?: MailAddress;
+  /** Filter by subject contains */
+  subject?: string;
+  /** Filter by body contains */
+  body?: string;
+  /** Filter by unread status */
+  unread?: boolean;
+  /** Filter by read status */
+  read?: boolean;
+  /** Filter by star status */
+  starred?: boolean;
+  /** Filter by priority */
+  priority?: MailPriority;
+  /** Filter by date range - start (ISO string) */
+  dateFrom?: string;
+  /** Filter by date range - end (ISO string) */
+  dateTo?: string;
+  /** Pagination options */
+  pagination?: PaginationOptions;
+}
+
+/**
+ * Inbox result with metadata
+ */
+export interface InboxResult {
+  /** The requested address */
+  address: MailAddress;
+  /** List of messages */
+  messages: MailMessage[];
+  /** Total number of messages matching query */
+  total: number;
+  /** Number of unread messages */
+  unread: number;
+  /** Number of starred messages */
+  starred: number;
+}
+
+// =============================================================================
+// Storage Interface - 存储接口
+// =============================================================================
+
+/**
+ * Result of send operation
+ */
+export interface SendResult {
+  success: boolean;
+  messageId?: string;
+  sentAt?: string;
+  error?: string;
+}
+
+/**
+ * Storage operation result
+ */
+export interface StorageResult<T = void> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+/**
+ * Mail storage interface defining operations for storing and retrieving mail
+ */
+export interface IMailStorage {
+  /** Initialize the storage backend */
+  initialize(): Promise<void>;
+
+  /**
+   * Send/save a mail message
+   * @param mail The outgoing mail to send
+   * @returns Result containing messageId on success
+   */
+  send(mail: OutgoingMail): Promise<SendResult>;
+
+  /**
+   * Get messages for a specific inbox address
+   * @param address The mailbox address to query
+   * @param query Optional query parameters
+   * @returns Inbox result with messages and metadata
+   */
+  getInbox(address: MailAddress, query?: InboxQuery): Promise<InboxResult>;
+
+  /**
+   * Get a single message by ID
+   * @param messageId The message ID to retrieve
+   * @returns The mail message if found
+   */
+  getMessage(messageId: string): Promise<MailMessage | null>;
+
+  /**
+   * Get unread message count for an address
+   * @param address The mailbox address
+   * @returns Number of unread messages
+   */
+  getUnreadCount(address: MailAddress): Promise<number>;
+
+  /**
+   * Mark a message as read
+   * @param messageId The message ID to mark as read
+   * @returns Result of the operation
+   */
+  markAsRead(messageId: string): Promise<StorageResult>;
+
+  /**
+   * Mark a message as unread
+   * @param messageId The message ID to mark as unread
+   * @returns Result of the operation
+   */
+  markAsUnread(messageId: string): Promise<StorageResult>;
+
+  /**
+   * Star a message
+   * @param messageId The message ID to star
+   * @returns Result of the operation
+   */
+  starMessage(messageId: string): Promise<StorageResult>;
+
+  /**
+   * Unstar a message
+   * @param messageId The message ID to unstar
+   * @returns Result of the operation
+   */
+  unstarMessage(messageId: string): Promise<StorageResult>;
+
+  /**
+   * Delete a message (soft delete)
+   * @param messageId The message ID to delete
+   * @returns Result of the operation
+   */
+  deleteMessage(messageId: string): Promise<StorageResult>;
+
+  /**
+   * Permanently remove a message
+   * @param messageId The message ID to remove
+   * @returns Result of the operation
+   */
+  removeMessage(messageId: string): Promise<StorageResult>;
+
+  /**
+   * Search messages across all mailboxes
+   * @param query Search query parameters
+   * @returns List of matching messages
+   */
+  search(query: SearchQuery): Promise<MailMessage[]>;
+
+  /**
+   * Register a new mailbox address
+   * @param address The address to register
+   * @returns Result of the operation
+   */
+  registerAddress(address: MailAddress): Promise<StorageResult>;
+
+  /**
+   * Check if an address is registered
+   * @param address The address to check
+   * @returns True if the address is registered
+   */
+  isAddressRegistered(address: MailAddress): Promise<boolean>;
+
+  /**
+   * Get all registered addresses
+   * @returns List of all registered addresses
+   */
+  getRegisteredAddresses(): Promise<MailAddress[]>;
+
+  /** Close/cleanup storage connections */
+  close(): Promise<void>;
 }
 
 // =============================================================================

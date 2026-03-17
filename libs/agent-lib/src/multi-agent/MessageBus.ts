@@ -14,25 +14,23 @@ import type {
   OutgoingMail,
   IMailListener,
   SubscriptionId,
-  Subscription,
+  MailSubscription,
   MailPriority,
 } from './types.js';
+import { isBroadcast } from './types.js';
+
+/**
+ * Helper function to convert Map to array of entries
+ */
+function ArrayFromMap<T>(map: Map<string, T>): Array<[string, T]> {
+  return Array.from(map.entries());
+}
 
 /**
  * Generate unique ID
  */
 function generateId(): string {
   return `mail_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-}
-
-/**
- * 将 MailAddress 转换为字符串键
- */
-function addressToKey(address: MailAddress): string {
-  if (address.type === 'broadcast') {
-    return 'broadcast';
-  }
-  return `${address.type}:${address.type === 'mc' ? address.mcId : address.expertId}`;
 }
 
 /**
@@ -44,13 +42,16 @@ export class MessageBus implements IMessageBus {
   private readonly mailboxes: Map<string, MailMessage[]> = new Map();
 
   // 订阅：address -> 订阅者列表
-  private readonly subscriptions: Map<string, Map<SubscriptionId, IMailListener>> = new Map();
+  private readonly subscriptions: Map<
+    string,
+    Map<SubscriptionId, IMailListener>
+  > = new Map();
 
   // 订阅 ID 管理
   private subscriptionIds: Set<SubscriptionId> = new Set();
 
   // 初始化状态
-  private initialized: boolean = false;
+  private initialized = false;
 
   /**
    * 初始化 MessageBus
@@ -118,7 +119,7 @@ export class MessageBus implements IMessageBus {
       };
 
       // 写入收件人收件箱
-      const inboxKey = addressToKey(recipient);
+      const inboxKey = recipient; // MailAddress is now a simple string
       if (!this.mailboxes.has(inboxKey)) {
         this.mailboxes.set(inboxKey, []);
       }
@@ -141,24 +142,22 @@ export class MessageBus implements IMessageBus {
     this.ensureReady();
 
     // 获取所有已订阅的地址
-    const allAddresses: MailAddress[] = [];
-    for (const [key] of this.subscriptions) {
-      if (key === 'broadcast') {
-        allAddresses.push({ type: 'broadcast' });
-      } else if (key.startsWith('expert:')) {
-        allAddresses.push({ type: 'expert', expertId: key.replace('expert:', '') });
-      } else if (key.startsWith('mc:')) {
-        allAddresses.push({ type: 'mc', mcId: key.replace('mc:', '') });
-      }
+    const allAddresses: MailAddress[] = Array.from(
+      this.subscriptions.keys(),
+    ).filter((key) => !isBroadcast(key));
+
+    // 发送给每个地址
+    const results: MailMessage[] = [];
+    for (const address of allAddresses) {
+      const singleMail: OutgoingMail = {
+        ...mail,
+        to: address,
+      };
+      const result = await this.send(singleMail);
+      results.push(result);
     }
 
-    // 发送给所有地址
-    const broadcastMail: OutgoingMail = {
-      ...mail,
-      to: allAddresses,
-    };
-
-    return this.send(broadcastMail);
+    return results;
   }
 
   // ==================== 订阅机制 ====================
@@ -171,7 +170,7 @@ export class MessageBus implements IMessageBus {
   subscribe(address: MailAddress, listener: IMailListener): SubscriptionId {
     this.ensureReady();
 
-    const key = addressToKey(address);
+    const key = address; // MailAddress is now a simple string
 
     if (!this.subscriptions.has(key)) {
       this.subscriptions.set(key, new Map());
@@ -192,7 +191,7 @@ export class MessageBus implements IMessageBus {
       return;
     }
 
-    for (const [key, listeners] of this.subscriptions.entries()) {
+    for (const [key, listeners] of ArrayFromMap(this.subscriptions)) {
       if (listeners.has(subscriptionId)) {
         listeners.delete(subscriptionId);
         this.subscriptionIds.delete(subscriptionId);
@@ -209,12 +208,12 @@ export class MessageBus implements IMessageBus {
   /**
    * 获取所有订阅
    */
-  getSubscriptions(): Subscription[] {
-    const result: Subscription[] = [];
+  getSubscriptions(): MailSubscription[] {
+    const result: MailSubscription[] = [];
 
-    for (const [key, listeners] of this.subscriptions.entries()) {
-      const address = this.parseAddress(key);
-      for (const [id, listener] of listeners.entries()) {
+    for (const [key, listeners] of Array.from(this.subscriptions.entries())) {
+      const address = key; // MailAddress is now a simple string
+      for (const [id, listener] of ArrayFromMap(listeners)) {
         result.push({
           subscriptionId: id,
           address,
@@ -235,18 +234,18 @@ export class MessageBus implements IMessageBus {
   getInbox(address: MailAddress): MailMessage[] {
     this.ensureReady();
 
-    const key = addressToKey(address);
+    const key = address; // MailAddress is now a simple string
     const messages = this.mailboxes.get(key) || [];
 
     // 返回未删除的消息
-    return messages.filter(m => !m.deleted);
+    return messages.filter((m) => !m.deleted);
   }
 
   /**
    * 获取未读邮件
    */
   getUnreadMail(address: MailAddress): MailMessage[] {
-    return this.getInbox(address).filter(m => !m.read);
+    return this.getInbox(address).filter((m) => !m.read);
   }
 
   /**
@@ -304,8 +303,8 @@ export class MessageBus implements IMessageBus {
   async permanentlyDeleteMessage(messageId: string): Promise<void> {
     this.ensureReady();
 
-    for (const [key, messages] of this.mailboxes.entries()) {
-      const index = messages.findIndex(m => m.messageId === messageId);
+    for (const [key, messages] of ArrayFromMap(this.mailboxes)) {
+      const index = messages.findIndex((m) => m.messageId === messageId);
       if (index !== -1) {
         messages.splice(index, 1);
         return;
@@ -329,15 +328,24 @@ export class MessageBus implements IMessageBus {
 
     const results: MailMessage[] = [];
 
-    for (const messages of this.mailboxes.values()) {
+    for (const messages of Array.from(this.mailboxes.values())) {
       for (const mail of messages) {
         if (mail.deleted) continue;
 
-        // 过滤条件
-        if (query.from && !this.addressesEqual(mail.from, query.from)) continue;
-        if (query.to && !this.addressesEqual(mail.to, query.to)) continue;
-        if (query.subject && !mail.subject.toLowerCase().includes(query.subject.toLowerCase())) continue;
-        if (query.body && (!mail.body || !mail.body.toLowerCase().includes(query.body.toLowerCase()))) continue;
+        // 过滤条件 - comparing strings directly now
+        if (query.from && mail.from !== query.from) continue;
+        if (query.to && mail.to !== query.to) continue;
+        if (
+          query.subject &&
+          !mail.subject.toLowerCase().includes(query.subject.toLowerCase())
+        )
+          continue;
+        if (
+          query.body &&
+          (!mail.body ||
+            !mail.body.toLowerCase().includes(query.body.toLowerCase()))
+        )
+          continue;
         if (query.unread && mail.read) continue;
 
         results.push(mail);
@@ -352,8 +360,11 @@ export class MessageBus implements IMessageBus {
   /**
    * 新邮件到达通知 - 事件驱动核心
    */
-  private async notifyNewMail(address: MailAddress, mail: MailMessage): Promise<void> {
-    const key = addressToKey(address);
+  private async notifyNewMail(
+    address: MailAddress,
+    mail: MailMessage,
+  ): Promise<void> {
+    const key = address; // MailAddress is now a simple string
     const listeners = this.subscriptions.get(key);
 
     if (!listeners || listeners.size === 0) {
@@ -362,7 +373,7 @@ export class MessageBus implements IMessageBus {
 
     // 通知所有订阅者
     const promises: Promise<void>[] = [];
-    for (const [id, listener] of listeners.entries()) {
+    for (const [id, listener] of ArrayFromMap(listeners)) {
       promises.push(
         listener.onNewMail(mail).catch(async (error) => {
           if (listener.onError) {
@@ -370,7 +381,7 @@ export class MessageBus implements IMessageBus {
           } else {
             console.error(`[MessageBus] Listener ${id} error:`, error);
           }
-        })
+        }),
       );
     }
 
@@ -381,9 +392,12 @@ export class MessageBus implements IMessageBus {
   /**
    * 更新邮件状态
    */
-  private updateMessage(messageId: string, updates: Partial<MailMessage>): void {
-    for (const messages of this.mailboxes.values()) {
-      const mail = messages.find(m => m.messageId === messageId);
+  private updateMessage(
+    messageId: string,
+    updates: Partial<MailMessage>,
+  ): void {
+    for (const messages of Array.from(this.mailboxes.values())) {
+      const mail = messages.find((m) => m.messageId === messageId);
       if (mail) {
         Object.assign(mail, updates);
         return;
@@ -392,32 +406,13 @@ export class MessageBus implements IMessageBus {
   }
 
   /**
-   * 解析地址字符串
-   */
-  private parseAddress(key: string): MailAddress {
-    if (key === 'broadcast') {
-      return { type: 'broadcast' };
-    }
-    const [type, id] = key.split(':');
-    if (type === 'expert') {
-      return { type: 'expert', expertId: id };
-    }
-    return { type: 'mc', mcId: id };
-  }
-
-  /**
-   * 比较地址是否相等
-   */
-  private addressesEqual(a: MailAddress, b: MailAddress): boolean {
-    return addressToKey(a) === addressToKey(b);
-  }
-
-  /**
    * 确保已初始化
    */
   private ensureReady(): void {
     if (!this.initialized) {
-      throw new Error('MessageBus is not initialized. Call initialize() first.');
+      throw new Error(
+        'MessageBus is not initialized. Call initialize() first.',
+      );
     }
   }
 
@@ -464,7 +459,7 @@ export interface IMessageBus {
   // 订阅
   subscribe(address: MailAddress, listener: IMailListener): SubscriptionId;
   unsubscribe(subscriptionId: SubscriptionId): void;
-  getSubscriptions(): Subscription[];
+  getSubscriptions(): MailSubscription[];
 
   // 收件箱
   getInbox(address: MailAddress): MailMessage[];
