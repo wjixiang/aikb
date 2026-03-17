@@ -235,4 +235,144 @@ describe('PostgreMailStorage E2E', () => {
       expect(message).toBeNull();
     });
   });
+
+  describe('replyToMessage', () => {
+    it('should reply to a message', async () => {
+      // First send a message
+      const mail: OutgoingMail = {
+        from: testAddress1,
+        to: testAddress2,
+        subject: 'Original message',
+        body: 'Original body',
+      };
+      const sendResult = await storage.send(mail);
+      expect(sendResult.success).toBe(true);
+
+      const messageId = sendResult.messageId + '_0';
+
+      // Reply to the message
+      const replyResult = await storage.replyToMessage(messageId, {
+        body: 'This is a reply',
+      });
+
+      expect(replyResult.success).toBe(true);
+      expect(replyResult.messageId).toBeDefined();
+    });
+
+    it('should return error for non-existent message', async () => {
+      const result = await storage.replyToMessage('non_existent_id', {
+        body: 'This is a reply',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('not found');
+    });
+  });
+
+  describe('getThread', () => {
+    it('should get message thread', async () => {
+      // Send a message
+      const mail: OutgoingMail = {
+        from: testAddress1,
+        to: testAddress2,
+        subject: 'Thread test',
+        body: 'Original message',
+      };
+      const sendResult = await storage.send(mail);
+      const messageId = sendResult.messageId + '_0';
+
+      // Reply to create a thread
+      await storage.replyToMessage(messageId, {
+        body: 'Reply message',
+      });
+
+      // Get the thread
+      const thread = await storage.getThread(messageId);
+
+      expect(thread).not.toBeNull();
+      expect(thread?.rootMessage).toBeDefined();
+      expect(thread?.messages.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should return null for non-existent message', async () => {
+      const thread = await storage.getThread('non_existent_id');
+
+      expect(thread).toBeNull();
+    });
+  });
+
+  describe('batchOperation', () => {
+    it('should mark multiple messages as read', async () => {
+      // Send two messages
+      const mail1: OutgoingMail = {
+        from: testAddress1,
+        to: testAddress2,
+        subject: 'Batch test 1',
+        body: 'Message 1',
+      };
+      const mail2: OutgoingMail = {
+        from: testAddress1,
+        to: testAddress2,
+        subject: 'Batch test 2',
+        body: 'Message 2',
+      };
+
+      const result1 = await storage.send(mail1);
+      const result2 = await storage.send(mail2);
+
+      const messageIds = [
+        result1.messageId + '_0',
+        result2.messageId + '_0',
+      ];
+
+      // Batch mark as read
+      const batchResult = await storage.batchOperation({
+        operation: 'markAsRead',
+        messageIds,
+      });
+
+      expect(batchResult.success).toBe(true);
+      expect(batchResult.succeeded).toBe(2);
+      expect(batchResult.failed).toBe(0);
+
+      // Verify messages are marked as read
+      for (const msgId of messageIds) {
+        const msg = await storage.getMessage(msgId);
+        expect(msg?.status.read).toBe(true);
+      }
+    });
+
+    it('should handle invalid operation type', async () => {
+      const result = await storage.batchOperation({
+        operation: 'invalidOperation' as any,
+        messageIds: ['msg1', 'msg2'],
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.failed).toBe(2);
+    });
+
+    it('should handle partial failures', async () => {
+      // Send one message
+      const mail: OutgoingMail = {
+        from: testAddress1,
+        to: testAddress2,
+        subject: 'Partial failure test',
+        body: 'Test',
+      };
+      const sendResult = await storage.send(mail);
+
+      // Try to mark one valid and one invalid message
+      const result = await storage.batchOperation({
+        operation: 'markAsRead',
+        messageIds: [sendResult.messageId + '_0', 'non_existent_id'],
+      });
+
+      // Should have partial success
+      expect(result.succeeded).toBe(1);
+      expect(result.failed).toBe(1);
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.length).toBe(1);
+    });
+  });
 });

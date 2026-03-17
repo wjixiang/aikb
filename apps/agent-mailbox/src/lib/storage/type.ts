@@ -185,6 +185,70 @@ export interface SearchQuery {
 }
 
 /**
+ * Reply to a message
+ */
+export interface ReplyMail {
+  /** Reply body content */
+  body: string;
+  /** Attachment URLs or S3 keys */
+  attachments?: string[];
+  /** Custom payload data */
+  payload?: Record<string, unknown>;
+  /** Sender address (optional, defaults to original recipient) */
+  from?: MailAddress;
+}
+
+/**
+ * Result of reply operation
+ */
+export interface ReplyResult {
+  success: boolean;
+  messageId?: string;
+  sentAt?: string;
+  error?: string;
+}
+
+/**
+ * Thread result containing related messages
+ */
+export interface ThreadResult {
+  /** The root message of the thread */
+  rootMessage: MailMessage;
+  /** All messages in the thread (including root) */
+  messages: MailMessage[];
+  /** Total count of messages in thread */
+  total: number;
+}
+
+/**
+ * Batch operation type
+ */
+export type BatchOperationType = 'markAsRead' | 'markAsUnread' | 'star' | 'unstar' | 'delete';
+
+/**
+ * Batch operation request
+ */
+export interface BatchOperation {
+  /** Operation type */
+  operation: BatchOperationType;
+  /** Message IDs to operate on */
+  messageIds: string[];
+}
+
+/**
+ * Batch operation result
+ */
+export interface BatchOperationResult {
+  success: boolean;
+  /** Number of successful operations */
+  succeeded: number;
+  /** Number of failed operations */
+  failed: number;
+  /** Details of failures */
+  errors?: Array<{ messageId: string; error: string }>;
+}
+
+/**
  * Inbox result with metadata
  */
 export interface InboxResult {
@@ -309,6 +373,28 @@ export interface IMailStorage {
    * @returns List of matching messages
    */
   search(query: SearchQuery): Promise<MailMessage[]>;
+
+  /**
+   * Reply to a message
+   * @param messageId The message ID to reply to
+   * @param reply The reply content
+   * @returns Result of the reply operation
+   */
+  replyToMessage(messageId: string, reply: ReplyMail): Promise<ReplyResult>;
+
+  /**
+   * Get message thread (conversation chain)
+   * @param messageId Any message ID in the thread
+   * @returns Thread result with related messages
+   */
+  getThread(messageId: string): Promise<ThreadResult | null>;
+
+  /**
+   * Perform batch operations on messages
+   * @param operation The batch operation to perform
+   * @returns Result of the batch operation
+   */
+  batchOperation(operation: BatchOperation): Promise<BatchOperationResult>;
 
   /**
    * Register a new mailbox address
