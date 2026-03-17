@@ -16,8 +16,19 @@ import {
   type InboxResult,
   type SearchQuery,
   type MailComponentConfig,
+  type SendResult,
+  type StorageResult,
 } from 'agent-lib/multi-agent';
-import { mailToolSchemas } from './mailSchemas';
+import {
+  mailToolSchemas,
+  type SendMailParams,
+  type GetInboxParams,
+  type GetUnreadCountParams,
+  type MessageIdParams,
+  type SearchMessagesParams,
+  type ReplyToMessageParams,
+  type RegisterAddressParams,
+} from './mailSchemas';
 
 /**
  * MailComponent Configuration
@@ -103,7 +114,7 @@ export class MailComponent extends ToolComponent {
 
   override handleToolCall = async (
     toolName: string,
-    params: any,
+    params: unknown,
   ): Promise<ToolCallResult> => {
     try {
       switch (toolName) {
@@ -144,7 +155,7 @@ export class MailComponent extends ToolComponent {
     }
   };
 
-  private async handleSendMail(params: any): Promise<ToolCallResult> {
+  private async handleSendMail(params: SendMailParams): Promise<ToolCallResult> {
     const mail: OutgoingMail = {
       from: this.config.defaultAddress || params.from,
       to: params.to,
@@ -166,7 +177,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleGetInbox(params: any): Promise<ToolCallResult> {
+  private async handleGetInbox(params: GetInboxParams): Promise<ToolCallResult> {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
@@ -193,7 +204,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleGetUnreadCount(params: any): Promise<ToolCallResult> {
+  private async handleGetUnreadCount(params: GetUnreadCountParams): Promise<ToolCallResult> {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
@@ -210,7 +221,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleMarkAsRead(params: any): Promise<ToolCallResult> {
+  private async handleMarkAsRead(params: MessageIdParams): Promise<ToolCallResult> {
     const result = await this.markAsRead(params.messageId);
     return {
       data: result,
@@ -220,7 +231,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleMarkAsUnread(params: any): Promise<ToolCallResult> {
+  private async handleMarkAsUnread(params: MessageIdParams): Promise<ToolCallResult> {
     const result = await this.markAsUnread(params.messageId);
     return {
       data: result,
@@ -230,7 +241,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleStarMessage(params: any): Promise<ToolCallResult> {
+  private async handleStarMessage(params: MessageIdParams): Promise<ToolCallResult> {
     const result = await this.starMessage(params.messageId);
     return {
       data: result,
@@ -240,7 +251,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleUnstarMessage(params: any): Promise<ToolCallResult> {
+  private async handleUnstarMessage(params: MessageIdParams): Promise<ToolCallResult> {
     const result = await this.unstarMessage(params.messageId);
     return {
       data: result,
@@ -250,7 +261,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleDeleteMessage(params: any): Promise<ToolCallResult> {
+  private async handleDeleteMessage(params: MessageIdParams): Promise<ToolCallResult> {
     const result = await this.deleteMessage(params.messageId);
     return {
       data: result,
@@ -260,7 +271,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleSearchMessages(params: any): Promise<ToolCallResult> {
+  private async handleSearchMessages(params: SearchMessagesParams): Promise<ToolCallResult> {
     const query: SearchQuery = {
       subject: params.query,
       body: params.query,
@@ -279,7 +290,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleReplyToMessage(params: any): Promise<ToolCallResult> {
+  private async handleReplyToMessage(params: ReplyToMessageParams): Promise<ToolCallResult> {
     // First get the original message to find the sender
     const messages = await this.searchMessages({ subject: params.messageId });
     const originalMessage = messages.find(m => m.messageId === params.messageId);
@@ -312,7 +323,7 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleRegisterAddress(params: any): Promise<ToolCallResult> {
+  private async handleRegisterAddress(params: RegisterAddressParams): Promise<ToolCallResult> {
     const result = await this.registerAddress(params.address);
     return {
       data: result,
@@ -327,8 +338,8 @@ export class MailComponent extends ToolComponent {
   /**
    * Send an email message
    */
-  async sendMail(mail: OutgoingMail): Promise<{ success: boolean; messageId?: string; sentAt?: string; error?: string }> {
-    const response = await this.fetchApi('/send', {
+  async sendMail(mail: OutgoingMail): Promise<SendResult> {
+    const response = await this.fetchApi<SendResult>('/send', {
       method: 'POST',
       body: JSON.stringify(mail),
     });
@@ -347,7 +358,7 @@ export class MailComponent extends ToolComponent {
     if (query?.sortBy) queryParams.set('sortBy', query.sortBy);
     if (query?.sortOrder) queryParams.set('sortOrder', query.sortOrder);
 
-    const response = await this.fetchApi(`/inbox/${encodeURIComponent(address)}?${queryParams}`);
+    const response = await this.fetchApi<InboxResult>(`/inbox/${encodeURIComponent(address)}?${queryParams}`);
     return response;
   }
 
@@ -355,7 +366,7 @@ export class MailComponent extends ToolComponent {
    * Get unread message count
    */
   async getUnreadCount(address: MailAddress): Promise<number> {
-    const response = await this.fetchApi(`/inbox/${encodeURIComponent(address)}/unread`);
+    const response = await this.fetchApi<number>(`/inbox/${encodeURIComponent(address)}/unread`);
     return response;
   }
 
@@ -370,43 +381,43 @@ export class MailComponent extends ToolComponent {
   /**
    * Mark a message as read
    */
-  async markAsRead(messageId: string): Promise<{ success: boolean; error?: string }> {
-    return this.fetchApi(`/${messageId}/read`, { method: 'POST' });
+  async markAsRead(messageId: string): Promise<StorageResult> {
+    return this.fetchApi<StorageResult>(`/${messageId}/read`, { method: 'POST' });
   }
 
   /**
    * Mark a message as unread
    */
-  async markAsUnread(messageId: string): Promise<{ success: boolean; error?: string }> {
-    return this.fetchApi(`/${messageId}/unread`, { method: 'POST' });
+  async markAsUnread(messageId: string): Promise<StorageResult> {
+    return this.fetchApi<StorageResult>(`/${messageId}/unread`, { method: 'POST' });
   }
 
   /**
    * Star a message
    */
-  async starMessage(messageId: string): Promise<{ success: boolean; error?: string }> {
-    return this.fetchApi(`/${messageId}/star`, { method: 'POST' });
+  async starMessage(messageId: string): Promise<StorageResult> {
+    return this.fetchApi<StorageResult>(`/${messageId}/star`, { method: 'POST' });
   }
 
   /**
    * Unstar a message
    */
-  async unstarMessage(messageId: string): Promise<{ success: boolean; error?: string }> {
-    return this.fetchApi(`/${messageId}/unstar`, { method: 'POST' });
+  async unstarMessage(messageId: string): Promise<StorageResult> {
+    return this.fetchApi<StorageResult>(`/${messageId}/unstar`, { method: 'POST' });
   }
 
   /**
    * Delete a message (soft delete)
    */
-  async deleteMessage(messageId: string): Promise<{ success: boolean; error?: string }> {
-    return this.fetchApi(`/${messageId}`, { method: 'DELETE' });
+  async deleteMessage(messageId: string): Promise<StorageResult> {
+    return this.fetchApi<StorageResult>(`/${messageId}`, { method: 'DELETE' });
   }
 
   /**
    * Search messages
    */
   async searchMessages(query: SearchQuery): Promise<MailMessage[]> {
-    return this.fetchApi('/search', {
+    return this.fetchApi<MailMessage[]>('/search', {
       method: 'POST',
       body: JSON.stringify(query),
     });
@@ -415,8 +426,8 @@ export class MailComponent extends ToolComponent {
   /**
    * Register a new address
    */
-  async registerAddress(address: MailAddress): Promise<{ success: boolean; error?: string }> {
-    return this.fetchApi('/register', {
+  async registerAddress(address: MailAddress): Promise<StorageResult> {
+    return this.fetchApi<StorageResult>('/register', {
       method: 'POST',
       body: JSON.stringify({ address }),
     });
@@ -425,7 +436,7 @@ export class MailComponent extends ToolComponent {
   /**
    * Internal fetch helper
    */
-  private async fetchApi(path: string, options: RequestInit = {}): Promise<any> {
+  private async fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.config.baseUrl}/api/v1/mail${path}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

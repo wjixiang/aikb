@@ -46,6 +46,18 @@ export {
   registerAddressParamsSchema,
 } from './mailSchemas.js';
 
+// Export parameter types derived from Zod schemas
+export type {
+  SendMailParams,
+  GetInboxParams,
+  GetUnreadCountParams,
+  MessageIdParams,
+  SearchMessagesParams,
+  ReplyToMessageParams,
+  RegisterAddressParams,
+  MailToolParams,
+} from './mailSchemas.js';
+
 // Re-export mail-related types from agent-lib for convenience
 export type {
   MailAddress,

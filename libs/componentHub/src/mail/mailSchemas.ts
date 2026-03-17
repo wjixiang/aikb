@@ -6,6 +6,27 @@ export type { MailComponentConfig };
 /**
  * Tool parameter schemas
  */
+
+// SendMail parameters
+export type SendMailParams = z.infer<typeof sendMailParamsSchema>;
+
+// GetInbox parameters
+export type GetInboxParams = z.infer<typeof getInboxParamsSchema>;
+
+// GetUnreadCount parameters
+export type GetUnreadCountParams = z.infer<typeof getUnreadCountParamsSchema>;
+
+// Message ID parameters (for markAsRead, markAsUnread, starMessage, unstarMessage, deleteMessage)
+export type MessageIdParams = z.infer<typeof messageIdParamsSchema>;
+
+// SearchMessages parameters
+export type SearchMessagesParams = z.infer<typeof searchMessagesParamsSchema>;
+
+// ReplyToMessage parameters
+export type ReplyToMessageParams = z.infer<typeof replyToMessageParamsSchema>;
+
+// RegisterAddress parameters
+export type RegisterAddressParams = z.infer<typeof registerAddressParamsSchema>;
 export const sendMailParamsSchema = z.object({
   to: z.string().describe('Recipient address (e.g., "pubmed@expert", "analysis@expert")'),
   subject: z.string().describe('Email subject line'),
@@ -51,6 +72,18 @@ export const replyToMessageParamsSchema = z.object({
 export const registerAddressParamsSchema = z.object({
   address: z.string().describe('Address to register (e.g., "myagent@expert")'),
 });
+
+/**
+ * Union type for all mail tool parameters
+ */
+export type MailToolParams =
+  | SendMailParams
+  | GetInboxParams
+  | GetUnreadCountParams
+  | MessageIdParams
+  | SearchMessagesParams
+  | ReplyToMessageParams
+  | RegisterAddressParams;
 
 /**
  * Tool schemas map
