@@ -110,10 +110,14 @@ export class MessageBus implements IMessageBus {
         attachments: mail.attachments,
         payload: mail.payload,
         priority: mail.priority || 'normal',
-        sentAt: new Date(),
-        read: false,
-        starred: false,
-        deleted: false,
+        sentAt: new Date().toISOString(),
+        receivedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: {
+          read: false,
+          starred: false,
+          deleted: false,
+        },
         inReplyTo: mail.inReplyTo,
         taskId: mail.taskId,
       };
@@ -238,14 +242,14 @@ export class MessageBus implements IMessageBus {
     const messages = this.mailboxes.get(key) || [];
 
     // 返回未删除的消息
-    return messages.filter((m) => !m.deleted);
+    return messages.filter((m) => !m.status.deleted);
   }
 
   /**
    * 获取未读邮件
    */
   getUnreadMail(address: MailAddress): MailMessage[] {
-    return this.getInbox(address).filter((m) => !m.read);
+    return this.getInbox(address).filter((m) => !m.status.read);
   }
 
   /**
@@ -330,7 +334,7 @@ export class MessageBus implements IMessageBus {
 
     for (const messages of Array.from(this.mailboxes.values())) {
       for (const mail of messages) {
-        if (mail.deleted) continue;
+        if (mail.status.deleted) continue;
 
         // 过滤条件 - comparing strings directly now
         if (query.from && mail.from !== query.from) continue;
@@ -346,7 +350,7 @@ export class MessageBus implements IMessageBus {
             !mail.body.toLowerCase().includes(query.body.toLowerCase()))
         )
           continue;
-        if (query.unread && mail.read) continue;
+        if (query.unread && mail.status.read) continue;
 
         results.push(mail);
       }
@@ -394,12 +398,38 @@ export class MessageBus implements IMessageBus {
    */
   private updateMessage(
     messageId: string,
-    updates: Partial<MailMessage>,
+    updates: Partial<MailMessage> & { read?: boolean; starred?: boolean; deleted?: boolean },
   ): void {
     for (const messages of Array.from(this.mailboxes.values())) {
       const mail = messages.find((m) => m.messageId === messageId);
       if (mail) {
-        Object.assign(mail, updates);
+        // Cast updates to any to handle both status and non-status properties
+        const upd = updates as unknown as {
+          read?: boolean;
+          starred?: boolean;
+          deleted?: boolean;
+          [key: string]: unknown;
+        };
+
+        // Handle nested status properties
+        if (
+          upd.read !== undefined ||
+          upd.starred !== undefined ||
+          upd.deleted !== undefined
+        ) {
+          mail.status = {
+            ...mail.status,
+            read: upd.read ?? mail.status.read,
+            starred: upd.starred ?? mail.status.starred,
+            deleted: upd.deleted ?? mail.status.deleted,
+          };
+        }
+        // Update other properties (exclude read, starred, deleted from being assigned directly)
+        const otherUpdates = { ...updates };
+        delete (otherUpdates as Record<string, unknown>)['read'];
+        delete (otherUpdates as Record<string, unknown>)['starred'];
+        delete (otherUpdates as Record<string, unknown>)['deleted'];
+        Object.assign(mail, otherUpdates);
         return;
       }
     }

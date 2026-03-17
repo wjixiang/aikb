@@ -12,8 +12,8 @@ describe('MessageBus', () => {
 
     describe('send and receive', () => {
         it('should send mail to recipient inbox', async () => {
-            const from: MailAddress = { type: 'mc', mcId: 'main' };
-            const to: MailAddress = { type: 'expert', expertId: 'pubmed' };
+            const from: MailAddress = 'main@mc';
+            const to: MailAddress = 'pubmed@expert';
 
             const mail = await messageBus.send({
                 from,
@@ -33,10 +33,10 @@ describe('MessageBus', () => {
         });
 
         it('should send to multiple recipients', async () => {
-            const from: MailAddress = { type: 'mc', mcId: 'main' };
+            const from: MailAddress = 'main@mc';
             const to: MailAddress[] = [
-                { type: 'expert', expertId: 'pubmed' },
-                { type: 'expert', expertId: 'analysis' },
+                'pubmed@expert',
+                'analysis@expert',
             ];
 
             await messageBus.send({
@@ -45,14 +45,14 @@ describe('MessageBus', () => {
                 subject: 'Process this',
             });
 
-            expect(messageBus.getInbox({ type: 'expert', expertId: 'pubmed' })).toHaveLength(1);
-            expect(messageBus.getInbox({ type: 'expert', expertId: 'analysis' })).toHaveLength(1);
+            expect(messageBus.getInbox('pubmed@expert')).toHaveLength(1);
+            expect(messageBus.getInbox('analysis@expert')).toHaveLength(1);
         });
     });
 
     describe('subscription', () => {
         it('should notify subscriber when new mail arrives', async () => {
-            const to: MailAddress = { type: 'expert', expertId: 'pubmed' };
+            const to: MailAddress = 'pubmed@expert';
 
             let receivedMail: MailMessage | null = null;
 
@@ -65,7 +65,7 @@ describe('MessageBus', () => {
             messageBus.subscribe(to, listener);
 
             await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Test mail',
             });
@@ -80,7 +80,7 @@ describe('MessageBus', () => {
             expect((receivedMail as MailMessage).subject).toBe('Test mail');
         });
         it('should allow unsubscribe', async () => {
-            const to: MailAddress = { type: 'expert', expertId: 'pubmed' };
+            const to: MailAddress = 'pubmed@expert';
 
             let callCount = 0;
             const listener: IMailListener = {
@@ -92,7 +92,7 @@ describe('MessageBus', () => {
             const subscriptionId = messageBus.subscribe(to, listener);
 
             await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Mail 1',
             });
@@ -103,7 +103,7 @@ describe('MessageBus', () => {
             messageBus.unsubscribe(subscriptionId);
 
             await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Mail 2',
             });
@@ -117,16 +117,16 @@ describe('MessageBus', () => {
 
     describe('mailbox operations', () => {
         it('should track unread count', async () => {
-            const to: MailAddress = { type: 'expert', expertId: 'pubmed' };
+            const to: MailAddress = 'pubmed@expert';
 
             await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Mail 1',
             });
 
             await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Mail 2',
             });
@@ -141,10 +141,10 @@ describe('MessageBus', () => {
         });
 
         it('should delete mail', async () => {
-            const to: MailAddress = { type: 'expert', expertId: 'pubmed' };
+            const to: MailAddress = 'pubmed@expert';
 
             const mail = await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'To be deleted',
             });
@@ -157,10 +157,10 @@ describe('MessageBus', () => {
         });
 
         it('should star mail', async () => {
-            const to: MailAddress = { type: 'expert', expertId: 'pubmed' };
+            const to: MailAddress = 'pubmed@expert';
 
             const mail = await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Important',
             });
@@ -168,22 +168,22 @@ describe('MessageBus', () => {
             await messageBus.starMessage(mail.messageId);
 
             const inbox = messageBus.getInbox(to);
-            expect(inbox[0].starred).toBe(true);
+            expect(inbox[0].status.starred).toBe(true);
         });
     });
 
     describe('search', () => {
         it('should search by subject', async () => {
-            const to: MailAddress = { type: 'expert', expertId: 'pubmed' };
+            const to: MailAddress = 'pubmed@expert';
 
             await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Search for cancer papers',
             });
 
             await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Search for diabetes papers',
             });
@@ -197,22 +197,22 @@ describe('MessageBus', () => {
         });
 
         it('should search by sender', async () => {
-            const to: MailAddress = { type: 'expert', expertId: 'pubmed' };
+            const to: MailAddress = 'pubmed@expert';
 
             await messageBus.send({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
                 to,
                 subject: 'Task 1',
             });
 
             await messageBus.send({
-                from: { type: 'expert', expertId: 'analysis' },
+                from: 'analysis@expert',
                 to,
                 subject: 'Task 2',
             });
 
             const results = messageBus.search({
-                from: { type: 'mc', mcId: 'main' },
+                from: 'main@mc',
             });
 
             expect(results).toHaveLength(1);
