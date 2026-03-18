@@ -212,6 +212,13 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
               sentAt: { type: 'string' },
             },
           },
+          500: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              error: { type: 'string' },
+            },
+          },
         },
       },
     },
@@ -245,6 +252,7 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
             from: request.body.from,
             to: request.body.to,
           });
+          return reply.status(500).send(result);
         }
 
         // Record request duration
@@ -502,6 +510,7 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           logger.debug('Message marked as read', { messageId });
         } else {
           logger.warn('Failed to mark message as read', { messageId, error: result.error });
+          return reply.status(500).send(result);
         }
 
         return result;
@@ -573,6 +582,7 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           logger.debug('Message marked as unread', { messageId });
         } else {
           logger.warn('Failed to mark message as unread', { messageId, error: result.error });
+          return reply.status(500).send(result);
         }
 
         return result;
@@ -644,6 +654,7 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           logger.debug('Message starred', { messageId });
         } else {
           logger.warn('Failed to star message', { messageId, error: result.error });
+          return reply.status(500).send(result);
         }
 
         return result;
@@ -715,6 +726,7 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           logger.debug('Message unstarred', { messageId });
         } else {
           logger.warn('Failed to unstar message', { messageId, error: result.error });
+          return reply.status(500).send(result);
         }
 
         return result;
@@ -981,6 +993,7 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           logger.info(`Address ${status}`, { address: request.body.address });
         } else {
           logger.warn('Failed to register address', { address: request.body.address, error: result.error });
+          return reply.status(500).send(result);
         }
 
         return result;
@@ -1375,6 +1388,17 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           { method: 'POST', route: '/mail/batch', status_code: result.success ? 200 : 500 },
           duration,
         );
+
+        if (!result.success) {
+          logger.warn('Batch operation failed', {
+            operation: request.body.operation,
+            messageCount: request.body.messageIds.length,
+            succeeded: result.succeeded,
+            failed: result.failed,
+            errors: result.errors,
+          });
+          return reply.status(500).send(result);
+        }
 
         logger.info('Batch operation completed', {
           operation: request.body.operation,

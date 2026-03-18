@@ -185,6 +185,28 @@ export class PostgreMailStorage implements IMailStorage {
     });
 
     try {
+      // Validate all recipient addresses are registered before sending
+      const unregisteredRecipients = [];
+      for (const recipient of recipients) {
+        const addressRecord = await this.prisma.registeredAddress.findUnique({
+          where: { address: recipient },
+        });
+        if (!addressRecord || !addressRecord.active) {
+          unregisteredRecipients.push(recipient);
+        }
+      }
+
+      if (unregisteredRecipients.length > 0) {
+        this.logger.warn('Attempted to send mail to unregistered addresses', {
+          from: mail.from,
+          unregisteredRecipients,
+        });
+        return {
+          success: false,
+          error: `Recipient address(es) not registered: ${unregisteredRecipients.join(', ')}`,
+        };
+      }
+
       // Use transaction to ensure atomicity
       const result = await this.prisma.$transaction(async (tx) => {
         // Prepare messages for each recipient
@@ -631,17 +653,37 @@ export class PostgreMailStorage implements IMailStorage {
     this.logger.debug('Replying to message', { messageId, from: reply.from });
 
     try {
+      // First validate the original message exists
+      const originalMessage = await this.prisma.mailMessage.findUnique({
+        where: { messageId },
+      });
+
+      if (!originalMessage) {
+        return {
+          success: false,
+          error: 'Message not found',
+        };
+      }
+
+      // Validate the recipient (original sender) is registered
+      const recipientAddress = originalMessage.from;
+      const recipientRecord = await this.prisma.registeredAddress.findUnique({
+        where: { address: recipientAddress },
+      });
+
+      if (!recipientRecord || !recipientRecord.active) {
+        this.logger.warn('Attempted to reply to unregistered address', {
+          originalMessageId: messageId,
+          unregisteredRecipient: recipientAddress,
+        });
+        return {
+          success: false,
+          error: `Recipient address not registered: ${recipientAddress}`,
+        };
+      }
+
       // Use transaction for atomicity
       const result = await this.prisma.$transaction(async (tx) => {
-        // Get the original message
-        const originalMessage = await tx.mailMessage.findUnique({
-          where: { messageId },
-        });
-
-        if (!originalMessage) {
-          throw new NotFoundError('Message', messageId);
-        }
-
         // Build references chain
         const references: string[] = [
           ...(originalMessage.references || []),
