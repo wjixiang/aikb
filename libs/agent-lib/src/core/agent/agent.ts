@@ -4,13 +4,14 @@ import { ApiMessage, MessageBuilder } from '../memory/types.js';
 import type { AgentStatus } from '../common/types.js';
 import { MessageTokenUsage, ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
-import { VirtualWorkspace } from '../statefulContext/index.js';
+import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
 import {
   AgentError,
 } from '../common/errors.js';
 import { generateWorkspaceGuide } from '../prompts/sections/workspaceGuide.js';
 import { generateActionPhaseGuidance } from '../prompts/sections/actionPhaseGuidance.js';
+import { generateMailTaskGuide } from '../prompts/sections/mailTaskGuide.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type {
@@ -24,7 +25,7 @@ import type {
   ToolResult,
 } from '../action/types.js';
 import { TYPES } from '../di/types.js';
-import type { IVirtualWorkspace } from '../statefulContext/index.js';
+import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { ILogger } from '../utils/logging/types.js';
 import type { Tool } from '../../components/core/types.js';
@@ -260,6 +261,28 @@ export class Agent {
       source,
       details,
     };
+  }
+
+  /**
+   * Wake up agent to process mail tasks
+   * Called by ExpertInstance when new mail is detected
+   * Triggers the agent to check mailbox and process pending tasks
+   */
+  async wakeUpForMailTask(): Promise<void> {
+    this.logger.info('Waking up agent for mail task processing');
+
+    // In mail-driven mode, the agent should check its inbox for new tasks
+    // The system prompt already includes instructions for the LLM to check mailbox
+    // We just need to trigger the agent to run with a prompt that tells it to check mail
+
+    // Reset status to running if it was completed
+    if (this._status === 'completed' || this._status === 'idle') {
+      this._status = 'running';
+    }
+
+    // Trigger agent to check mailbox
+    // The LLM will check inbox, process tasks, and send results
+    await this.requestLoop('Check your inbox for new task emails and process them.');
   }
 
   /**
@@ -588,9 +611,17 @@ ${direction}
       ? componentToolsSection.render()
       : '';
 
+    // Check if mail component is available for mail-driven mode
+    const componentKeys = this.workspace.getComponentKeys();
+    const hasMailComponent = componentKeys.includes('mail');
+
+    // Generate mail task guide if mail component is available
+    const mailTaskGuide = hasMailComponent ? generateMailTaskGuide() : '';
+
     return `
 ${generateWorkspaceGuide()}
 ${this.renderAgentPrompt()}
+${mailTaskGuide}
 ${this.workspace.renderToolBox().render()}
 ${componentToolsRendered}
         `;

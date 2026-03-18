@@ -1,6 +1,5 @@
 import 'reflect-metadata';
 import { ExpertExecutor, ExpertRegistry } from 'agent-lib';
-import type { ExpertTask } from 'agent-lib';
 import config from '../experts/pubmed-retrieve';
 import { config as conf } from 'dotenv';
 conf();
@@ -18,7 +17,9 @@ async function main() {
   const executor = new ExpertExecutor(registry, undefined, {
     mailConfig: {
       baseUrl: mailboxUrl,
+      enabled: true,
     },
+    autoStartExperts: true,
   });
 
   config.apiConfiguration = {
@@ -30,26 +31,38 @@ async function main() {
   // 2. Register ExpertConfig
   executor.registerExpert(config);
 
-  // 3. Create Expert instance
-  const expert = await executor.createExpert(config.expertId);
-
-  // 4. Activate the expert
-  await expert.activate();
-
-  // 5. Define task
-  const task: ExpertTask = {
-    taskId: `task-${Date.now()}`,
-    description: '搜索血管外科近几年的研究热点',
-    input: {},
+  // 2.5 Enable mail-driven mode for the expert
+  config.mailConfig = {
+    enabled: true,
+    baseUrl: mailboxUrl,
+    pollInterval: 10000,
   };
 
-  // 6. Execute task
-  const result = await expert.execute(task);
+  // 3. Start Expert in message-driven mode
+  // Expert will poll its inbox for tasks via email
+  await executor.startExpert(config.expertId);
 
-  // 7. Check result
-  console.log('Expert status:', expert.status);
-  console.log('Task ID:', task.taskId);
-  console.log('Result:', result);
+  console.log(`Expert ${config.expertId} started in message-driven mode`);
+  console.log(`Mailbox: ${config.expertId}@expert`);
+  console.log('Waiting for tasks...');
+
+  // Handle graceful shutdown
+  const shutdown = (signal: string) => {
+    console.log(`\nReceived ${signal}, shutting down...`);
+    executor
+      .stopAll()
+      .then(() => {
+        console.log('Shutdown complete');
+        process.exit(0);
+      })
+      .catch((err) => {
+        console.error('Error during shutdown:', err);
+        process.exit(1);
+      });
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 main().catch(console.error);
