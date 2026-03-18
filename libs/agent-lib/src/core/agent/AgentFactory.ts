@@ -184,34 +184,4 @@ export class AgentFactory {
     });
   }
 
-  /**
-   * Create an Agent with a custom ApiClient
-   *
-   * This is useful for testing or when you need to use a custom
-   * API client implementation.
-   *
-   * @param workspace - The VirtualWorkspace instance
-   * @param apiClient - The custom ApiClient to use
-   * @param options - Optional configuration for the agent
-   * @returns A configured Agent instance
-   */
-  static createWithCustomClient(
-    workspace: VirtualWorkspace,
-    apiClient: ApiClient,
-    agentPrompt: AgentPrompt,
-    options: Omit<AgentFactoryOptions, 'apiClient'> = {},
-  ): Agent {
-    // For custom API client, we need to use the standard create method
-    // The container doesn't directly support overriding ApiClient after creation
-    // For now, delegate to the standard create method which will use the container
-    // Note: The custom apiClient parameter is currently ignored in the container-based approach
-    // If you need to use a custom ApiClient, consider using the container directly
-
-    // Log a warning that custom apiClient is not supported in container mode
-    console.warn(
-      '[AgentFactory.createWithCustomClient] Custom ApiClient is not directly supported in container-based mode. Using container-created ApiClient instead.',
-    );
-
-    return this.create(workspace, agentPrompt, options);
-  }
 }

@@ -102,7 +102,6 @@ export class Agent {
   };
   private _toolUsage: ToolUsage = {};
   private _consecutiveMistakeCount = 0;
-  private _consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map();
   private _collectedErrors: string[] = [];
   private _abortInfo: AbortInfo | null = null;
 
@@ -191,32 +190,10 @@ export class Agent {
   }
 
   /**
-   * Getter for consecutive mistake count for apply diff
-   */
-  public get consecutiveMistakeCountForApplyDiff(): Map<string, number> {
-    return this._consecutiveMistakeCountForApplyDiff;
-  }
-
-  /**
-   * Setter for consecutive mistake count for apply diff
-   */
-  public set consecutiveMistakeCountForApplyDiff(map: Map<string, number>) {
-    this._consecutiveMistakeCountForApplyDiff = map;
-  }
-
-  /**
    * Get memory module (always available)
    */
   public getMemoryModule(): IMemoryModule {
     return this.memoryModule;
-  }
-
-  /**
-   * Check if memory module is enabled (always true now)
-   * @deprecated Memory module is always enabled
-   */
-  public hasMemoryModule(): boolean {
-    return true;
   }
 
   // ==================== Lifecycle Methods ====================
@@ -526,23 +503,6 @@ export class Agent {
     });
 
     return actionResult;
-  }
-
-  // ==================== Message Processing (Deprecated - Now handled by ActionModule) ====================
-
-  /**
-   * Add a system message to conversation history
-   *
-   * NOTE: This method is NOT used for workspace context anymore.
-   * Workspace context is always passed fresh via workspaceContext parameter.
-   * Use this method for other system messages like thinking summaries, etc.
-   *
-   * @param message - The system message content to add
-   * @deprecated Use memoryModule.addSystemMessage() directly
-   */
-  addSystemMessageToHistory(message: string): void {
-    const apiMessage = MessageBuilder.system(message);
-    this.memoryModule.addMessage(apiMessage);
   }
 
   // ==================== Helper Methods ====================

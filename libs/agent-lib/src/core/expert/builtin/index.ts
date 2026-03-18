@@ -17,7 +17,7 @@
  */
 
 // Re-export ExpertDefinition utilities (for defining new experts)
-export { defineExpert, createExpertComponentDefinition, ExpertDefinition } from './ExpertDefinition.js';
+export { ExpertDefinition } from './ExpertDefinition.js';
 export type { ExpertDefinitionConfig } from './ExpertDefinition.js';
 
 // Import expert factory functions

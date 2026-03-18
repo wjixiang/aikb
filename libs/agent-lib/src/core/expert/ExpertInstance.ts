@@ -15,11 +15,10 @@ import type {
     ExpertStatus,
     ExpertResult,
     ExpertArtifact,
-    ExpertTask,
     IExpertInstance,
-    ExportResult,
 } from './types.js';
 import type { ToolComponent } from '../../components/index.js';
+import type { IExpertPersistenceStore, ExpertInstanceState } from './persistence/index.js';
 
 /**
  * Expert instance implementation
@@ -46,15 +45,22 @@ export class ExpertInstance implements IExpertInstance {
     private _maxConsecutiveErrors = 5;
     private _currentPollInterval: number;
 
+    // Persistence
+    private persistenceStore?: IExpertPersistenceStore;
+    private _lastSaveTimestamp = 0;
+    private readonly _saveThrottleMs = 5000; // Save at most every 5 seconds
+
     constructor(
         config: ExpertConfig,
         agent: Agent,
         instanceId: string,
+        persistenceStore?: IExpertPersistenceStore,
     ) {
         this.expertId = config.expertId;
         this.instanceId = instanceId;
         this.config = config;
         this.agent = agent;
+        this.persistenceStore = persistenceStore;
         // Initialize poll interval from config, default to 30000ms (30 seconds)
         this._currentPollInterval = config.mailConfig?.pollInterval || 30000;
     }
@@ -79,6 +85,7 @@ export class ExpertInstance implements IExpertInstance {
         this.status = 'running';
         this._consecutiveErrors = 0;
         this._lastUnreadCount = 0;
+        await this.persistState();
         this.logger.info(
             `Expert ${this.expertId} started message-driven mode (pollInterval: ${this._currentPollInterval}ms)`,
         );
@@ -136,6 +143,9 @@ export class ExpertInstance implements IExpertInstance {
             this._lastCheckTimestamp = Date.now();
             this._consecutiveErrors = 0; // Reset error count on success
             this._currentPollInterval = this.config.mailConfig?.pollInterval || 30000; // Reset interval
+
+            // Throttled persist during polling
+            await this.persistState();
 
             // Check if there are new unread messages
             if (currentUnreadCount > this._lastUnreadCount) {
@@ -209,11 +219,14 @@ export class ExpertInstance implements IExpertInstance {
             return;
         }
 
+        const wasRunning = this.status === 'running';
         this._isRunning = false;
+        this.status = 'ready';
+        await this.persistState();
         this.logger.info(`Expert ${this.expertId} stopping message-driven mode`);
 
         // Abort any running agent task
-        if (this.status === 'running') {
+        if (wasRunning) {
             this.agent.abort('Expert stopped by user', 'manual');
         }
     }
@@ -231,6 +244,38 @@ export class ExpertInstance implements IExpertInstance {
      */
     private sleep(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Throttled persist state to persistence store
+     * Saves at most once every _saveThrottleMs milliseconds
+     */
+    private async persistState(): Promise<void> {
+        if (!this.persistenceStore) {
+            return;
+        }
+
+        const now = Date.now();
+        if (now - this._lastSaveTimestamp < this._saveThrottleMs) {
+            return;
+        }
+
+        this._lastSaveTimestamp = now;
+        const state: ExpertInstanceState = {
+            expertClassId: this.expertId,
+            instanceId: this.instanceId,
+            status: this.status,
+            lastUnreadCount: this._lastUnreadCount,
+            lastCheckTimestamp: new Date(this._lastCheckTimestamp),
+            pollInterval: this._currentPollInterval,
+            consecutiveErrors: this._consecutiveErrors,
+        };
+
+        try {
+            await this.persistenceStore.saveInstance(state);
+        } catch (err) {
+            this.logger.error(`Expert ${this.expertId}: Failed to persist state: ${err}`);
+        }
     }
 
     async getStateSummary(): Promise<string> {
@@ -268,6 +313,7 @@ ${componentSummaries.join('\n') || 'No components'}
             this.agent.abort('Expert disposed', 'manual');
         }
         this.status = 'idle';
+        await this.persistState();
         this.artifacts = [];
         this.logger.info(`Expert ${this.expertId} disposed`);
     }
@@ -288,112 +334,5 @@ ${componentSummaries.join('\n') || 'No components'}
 
     private get logger(): ILogger {
         return (this.agent as any).logger || console;
-    }
-
-    private buildTaskPrompt(task: ExpertTask, context?: Record<string, any>): string {
-        let prompt = '';
-
-        // NOTE: Expert's capability and direction are already set in agentPrompt (systemPrompt)
-        // Only add task-specific information here
-
-        // Add task description
-        prompt += `## Task\n${task.description}\n`;
-
-        // Add context information
-        if (context && Object.keys(context).length > 0) {
-            prompt += `\n## Context\n${JSON.stringify(context, null, 2)}\n`;
-        }
-
-        // Add expected outputs description
-        if (task.expectedOutputs && task.expectedOutputs.length > 0) {
-            prompt += `\n## Expected Outputs\n${task.expectedOutputs.join(', ')}\n`;
-        }
-
-        // Add Expert-specific system prompt (additional guidance)
-        if (this.config.systemPrompt) {
-            prompt += `\n## Additional Guidance\n${this.config.systemPrompt}\n`;
-        }
-
-        return prompt;
-    }
-
-    private getOutput(): any {
-        // Extract output from workspace or artifacts
-        const workspace = this.agent.workspace;
-        const componentKeys = workspace.getComponentKeys();
-
-        const outputs: Record<string, any> = {};
-        for (const key of componentKeys) {
-            const component = workspace.getComponent(key);
-            if (component) {
-                outputs[key] = component.getState();
-            }
-        }
-
-        return outputs;
-    }
-
-    /**
-     * Perform auto-export after task completion
-     */
-    private async performAutoExport(task: ExpertTask, output: any): Promise<ExportResult> {
-        const exportConfig = this.config.exportConfig;
-        if (!exportConfig) {
-            return { success: false, error: 'No export config' };
-        }
-
-        // Get export parameters
-        const bucket = exportConfig.bucket || process.env['FS_BUCKET'] || 'agentfs';
-
-        // Generate path with placeholders (no format placeholder)
-        let path = exportConfig.defaultPath || '{expertId}/{timestamp}.json';
-        path = path
-            .replace('{expertId}', this.expertId)
-            .replace('{taskId}', task.taskId || 'unknown')
-            .replace('{timestamp}', new Date().toISOString().replace(/[:.]/g, '-'));
-
-        // Use custom handler or default JSON export
-        if (exportConfig.exportHandler) {
-            return exportConfig.exportHandler(this.agent.workspace, { bucket, path });
-        }
-
-        // Default: export all component states as JSON
-        const content = JSON.stringify({
-            expertId: this.expertId,
-            taskId: task.taskId,
-            taskDescription: task.description,
-            output: output,
-            artifacts: this.artifacts,
-            timestamp: new Date().toISOString(),
-        }, null, 2);
-
-        // Get VirtualFileSystemComponent and export
-        const vfsComponent = this.getVirtualFileSystemComponent();
-        if (!vfsComponent) {
-            return { success: false, error: 'VirtualFileSystemComponent not found' };
-        }
-
-        // Default to JSON content type
-        const contentType = 'application/json';
-        return vfsComponent.exportContent(bucket, path, content, contentType);
-    }
-
-    /**
-     * Get VirtualFileSystemComponent from workspace
-     */
-    private getVirtualFileSystemComponent(): any {
-        const workspace = this.agent.workspace;
-        const componentKeys = workspace.getComponentKeys();
-
-        for (const key of componentKeys) {
-            const component = workspace.getComponent(key);
-            // Check by component name or type
-            if (component && (component.constructor.name === 'VirtualFileSystemComponent' ||
-                key.includes('virtualFileSystem') || key === 'virtualFileSystem')) {
-                return component;
-            }
-        }
-
-        return null;
     }
 }

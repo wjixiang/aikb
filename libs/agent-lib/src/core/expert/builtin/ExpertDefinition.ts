@@ -114,28 +114,3 @@ export class ExpertDefinition {
         return new ExpertDefinition(config);
     }
 }
-
-/**
- * Helper function to define an expert in a concise way
- */
-export function defineExpert(config: ExpertDefinitionConfig): ExpertConfig {
-    return new ExpertDefinition(config).build();
-}
-
-/**
- * Helper function to create a component definition for Expert
- * Similar to createComponentDefinition in Skill
- */
-export function createExpertComponentDefinition(
-    componentId: string,
-    displayName: string,
-    description: string,
-    instanceOrFactory: ExpertComponentDefinition['instance']
-): ExpertComponentDefinition {
-    return {
-        componentId,
-        displayName,
-        description,
-        instance: instanceOrFactory
-    };
-}

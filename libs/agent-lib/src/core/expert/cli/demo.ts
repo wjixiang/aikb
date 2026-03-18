@@ -18,8 +18,9 @@ console.log(chalk.cyan('Loading...'));
 dotenv.config();
 
 import { ExpertInstance } from '../ExpertInstance.js';
-import type { ExpertConfig, ExpertTask, ExpertResult } from '../types.js';
-import { AgentFactory } from '../../agent/AgentFactory.js';
+import { ExpertRegistry } from '../ExpertRegistry.js';
+import { ExpertExecutor } from '../ExpertExecutor.js';
+import type { ExpertConfig, ExpertResult, ExpertArtifact } from '../types.js';
 import { ProviderSettings } from '../../types/provider-settings.js';
 
 /**
@@ -82,41 +83,6 @@ async function loadExpert(expertName: string): Promise<ExpertConfig> {
     throw new Error(`Expert entry point not found: ${expertDir}\nExpected index.ts or expert.ts`);
 }
 
-/**
- * Create Agent with real API
- */
-async function createAgent(): Promise<any> {
-    // Determine API key and provider type
-    let apiKey = process.env['ANTHROPIC_API_KEY'] || process.env['OPENAI_API_KEY'] || process.env['GLM_API_KEY'] || process.env['MINIMAX_API_KEY'];
-
-    if (!apiKey) {
-        throw new Error('No API key found. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, GLM_API_KEY, or MINIMAX_API_KEY');
-    }
-
-    const providerSettings: Partial<ProviderSettings> = {
-        apiKey: apiKey,
-    };
-
-    // Use createWithContainer which handles workspace creation internally
-    const agent = AgentFactory.createWithContainer(
-        {
-            capability: 'You are a helpful assistant.',
-            direction: 'Complete the given task.',
-        },
-        {
-            apiConfiguration: providerSettings,
-            virtualWorkspaceConfig: {
-                id: `demo-${Date.now()}`,
-                name: 'Demo Workspace',
-                expertMode: true, // Disable all skill-related features for Expert
-                disableBuiltinSkills: true, // Expert should NOT have access to builtin skills
-                renderMode: 'markdown'
-            }
-        }
-    );
-
-    return agent;
-}
 
 /**
  * Run Expert demo
@@ -201,12 +167,24 @@ export async function runDemo(
             }
         }
 
-        // Create agent with real API
-        console.log(chalk.cyan('  → Creating agent with real API...'));
-        spinner.text = chalk.cyan('Creating agent with real API...');
+        // Create ExpertExecutor to properly create and manage the expert
+        console.log(chalk.cyan('  → Creating ExpertExecutor...'));
+        spinner.text = chalk.cyan('Creating ExpertExecutor...');
         spinner.start();
-        agent = await createAgent();
-        spinner.succeed(chalk.green('  ✓ Agent created'));
+
+        const registry = new ExpertRegistry();
+        const executor = new ExpertExecutor(registry, undefined, {
+            // Disable auto-start so we can run a single task directly
+            autoStartExperts: false,
+            // Disable mail-driven mode for single task execution
+            mailConfig: { enabled: false },
+        });
+
+        // Register the expert config and create the expert instance
+        registry.register(expertConfig);
+        expertInstance = await executor.createExpert(expertConfig.expertId);
+        agent = expertInstance.getAgent();
+        spinner.succeed(chalk.green('  ✓ Expert created'));
 
         // Show the prompt that will be used
         console.log(chalk.bold('\n📝 Task Prompt:'));
@@ -214,31 +192,37 @@ export async function runDemo(
         const taskPrompt = buildTaskPrompt(expertConfig, taskDescription);
         console.log(chalk.gray(taskPrompt.substring(0, 500) + (taskPrompt.length > 500 ? '...' : '')));
 
-        // Create expert instance
-        console.log(chalk.cyan('  → Initializing expert...'));
-        spinner.text = chalk.cyan('Starting expert...');
-        spinner.start();
-        expertInstance = new ExpertInstance(expertConfig, agent);
-        await expertInstance.activate();
-        spinner.succeed(chalk.green('  ✓ Expert activated'));
-
-        // Create task
-        const task: ExpertTask = {
-            taskId: `demo-${Date.now()}`,
-            description: typeof input === 'string' ? input : JSON.stringify(input),
-            input
-        };
-
-        // Execute task
+        // Execute task directly via agent.start()
         console.log(chalk.cyan('\n  → Executing task with LLM (this may take a while)...'));
         spinner.text = chalk.cyan('Executing task...');
         spinner.start();
 
         const startTime = Date.now();
-        const result = await expertInstance.execute(task);
+        await agent.start(taskPrompt);
         const duration = Date.now() - startTime;
 
         spinner.succeed(chalk.green(`  Task completed in ${duration}ms`));
+
+        // Gather results from workspace components
+        const workspace = agent.workspace;
+        const componentKeys = workspace.getComponentKeys();
+        const output: Record<string, any> = {};
+        for (const key of componentKeys) {
+            const component = workspace.getComponent(key);
+            if (component) {
+                output[key] = component.getState();
+            }
+        }
+
+        // Build result object
+        const result: ExpertResult = {
+            expertId: expertConfig.expertId,
+            success: true,
+            output,
+            summary: 'Task completed successfully',
+            artifacts: expertInstance.getArtifacts(),
+            duration,
+        };
 
         // Show results
         console.log(chalk.bold('\n📊 Results:'));

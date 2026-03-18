@@ -2,7 +2,6 @@ import { Container } from 'inversify';
 import { TYPES } from '../../../di/types';
 import { ExpertRegistry } from '../../ExpertRegistry';
 import { ExpertExecutor } from '../../ExpertExecutor';
-import { ExpertOrchestrator } from '../../ExpertOrchestrator';
 import { ILogger } from '../../../utils/logging/types';
 
 /**
@@ -27,10 +26,6 @@ export function createTestContainer(): Container {
     // Bind Expert components
     container.bind<ExpertRegistry>(ExpertRegistry).toSelf();
     container.bind<ExpertExecutor>(ExpertExecutor).toSelf();
-    container.bind<ExpertOrchestrator>(ExpertOrchestrator).toSelf();
-
-    // Bind ExpertRegistry to IExpertRegistry (if needed)
-    // container.bind<IExpertRegistry>(TYPES.IExpertRegistry).to(ExpertRegistry);
 
     return container;
 }
@@ -42,7 +37,6 @@ export function getExpertComponents(container: Container) {
     return {
         registry: container.get<ExpertRegistry>(ExpertRegistry),
         executor: container.get<ExpertExecutor>(ExpertExecutor),
-        orchestrator: container.get<ExpertOrchestrator>(ExpertOrchestrator)
     };
 }
 
