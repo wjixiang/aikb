@@ -10,5 +10,6 @@ export * from './core/index.js';
 // Components module - UI components for bibliograpy search, PICOS, PRISMA, etc.
 export * from './components/index.js';
 
-// Multi-Agent module - Message-driven multi-agent communication
+// Multi-Agent module - Explicit re-export from index to avoid conflicts
+// Note: InboxResult, MailMessage, SendResult, StorageResult are exported from core
 export * from './multi-agent/index.js';

@@ -50,6 +50,26 @@ export { ToolComponent } from '../../components/index.js';
 // Re-export virtual workspace
 export { VirtualWorkspace, type ToolCallSummary } from './virtualWorkspace.js';
 
+// Re-export workspace hooks
+export {
+    createWorkspaceHooks,
+    createMailHooks,
+    isHookableComponent,
+    isMailComponent,
+    type WorkspaceHooks,
+    type MailHooks,
+    type SendMailParams,
+    type GetInboxParams,
+    type GetUnreadCountParams,
+    type MessageIdParams,
+    type SearchMessagesParams,
+    type ReplyToMessageParams,
+    type SendResult,
+    type InboxResult,
+    type MailMessage,
+    type StorageResult,
+} from './workspaceHooks.js';
+
 // Re-export TUI elements from components
 export {
     TUIElement,

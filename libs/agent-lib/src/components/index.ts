@@ -78,13 +78,10 @@ export {
   replaceDraftContentParamsSchema,
 } from './mail/mailSchemas.js';
 
+// Note: SendMailParams, GetInboxParams, GetUnreadCountParams, MessageIdParams,
+// SearchMessagesParams, ReplyToMessageParams are exported from core/statefulContext
+// to avoid duplicate export conflicts
 export type {
-  SendMailParams,
-  GetInboxParams,
-  GetUnreadCountParams,
-  MessageIdParams,
-  SearchMessagesParams,
-  ReplyToMessageParams,
   RegisterAddressParams,
   SaveDraftParams,
   EditDraftParams,
