@@ -13,14 +13,11 @@ datasource db {
 }
 
 model ExpertInstance {
-  id                 String   @id @default(uuid())
-  expertClassId      String
-  instanceId         String
-  status             String   @default("idle")
-  lastUnreadCount    Int      @default(0)
-  lastCheckTimestamp DateTime @default(now())
-  pollInterval       Int      @default(30000)
-  consecutiveErrors  Int      @default(0)
+  id            String   @id @default(uuid())
+  expertClassId String
+  instanceId    String
+  status        String   @default("idle")
+  agentStatus   String   @default("idle")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

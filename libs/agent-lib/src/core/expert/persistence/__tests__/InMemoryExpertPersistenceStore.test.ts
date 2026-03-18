@@ -9,10 +9,6 @@ describe('InMemoryExpertPersistenceStore', () => {
         expertClassId: 'test-expert',
         instanceId: 'instance-1',
         status: 'idle',
-        lastUnreadCount: 0,
-        lastCheckTimestamp: new Date(),
-        pollInterval: 30000,
-        consecutiveErrors: 0,
         ...overrides,
     });
 
@@ -36,31 +32,23 @@ describe('InMemoryExpertPersistenceStore', () => {
             const state1 = createTestState({ status: 'idle' });
             await store.saveInstance(state1);
 
-            const state2 = createTestState({ status: 'running', lastUnreadCount: 5 });
+            const state2 = createTestState({ status: 'running' });
             await store.saveInstance(state2);
 
             const loaded = await store.loadInstance(state1.expertClassId, state1.instanceId);
             expect(loaded?.status).toBe('running');
-            expect(loaded?.lastUnreadCount).toBe(5);
         });
 
         it('should replace entire state on update', async () => {
-            const originalTimestamp = new Date('2024-01-01');
-            const state1 = createTestState({
-                pollInterval: 60000,
-                consecutiveErrors: 3,
-                lastCheckTimestamp: originalTimestamp,
-            });
+            const state1 = createTestState({ status: 'idle' });
             await store.saveInstance(state1);
 
             // Update with different values
-            const state2 = createTestState({ status: 'running', pollInterval: 30000 });
+            const state2 = createTestState({ status: 'running' });
             await store.saveInstance(state2);
 
             const loaded = await store.loadInstance(state1.expertClassId, state1.instanceId);
-            // In-memory store replaces entire state, not merges
-            expect(loaded?.pollInterval).toBe(30000); // From state2
-            expect(loaded?.status).toBe('running'); // From state2
+            expect(loaded?.status).toBe('running');
         });
     });
 
@@ -71,15 +59,10 @@ describe('InMemoryExpertPersistenceStore', () => {
         });
 
         it('should return saved instance with all fields', async () => {
-            const timestamp = new Date();
             const state = createTestState({
                 expertClassId: 'my-expert',
                 instanceId: 'my-instance',
                 status: 'running',
-                lastUnreadCount: 10,
-                lastCheckTimestamp: timestamp,
-                pollInterval: 60000,
-                consecutiveErrors: 2,
             });
             await store.saveInstance(state);
 

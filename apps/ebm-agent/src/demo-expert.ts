@@ -43,7 +43,6 @@ async function main() {
   await executor.startExpert(config.expertId);
 
   console.log(`Expert ${config.expertId} started in message-driven mode`);
-  console.log(`Mailbox: ${config.expertId}@expert`);
   console.log('Waiting for tasks...');
 
   // Handle graceful shutdown

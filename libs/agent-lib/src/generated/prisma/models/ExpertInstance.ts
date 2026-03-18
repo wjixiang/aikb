@@ -20,22 +20,8 @@ export type ExpertInstanceModel = runtime.Types.Result.DefaultSelection<Prisma.$
 
 export type AggregateExpertInstance = {
   _count: ExpertInstanceCountAggregateOutputType | null
-  _avg: ExpertInstanceAvgAggregateOutputType | null
-  _sum: ExpertInstanceSumAggregateOutputType | null
   _min: ExpertInstanceMinAggregateOutputType | null
   _max: ExpertInstanceMaxAggregateOutputType | null
-}
-
-export type ExpertInstanceAvgAggregateOutputType = {
-  lastUnreadCount: number | null
-  pollInterval: number | null
-  consecutiveErrors: number | null
-}
-
-export type ExpertInstanceSumAggregateOutputType = {
-  lastUnreadCount: number | null
-  pollInterval: number | null
-  consecutiveErrors: number | null
 }
 
 export type ExpertInstanceMinAggregateOutputType = {
@@ -43,10 +29,7 @@ export type ExpertInstanceMinAggregateOutputType = {
   expertClassId: string | null
   instanceId: string | null
   status: string | null
-  lastUnreadCount: number | null
-  lastCheckTimestamp: Date | null
-  pollInterval: number | null
-  consecutiveErrors: number | null
+  agentStatus: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -56,10 +39,7 @@ export type ExpertInstanceMaxAggregateOutputType = {
   expertClassId: string | null
   instanceId: string | null
   status: string | null
-  lastUnreadCount: number | null
-  lastCheckTimestamp: Date | null
-  pollInterval: number | null
-  consecutiveErrors: number | null
+  agentStatus: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -69,37 +49,19 @@ export type ExpertInstanceCountAggregateOutputType = {
   expertClassId: number
   instanceId: number
   status: number
-  lastUnreadCount: number
-  lastCheckTimestamp: number
-  pollInterval: number
-  consecutiveErrors: number
+  agentStatus: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
 
-export type ExpertInstanceAvgAggregateInputType = {
-  lastUnreadCount?: true
-  pollInterval?: true
-  consecutiveErrors?: true
-}
-
-export type ExpertInstanceSumAggregateInputType = {
-  lastUnreadCount?: true
-  pollInterval?: true
-  consecutiveErrors?: true
-}
-
 export type ExpertInstanceMinAggregateInputType = {
   id?: true
   expertClassId?: true
   instanceId?: true
   status?: true
-  lastUnreadCount?: true
-  lastCheckTimestamp?: true
-  pollInterval?: true
-  consecutiveErrors?: true
+  agentStatus?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -109,10 +71,7 @@ export type ExpertInstanceMaxAggregateInputType = {
   expertClassId?: true
   instanceId?: true
   status?: true
-  lastUnreadCount?: true
-  lastCheckTimestamp?: true
-  pollInterval?: true
-  consecutiveErrors?: true
+  agentStatus?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -122,10 +81,7 @@ export type ExpertInstanceCountAggregateInputType = {
   expertClassId?: true
   instanceId?: true
   status?: true
-  lastUnreadCount?: true
-  lastCheckTimestamp?: true
-  pollInterval?: true
-  consecutiveErrors?: true
+  agentStatus?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -169,18 +125,6 @@ export type ExpertInstanceAggregateArgs<ExtArgs extends runtime.Types.Extensions
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
-   * Select which fields to average
-  **/
-  _avg?: ExpertInstanceAvgAggregateInputType
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   * 
-   * Select which fields to sum
-  **/
-  _sum?: ExpertInstanceSumAggregateInputType
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   * 
    * Select which fields to find the minimum value
   **/
   _min?: ExpertInstanceMinAggregateInputType
@@ -211,8 +155,6 @@ export type ExpertInstanceGroupByArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   _count?: ExpertInstanceCountAggregateInputType | true
-  _avg?: ExpertInstanceAvgAggregateInputType
-  _sum?: ExpertInstanceSumAggregateInputType
   _min?: ExpertInstanceMinAggregateInputType
   _max?: ExpertInstanceMaxAggregateInputType
 }
@@ -222,15 +164,10 @@ export type ExpertInstanceGroupByOutputType = {
   expertClassId: string
   instanceId: string
   status: string
-  lastUnreadCount: number
-  lastCheckTimestamp: Date
-  pollInterval: number
-  consecutiveErrors: number
+  agentStatus: string
   createdAt: Date
   updatedAt: Date
   _count: ExpertInstanceCountAggregateOutputType | null
-  _avg: ExpertInstanceAvgAggregateOutputType | null
-  _sum: ExpertInstanceSumAggregateOutputType | null
   _min: ExpertInstanceMinAggregateOutputType | null
   _max: ExpertInstanceMaxAggregateOutputType | null
 }
@@ -258,10 +195,7 @@ export type ExpertInstanceWhereInput = {
   expertClassId?: Prisma.StringFilter<"ExpertInstance"> | string
   instanceId?: Prisma.StringFilter<"ExpertInstance"> | string
   status?: Prisma.StringFilter<"ExpertInstance"> | string
-  lastUnreadCount?: Prisma.IntFilter<"ExpertInstance"> | number
-  lastCheckTimestamp?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
-  pollInterval?: Prisma.IntFilter<"ExpertInstance"> | number
-  consecutiveErrors?: Prisma.IntFilter<"ExpertInstance"> | number
+  agentStatus?: Prisma.StringFilter<"ExpertInstance"> | string
   createdAt?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
 }
@@ -271,10 +205,7 @@ export type ExpertInstanceOrderByWithRelationInput = {
   expertClassId?: Prisma.SortOrder
   instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  lastUnreadCount?: Prisma.SortOrder
-  lastCheckTimestamp?: Prisma.SortOrder
-  pollInterval?: Prisma.SortOrder
-  consecutiveErrors?: Prisma.SortOrder
+  agentStatus?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -288,10 +219,7 @@ export type ExpertInstanceWhereUniqueInput = Prisma.AtLeast<{
   expertClassId?: Prisma.StringFilter<"ExpertInstance"> | string
   instanceId?: Prisma.StringFilter<"ExpertInstance"> | string
   status?: Prisma.StringFilter<"ExpertInstance"> | string
-  lastUnreadCount?: Prisma.IntFilter<"ExpertInstance"> | number
-  lastCheckTimestamp?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
-  pollInterval?: Prisma.IntFilter<"ExpertInstance"> | number
-  consecutiveErrors?: Prisma.IntFilter<"ExpertInstance"> | number
+  agentStatus?: Prisma.StringFilter<"ExpertInstance"> | string
   createdAt?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
 }, "id" | "expertClassId_instanceId">
@@ -301,17 +229,12 @@ export type ExpertInstanceOrderByWithAggregationInput = {
   expertClassId?: Prisma.SortOrder
   instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  lastUnreadCount?: Prisma.SortOrder
-  lastCheckTimestamp?: Prisma.SortOrder
-  pollInterval?: Prisma.SortOrder
-  consecutiveErrors?: Prisma.SortOrder
+  agentStatus?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ExpertInstanceCountOrderByAggregateInput
-  _avg?: Prisma.ExpertInstanceAvgOrderByAggregateInput
   _max?: Prisma.ExpertInstanceMaxOrderByAggregateInput
   _min?: Prisma.ExpertInstanceMinOrderByAggregateInput
-  _sum?: Prisma.ExpertInstanceSumOrderByAggregateInput
 }
 
 export type ExpertInstanceScalarWhereWithAggregatesInput = {
@@ -322,10 +245,7 @@ export type ExpertInstanceScalarWhereWithAggregatesInput = {
   expertClassId?: Prisma.StringWithAggregatesFilter<"ExpertInstance"> | string
   instanceId?: Prisma.StringWithAggregatesFilter<"ExpertInstance"> | string
   status?: Prisma.StringWithAggregatesFilter<"ExpertInstance"> | string
-  lastUnreadCount?: Prisma.IntWithAggregatesFilter<"ExpertInstance"> | number
-  lastCheckTimestamp?: Prisma.DateTimeWithAggregatesFilter<"ExpertInstance"> | Date | string
-  pollInterval?: Prisma.IntWithAggregatesFilter<"ExpertInstance"> | number
-  consecutiveErrors?: Prisma.IntWithAggregatesFilter<"ExpertInstance"> | number
+  agentStatus?: Prisma.StringWithAggregatesFilter<"ExpertInstance"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ExpertInstance"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ExpertInstance"> | Date | string
 }
@@ -335,10 +255,7 @@ export type ExpertInstanceCreateInput = {
   expertClassId: string
   instanceId: string
   status?: string
-  lastUnreadCount?: number
-  lastCheckTimestamp?: Date | string
-  pollInterval?: number
-  consecutiveErrors?: number
+  agentStatus?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -348,10 +265,7 @@ export type ExpertInstanceUncheckedCreateInput = {
   expertClassId: string
   instanceId: string
   status?: string
-  lastUnreadCount?: number
-  lastCheckTimestamp?: Date | string
-  pollInterval?: number
-  consecutiveErrors?: number
+  agentStatus?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -361,10 +275,7 @@ export type ExpertInstanceUpdateInput = {
   expertClassId?: Prisma.StringFieldUpdateOperationsInput | string
   instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  lastUnreadCount?: Prisma.IntFieldUpdateOperationsInput | number
-  lastCheckTimestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  pollInterval?: Prisma.IntFieldUpdateOperationsInput | number
-  consecutiveErrors?: Prisma.IntFieldUpdateOperationsInput | number
+  agentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -374,10 +285,7 @@ export type ExpertInstanceUncheckedUpdateInput = {
   expertClassId?: Prisma.StringFieldUpdateOperationsInput | string
   instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  lastUnreadCount?: Prisma.IntFieldUpdateOperationsInput | number
-  lastCheckTimestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  pollInterval?: Prisma.IntFieldUpdateOperationsInput | number
-  consecutiveErrors?: Prisma.IntFieldUpdateOperationsInput | number
+  agentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -387,10 +295,7 @@ export type ExpertInstanceCreateManyInput = {
   expertClassId: string
   instanceId: string
   status?: string
-  lastUnreadCount?: number
-  lastCheckTimestamp?: Date | string
-  pollInterval?: number
-  consecutiveErrors?: number
+  agentStatus?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -400,10 +305,7 @@ export type ExpertInstanceUpdateManyMutationInput = {
   expertClassId?: Prisma.StringFieldUpdateOperationsInput | string
   instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  lastUnreadCount?: Prisma.IntFieldUpdateOperationsInput | number
-  lastCheckTimestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  pollInterval?: Prisma.IntFieldUpdateOperationsInput | number
-  consecutiveErrors?: Prisma.IntFieldUpdateOperationsInput | number
+  agentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -413,10 +315,7 @@ export type ExpertInstanceUncheckedUpdateManyInput = {
   expertClassId?: Prisma.StringFieldUpdateOperationsInput | string
   instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
-  lastUnreadCount?: Prisma.IntFieldUpdateOperationsInput | number
-  lastCheckTimestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  pollInterval?: Prisma.IntFieldUpdateOperationsInput | number
-  consecutiveErrors?: Prisma.IntFieldUpdateOperationsInput | number
+  agentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -431,18 +330,9 @@ export type ExpertInstanceCountOrderByAggregateInput = {
   expertClassId?: Prisma.SortOrder
   instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  lastUnreadCount?: Prisma.SortOrder
-  lastCheckTimestamp?: Prisma.SortOrder
-  pollInterval?: Prisma.SortOrder
-  consecutiveErrors?: Prisma.SortOrder
+  agentStatus?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-}
-
-export type ExpertInstanceAvgOrderByAggregateInput = {
-  lastUnreadCount?: Prisma.SortOrder
-  pollInterval?: Prisma.SortOrder
-  consecutiveErrors?: Prisma.SortOrder
 }
 
 export type ExpertInstanceMaxOrderByAggregateInput = {
@@ -450,10 +340,7 @@ export type ExpertInstanceMaxOrderByAggregateInput = {
   expertClassId?: Prisma.SortOrder
   instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  lastUnreadCount?: Prisma.SortOrder
-  lastCheckTimestamp?: Prisma.SortOrder
-  pollInterval?: Prisma.SortOrder
-  consecutiveErrors?: Prisma.SortOrder
+  agentStatus?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -463,30 +350,13 @@ export type ExpertInstanceMinOrderByAggregateInput = {
   expertClassId?: Prisma.SortOrder
   instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  lastUnreadCount?: Prisma.SortOrder
-  lastCheckTimestamp?: Prisma.SortOrder
-  pollInterval?: Prisma.SortOrder
-  consecutiveErrors?: Prisma.SortOrder
+  agentStatus?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
-export type ExpertInstanceSumOrderByAggregateInput = {
-  lastUnreadCount?: Prisma.SortOrder
-  pollInterval?: Prisma.SortOrder
-  consecutiveErrors?: Prisma.SortOrder
-}
-
 export type StringFieldUpdateOperationsInput = {
   set?: string
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -500,10 +370,7 @@ export type ExpertInstanceSelect<ExtArgs extends runtime.Types.Extensions.Intern
   expertClassId?: boolean
   instanceId?: boolean
   status?: boolean
-  lastUnreadCount?: boolean
-  lastCheckTimestamp?: boolean
-  pollInterval?: boolean
-  consecutiveErrors?: boolean
+  agentStatus?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["expertInstance"]>
@@ -513,10 +380,7 @@ export type ExpertInstanceSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   expertClassId?: boolean
   instanceId?: boolean
   status?: boolean
-  lastUnreadCount?: boolean
-  lastCheckTimestamp?: boolean
-  pollInterval?: boolean
-  consecutiveErrors?: boolean
+  agentStatus?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["expertInstance"]>
@@ -526,10 +390,7 @@ export type ExpertInstanceSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   expertClassId?: boolean
   instanceId?: boolean
   status?: boolean
-  lastUnreadCount?: boolean
-  lastCheckTimestamp?: boolean
-  pollInterval?: boolean
-  consecutiveErrors?: boolean
+  agentStatus?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["expertInstance"]>
@@ -539,15 +400,12 @@ export type ExpertInstanceSelectScalar = {
   expertClassId?: boolean
   instanceId?: boolean
   status?: boolean
-  lastUnreadCount?: boolean
-  lastCheckTimestamp?: boolean
-  pollInterval?: boolean
-  consecutiveErrors?: boolean
+  agentStatus?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ExpertInstanceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "expertClassId" | "instanceId" | "status" | "lastUnreadCount" | "lastCheckTimestamp" | "pollInterval" | "consecutiveErrors" | "createdAt" | "updatedAt", ExtArgs["result"]["expertInstance"]>
+export type ExpertInstanceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "expertClassId" | "instanceId" | "status" | "agentStatus" | "createdAt" | "updatedAt", ExtArgs["result"]["expertInstance"]>
 
 export type $ExpertInstancePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ExpertInstance"
@@ -557,10 +415,7 @@ export type $ExpertInstancePayload<ExtArgs extends runtime.Types.Extensions.Inte
     expertClassId: string
     instanceId: string
     status: string
-    lastUnreadCount: number
-    lastCheckTimestamp: Date
-    pollInterval: number
-    consecutiveErrors: number
+    agentStatus: string
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["expertInstance"]>
@@ -990,10 +845,7 @@ export interface ExpertInstanceFieldRefs {
   readonly expertClassId: Prisma.FieldRef<"ExpertInstance", 'String'>
   readonly instanceId: Prisma.FieldRef<"ExpertInstance", 'String'>
   readonly status: Prisma.FieldRef<"ExpertInstance", 'String'>
-  readonly lastUnreadCount: Prisma.FieldRef<"ExpertInstance", 'Int'>
-  readonly lastCheckTimestamp: Prisma.FieldRef<"ExpertInstance", 'DateTime'>
-  readonly pollInterval: Prisma.FieldRef<"ExpertInstance", 'Int'>
-  readonly consecutiveErrors: Prisma.FieldRef<"ExpertInstance", 'Int'>
+  readonly agentStatus: Prisma.FieldRef<"ExpertInstance", 'String'>
   readonly createdAt: Prisma.FieldRef<"ExpertInstance", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ExpertInstance", 'DateTime'>
 }

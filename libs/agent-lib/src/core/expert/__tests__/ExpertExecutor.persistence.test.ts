@@ -70,10 +70,6 @@ describe('ExpertExecutor persistence integration', () => {
                     expertClassId: 'test-expert',
                     instanceId: 'instance-1',
                     status: 'running',
-                    lastUnreadCount: 5,
-                    lastCheckTimestamp: new Date(),
-                    pollInterval: 30000,
-                    consecutiveErrors: 0,
                 },
             ];
 
@@ -108,10 +104,6 @@ describe('ExpertExecutor persistence integration', () => {
                         expertClassId: 'non-existent-expert',
                         instanceId: 'instance-1',
                         status: 'running',
-                        lastUnreadCount: 0,
-                        lastCheckTimestamp: new Date(),
-                        pollInterval: 30000,
-                        consecutiveErrors: 0,
                     },
                 ]),
             };

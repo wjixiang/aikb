@@ -6,13 +6,13 @@
 
 import type { ExpertInstanceState, IExpertPersistenceStore } from './ExpertPersistenceStore.js';
 import type { AgentPrismaService } from '../../prisma/AgentPrismaService.js';
-import type { ExpertStatus } from '../types.js';
+import type { AgentStatus } from '../../common/types.js';
 
 export class PrismaExpertPersistenceStore implements IExpertPersistenceStore {
   constructor(private prisma: AgentPrismaService) {}
 
   async saveInstance(state: ExpertInstanceState): Promise<void> {
-    const { expertClassId, instanceId, status, lastUnreadCount, lastCheckTimestamp, pollInterval, consecutiveErrors } = state;
+    const { expertClassId, instanceId, status } = state;
 
     await this.prisma.expertInstance.upsert({
       where: {
@@ -23,19 +23,13 @@ export class PrismaExpertPersistenceStore implements IExpertPersistenceStore {
       },
       update: {
         status,
-        lastUnreadCount,
-        lastCheckTimestamp,
-        pollInterval,
-        consecutiveErrors,
+        agentStatus: status,
       },
       create: {
         expertClassId,
         instanceId,
         status,
-        lastUnreadCount,
-        lastCheckTimestamp,
-        pollInterval,
-        consecutiveErrors,
+        agentStatus: status,
       },
     });
   }
@@ -94,19 +88,12 @@ export class PrismaExpertPersistenceStore implements IExpertPersistenceStore {
     expertClassId: string;
     instanceId: string;
     status: string;
-    lastUnreadCount: number;
-    lastCheckTimestamp: Date;
-    pollInterval: number;
-    consecutiveErrors: number;
+    agentStatus: string;
   }): ExpertInstanceState {
     return {
       expertClassId: record.expertClassId,
       instanceId: record.instanceId,
-      status: record.status as ExpertStatus,
-      lastUnreadCount: record.lastUnreadCount,
-      lastCheckTimestamp: record.lastCheckTimestamp,
-      pollInterval: record.pollInterval,
-      consecutiveErrors: record.consecutiveErrors,
+      status: record.status as AgentStatus,
     };
   }
 }

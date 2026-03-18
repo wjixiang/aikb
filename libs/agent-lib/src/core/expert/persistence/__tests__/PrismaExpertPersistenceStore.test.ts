@@ -21,10 +21,6 @@ describe('PrismaExpertPersistenceStore', () => {
         expertClassId: 'test-expert',
         instanceId: 'instance-1',
         status: 'idle',
-        lastUnreadCount: 0,
-        lastCheckTimestamp: new Date(),
-        pollInterval: 30000,
-        consecutiveErrors: 0,
         ...overrides,
     });
 
@@ -35,14 +31,11 @@ describe('PrismaExpertPersistenceStore', () => {
     });
 
     describe('saveInstance', () => {
-        it('should upsert instance with all fields', async () => {
+        it('should upsert instance with simplified fields', async () => {
             const state = createTestState({
                 expertClassId: 'my-expert',
                 instanceId: 'my-instance',
                 status: 'running',
-                lastUnreadCount: 5,
-                pollInterval: 60000,
-                consecutiveErrors: 2,
             });
 
             await store.saveInstance(state);
@@ -56,19 +49,13 @@ describe('PrismaExpertPersistenceStore', () => {
                 },
                 update: {
                     status: 'running',
-                    lastUnreadCount: 5,
-                    lastCheckTimestamp: state.lastCheckTimestamp,
-                    pollInterval: 60000,
-                    consecutiveErrors: 2,
+                    agentStatus: 'running',
                 },
                 create: {
                     expertClassId: 'my-expert',
                     instanceId: 'my-instance',
                     status: 'running',
-                    lastUnreadCount: 5,
-                    lastCheckTimestamp: state.lastCheckTimestamp,
-                    pollInterval: 60000,
-                    consecutiveErrors: 2,
+                    agentStatus: 'running',
                 },
             });
         });
@@ -93,10 +80,7 @@ describe('PrismaExpertPersistenceStore', () => {
                 expertClassId: 'my-expert',
                 instanceId: 'my-instance',
                 status: 'running',
-                lastUnreadCount: 10,
-                lastCheckTimestamp: new Date('2024-01-01'),
-                pollInterval: 45000,
-                consecutiveErrors: 3,
+                agentStatus: 'running',
             };
             mockPrismaClient.expertInstance.findUnique.mockResolvedValue(dbRecord);
 
@@ -106,22 +90,15 @@ describe('PrismaExpertPersistenceStore', () => {
                 expertClassId: 'my-expert',
                 instanceId: 'my-instance',
                 status: 'running',
-                lastUnreadCount: 10,
-                lastCheckTimestamp: new Date('2024-01-01'),
-                pollInterval: 45000,
-                consecutiveErrors: 3,
             });
         });
 
-        it('should cast status string to ExpertStatus', async () => {
+        it('should cast status string to AgentStatus', async () => {
             const dbRecord = {
                 expertClassId: 'test',
                 instanceId: 'test',
                 status: 'idle',
-                lastUnreadCount: 0,
-                lastCheckTimestamp: new Date(),
-                pollInterval: 30000,
-                consecutiveErrors: 0,
+                agentStatus: 'idle',
             };
             mockPrismaClient.expertInstance.findUnique.mockResolvedValue(dbRecord);
 
@@ -144,19 +121,13 @@ describe('PrismaExpertPersistenceStore', () => {
                     expertClassId: 'expert-a',
                     instanceId: '1',
                     status: 'running',
-                    lastUnreadCount: 0,
-                    lastCheckTimestamp: new Date(),
-                    pollInterval: 30000,
-                    consecutiveErrors: 0,
+                    agentStatus: 'running',
                 },
                 {
                     expertClassId: 'expert-b',
                     instanceId: '1',
                     status: 'idle',
-                    lastUnreadCount: 0,
-                    lastCheckTimestamp: new Date(),
-                    pollInterval: 30000,
-                    consecutiveErrors: 0,
+                    agentStatus: 'idle',
                 },
             ];
             mockPrismaClient.expertInstance.findMany.mockResolvedValue(dbRecords);
@@ -171,10 +142,7 @@ describe('PrismaExpertPersistenceStore', () => {
                     expertClassId: 'expert-a',
                     instanceId: '1',
                     status: 'running',
-                    lastUnreadCount: 0,
-                    lastCheckTimestamp: new Date(),
-                    pollInterval: 30000,
-                    consecutiveErrors: 0,
+                    agentStatus: 'running',
                 },
             ]);
 
@@ -233,19 +201,13 @@ describe('PrismaExpertPersistenceStore', () => {
                     expertClassId: 'expert-a',
                     instanceId: '1',
                     status: 'running',
-                    lastUnreadCount: 5,
-                    lastCheckTimestamp: new Date(),
-                    pollInterval: 30000,
-                    consecutiveErrors: 0,
+                    agentStatus: 'running',
                 },
                 {
                     expertClassId: 'expert-b',
                     instanceId: '1',
                     status: 'running',
-                    lastUnreadCount: 3,
-                    lastCheckTimestamp: new Date(),
-                    pollInterval: 30000,
-                    consecutiveErrors: 0,
+                    agentStatus: 'running',
                 },
             ];
             mockPrismaClient.expertInstance.findMany.mockResolvedValue(dbRecords);

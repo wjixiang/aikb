@@ -331,6 +331,7 @@ export class ExpertExecutor implements IExpertExecutor {
     // Create MailComponent with address format: {expertClassId}-{instanceId}@expert
     // e.g., pubmed-retrieve-abc123@expert
     const mailAddress = `${config.expertId}-${instanceId}@expert`;
+
     const mailComponent = createMailComponent({
       baseUrl,
       defaultAddress: mailAddress,
@@ -366,10 +367,6 @@ export class ExpertExecutor implements IExpertExecutor {
         expertClassId: expert.expertId,
         instanceId: expert.instanceId,
         status: expert.status,
-        lastUnreadCount: 0,
-        lastCheckTimestamp: new Date(),
-        pollInterval: 30000,
-        consecutiveErrors: 0,
       };
       await this.persistenceStore.saveInstance(state);
     } catch (err) {

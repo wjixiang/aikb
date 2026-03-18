@@ -8,26 +8,18 @@ describe('ExpertInstanceState interface', () => {
             expertClassId: 'test-expert',
             instanceId: 'instance-1',
             status: 'idle',
-            lastUnreadCount: 0,
-            lastCheckTimestamp: new Date(),
-            pollInterval: 30000,
-            consecutiveErrors: 0,
         };
         expect(state.expertClassId).toBe('test-expert');
     });
 
     it('should accept all valid status values', () => {
-        const statuses: ExpertInstanceState['status'][] = ['idle', 'ready', 'running', 'completed', 'failed', 'suspended'];
+        const statuses: ExpertInstanceState['status'][] = ['idle', 'running', 'completed', 'aborted'];
 
         for (const status of statuses) {
             const state: ExpertInstanceState = {
                 expertClassId: 'test',
                 instanceId: 'test',
                 status,
-                lastUnreadCount: 0,
-                lastCheckTimestamp: new Date(),
-                pollInterval: 30000,
-                consecutiveErrors: 0,
             };
             expect(state.status).toBe(status);
         }
@@ -84,10 +76,6 @@ describe('IExpertPersistenceStore interface compliance', () => {
             expertClassId: 'test-expert',
             instanceId: 'instance-1',
             status: 'running',
-            lastUnreadCount: 5,
-            lastCheckTimestamp: new Date(),
-            pollInterval: 60000,
-            consecutiveErrors: 2,
         };
 
         await store.saveInstance(state);
@@ -103,28 +91,16 @@ describe('IExpertPersistenceStore interface compliance', () => {
             expertClassId: 'a',
             instanceId: '1',
             status: 'running',
-            lastUnreadCount: 0,
-            lastCheckTimestamp: new Date(),
-            pollInterval: 30000,
-            consecutiveErrors: 0,
         });
         await store.saveInstance({
             expertClassId: 'b',
             instanceId: '1',
             status: 'idle',
-            lastUnreadCount: 0,
-            lastCheckTimestamp: new Date(),
-            pollInterval: 30000,
-            consecutiveErrors: 0,
         });
         await store.saveInstance({
             expertClassId: 'c',
             instanceId: '1',
             status: 'running',
-            lastUnreadCount: 0,
-            lastCheckTimestamp: new Date(),
-            pollInterval: 30000,
-            consecutiveErrors: 0,
         });
 
         const running = await store.listRunningInstances();

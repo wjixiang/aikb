@@ -75,10 +75,7 @@ export const ExpertInstanceScalarFieldEnum = {
   expertClassId: 'expertClassId',
   instanceId: 'instanceId',
   status: 'status',
-  lastUnreadCount: 'lastUnreadCount',
-  lastCheckTimestamp: 'lastCheckTimestamp',
-  pollInterval: 'pollInterval',
-  consecutiveErrors: 'consecutiveErrors',
+  agentStatus: 'agentStatus',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

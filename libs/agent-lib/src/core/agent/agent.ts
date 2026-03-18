@@ -89,6 +89,14 @@ export interface AgentPrompt {
   direction: string;
 }
 
+/**
+ * Mail-driven mode configuration
+ */
+interface MailDrivenConfig {
+  pollInterval: number;
+  maxConsecutiveErrors: number;
+}
+
 @injectable()
 export class Agent {
   workspace: VirtualWorkspace;
@@ -104,6 +112,17 @@ export class Agent {
   private _consecutiveMistakeCount = 0;
   private _collectedErrors: string[] = [];
   private _abortInfo: AbortInfo | null = null;
+
+  // Mail-driven mode state
+  private _isMailDrivenRunning = false;
+  private _mailDrivenConfig: MailDrivenConfig = {
+    pollInterval: 30000,
+    maxConsecutiveErrors: 5,
+  };
+  private _lastUnreadCount = 0;
+  private _lastCheckTimestamp = 0;
+  private _consecutiveErrors = 0;
+  private _currentPollInterval: number;
 
   // Memory module (dependency injected, always present)
   private memoryModule: IMemoryModule;
@@ -131,6 +150,7 @@ export class Agent {
     this.workspace = workspace as unknown as VirtualWorkspace;
     this._taskId = taskId || crypto.randomUUID();
     this.agentPrompt = agentPrompt;
+    this._currentPollInterval = 30000;
 
     // Use injected dependencies
     this.memoryModule = memoryModule as MemoryModule;
@@ -263,6 +283,177 @@ export class Agent {
   }
 
   /**
+   * Start agent in mail-driven mode
+   * Agent polls its mailbox for new tasks and processes them autonomously
+   * @param pollInterval - Polling interval in milliseconds (default: 30000)
+   */
+  async startMailDrivenMode(pollInterval = 30000): Promise<void> {
+    this.logger.info(`[MailDriven] startMailDrivenMode called, current status=${this._status}`);
+
+    if (this._isMailDrivenRunning) {
+      this.logger.warn('Agent is already in mail-driven mode');
+      return;
+    }
+
+    // Check if mail component is available
+    const mailComponent = this.getMailComponent();
+    if (!mailComponent) {
+      this.logger.warn('[MailDriven] Mail component not found in workspace, mail-driven mode requires mail component');
+      this.logger.warn('[MailDriven] Available components: ' + (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'));
+      return;
+    }
+
+    this.logger.info('[MailDriven] Mail component found');
+    this._isMailDrivenRunning = true;
+    this._currentPollInterval = pollInterval;
+    this._mailDrivenConfig.pollInterval = pollInterval;
+    this._consecutiveErrors = 0;
+    this._lastUnreadCount = 0;
+    // Don't set status to 'running' here - stay idle until actually processing a task
+    // _status remains whatever it was before (typically 'idle')
+
+    this.logger.info(`[MailDriven] Agent started mail-driven mode (pollInterval: ${pollInterval}ms), status=${this._status}`);
+
+    try {
+      while (this._isMailDrivenRunning) {
+        const agentStatus = this.status;
+        const isAgentIdle = agentStatus === 'idle' || agentStatus === 'completed';
+
+        this.logger.debug(`[MailDriven] poll check: status=${agentStatus}, isIdle=${isAgentIdle}`);
+
+        if (isAgentIdle && this._isMailDrivenRunning) {
+          const hasNewTasks = await this.checkForNewTasks();
+
+          if (hasNewTasks) {
+            this.logger.info('[MailDriven] New task detected, waking up agent');
+            await this.wakeUpAgentForMailTask();
+            this.logger.info('[MailDriven] Agent finished processing task');
+          }
+        } else {
+          this.logger.debug(`[MailDriven] Agent busy (status=${agentStatus}), skipping poll`);
+        }
+
+        await this.sleep(this._currentPollInterval);
+      }
+    } catch (error) {
+      this.logger.error(`Agent mail-driven polling error: ${error}`);
+    } finally {
+      this._isMailDrivenRunning = false;
+      this._status = 'idle';
+      this.logger.info('Agent stopped mail-driven mode');
+    }
+  }
+
+  /**
+   * Check for new tasks by querying the mail component
+   * Returns true if there are new unread messages
+   */
+  private async checkForNewTasks(): Promise<boolean> {
+    const mailComponent = this.getMailComponent();
+    if (!mailComponent) {
+      this.logger.debug('No mail component found in workspace');
+      return false;
+    }
+
+    try {
+      const result = await mailComponent.handleToolCall('getUnreadCount', {});
+
+      // MailComponent returns errors inside result.data.error
+      if (result?.data?.error) {
+        this._handlePollingError(new Error(result.data.error as string));
+        return false;
+      }
+
+      const currentUnreadCount = result?.data?.count ?? 0;
+      this._lastCheckTimestamp = Date.now();
+      this._consecutiveErrors = 0;
+      this._currentPollInterval = this._mailDrivenConfig.pollInterval;
+
+      this.logger.debug(`[MailDriven] Unread count: current=${currentUnreadCount}, last=${this._lastUnreadCount}`);
+
+      if (currentUnreadCount > this._lastUnreadCount) {
+        const newMessageCount = currentUnreadCount - this._lastUnreadCount;
+        this.logger.info(
+          `[MailDriven] Detected ${newMessageCount} new unread message(s) (total: ${currentUnreadCount})`,
+        );
+        this._lastUnreadCount = currentUnreadCount;
+        return true;
+      }
+
+      this._lastUnreadCount = currentUnreadCount;
+      this.logger.debug(`[MailDriven] No new messages (unread: ${currentUnreadCount})`);
+      return false;
+    } catch (error) {
+      this._handlePollingError(error as Error);
+      return false;
+    }
+  }
+
+  /**
+   * Handle polling errors with exponential backoff
+   */
+  private _handlePollingError(error: Error): void {
+    this._consecutiveErrors++;
+
+    if (this._consecutiveErrors >= this._mailDrivenConfig.maxConsecutiveErrors) {
+      const maxInterval = 300000;
+      const newInterval = Math.min(
+        this._currentPollInterval * 2,
+        maxInterval,
+      );
+
+      if (newInterval !== this._currentPollInterval) {
+        this.logger.warn(
+          `Too many consecutive errors (${this._consecutiveErrors}), backing off to ${newInterval}ms`,
+        );
+        this._currentPollInterval = newInterval;
+      }
+    }
+
+    this.logger.error(`Error checking for new tasks: ${error.message}`);
+  }
+
+  /**
+   * Get MailComponent from workspace
+   */
+  private getMailComponent(): any {
+    return this.workspace.getComponent('mail');
+  }
+
+  /**
+   * Sleep utility
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Check if in mail-driven mode
+   */
+  isMailDrivenRunning(): boolean {
+    return this._isMailDrivenRunning;
+  }
+
+  /**
+   * Stop mail-driven mode
+   */
+  stopMailDrivenMode(): void {
+    if (!this._isMailDrivenRunning) {
+      return;
+    }
+    this._isMailDrivenRunning = false;
+    this._status = 'idle';
+    this.logger.info('Stopping mail-driven mode');
+  }
+
+  /**
+   * Internal wake up agent for mail task (called from polling loop)
+   */
+  private async wakeUpAgentForMailTask(): Promise<void> {
+    await this.wakeUpForMailTask();
+  }
+
+  /**
    * Get abort information
    * @returns The abort info if task was aborted, null otherwise
    */
@@ -360,10 +551,10 @@ export class Agent {
         const errorObj: Record<string, unknown> =
           error instanceof Error
             ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-              }
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
             : { message: String(error), original: error };
         // Add cause if it exists
         if (error instanceof Error && 'cause' in error) {

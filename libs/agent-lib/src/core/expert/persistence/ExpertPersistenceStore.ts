@@ -4,7 +4,7 @@
  * Defines the interface for persisting Expert instance state
  */
 
-import type { ExpertStatus } from '../types.js';
+import type { AgentStatus } from '../../common/types.js';
 
 /**
  * Expert instance state that can be persisted
@@ -12,11 +12,7 @@ import type { ExpertStatus } from '../types.js';
 export interface ExpertInstanceState {
   expertClassId: string;
   instanceId: string;
-  status: ExpertStatus;
-  lastUnreadCount: number;
-  lastCheckTimestamp: Date;
-  pollInterval: number;
-  consecutiveErrors: number;
+  status: AgentStatus;
 }
 
 /**

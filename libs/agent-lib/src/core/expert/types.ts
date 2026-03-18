@@ -8,6 +8,7 @@
 import type { IVirtualWorkspace, ToolComponent, VirtualWorkspaceConfig } from '../../components/index.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { AgentConfig } from '../agent/agent.js';
+import type { AgentStatus } from '../common/types.js';
 
 /**
  * Component definition - for Expert
@@ -184,6 +185,7 @@ export interface ExpertSummary {
 
 /**
  * Expert status
+ * @deprecated Use AgentStatus from core/common/types.js instead
  */
 export type ExpertStatus = 'idle' | 'ready' | 'running' | 'completed' | 'failed' | 'suspended';
 
@@ -348,8 +350,8 @@ export interface IExpertInstance {
     expertId: string;
     /** Instance ID - unique runtime identifier for this instance */
     instanceId: string;
-    /** Current status */
-    status: ExpertStatus;
+    /** Current status (delegated to Agent) */
+    status: AgentStatus;
     /** Start Expert in message-driven mode */
     start(): Promise<void>;
     /** Stop Expert */
