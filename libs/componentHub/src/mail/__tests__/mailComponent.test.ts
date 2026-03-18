@@ -73,10 +73,14 @@ describe('MailComponent', () => {
       expect(tools.has('searchMessages')).toBe(true);
       expect(tools.has('replyToMessage')).toBe(true);
       expect(tools.has('registerAddress')).toBe(true);
-      expect(tools.size).toBe(10);
+      expect(tools.has('saveDraft')).toBe(true);
+      expect(tools.has('editDraft')).toBe(true);
+      expect(tools.has('getDrafts')).toBe(true);
+      expect(tools.has('deleteDraft')).toBe(true);
+      expect(tools.size).toBe(15);
     });
 
-    it.only('should auto-fetch inbox during render (side effect)', async () => {
+    it('should auto-fetch inbox and drafts during render (side effect)', async () => {
       // Mock inbox data that will be fetched during render
       const mockInbox: InboxResult = {
         address: 'test@expert',
@@ -111,17 +115,24 @@ describe('MailComponent', () => {
         starred: 1,
       };
 
+      // Save some drafts to local state first
+      await component.handleToolCall('saveDraft', {
+        to: 'recipient@expert',
+        subject: 'Draft Subject',
+        body: 'Draft body',
+      });
+
       // Mock the inbox fetch that happens automatically during render
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockInbox),
       });
 
-      // Render the component - inbox will be auto-fetched as side effect
+      // Render the component - inbox will be auto-fetched, drafts from local state
       const elements = await component.renderImply();
 
       // Debug output
-      console.log('=== Auto-fetch Inbox Test ===');
+      console.log('=== Auto-fetch Inbox and Drafts Test ===');
       console.log('Fetch calls:', mockFetch.mock.calls.length);
       for (const el of elements) {
         console.log(el.render());
@@ -769,6 +780,357 @@ describe('MailComponent', () => {
       });
     });
 
+    describe('saveDraft', () => {
+      it('should save draft successfully (state-based)', async () => {
+        const result = await component.handleToolCall('saveDraft', {
+          to: 'recipient@expert',
+          subject: 'Draft Subject',
+          body: 'Draft body content',
+          priority: 'normal',
+        });
+
+        expect(result.data.success).toBe(true);
+        expect(result.data.draftId).toBeDefined();
+        expect(result.summary).toBe('[Mail] Draft saved: "Draft Subject"');
+        // No API call should be made
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('should return error when no default address for draft', async () => {
+        const componentWithoutAddress = new MailComponent({
+          baseUrl: 'http://localhost:3000',
+        });
+
+        const result = await componentWithoutAddress.handleToolCall('saveDraft', {
+          to: 'recipient@expert',
+          subject: 'Test',
+          body: 'Body',
+        });
+
+        expect(result.data).toEqual({ error: 'No default address configured' });
+        expect(result.summary).toContain('Error');
+      });
+    });
+
+    describe('editDraft', () => {
+      it('should edit draft successfully (state-based)', async () => {
+        // First save a draft to edit
+        const saveResult = await component.handleToolCall('saveDraft', {
+          to: 'recipient@expert',
+          subject: 'Original Subject',
+          body: 'Original body',
+        });
+        const draftId = saveResult.data.draftId;
+
+        // Now edit the draft
+        const result = await component.handleToolCall('editDraft', {
+          draftId: draftId,
+          subject: 'Updated Subject',
+          body: 'Updated body',
+        });
+
+        expect(result.data.success).toBe(true);
+        expect(result.summary).toBe(`[Mail] Draft edited: "${draftId}"`);
+        // No API call should be made
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('should return error when draft not found', async () => {
+        const result = await component.handleToolCall('editDraft', {
+          draftId: 'non_existent_draft',
+          subject: 'Updated Subject',
+        });
+
+        expect(result.data.success).toBe(false);
+        expect(result.data.error).toContain('not found');
+      });
+    });
+
+    describe('getDrafts', () => {
+      it('should get drafts with default address (state-based)', async () => {
+        // First save some drafts
+        await component.handleToolCall('saveDraft', {
+          to: 'recipient1@expert',
+          subject: 'Draft 1',
+          body: 'Body 1',
+        });
+        await component.handleToolCall('saveDraft', {
+          to: 'recipient2@expert',
+          subject: 'Draft 2',
+          body: 'Body 2',
+          priority: 'high',
+        });
+
+        const result = await component.handleToolCall('getDrafts', {});
+
+        expect(result.data.drafts.length).toBe(2);
+        expect(result.data.total).toBe(2);
+        expect(result.summary).toContain('test@expert');
+        expect(result.summary).toContain('2 drafts');
+        // No API call should be made
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('should return error when no address configured', async () => {
+        const componentWithoutAddress = new MailComponent({
+          baseUrl: 'http://localhost:3000',
+        });
+
+        const result = await componentWithoutAddress.handleToolCall('getDrafts', {});
+
+        expect(result.data).toEqual({
+          error: 'No address specified and no default address configured',
+        });
+      });
+
+      it('should support pagination parameters (state-based)', async () => {
+        // Save more than limit drafts
+        for (let i = 0; i < 5; i++) {
+          await component.handleToolCall('saveDraft', {
+            to: `recipient${i}@expert`,
+            subject: `Draft ${i}`,
+            body: `Body ${i}`,
+          });
+        }
+
+        const result = await component.handleToolCall('getDrafts', {
+          limit: 2,
+          offset: 1,
+        });
+
+        expect(result.data.drafts.length).toBe(2);
+        expect(result.data.total).toBe(5);
+      });
+    });
+
+    describe('deleteDraft', () => {
+      it('should delete draft successfully (state-based)', async () => {
+        // First save a draft to delete
+        const saveResult = await component.handleToolCall('saveDraft', {
+          to: 'recipient@expert',
+          subject: 'Draft to Delete',
+          body: 'Body',
+        });
+        const draftId = saveResult.data.draftId;
+
+        // Now delete the draft
+        const result = await component.handleToolCall('deleteDraft', {
+          draftId: draftId,
+        });
+
+        expect(result.data.success).toBe(true);
+        expect(result.summary).toBe(`[Mail] Draft deleted: "${draftId}"`);
+        // No API call should be made
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('should return error when draft not found', async () => {
+        const result = await component.handleToolCall('deleteDraft', {
+          draftId: 'non_existent_draft',
+        });
+
+        expect(result.data.success).toBe(false);
+        expect(result.data.error).toContain('not found');
+      });
+    });
+
+    describe('Draft Rendering Tests', () => {
+      it.only('should render draft content correctly', async () => {
+        console.log('\n========== Draft Rendering Test ==========');
+
+        // Save a draft with all fields
+        const saveResult = await component.handleToolCall('saveDraft', {
+          to: 'recipient@expert',
+          subject: 'Test Draft Subject',
+          body: 'This is the draft body content.\nIt has multiple lines.',
+          priority: 'high',
+          taskId: 'task_123',
+          attachments: ['file1.pdf', 'file2.pdf'],
+          payload: { customField: 'customValue' },
+        });
+
+        console.log('Saved draft result:', JSON.stringify(saveResult.data, null, 2));
+        const draftId = saveResult.data.draftId;
+
+        // Get drafts to verify
+        const getResult = await component.handleToolCall('getDrafts', {});
+        console.log('\nGet drafts result:', JSON.stringify(getResult.data, null, 2));
+
+        // Render the component to see draft UI
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
+        });
+
+        const elements = await component.renderImply();
+
+        console.log('\n========== Rendered Elements ==========');
+        for (let i = 0; i < elements.length; i++) {
+          const rendered = elements[i].render();
+          console.log(`\n--- Element ${i} ---`);
+          console.log(rendered);
+        }
+
+        console.log('\n========== End of Draft Rendering Test ==========\n');
+
+        expect(saveResult.data.success).toBe(true);
+        expect(getResult.data.drafts.length).toBe(1);
+        expect(elements.length).toBeGreaterThan(0);
+      });
+
+      it('should render multiple drafts correctly', async () => {
+        console.log('\n========== Multiple Drafts Rendering Test ==========');
+
+        // Save multiple drafts
+        await component.handleToolCall('saveDraft', {
+          to: 'recipient1@expert',
+          subject: 'First Draft',
+          body: 'Body of first draft',
+          priority: 'normal',
+        });
+
+        await component.handleToolCall('saveDraft', {
+          to: 'recipient2@expert',
+          subject: 'Second Draft',
+          body: 'Body of second draft',
+          priority: 'high',
+        });
+
+        await component.handleToolCall('saveDraft', {
+          to: 'recipient3@expert',
+          subject: 'Urgent Draft',
+          body: 'This is an urgent message',
+          priority: 'urgent',
+        });
+
+        // Get drafts
+        const getResult = await component.handleToolCall('getDrafts', {});
+        console.log('\nAll drafts:', JSON.stringify(getResult.data, null, 2));
+
+        // Render
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
+        });
+
+        const elements = await component.renderImply();
+
+        console.log('\n========== Rendered Elements (Multiple Drafts) ==========');
+        for (let i = 0; i < elements.length; i++) {
+          const rendered = elements[i].render();
+          console.log(`\n--- Element ${i} ---`);
+          console.log(rendered);
+        }
+
+        console.log('\n========== End of Multiple Drafts Rendering Test ==========\n');
+
+        expect(getResult.data.drafts.length).toBe(3);
+        expect(getResult.data.total).toBe(3);
+      });
+
+      it('should render edited draft correctly', async () => {
+        console.log('\n========== Edited Draft Rendering Test ==========');
+
+        // Save a draft
+        const saveResult = await component.handleToolCall('saveDraft', {
+          to: 'original@expert',
+          subject: 'Original Subject',
+          body: 'Original body',
+          priority: 'normal',
+        });
+
+        const draftId = saveResult.data.draftId;
+        console.log('Original draft:', JSON.stringify(saveResult.data, null, 2));
+
+        // Edit the draft
+        const editResult = await component.handleToolCall('editDraft', {
+          draftId: draftId,
+          to: 'updated@expert',
+          subject: 'Updated Subject',
+          body: 'Updated body content',
+          priority: 'high',
+        });
+
+        console.log('Edit result:', JSON.stringify(editResult.data, null, 2));
+
+        // Get the updated draft
+        const getResult = await component.handleToolCall('getDrafts', {});
+        console.log('\nUpdated draft:', JSON.stringify(getResult.data, null, 2));
+
+        // Render
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
+        });
+
+        const elements = await component.renderImply();
+
+        console.log('\n========== Rendered Elements (Edited Draft) ==========');
+        for (let i = 0; i < elements.length; i++) {
+          const rendered = elements[i].render();
+          console.log(`\n--- Element ${i} ---`);
+          console.log(rendered);
+        }
+
+        console.log('\n========== End of Edited Draft Rendering Test ==========\n');
+
+        expect(editResult.data.success).toBe(true);
+        expect(getResult.data.drafts[0].subject).toBe('Updated Subject');
+      });
+
+      it('should render after draft deletion correctly', async () => {
+        console.log('\n========== Draft Deletion Rendering Test ==========');
+
+        // Save drafts
+        await component.handleToolCall('saveDraft', {
+          to: 'recipient1@expert',
+          subject: 'Draft 1',
+          body: 'Body 1',
+        });
+
+        const draft2Result = await component.handleToolCall('saveDraft', {
+          to: 'recipient2@expert',
+          subject: 'Draft 2',
+          body: 'Body 2',
+        });
+        const draftIdToDelete = draft2Result.data.draftId;
+
+        console.log('Drafts before deletion:', (await component.handleToolCall('getDrafts', {})).data);
+
+        // Delete one draft
+        const deleteResult = await component.handleToolCall('deleteDraft', {
+          draftId: draftIdToDelete,
+        });
+
+        console.log('Delete result:', JSON.stringify(deleteResult.data, null, 2));
+
+        // Get remaining drafts
+        const getResult = await component.handleToolCall('getDrafts', {});
+        console.log('\nDrafts after deletion:', JSON.stringify(getResult.data, null, 2));
+
+        // Render
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
+        });
+
+        const elements = await component.renderImply();
+
+        console.log('\n========== Rendered Elements (After Deletion) ==========');
+        for (let i = 0; i < elements.length; i++) {
+          const rendered = elements[i].render();
+          console.log(`\n--- Element ${i} ---`);
+          console.log(rendered);
+        }
+
+        console.log('\n========== End of Draft Deletion Rendering Test ==========\n');
+
+        expect(deleteResult.data.success).toBe(true);
+        expect(getResult.data.drafts.length).toBe(1);
+        expect(getResult.data.total).toBe(1);
+      });
+    });
+
     describe('unknown tool', () => {
       it('should return error for unknown tool', async () => {
         const result = await component.handleToolCall('unknownTool', {});
@@ -1031,9 +1393,10 @@ describe('MailComponent', () => {
 
   describe('renderImply', () => {
     it('should render header and connection info', async () => {
+      // renderImply now makes 1 API call: getInbox (drafts are from local state)
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(0),
+        json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
       });
 
       const elements = await component.renderImply();
@@ -1043,8 +1406,7 @@ describe('MailComponent', () => {
       expect(elements[0]).toBeDefined();
     });
 
-    it('should render inbox when currentInbox is set', async () => {
-      // First set up inbox by calling getInbox
+    it('should render inbox and drafts when data is available', async () => {
       const mockInbox: InboxResult = {
         address: 'test@expert',
         messages: [
@@ -1066,31 +1428,38 @@ describe('MailComponent', () => {
         starred: 1,
       };
 
+      // First save some drafts to local state
+      await component.handleToolCall('saveDraft', {
+        to: 'recipient@expert',
+        subject: 'My Draft',
+        body: 'Draft body',
+      });
+
+      // Only mock for refreshInbox (drafts are from local state)
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockInbox),
       });
 
-      await component.handleToolCall('getInbox', {});
-
-      // Now render should include inbox
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(1),
-      });
-
       const elements = await component.renderImply();
 
       expect(elements.length).toBeGreaterThan(0);
+      // Should contain inbox content
+      const rendered = elements.map((el) => el.render()).join('\n');
+      expect(rendered).toContain('Test Message');
+      // Should contain drafts content
+      expect(rendered).toContain('My Draft');
+      // Should contain divider between inbox and drafts
+      expect(rendered).toContain('═');
     });
 
     it('should handle render error gracefully', async () => {
-      // Mock fetch to throw error
+      // First call fails for inbox
       mockFetch.mockRejectedValueOnce(new Error('Connection failed'));
 
       const elements = await component.renderImply();
 
-      // Should still render header and info even if stats fail
+      // Should still render header and info even if inbox fetch fails
       expect(elements.length).toBeGreaterThan(0);
     });
   });
@@ -1128,10 +1497,10 @@ describe('MailComponent', () => {
 
       await component.handleToolCall('getInbox', {});
 
-      // Render should handle array recipients - mock for getUnreadCount
+      // Mock for refreshInbox in renderImply (drafts from local state)
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(0),
+        json: () => Promise.resolve(mockInbox),
       });
 
       const elements = await component.renderImply();

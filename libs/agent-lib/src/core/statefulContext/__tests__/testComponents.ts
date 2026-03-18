@@ -22,7 +22,7 @@ export class TestComponent extends ToolComponent {
         return [];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         return { data: { success: true } };
     };
 }
@@ -47,7 +47,7 @@ export class TestComponent2 extends ToolComponent {
         return [];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         return { data: { success: true } };
     };
 }
@@ -72,7 +72,7 @@ export class AnotherComponent extends ToolComponent {
         return [];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         return { data: { success: true } };
     };
 }
@@ -106,7 +106,7 @@ export class TestToolComponentA extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         if (toolName === 'search') {
             this.searchQuery = params.query;
             this.searchResults = [`result1 for ${params.query}`, `result2 for ${params.query}`];
@@ -151,7 +151,7 @@ export class TestToolComponentB extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         if (toolName === 'increment') {
             const amount = params.amount || 1;
             this.counter += amount;
@@ -192,7 +192,7 @@ export class TestToolComponentC extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         if (toolName === 'toggle') {
             this.flag = !this.flag;
             return {

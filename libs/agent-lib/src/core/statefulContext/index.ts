@@ -12,6 +12,7 @@
 // Re-export all types from components
 export type {
     Tool,
+    ToolCallResult,
     IVirtualWorkspace,
     RenderMode,
     VirtualWorkspaceConfig,

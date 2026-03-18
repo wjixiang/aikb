@@ -91,7 +91,7 @@ class TestToolComponent extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         if (toolName === 'test_action_tool') {
             this.lastAction = params.action;
             return {

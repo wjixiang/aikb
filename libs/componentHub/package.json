@@ -35,7 +35,11 @@
     "build": "tsup src/index.ts",
     "dev": "tsup src/index.ts --watch",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:unit:watch": "vitest --config vitest.unit.config.ts",
+    "test:integrated": "vitest run --config vitest.integrated.config.ts",
+    "test:integrated:watch": "vitest --config vitest.integrated.config.ts"
   },
   "dependencies": {
     "agent-lib": "workspace:*",
@@ -47,6 +51,6 @@
   "devDependencies": {
     "tsup": "^8.5.1",
     "typescript": "^5.7.3",
-    "vitest": "^4.0.0"
+    "vitest": "^4.0.15"
   }
 }

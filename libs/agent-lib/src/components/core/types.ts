@@ -20,7 +20,7 @@ export interface IVirtualWorkspace {
     /**
      * Handle a tool call by name with given parameters
      */
-    handleToolCall(name: string, params: any): Promise<any>;
+    handleToolCall(name: string, params: any): Promise<ToolCallResult<any>>;
 
     /**
      * Get all registered tools
@@ -300,11 +300,11 @@ export interface Tool {
  * Result returned by ToolComponent.handleToolCall()
  * This allows components to provide custom summaries for the LOG section
  */
-export interface ToolCallResult {
+export interface ToolCallResult<T> {
     /**
      * The actual result data to return to the caller
      */
-    data: any;
+    data: T;
     /**
      * Optional custom summary for the LOG section
      * If not provided, a default summary will be generated

@@ -1,31 +1,10 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "lib": ["ES2022"],
-    "moduleResolution": "node",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationDir": "./dist",
-    "outDir": "./dist",
-    "noEmit": false,
-    "allowImportingTsExtensions": false,
-    "noImplicitAny": false,
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "agent-lib": ["../agent-lib/dist/index.d.ts"],
-      "agent-lib/*": ["../agent-lib/dist/src/*"]
-    }
+    "outDir": "../../dist/out-tsc",
+    "types": ["node"]
   },
   "include": ["src/**/*"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.spec.ts",
-    "**/*.test.ts"
-  ]
+  "exclude": ["node_modules", "dist"],
+
 }

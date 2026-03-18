@@ -33,6 +33,10 @@ export {
   createMailComponent,
   type MailComponentConfig,
   type MailComponentState,
+  type DraftData,
+  type DraftUpdate,
+  type DraftResult,
+  type DraftsResult,
 } from './mailComponent.js';
 
 // Export schema types for external use
@@ -45,6 +49,9 @@ export {
   searchMessagesParamsSchema,
   replyToMessageParamsSchema,
   registerAddressParamsSchema,
+  saveDraftParamsSchema,
+  editDraftParamsSchema,
+  getDraftsParamsSchema,
 } from './mailSchemas.js';
 
 // Export parameter types derived from Zod schemas
@@ -56,6 +63,9 @@ export type {
   SearchMessagesParams,
   ReplyToMessageParams,
   RegisterAddressParams,
+  SaveDraftParams,
+  EditDraftParams,
+  GetDraftsParams,
   MailToolParams,
 } from './mailSchemas.js';
 
@@ -76,5 +86,4 @@ export type {
   SendResult,
   StorageResult,
   IMailStorage,
-  MailComponentConfig,
-} from 'agent-lib/multi-agent';
+} from 'agent-lib';

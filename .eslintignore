@@ -1,0 +1,10 @@
+# Exclude a specific test directory
+/test/*
+
+# Exclude files ending with .test.js or .spec.js anywhere in the project
+**/*.test.js
+**/*.spec.js
+
+# Exclude files ending with .test.ts or .spec.ts
+**/*.test.ts
+**/*.spec.ts

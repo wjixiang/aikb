@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   Tool,
   ToolCallResult,
@@ -7,7 +7,7 @@ import {
   tdiv,
   th,
   tp,
-} from 'agent-lib/components/ui';
+} from 'agent-lib';
 import {
   type MailAddress,
   type OutgoingMail,
@@ -22,11 +22,18 @@ import {
 import {
   mailToolSchemas,
   type SendMailParams,
+  type GetInboxParams,
   type GetUnreadCountParams,
   type MessageIdParams,
   type SearchMessagesParams,
   type ReplyToMessageParams,
   type RegisterAddressParams,
+  type SaveDraftParams,
+  type EditDraftParams,
+  type GetDraftsParams,
+  type DeleteDraftParams,
+  type InsertDraftContentParams,
+  type ReplaceDraftContentParams,
 } from './mailSchemas';
 
 /**
@@ -82,12 +89,86 @@ export interface MailComponentState {
   starred: number;
   /** Currently selected message */
   selectedMessage?: MailMessage;
+  /** Drafts list */
+  drafts: Array<{
+    draftId: string;
+    to: string;
+    subject: string;
+    body: string;
+    priority: string;
+    taskId?: string;
+    attachments?: DraftAttachment[];
+    payload?: Record<string, unknown>;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  /** Drafts total count */
+  draftsTotal: number;
+  /** Currently selected draft for editing */
+  selectedDraft?: {
+    draftId: string;
+    to: string;
+    subject: string;
+    body: string;
+    priority: string;
+  };
+}
+
+/**
+ * Draft data for saving/editing drafts
+ */
+export interface DraftData {
+  from: string;
+  to: string;
+  subject: string;
+  body: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  taskId?: string;
+  attachments?: string[];
+  payload?: Record<string, unknown>;
+}
+
+export interface DraftUpdate {
+  to?: string;
+  subject?: string;
+  body?: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  taskId?: string;
+  attachments?: string[];
+  payload?: Record<string, unknown>;
+}
+
+export interface DraftResult {
+  success: boolean;
+  draftId?: string;
+  error?: string;
+}
+
+/**
+ * Attachment interface for draft attachments
+ */
+export interface DraftAttachment {
+  name: string;
+  url?: string;
+}
+
+export interface DraftsResult {
+  drafts: Array<{
+    draftId: string;
+    to: string;
+    subject: string;
+    body: string;
+    priority: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  total: number;
 }
 
 export class MailComponent extends ToolComponent {
-  componentId = 'mail';
-  displayName = 'Mail';
-  description = 'Email-style messaging system for agent communication';
+  override componentId = 'mail';
+  override displayName = 'Mail';
+  override description = 'Email-style messaging system for agent communication';
 
   toolSet: Map<string, Tool>;
   private config: MailComponentConfig;
@@ -98,7 +179,29 @@ export class MailComponent extends ToolComponent {
     total: 0,
     unread: 0,
     starred: 0,
+    drafts: [],
+    draftsTotal: 0,
   };
+
+  // Local in-memory storage for drafts (replaces API)
+  private draftsStore: Map<string, {
+    draftId: string;
+    from: string;
+    to: string;
+    subject: string;
+    body: string;
+    priority: string;
+    taskId?: string;
+    attachments?: DraftAttachment[];
+    payload?: Record<string, unknown>;
+    createdAt: string;
+    updatedAt: string;
+  }> = new Map();
+
+  // Generate unique draft ID
+  private generateDraftId(): string {
+    return `draft_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  }
 
   // Legacy support: currentInbox for backward compatibility
   private currentInbox: InboxResult | null = null;
@@ -136,6 +239,26 @@ export class MailComponent extends ToolComponent {
   }
 
   /**
+   * Select a draft for editing
+   */
+  private _selectDraft(draft: {
+    draftId: string;
+    to: string;
+    subject: string;
+    body: string;
+    priority: string;
+  }): void {
+    this.state.selectedDraft = draft;
+  }
+
+  /**
+   * Clear selected draft
+   */
+  private _clearDraftSelection(): void {
+    this.state.selectedDraft = undefined;
+  }
+
+  /**
    * Get current component state (internal use)
    */
   private _getState(): MailComponentState {
@@ -151,6 +274,8 @@ export class MailComponent extends ToolComponent {
       total: 0,
       unread: 0,
       starred: 0,
+      drafts: [],
+      draftsTotal: 0,
     };
     this.currentInbox = null;
     this.selectedMessage = null;
@@ -181,6 +306,7 @@ export class MailComponent extends ToolComponent {
     // Import tool schemas from mailSchemas
     const toolEntries: [string, Tool][] = [
       ['sendMail', mailToolSchemas.sendMail],
+      ['getInbox', mailToolSchemas.getInbox],
       ['getUnreadCount', mailToolSchemas.getUnreadCount],
       ['markAsRead', mailToolSchemas.markAsRead],
       ['markAsUnread', mailToolSchemas.markAsUnread],
@@ -190,6 +316,12 @@ export class MailComponent extends ToolComponent {
       ['searchMessages', mailToolSchemas.searchMessages],
       ['replyToMessage', mailToolSchemas.replyToMessage],
       ['registerAddress', mailToolSchemas.registerAddress],
+      ['saveDraft', mailToolSchemas.saveDraft],
+      ['editDraft', mailToolSchemas.editDraft],
+      ['getDrafts', mailToolSchemas.getDrafts],
+      ['deleteDraft', mailToolSchemas.deleteDraft],
+      ['insertDraftContent', mailToolSchemas.insertDraftContent],
+      ['replaceDraftContent', mailToolSchemas.replaceDraftContent],
     ];
 
     toolEntries.forEach(([name, tool]) => {
@@ -209,6 +341,8 @@ export class MailComponent extends ToolComponent {
       switch (toolName) {
         case 'sendMail':
           return await this.handleSendMail(params as SendMailParams);
+        case 'getInbox':
+          return await this.handleGetInbox(params as GetInboxParams);
         case 'getUnreadCount':
           return await this.handleGetUnreadCount(
             params as GetUnreadCountParams,
@@ -235,6 +369,18 @@ export class MailComponent extends ToolComponent {
           return await this.handleRegisterAddress(
             params as RegisterAddressParams,
           );
+        case 'saveDraft':
+          return this.handleSaveDraft(params as SaveDraftParams);
+        case 'editDraft':
+          return this.handleEditDraft(params as EditDraftParams);
+        case 'getDrafts':
+          return this.handleGetDrafts(params as GetDraftsParams);
+        case 'deleteDraft':
+          return this.handleDeleteDraft(params as DeleteDraftParams);
+        case 'insertDraftContent':
+          return this.handleInsertDraftContent(params as InsertDraftContentParams);
+        case 'replaceDraftContent':
+          return this.handleReplaceDraftContent(params as ReplaceDraftContentParams);
         default:
           return {
             data: { error: `Unknown tool: ${toolName}` },
@@ -280,6 +426,36 @@ export class MailComponent extends ToolComponent {
       summary: result.success
         ? `[Mail] Sent to ${params.to}: "${params.subject}"`
         : `[Mail] Failed to send: ${result.error}`,
+    };
+  }
+
+  private async handleGetInbox(
+    params: GetInboxParams,
+  ): Promise<ToolCallResult> {
+    const address = params.address || this.config.defaultAddress;
+    if (!address) {
+      return {
+        data: {
+          error: 'No address specified and no default address configured',
+        },
+        summary: '[Mail] Error: No address configured',
+      };
+    }
+
+    const query: InboxQuery = {
+      pagination: {
+        limit: params.limit || 20,
+        offset: params.offset || 0,
+      },
+      unreadOnly: params.unreadOnly,
+      starredOnly: params.starredOnly,
+    };
+
+    const result = await this.getInbox(address, query);
+
+    return {
+      data: result,
+      summary: `[Mail] ${address}: ${result.messages.length}/${result.total} messages (${result.unread} unread)`,
     };
   }
 
@@ -434,6 +610,122 @@ export class MailComponent extends ToolComponent {
     };
   }
 
+  private handleSaveDraft(
+    params: SaveDraftParams,
+  ): ToolCallResult {
+    const from = this.config.defaultAddress;
+    if (!from) {
+      return {
+        data: { error: 'No default address configured' },
+        summary: '[Mail] Error: No default address configured',
+      };
+    }
+
+    const draft = {
+      from,
+      to: params.to,
+      subject: params.subject,
+      body: params.body,
+      priority: params.priority || 'normal',
+      taskId: params.taskId,
+      attachments: params.attachments,
+      payload: params.payload,
+    };
+
+    const result = this.saveDraft(draft);
+
+    return {
+      data: result,
+      summary: result.success
+        ? `[Mail] Draft saved: "${params.subject}"`
+        : `[Mail] Failed to save draft: ${result.error}`,
+    };
+  }
+
+  private handleEditDraft(
+    params: EditDraftParams,
+  ): ToolCallResult {
+    const result = this.editDraft(params.draftId, {
+      to: params.to,
+      subject: params.subject,
+      body: params.body,
+      priority: params.priority,
+      taskId: params.taskId,
+      attachments: params.attachments,
+      payload: params.payload,
+    });
+
+    return {
+      data: result,
+      summary: result.success
+        ? `[Mail] Draft edited: "${params.draftId}"`
+        : `[Mail] Failed to edit draft: ${result.error}`,
+    };
+  }
+
+  private handleGetDrafts(
+    params: GetDraftsParams,
+  ): ToolCallResult {
+    const address = params.address || this.config.defaultAddress;
+    if (!address) {
+      return {
+        data: {
+          error: 'No address specified and no default address configured',
+        },
+        summary: '[Mail] Error: No address configured',
+      };
+    }
+
+    const result = this.getDrafts(address, {
+      limit: params.limit || 20,
+      offset: params.offset || 0,
+    });
+
+    return {
+      data: result,
+      summary: `[Mail] ${address}: ${result.drafts.length} drafts`,
+    };
+  }
+
+  private handleDeleteDraft(
+    params: DeleteDraftParams,
+  ): ToolCallResult {
+    const result = this.deleteDraft(params.draftId);
+
+    return {
+      data: result,
+      summary: result.success
+        ? `[Mail] Draft deleted: "${params.draftId}"`
+        : `[Mail] Failed to delete draft: ${result.error}`,
+    };
+  }
+
+  private handleInsertDraftContent(
+    params: InsertDraftContentParams,
+  ): ToolCallResult {
+    const result = this.insertDraftContent(params.draftId, params.content, params.position);
+
+    return {
+      data: result,
+      summary: result.success
+        ? `[Mail] Inserted content at position ${params.position} in draft "${params.draftId}"`
+        : `[Mail] Failed to insert content: ${result.error}`,
+    };
+  }
+
+  private handleReplaceDraftContent(
+    params: ReplaceDraftContentParams,
+  ): ToolCallResult {
+    const result = this.replaceDraftContent(params.draftId, params.search, params.replacement, params.replaceAll);
+
+    return {
+      data: result,
+      summary: result.success
+        ? `[Mail] Replaced "${params.search}" with "${params.replacement}" in draft "${params.draftId}"`
+        : `[Mail] Failed to replace content: ${result.error}`,
+    };
+  }
+
   // ==================== API Methods ====================
 
   /**
@@ -552,6 +844,337 @@ export class MailComponent extends ToolComponent {
   }
 
   /**
+   * Save an email as a draft (state-based, no API)
+   */
+  saveDraft(draft: DraftData): DraftResult {
+    try {
+      const draftId = this.generateDraftId();
+      const now = new Date().toISOString();
+
+      // Convert string[] attachments to DraftAttachment[]
+      const attachments: DraftAttachment[] | undefined = draft.attachments?.map(s3Key => ({
+        name: s3Key.split('/').pop() || s3Key,
+        url: s3Key,
+      }));
+
+      const newDraft = {
+        draftId,
+        from: draft.from,
+        to: draft.to,
+        subject: draft.subject,
+        body: draft.body,
+        priority: draft.priority || 'normal',
+        taskId: draft.taskId,
+        attachments,
+        payload: draft.payload,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      // Store in local memory
+      this.draftsStore.set(draftId, newDraft);
+
+      // Update state
+      this._setState({
+        drafts: Array.from(this.draftsStore.values()).map(d => ({
+          draftId: d.draftId,
+          to: d.to,
+          subject: d.subject,
+          body: d.body,
+          priority: d.priority,
+          taskId: d.taskId,
+          attachments: d.attachments,
+          payload: d.payload,
+          createdAt: d.createdAt,
+          updatedAt: d.updatedAt,
+        })),
+        draftsTotal: this.draftsStore.size,
+      });
+
+      return {
+        success: true,
+        draftId,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Edit an existing draft (state-based, no API)
+   */
+  editDraft(draftId: string, update: DraftUpdate): DraftResult {
+    try {
+      const existingDraft = this.draftsStore.get(draftId);
+      if (!existingDraft) {
+        return {
+          success: false,
+          error: `Draft ${draftId} not found`,
+        };
+      }
+
+      // Convert string[] attachments to DraftAttachment[] if needed
+      let attachments: DraftAttachment[] | undefined = (update as any).attachments;
+      if (attachments && attachments.length > 0 && typeof attachments[0] === 'string') {
+        attachments = (attachments as unknown as string[]).map((s3Key: string) => ({
+          name: s3Key.split('/').pop() || s3Key,
+          url: s3Key,
+        }));
+      }
+
+      const updatedDraft = {
+        ...existingDraft,
+        to: update.to ?? existingDraft.to,
+        subject: update.subject ?? existingDraft.subject,
+        body: update.body ?? existingDraft.body,
+        priority: update.priority ?? existingDraft.priority,
+        taskId: update.taskId ?? existingDraft.taskId,
+        attachments: attachments ?? existingDraft.attachments,
+        payload: update.payload ?? existingDraft.payload,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Store in local memory
+      this.draftsStore.set(draftId, updatedDraft);
+
+      // Update state
+      this._setState({
+        drafts: Array.from(this.draftsStore.values()).map(d => ({
+          draftId: d.draftId,
+          to: d.to,
+          subject: d.subject,
+          body: d.body,
+          priority: d.priority,
+          taskId: d.taskId,
+          attachments: d.attachments,
+          payload: d.payload,
+          createdAt: d.createdAt,
+          updatedAt: d.updatedAt,
+        })),
+        draftsTotal: this.draftsStore.size,
+      });
+
+      return {
+        success: true,
+        draftId,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Get drafts for an address (state-based, no API)
+   */
+  getDrafts(
+    _address: MailAddress,
+    options?: { limit?: number; offset?: number },
+  ): DraftsResult {
+    const allDrafts = Array.from(this.draftsStore.values());
+
+    const limit = options?.limit || 20;
+    const offset = options?.offset || 0;
+
+    const paginatedDrafts = allDrafts.slice(offset, offset + limit);
+
+    return {
+      drafts: paginatedDrafts.map(d => ({
+        draftId: d.draftId,
+        to: d.to,
+        subject: d.subject,
+        body: d.body,
+        priority: d.priority,
+        taskId: d.taskId,
+        attachments: d.attachments,
+        payload: d.payload,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
+      })),
+      total: allDrafts.length,
+    };
+  }
+
+  /**
+   * Delete a draft (state-based, no API)
+   */
+  deleteDraft(draftId: string): DraftResult {
+    try {
+      const existingDraft = this.draftsStore.get(draftId);
+      if (!existingDraft) {
+        return {
+          success: false,
+          error: `Draft ${draftId} not found`,
+        };
+      }
+
+      // Delete from local memory
+      this.draftsStore.delete(draftId);
+
+      // Clear selected draft if it was deleted
+      if (this.state.selectedDraft?.draftId === draftId) {
+        this._clearDraftSelection();
+      }
+
+      // Update state
+      this._setState({
+        drafts: Array.from(this.draftsStore.values()).map(d => ({
+          draftId: d.draftId,
+          to: d.to,
+          subject: d.subject,
+          body: d.body,
+          priority: d.priority,
+          taskId: d.taskId,
+          attachments: d.attachments,
+          payload: d.payload,
+          createdAt: d.createdAt,
+          updatedAt: d.updatedAt,
+        })),
+        draftsTotal: this.draftsStore.size,
+      });
+
+      return {
+        success: true,
+        draftId,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Insert content at a specific position in a draft body (state-based)
+   */
+  insertDraftContent(draftId: string, content: string, position: number): DraftResult {
+    try {
+      const existingDraft = this.draftsStore.get(draftId);
+      if (!existingDraft) {
+        return {
+          success: false,
+          error: `Draft ${draftId} not found`,
+        };
+      }
+
+      const currentBody = existingDraft.body || '';
+      // Validate position
+      const validPosition = Math.max(0, Math.min(position, currentBody.length));
+      const newBody = currentBody.slice(0, validPosition) + content + currentBody.slice(validPosition);
+
+      const updatedDraft = {
+        ...existingDraft,
+        body: newBody,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Store in local memory
+      this.draftsStore.set(draftId, updatedDraft);
+
+      // Update state
+      this._setState({
+        drafts: Array.from(this.draftsStore.values()).map(d => ({
+          draftId: d.draftId,
+          to: d.to,
+          subject: d.subject,
+          body: d.body,
+          priority: d.priority,
+          taskId: d.taskId,
+          attachments: d.attachments,
+          payload: d.payload,
+          createdAt: d.createdAt,
+          updatedAt: d.updatedAt,
+        })),
+        draftsTotal: this.draftsStore.size,
+      });
+
+      return {
+        success: true,
+        draftId,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Replace content in a draft body (state-based)
+   */
+  replaceDraftContent(draftId: string, search: string, replacement: string, replaceAll: boolean = false): DraftResult {
+    try {
+      const existingDraft = this.draftsStore.get(draftId);
+      if (!existingDraft) {
+        return {
+          success: false,
+          error: `Draft ${draftId} not found`,
+        };
+      }
+
+      const currentBody = existingDraft.body || '';
+
+      // Check if search string exists
+      if (!currentBody.includes(search)) {
+        return {
+          success: false,
+          error: `Search text "${search}" not found in draft body`,
+        };
+      }
+
+      let newBody: string;
+      if (replaceAll) {
+        newBody = currentBody.split(search).join(replacement);
+      } else {
+        newBody = currentBody.replace(search, replacement);
+      }
+
+      const updatedDraft = {
+        ...existingDraft,
+        body: newBody,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Store in local memory
+      this.draftsStore.set(draftId, updatedDraft);
+
+      // Update state
+      this._setState({
+        drafts: Array.from(this.draftsStore.values()).map(d => ({
+          draftId: d.draftId,
+          to: d.to,
+          subject: d.subject,
+          body: d.body,
+          priority: d.priority,
+          taskId: d.taskId,
+          attachments: d.attachments,
+          payload: d.payload,
+          createdAt: d.createdAt,
+          updatedAt: d.updatedAt,
+        })),
+        draftsTotal: this.draftsStore.size,
+      });
+
+      return {
+        success: true,
+        draftId,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
    * Internal fetch helper
    */
   private async fetchApi<T>(
@@ -608,8 +1231,9 @@ export class MailComponent extends ToolComponent {
    * Automatically fetches inbox data as a side effect during rendering
    */
   renderImply = async (): Promise<TUIElement[]> => {
-    // Side effect: auto-refresh inbox data from API
+    // Side effect: auto-refresh inbox and drafts data from local state
     await this.refreshInbox();
+    this.refreshDrafts();
 
     const elements: TUIElement[] = [];
 
@@ -638,26 +1262,24 @@ export class MailComponent extends ToolComponent {
       }),
     );
 
-    // Quick stats - use state property values directly
-    if (this.state.messages.length > 0 || this.state.total > 0) {
-      elements.push(
-        new tdiv({
-          content: `Unread: ${this.state.unread} | Total: ${this.state.total} | Starred: ${this.state.starred}`,
-          styles: {
-            align: 'center',
-            showBorder: true,
-            padding: { vertical: 1 },
-          },
-        }),
-      );
-    }
-
-    // Inbox view - use state property
-    if (this.state.messages.length > 0) {
+    // Inbox view
+    const messages = this.state.messages || [];
+    if (messages.length > 0) {
       elements.push(this.renderInboxFromState());
     } else if (this.currentInbox) {
-      // Fallback to legacy inbox for backward compatibility
       elements.push(this.renderInbox());
+    }
+
+    // Drafts section
+    elements.push(new tp({ content: '', indent: 1 }));
+    elements.push(new tp({ content: '═'.repeat(60), indent: 1 }));
+    elements.push(new tp({ content: '', indent: 1 }));
+
+    // Show draft editor if a draft is selected
+    if (this.state.selectedDraft) {
+      elements.push(this.renderDraftEditor());
+    } else {
+      elements.push(this.renderDraftsList());
     }
 
     return elements;
@@ -701,6 +1323,23 @@ export class MailComponent extends ToolComponent {
   private _isFetchingInbox = false;
 
   /**
+   * Auto-refresh drafts data from local state
+   */
+  private refreshDrafts(): void {
+    const address = this.config.defaultAddress;
+    if (!address) {
+      return;
+    }
+
+    // Get drafts from local state
+    const draftsResult = this.getDrafts(address);
+    this._setState({
+      drafts: draftsResult.drafts,
+      draftsTotal: draftsResult.total,
+    });
+  }
+
+  /**
    * Render inbox from state properties (new approach)
    */
   private renderInboxFromState(): TUIElement {
@@ -718,23 +1357,24 @@ export class MailComponent extends ToolComponent {
     );
 
     // Stats
+    const stateMessages = this.state.messages || [];
     container.addChild(
       new tp({
-        content: `Messages: ${this.state.messages.length}/${this.state.total} | Unread: ${this.state.unread} | Starred: ${this.state.starred}`,
+        content: `Messages: ${stateMessages.length}/${this.state.total} | Unread: ${this.state.unread} | Starred: ${this.state.starred}`,
         indent: 1,
         textStyle: { bold: true },
       }),
     );
 
     // Messages list
-    if (this.state.messages.length === 0) {
+    if (stateMessages.length === 0) {
       container.addChild(new tp({ content: 'No messages found.', indent: 2 }));
     } else {
       container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
 
-      this.state.messages.forEach((msg, index) => {
-        const starMarker = msg.status.starred ? '⭐ ' : '';
-        const readMarker = msg.status.read ? '  ' : '● ';
+      stateMessages.forEach((msg, index) => {
+        const starMarker = msg.status.starred ? '[STARRED]' : '';
+        const readMarker = msg.status.read ? '[UNREAD]' : '[READ]';
         const priorityMarker =
           msg.priority === 'urgent'
             ? ' [URGENT]'
@@ -796,23 +1436,23 @@ export class MailComponent extends ToolComponent {
     );
 
     // Stats
-    container.addChild(
-      new tp({
-        content: `Messages: ${this.currentInbox.messages.length}/${this.currentInbox.total} | Unread: ${this.currentInbox.unread} | Starred: ${this.currentInbox.starred}`,
-        indent: 1,
-        textStyle: { bold: true },
-      }),
-    );
+    const inboxMessages = this.currentInbox?.messages || [];
+    const mailStatusBox = new tp({
+      content: `Messages: ${inboxMessages.length}/${this.currentInbox.total} | Unread: ${this.currentInbox.unread} | Starred: ${this.currentInbox.starred}`,
+      indent: 1,
+    });
+
+    container.addChild(mailStatusBox);
 
     // Messages list
-    if (this.currentInbox.messages.length === 0) {
+    if (inboxMessages.length === 0) {
       container.addChild(new tp({ content: 'No messages found.', indent: 2 }));
     } else {
       container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
 
-      this.currentInbox.messages.forEach((msg, index) => {
-        const starMarker = msg.status.starred ? '⭐ ' : '';
-        const readMarker = msg.status.read ? '  ' : '● ';
+      inboxMessages.forEach((msg, index) => {
+        const starMarker = msg.status.starred ? '[STARRED]' : '';
+        const readMarker = msg.status.read ? '[UNDREAD]' : '[READ]';
         const priorityMarker =
           msg.priority === 'urgent'
             ? ' [URGENT]'
@@ -927,6 +1567,218 @@ export class MailComponent extends ToolComponent {
         }),
       );
     }
+
+    return container;
+  }
+
+  /**
+   * Render drafts list view
+   */
+  private renderDraftsList(): TUIElement {
+    const container = new tdiv({
+      styles: { showBorder: true, padding: { vertical: 1 } },
+    });
+
+    // Title
+    container.addChild(
+      new th({
+        content: 'Drafts',
+        level: 2,
+        styles: { align: 'center' },
+      }),
+    );
+
+    // Stats
+    const drafts = this.state.drafts || [];
+    container.addChild(
+      new tp({
+        content: `Total drafts: ${drafts.length}/${this.state.draftsTotal}`,
+        indent: 1,
+        textStyle: { bold: true },
+      }),
+    );
+
+    // Drafts list
+    if (drafts.length === 0) {
+      container.addChild(new tp({ content: 'No drafts found.', indent: 2 }));
+    } else {
+      container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
+
+      drafts.forEach((draft, index) => {
+        container.addChild(
+          new tp({
+            content: `${index + 1}. ${draft.subject || '(No Subject)'}`,
+            indent: 1,
+            textStyle: { bold: true },
+          }),
+        );
+
+        container.addChild(
+          new tp({
+            content: `   To: ${draft.to || '(No recipient)'} | Priority: ${draft.priority}`,
+            indent: 2,
+          }),
+        );
+
+        // Render taskId if present
+        if (draft.taskId) {
+          container.addChild(
+            new tp({
+              content: `   Task ID: ${draft.taskId}`,
+              indent: 2,
+            }),
+          );
+        }
+
+        if (draft.body) {
+          const preview =
+            draft.body.length > 80
+              ? draft.body.substring(0, 80) + '...'
+              : draft.body;
+          container.addChild(new tp({ content: `   ${preview}`, indent: 2 }));
+        }
+
+        // Render attachments if present
+        if (draft.attachments && draft.attachments.length > 0) {
+          container.addChild(
+            new tp({
+              content: `   Attachments: ${draft.attachments.map(a => a.name).join(', ')}`,
+              indent: 2,
+            }),
+          );
+        }
+
+        // Render payload indicator if present
+        if (draft.payload) {
+          const payloadKeys = Object.keys(draft.payload);
+          container.addChild(
+            new tp({
+              content: `   Payload: {${payloadKeys.join(', ')}}`,
+              indent: 2,
+              textStyle: { italic: true },
+            }),
+          );
+        }
+
+        container.addChild(
+          new tp({
+            content: `   Updated: ${new Date(draft.updatedAt).toLocaleString()}`,
+            indent: 2,
+          }),
+        );
+
+        container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
+      });
+    }
+
+    return container;
+  }
+
+  /**
+   * Render draft editor view
+   */
+  private renderDraftEditor(): TUIElement {
+    const draft = this.state.selectedDraft;
+    if (!draft) {
+      return new tdiv({ content: 'No draft selected' });
+    }
+
+    const container = new tdiv({
+      styles: { showBorder: true, padding: { vertical: 1 } },
+    });
+
+    // Title
+    container.addChild(
+      new th({
+        content: 'Edit Draft',
+        level: 2,
+        styles: { align: 'center' },
+      }),
+    );
+
+    container.addChild(new tp({ content: '', indent: 1 }));
+
+    // Draft ID (read-only)
+    container.addChild(
+      new tp({
+        content: `Draft ID: ${draft.draftId}`,
+        indent: 1,
+        textStyle: { bold: true },
+      }),
+    );
+
+    // To
+    container.addChild(
+      new tp({
+        content: `To: ${draft.to || '(empty)'}`,
+        indent: 1,
+      }),
+    );
+
+    // Subject
+    container.addChild(
+      new tp({
+        content: `Subject: ${draft.subject || '(no subject)'}`,
+        indent: 1,
+      }),
+    );
+
+    // Priority
+    container.addChild(
+      new tp({
+        content: `Priority: ${draft.priority}`,
+        indent: 1,
+      }),
+    );
+
+    container.addChild(new tp({ content: '', indent: 1 }));
+    container.addChild(new tp({ content: '─'.repeat(40), indent: 1 }));
+    container.addChild(new tp({ content: '', indent: 1 }));
+
+    // Body
+    container.addChild(
+      new th({
+        content: 'Body:',
+        level: 4,
+      }),
+    );
+
+    if (draft.body) {
+      container.addChild(new tp({ content: draft.body, indent: 1 }));
+    } else {
+      container.addChild(new tp({ content: '(empty)', indent: 1, textStyle: { italic: true } }));
+    }
+
+    container.addChild(new tp({ content: '', indent: 1 }));
+    container.addChild(new tp({ content: '─'.repeat(40), indent: 1 }));
+
+    // Instructions
+    container.addChild(new tp({ content: '', indent: 1 }));
+    container.addChild(
+      new tp({
+        content: 'Actions:',
+        indent: 1,
+        textStyle: { bold: true },
+      }),
+    );
+    container.addChild(
+      new tp({
+        content: '  - Use editDraft tool to modify this draft',
+        indent: 2,
+      }),
+    );
+    container.addChild(
+      new tp({
+        content: '  - Use sendMail to send this draft',
+        indent: 2,
+      }),
+    );
+    container.addChild(
+      new tp({
+        content: '  - Use saveDraft to create a new draft',
+        indent: 2,
+      }),
+    );
 
     return container;
   }

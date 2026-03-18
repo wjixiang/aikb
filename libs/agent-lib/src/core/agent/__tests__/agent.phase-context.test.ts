@@ -16,7 +16,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
 import { ToolComponent, ToolCallResult } from '../../statefulContext/index.js';
-import { Tool } from '../../statefulContext/types.js';
+import { Tool } from '../../statefulContext/index.js';
 import { tdiv } from '../../statefulContext/index.js';
 import * as z from 'zod';
 import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
@@ -66,7 +66,7 @@ class TestActionComponent extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         if (toolName === 'search_database') {
             this.searchData = `Searched for: ${params.query}`;
             return {

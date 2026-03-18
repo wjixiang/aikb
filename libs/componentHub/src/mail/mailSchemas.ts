@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type MailComponentConfig } from 'agent-lib/multi-agent';
+import type { MailComponentConfig } from 'agent-lib';
 
 export type { MailComponentConfig };
 
@@ -27,6 +27,25 @@ export type ReplyToMessageParams = z.infer<typeof replyToMessageParamsSchema>;
 
 // RegisterAddress parameters
 export type RegisterAddressParams = z.infer<typeof registerAddressParamsSchema>;
+
+// SaveDraft parameters
+export type SaveDraftParams = z.infer<typeof saveDraftParamsSchema>;
+
+// EditDraft parameters
+export type EditDraftParams = z.infer<typeof editDraftParamsSchema>;
+
+// GetDrafts parameters
+export type GetDraftsParams = z.infer<typeof getDraftsParamsSchema>;
+
+// DeleteDraft parameters
+export type DeleteDraftParams = z.infer<typeof deleteDraftParamsSchema>;
+
+// InsertDraftContent parameters
+export type InsertDraftContentParams = z.infer<typeof insertDraftContentParamsSchema>;
+
+// ReplaceDraftContent parameters
+export type ReplaceDraftContentParams = z.infer<typeof replaceDraftContentParamsSchema>;
+
 export const sendMailParamsSchema = z.object({
   to: z.string().describe('Recipient address (e.g., "pubmed@expert", "analysis@expert")'),
   subject: z.string().describe('Email subject line'),
@@ -73,6 +92,52 @@ export const registerAddressParamsSchema = z.object({
   address: z.string().describe('Address to register (e.g., "myagent@expert")'),
 });
 
+export const saveDraftParamsSchema = z.object({
+  to: z.string().describe('Recipient address (e.g., "pubmed@expert", "analysis@expert")'),
+  subject: z.string().describe('Email subject line'),
+  body: z.string().describe('Email body content'),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal').describe('Message priority'),
+  taskId: z.string().optional().describe('Associated task ID'),
+  attachments: z.array(z.string()).optional().describe('S3 keys of attachments'),
+  payload: z.record(z.unknown()).optional().describe('Additional JSON payload data'),
+});
+
+export const editDraftParamsSchema = z.object({
+  draftId: z.string().describe('ID of the draft to edit'),
+  to: z.string().optional().describe('New recipient address'),
+  subject: z.string().optional().describe('New email subject line'),
+  body: z.string().optional().describe('New email body content'),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().describe('New message priority'),
+  taskId: z.string().optional().describe('New associated task ID'),
+  attachments: z.array(z.string()).optional().describe('New S3 keys of attachments'),
+  payload: z.record(z.unknown()).optional().describe('New additional JSON payload data'),
+});
+
+export const getDraftsParamsSchema = z.object({
+  address: z.string().optional().describe('Mailbox address to query (defaults to component defaultAddress)'),
+  limit: z.number().default(20).describe('Maximum number of drafts to return'),
+  offset: z.number().default(0).describe('Number of drafts to skip'),
+});
+
+export const deleteDraftParamsSchema = z.object({
+  draftId: z.string().describe('ID of the draft to delete'),
+});
+
+// InsertDraftContent parameters - insert content at a specific position
+export const insertDraftContentParamsSchema = z.object({
+  draftId: z.string().describe('ID of the draft to insert content into'),
+  content: z.string().describe('Content to insert'),
+  position: z.number().describe('Character position to insert at (0-based index)'),
+});
+
+// ReplaceDraftContent parameters - replace specific content in the draft
+export const replaceDraftContentParamsSchema = z.object({
+  draftId: z.string().describe('ID of the draft to replace content in'),
+  search: z.string().describe('Content to search for (will be replaced)'),
+  replacement: z.string().describe('Content to replace the search text with'),
+  replaceAll: z.boolean().default(false).describe('Replace all occurrences or just the first one'),
+});
+
 /**
  * Union type for all mail tool parameters
  */
@@ -83,7 +148,10 @@ export type MailToolParams =
   | MessageIdParams
   | SearchMessagesParams
   | ReplyToMessageParams
-  | RegisterAddressParams;
+  | RegisterAddressParams
+  | SaveDraftParams
+  | EditDraftParams
+  | GetDraftsParams;
 
 /**
  * Tool schemas map
@@ -143,5 +211,35 @@ export const mailToolSchemas = {
     toolName: 'registerAddress',
     desc: 'Register a new mailbox address',
     paramsSchema: registerAddressParamsSchema,
+  },
+  saveDraft: {
+    toolName: 'saveDraft',
+    desc: 'Save an email as a draft (not sent)',
+    paramsSchema: saveDraftParamsSchema,
+  },
+  editDraft: {
+    toolName: 'editDraft',
+    desc: 'Edit an existing draft',
+    paramsSchema: editDraftParamsSchema,
+  },
+  getDrafts: {
+    toolName: 'getDrafts',
+    desc: 'Get saved drafts from mailbox',
+    paramsSchema: getDraftsParamsSchema,
+  },
+  deleteDraft: {
+    toolName: 'deleteDraft',
+    desc: 'Delete a draft',
+    paramsSchema: deleteDraftParamsSchema,
+  },
+  insertDraftContent: {
+    toolName: 'insertDraftContent',
+    desc: 'Insert content at a specific position in a draft body',
+    paramsSchema: insertDraftContentParamsSchema,
+  },
+  replaceDraftContent: {
+    toolName: 'replaceDraftContent',
+    desc: 'Replace specific content in a draft body with new content',
+    paramsSchema: replaceDraftContentParamsSchema,
   },
 };

@@ -36,7 +36,7 @@ export abstract class ToolComponent {
      * @param params - The parameters passed to the tool
      * @returns ToolCallResult containing the result data and optional custom summary for LOG section
      */
-    abstract handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    abstract handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult<any>>;
 
     /** Optional hook called when component is activated by a skill */
     onActivate?: () => Promise<void>;

@@ -130,7 +130,7 @@ class TestToolComponent extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         this.testData = params.input || JSON.stringify(params);
         return {
             data: { result: this.testData },
