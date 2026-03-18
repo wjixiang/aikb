@@ -27,10 +27,6 @@ export * from './api-client/index.js';
 // Common Types
 export * from './common/types.js';
 
-// Database
-export { prisma, AgentDBPrismaService } from '../prisma.js';
-export { AgentDBModule } from '../agent-db.module.js';
-
 // DI (Dependency Injection)
 export * from './di/index.js';
 

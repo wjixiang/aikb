@@ -13,7 +13,6 @@ export * from './types.js';
 // Classes
 export { ExpertRegistry } from './ExpertRegistry.js';
 export { ExpertExecutor } from './ExpertExecutor.js';
-export { ExpertOrchestrator } from './ExpertOrchestrator.js';
 export { ExpertInstance } from './ExpertInstance.js';
 
 // CLI
