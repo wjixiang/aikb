@@ -26,7 +26,10 @@ import type { ToolComponent } from '../../components/index.js';
  */
 @injectable()
 export class ExpertInstance implements IExpertInstance {
+    /** Expert class ID */
     public expertId: string;
+    /** Instance ID - unique runtime identifier */
+    public instanceId: string;
     public status: ExpertStatus = 'idle';
 
     private agent: Agent;
@@ -46,8 +49,10 @@ export class ExpertInstance implements IExpertInstance {
     constructor(
         config: ExpertConfig,
         agent: Agent,
+        instanceId: string,
     ) {
         this.expertId = config.expertId;
+        this.instanceId = instanceId;
         this.config = config;
         this.agent = agent;
         // Initialize poll interval from config, default to 30000ms (30 seconds)

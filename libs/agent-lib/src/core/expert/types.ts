@@ -35,8 +35,10 @@ export interface ExpertComponentDefinition {
  * Expert Configuration - integrates all original Skill functionality
  */
 export interface ExpertConfig {
-    /** Expert unique identifier (original Skill name) */
+    /** Expert unique identifier (original Skill name) - acts as "class ID" */
     expertId: string;
+    /** Instance ID - supports multiple instances of the same Expert class */
+    instanceId?: string;
     /** Expert display name (original Skill displayName) */
     displayName: string;
     /** Expert description (original Skill description) */
@@ -308,14 +310,31 @@ export interface ExpertExecutorOptions {
 export interface IExpertExecutor {
     /** Register Expert */
     registerExpert(config: ExpertConfig): void;
-    /** Create Expert instance */
-    createExpert(expertId: string): Promise<IExpertInstance>;
-    /** Get Expert instance */
-    getExpert(expertId: string): IExpertInstance | undefined;
-    /** Release Expert instance */
-    releaseExpert(expertId: string): void;
-    /** Start Expert in message-driven mode (no explicit task data) */
-    startExpert(expertId: string, autoStart?: boolean): Promise<IExpertInstance>;
+    /**
+     * Create Expert instance
+     * @param expertClassId - The Expert class ID (config.expertId)
+     * @param instanceId - Optional instance ID. If not provided, a unique ID is auto-generated
+     */
+    createExpert(expertClassId: string, instanceId?: string): Promise<IExpertInstance>;
+    /**
+     * Get Expert instance by composite key
+     * @param expertClassId - The Expert class ID
+     * @param instanceId - The instance ID (optional, matches any if not provided)
+     */
+    getExpert(expertClassId: string, instanceId?: string): IExpertInstance | undefined;
+    /**
+     * Release Expert instance by composite key
+     * @param expertClassId - The Expert class ID
+     * @param instanceId - The instance ID (optional, releases all if not provided)
+     */
+    releaseExpert(expertClassId: string, instanceId?: string): void;
+    /**
+     * Start Expert in message-driven mode (no explicit task data)
+     * @param expertClassId - The Expert class ID
+     * @param instanceId - Optional instance ID
+     * @param autoStart - If true, automatically start run loop after activation
+     */
+    startExpert(expertClassId: string, instanceId?: string, autoStart?: boolean): Promise<IExpertInstance>;
     /** Stop all running experts */
     stopAll(): Promise<void>;
 }
@@ -325,8 +344,10 @@ export interface IExpertExecutor {
  * Manages Agent lifecycle and message-driven task processing
  */
 export interface IExpertInstance {
-    /** Expert ID */
+    /** Expert class ID */
     expertId: string;
+    /** Instance ID - unique runtime identifier for this instance */
+    instanceId: string;
     /** Current status */
     status: ExpertStatus;
     /** Start Expert in message-driven mode */
