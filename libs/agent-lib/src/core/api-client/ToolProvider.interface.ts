@@ -1,4 +1,4 @@
-import { Tool } from '../statefulContext/index.js';
+import { Tool } from '../../components/core/types.js';
 
 /**
  * Interface for providing tools to API clients

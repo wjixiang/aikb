@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Agent, AgentConfig, AgentPrompt } from './agent.js';
 import { ProviderSettings } from '../types/provider-settings.js';
-import { VirtualWorkspace } from '../statefulContext/index.js';
+import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import { ApiClient } from '../api-client/index.js';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';

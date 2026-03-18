@@ -12,8 +12,12 @@
 import { z } from 'zod';
 import { tdiv, ToolComponent, Tool } from './ui/index.js';
 import type { ToolCallResult } from './core/types.js';
-import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
+// @ts-expect-error - Apollo client has default export at runtime but TS types are inconsistent
+import apollo from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
+import type { ApolloClient, NormalizedCacheObject, InMemoryCache, HttpLink } from '@apollo/client';
+
+const { ApolloClient: ApolloClientClass, InMemoryCache: InMemoryCacheClass, HttpLink: HttpLinkClass, gql } = apollo;
 
 loadDevMessages();
 loadErrorMessages();
@@ -25,12 +29,12 @@ let apolloClient: ApolloClient<NormalizedCacheObject> | null = null;
 
 function getApolloClient(): ApolloClient<NormalizedCacheObject> {
     if (!apolloClient) {
-        apolloClient = new ApolloClient({
-            link: new HttpLink({ uri: `${WIKI_SERVICE_URL}/graphql` }),
-            cache: new InMemoryCache(),
+        apolloClient = new ApolloClientClass({
+            link: new HttpLinkClass({ uri: `${WIKI_SERVICE_URL}/graphql` }),
+            cache: new InMemoryCacheClass(),
         });
     }
-    return apolloClient;
+    return apolloClient as ApolloClient<NormalizedCacheObject>;
 }
 
 // GraphQL queries and mutations

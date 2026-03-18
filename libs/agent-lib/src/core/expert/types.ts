@@ -5,7 +5,7 @@
  * Integrates original Skill functionality: prompt, components, lifecycle hooks
  */
 
-import type { ToolComponent, VirtualWorkspaceConfig } from '../../components/index.js';
+import type { IVirtualWorkspace, ToolComponent, VirtualWorkspaceConfig } from '../../components/index.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { AgentConfig } from '../agent/agent.js';
 
@@ -144,7 +144,7 @@ export interface ExpertExportConfig {
      * - Export logic
      */
     exportHandler?: (
-        workspace: any,
+        workspace: IVirtualWorkspace,
         config: ExportConfig
     ) => Promise<ExportResult>;
 }
@@ -228,20 +228,6 @@ export interface ExpertTask {
     dependencies?: string[];
     /** Expected output types */
     expectedOutputs?: string[];
-}
-
-/**
- * Expert execution request
- */
-export interface ExpertExecuteRequest {
-    /** Expert ID or name */
-    expertId: string;
-    /** Task to execute */
-    task: ExpertTask;
-    /** Context (from Controller or other Experts) */
-    context?: Record<string, any>;
-    /** Timeout in milliseconds */
-    timeout?: number;
 }
 
 /**
@@ -332,36 +318,25 @@ export interface IExpertExecutor {
     startExpert(expertId: string, autoStart?: boolean): Promise<IExpertInstance>;
     /** Stop all running experts */
     stopAll(): Promise<void>;
-    /** Execute a task directly using ExpertExecuteRequest */
-    execute(request: ExpertExecuteRequest): Promise<ExpertResult>;
 }
 
 /**
  * Expert Instance - running Expert
+ * Manages Agent lifecycle and message-driven task processing
  */
 export interface IExpertInstance {
     /** Expert ID */
     expertId: string;
-    /** Status */
+    /** Current status */
     status: ExpertStatus;
-    /** Activate Expert */
-    activate(): Promise<void>;
-    /** Suspend Expert */
-    suspend(): Promise<void>;
-    /** Resume Expert */
-    resume(): Promise<void>;
-    /** Execute task (legacy mode with explicit task data) */
-    execute(task: ExpertTask, context?: Record<string, any>): Promise<ExpertResult>;
-    /** Start message-driven mode - poll inbox for tasks */
-    run(): Promise<void>;
-    /** Stop message-driven mode */
+    /** Start Expert in message-driven mode */
+    start(): Promise<void>;
+    /** Stop Expert */
     stop(): Promise<void>;
-    /** Check if running in message-driven mode */
+    /** Check if running */
     isRunning(): boolean;
     /** Get current state summary */
     getStateSummary(): Promise<string>;
-    /** Get artifacts */
-    getArtifacts(): ExpertArtifact[];
     /** Cleanup resources */
     dispose(): Promise<void>;
 }

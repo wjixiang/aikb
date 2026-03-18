@@ -94,12 +94,11 @@ export class ExpertOrchestrator {
         for (const expertTask of request.expertTasks) {
             this.logger.info(`[Orchestrator] Executing expert: ${expertTask.expertId}`);
 
-            const result = await this.executor.execute({
-                expertId: expertTask.expertId,
-                task: expertTask.task,
-                context,
-                timeout: request.timeout
-            });
+            const result = await this.executor.executeTask(
+                expertTask.expertId,
+                expertTask.task,
+                context
+            );
 
             expertResults.set(expertTask.expertId, result);
             if (result.artifacts) {
@@ -146,12 +145,11 @@ export class ExpertOrchestrator {
         const promises = request.expertTasks.map(async (expertTask) => {
             this.logger.info(`[Orchestrator] Starting parallel expert: ${expertTask.expertId}`);
 
-            const result = await this.executor.execute({
-                expertId: expertTask.expertId,
-                task: expertTask.task,
-                context: request.globalContext,
-                timeout: request.timeout
-            });
+            const result = await this.executor.executeTask(
+                expertTask.expertId,
+                expertTask.task,
+                request.globalContext
+            );
 
             return { expertId: expertTask.expertId, result };
         });
@@ -219,12 +217,11 @@ export class ExpertOrchestrator {
                 }
             }
 
-            const result = await this.executor.execute({
-                expertId: expertTask.expertId,
-                task: expertTask.task,
-                context,
-                timeout: request.timeout
-            });
+            const result = await this.executor.executeTask(
+                expertTask.expertId,
+                expertTask.task,
+                context
+            );
 
             expertResults.set(expertTask.expertId, result);
             if (result.artifacts) {

@@ -8,7 +8,7 @@
  * a clean foundation for skills to dynamically add their components.
  */
 
-import { VirtualWorkspace } from '../statefulContext/index.js';
+import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { ToolManager } from '../tools/index.js';
 
 /**

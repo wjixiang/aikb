@@ -11,7 +11,8 @@
  * Or extend this class to add your own components.
  */
 
-import { VirtualWorkspace, ComponentRegistration } from '../statefulContext/index.js';
+import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
+import type { ComponentRegistration } from '../../components/index.js';
 
 /**
  * Knowledge Management Workspace

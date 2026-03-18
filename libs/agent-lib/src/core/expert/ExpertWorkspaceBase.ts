@@ -17,6 +17,7 @@
 
 import { ToolComponent } from '../../components/index.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
+import type { IVirtualWorkspace } from '../../components/index.js';
 import type { ExportResult, ExportConfig, InputHandler, ValidationResult } from './types.js';
 
 /**
@@ -145,7 +146,7 @@ export abstract class ExpertWorkspaceBase {
      * @param workspace - 虚拟工作空间
      * @returns 格式化的输出对象
      */
-    static formatOutput(workspace: VirtualWorkspace): Record<string, any> {
+    static formatOutput(workspace: IVirtualWorkspace): Record<string, any> {
         const outputs: Record<string, any> = {};
         const componentKeys = workspace.getComponentKeys();
 
@@ -169,7 +170,7 @@ export abstract class ExpertWorkspaceBase {
      * @returns 导出结果
      */
     static async exportHandler(
-        workspace: VirtualWorkspace,
+        workspace: IVirtualWorkspace,
         config: ExportConfig
     ): Promise<ExportResult> {
         try {
@@ -203,7 +204,7 @@ export abstract class ExpertWorkspaceBase {
      * 获取VirtualFileSystemComponent
      * 用于文件导出
      */
-    protected static getVFSComponent(workspace: VirtualWorkspace): any {
+    protected static getVFSComponent(workspace: IVirtualWorkspace): any {
         const componentKeys = workspace.getComponentKeys();
 
         for (const key of componentKeys) {

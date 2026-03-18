@@ -6,6 +6,7 @@
  */
 
 import type * as z from 'zod';
+import type { IToolManager } from '../../core';
 
 /**
  * Interface for VirtualWorkspace
@@ -30,7 +31,7 @@ export interface IVirtualWorkspace {
     /**
      * Get the tool manager instance
      */
-    getToolManager(): any;
+    getToolManager(): IToolManager;
 
     /**
      * Register a component with an ID
@@ -413,7 +414,7 @@ export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
 /**
  * Script validation result
  */
-export interface ValidationResult {
+export interface ScriptValidationResult {
     valid: boolean;
     errors: string[];
     warnings: string[];

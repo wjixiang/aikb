@@ -16,7 +16,7 @@ import type {
   SubscriptionId,
   MailAddress,
 } from './types.js';
-import type { ExpertTask, ExpertResult, IExpertExecutor, ExpertExecuteRequest } from '../core/expert/types.js';
+import type { ExpertTask, ExpertResult, IExpertExecutor } from '../core/expert/types.js';
 import { TYPES } from '../core/di/types.js';
 
 /**
@@ -135,24 +135,21 @@ export class ExpertAdapter {
         },
       };
 
-      // 执行任务
-      const executeRequest: ExpertExecuteRequest = {
-        expertId: this.config.expertId,
-        task: expertTask,
-        timeout: this.config.messageTimeout || 300000,
-      };
+      // Get or create expert instance
+      let expert = this.expertExecutor.getExpert(this.config.expertId);
+      if (!expert) {
+        expert = await this.expertExecutor.createExpert(this.config.expertId);
+        // Start in message-driven mode
+        expert.start();
+      }
 
-      const startTime = Date.now();
-      const expertResult = await this.expertExecutor.execute(executeRequest);
-      const duration = Date.now() - startTime;
-
-      // 发送结果邮件回给发件人
-      await this.sendResult(mail, expertResult, duration);
-
-      // 标记邮件为已读
+      // Note: In the new architecture, Expert itself polls inbox for tasks.
+      // This adapter is kept for backward compatibility but the actual task
+      // execution is now handled by Expert.run() internally.
+      // For now, we just mark the mail as read since Expert will process it.
       await this.messageBus.markAsRead(mail.messageId);
 
-      console.log(`[ExpertAdapter:${this.config.expertId}] Task completed in ${duration}ms`);
+      console.log(`[ExpertAdapter:${this.config.expertId}] Mail forwarded to Expert (will be processed in message-driven mode)`);
     } catch (error) {
       console.error(`[ExpertAdapter:${this.config.expertId}] Error processing mail:`, error);
 

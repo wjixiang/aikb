@@ -36,9 +36,9 @@ export type {
     Permission,
     State,
     ScriptExecutionResult,
+    ScriptValidationResult,
     SecurityConfig,
     DEFAULT_SECURITY_CONFIG,
-    ValidationResult,
     ComponentRegistration,
     WorkspaceScriptExecutionResult,
     CompletionCallback

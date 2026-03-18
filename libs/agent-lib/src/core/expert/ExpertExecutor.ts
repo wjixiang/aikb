@@ -10,8 +10,6 @@ import type {
   ExpertConfig,
   ExpertComponentDefinition,
   ExpertExecutorOptions,
-  ExpertExecuteRequest,
-  ExpertResult,
 } from './types.js';
 import { ExpertRegistry } from './ExpertRegistry.js';
 import { ExpertInstance } from './ExpertInstance.js';
@@ -75,15 +73,12 @@ export class ExpertExecutor implements IExpertExecutor {
   ): Promise<IExpertInstance> {
     const expert = await this.createExpert(expertId);
 
-    // Activate the expert
-    await expert.activate();
-
     // Start message-driven loop if enabled
     if (autoStart && this.options.autoStartExperts) {
       // Start in background - don't await
-      expert.run().catch((err) => {
+      expert.start().catch((err) => {
         console.error(
-          `[ExpertExecutor] Expert ${expertId} run loop error:`,
+          `[ExpertExecutor] Expert ${expertId} start error:`,
           err,
         );
       });
@@ -109,22 +104,18 @@ export class ExpertExecutor implements IExpertExecutor {
   }
 
   /**
-   * Execute a task directly using ExpertExecuteRequest
-   * This is a convenience method that creates/gets an expert instance and executes the task
+   * Execute a single task with an expert (internal method for Orchestrator)
+   * This is an internal API, not part of the public interface
    */
-  async execute(request: ExpertExecuteRequest): Promise<ExpertResult> {
-    const { expertId, task, context } = request;
+  async executeTask(
+    expertId: string,
+    task: { description: string; taskId?: string; input?: Record<string, any>; expectedOutputs?: string[] },
+    context?: Record<string, any>
+  ): Promise<{ expertId: string; success: boolean; output: any; summary: string; artifacts: any[]; duration: number; errors?: string[] }> {
+    const expert = await this.createExpert(expertId);
 
-    // Get or create expert instance
-    let expert = this.getExpert(expertId);
-    if (!expert) {
-      expert = await this.createExpert(expertId);
-      await expert.activate();
-    }
-
-    // Execute the task with optional context and timeout
-    const result = await expert.execute(task, context);
-
+    // For orchestration, execute directly without message-driven loop
+    const result = await (expert as any).executeInternal(task as any);
     return result;
   }
 

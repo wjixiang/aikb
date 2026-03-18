@@ -1,5 +1,5 @@
 import { injectable, inject, optional } from 'inversify';
-import type { Tool } from '../statefulContext/index.js';
+import type { Tool } from '../../components/core/types.js';
 import type { IToolProvider } from './IToolProvider.js';
 import { ToolSource } from './IToolProvider.js';
 import type {

@@ -35,9 +35,11 @@ import type {
     ExpertComponentDefinition,
     InputHandler,
     ExportConfig,
-    ExportResult
+    ExportResult,
+    ExpertExportConfig
 } from './types.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
+import type { IVirtualWorkspace } from '../../components/index.js';
 import { ExpertWorkspaceBase } from './ExpertWorkspaceBase.js';
 
 /**
@@ -265,7 +267,7 @@ export function createExpertConfig(
             autoExport: config.export.autoExport,
             bucket: config.export.bucket,
             defaultPath: config.export.defaultPath,
-            exportHandler: (ws: VirtualWorkspace, cfg: ExportConfig) =>
+            exportHandler: (ws: IVirtualWorkspace, cfg: ExportConfig) =>
                 workspace.exportHandler(ws, cfg),
         } : undefined,
     };
