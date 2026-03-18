@@ -20,3 +20,6 @@ export * from './cli/index.js';
 
 // Builtin Experts
 export * from './builtin/index.js';
+
+// Persistence
+export * from './persistence/index.js';

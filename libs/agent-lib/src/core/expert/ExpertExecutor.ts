@@ -19,6 +19,7 @@ import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import { AgentContainer } from '../di/container.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { ToolComponent, createMailComponent } from '../../components/index.js';
+import type { IExpertPersistenceStore, ExpertInstanceState } from './persistence/index.js';
 
 /**
  * Generate composite key for expert instance
@@ -32,14 +33,17 @@ export class ExpertExecutor implements IExpertExecutor {
   private expertConfigs: Map<string, ExpertConfig> = new Map();
   private agentContainer: AgentContainer;
   private options: ExpertExecutorOptions;
+  private persistenceStore?: IExpertPersistenceStore;
 
   constructor(
     private registry: ExpertRegistry,
     container?: AgentContainer,
     options?: ExpertExecutorOptions,
+    persistenceStore?: IExpertPersistenceStore,
   ) {
     this.agentContainer = container || new AgentContainer();
     this.options = options || {};
+    this.persistenceStore = persistenceStore;
   }
 
   /**
@@ -81,13 +85,18 @@ export class ExpertExecutor implements IExpertExecutor {
       if (expert) {
         expert.dispose();
         this.expertInstances.delete(key);
+        // Remove from persistence
+        this.deleteInstanceState(expertClassId, instanceId);
       }
     } else {
       // Release all instances of this expertClassId
       for (const [key, expert] of this.expertInstances) {
         if (key.startsWith(`${expertClassId}/`)) {
+          const [, instId] = key.split('/');
           expert.dispose();
           this.expertInstances.delete(key);
+          // Remove from persistence
+          this.deleteInstanceState(expertClassId, instId);
         }
       }
     }
@@ -107,6 +116,9 @@ export class ExpertExecutor implements IExpertExecutor {
     autoStart = true,
   ): Promise<IExpertInstance> {
     const expert = await this.createExpert(expertClassId, instanceId);
+
+    // Update status to running in persistence
+    await this.saveInstanceState(expert);
 
     // Start message-driven loop if enabled
     if (autoStart && this.options.autoStartExperts) {
@@ -129,6 +141,9 @@ export class ExpertExecutor implements IExpertExecutor {
     for (const [key, expert] of this.expertInstances) {
       try {
         await expert.stop();
+        // Update status in persistence
+        const [expertClassId, instanceId] = key.split('/');
+        await this.saveInstanceState(expert);
       } catch (err) {
         console.error(
           `[ExpertExecutor] Error stopping expert ${key}:`,
@@ -136,22 +151,6 @@ export class ExpertExecutor implements IExpertExecutor {
         );
       }
     }
-  }
-
-  /**
-   * Execute a single task with an expert (internal method for Orchestrator)
-   * This is an internal API, not part of the public interface
-   */
-  async executeTask(
-    expertClassId: string,
-    task: { description: string; taskId?: string; input?: Record<string, any>; expectedOutputs?: string[] },
-    context?: Record<string, any>
-  ): Promise<{ expertId: string; success: boolean; output: any; summary: string; artifacts: any[]; duration: number; errors?: string[] }> {
-    const expert = await this.createExpert(expertClassId);
-
-    // For orchestration, execute directly without message-driven loop
-    const result = await (expert as any).executeInternal(task as any);
-    return result;
   }
 
   /**
@@ -208,8 +207,11 @@ export class ExpertExecutor implements IExpertExecutor {
     await this.registerBuiltinComponent(agent, config, resolvedInstanceId);
 
     // Create ExpertInstance wrapping the Agent
-    const expertInstance = new ExpertInstance(config, agent, resolvedInstanceId);
+    const expertInstance = new ExpertInstance(config, agent, resolvedInstanceId, this.persistenceStore);
     this.expertInstances.set(compositeKey, expertInstance);
+
+    // Save instance state to persistence
+    await this.saveInstanceState(expertInstance);
 
     console.log(
       `[ExpertExecutor] Created Expert instance for: ${expertClassId}/${resolvedInstanceId}`,
@@ -349,5 +351,91 @@ export class ExpertExecutor implements IExpertExecutor {
     console.log(
       `[ExpertExecutor] Registered MailComponent for expert: ${mailAddress}`,
     );
+  }
+
+  /**
+   * Save instance state to persistence store
+   */
+  private async saveInstanceState(expert: IExpertInstance): Promise<void> {
+    if (!this.persistenceStore) {
+      return;
+    }
+
+    try {
+      const state: ExpertInstanceState = {
+        expertClassId: expert.expertId,
+        instanceId: expert.instanceId,
+        status: expert.status,
+        lastUnreadCount: 0,
+        lastCheckTimestamp: new Date(),
+        pollInterval: 30000,
+        consecutiveErrors: 0,
+      };
+      await this.persistenceStore.saveInstance(state);
+    } catch (err) {
+      console.error(
+        `[ExpertExecutor] Failed to save instance state for ${expert.expertId}/${expert.instanceId}:`,
+        err,
+      );
+    }
+  }
+
+  /**
+   * Delete instance state from persistence store
+   */
+  private async deleteInstanceState(expertClassId: string, instanceId: string): Promise<void> {
+    if (!this.persistenceStore) {
+      return;
+    }
+
+    try {
+      await this.persistenceStore.deleteInstance(expertClassId, instanceId);
+    } catch (err) {
+      console.error(
+        `[ExpertExecutor] Failed to delete instance state for ${expertClassId}/${instanceId}:`,
+        err,
+      );
+    }
+  }
+
+  /**
+   * Recover running instances after application restart
+   * Returns list of recovered expert configurations
+   */
+  async recoverRunningInstances(): Promise<{ expertClassId: string; instanceId: string }[]> {
+    if (!this.persistenceStore) {
+      console.log('[ExpertExecutor] No persistence store, skipping recovery');
+      return [];
+    }
+
+    try {
+      const runningInstances = await this.persistenceStore.listRunningInstances();
+      const recovered: { expertClassId: string; instanceId: string }[] = [];
+
+      for (const state of runningInstances) {
+        // Check if config exists for this expert
+        if (!this.expertConfigs.has(state.expertClassId)) {
+          console.warn(
+            `[ExpertExecutor] Cannot recover ${state.expertClassId}: config not found`,
+          );
+          continue;
+        }
+
+        // Note: We don't auto-restart - just report what was running
+        // The caller should decide whether to restart
+        console.log(
+          `[ExpertExecutor] Found running instance: ${state.expertClassId}/${state.instanceId}`,
+        );
+        recovered.push({
+          expertClassId: state.expertClassId,
+          instanceId: state.instanceId,
+        });
+      }
+
+      return recovered;
+    } catch (err) {
+      console.error('[ExpertExecutor] Failed to recover running instances:', err);
+      return [];
+    }
   }
 }

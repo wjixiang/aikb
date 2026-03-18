@@ -69,5 +69,8 @@ export * from './types/index.js';
 // Utils
 export * from './utils/index.js';
 
+// Prisma
+export * from './prisma/index.js';
+
 // Workspaces
 export * from './workspaces/index.js';

@@ -5,9 +5,27 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model ExpertInstance {
+  id                 String   @id @default(uuid())
+  expertClassId      String
+  instanceId         String
+  status             String   @default("idle")
+  lastUnreadCount    Int      @default(0)
+  lastCheckTimestamp DateTime @default(now())
+  pollInterval       Int      @default(30000)
+  consecutiveErrors  Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([expertClassId, instanceId])
+  @@index([status])
+  @@index([expertClassId])
 }
