@@ -52,7 +52,7 @@ import type { ZodSchema } from 'zod';
 function validateBody<T>(schema: ZodSchema<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const details = result.error.errors.map((err) => ({
+    const details = result.error.issues.map((err) => ({
       field: err.path.join('.'),
       message: err.message,
     }));
@@ -67,7 +67,7 @@ function validateBody<T>(schema: ZodSchema<T>, data: unknown): T {
 function validateParams<T>(schema: ZodSchema<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const details = result.error.errors.map((err) => ({
+    const details = result.error.issues.map((err) => ({
       field: err.path.join('.'),
       message: err.message,
     }));
@@ -82,7 +82,7 @@ function validateParams<T>(schema: ZodSchema<T>, data: unknown): T {
 function validateQuery<T>(schema: ZodSchema<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const details = result.error.errors.map((err) => ({
+    const details = result.error.issues.map((err) => ({
       field: err.path.join('.'),
       message: err.message,
     }));
@@ -855,7 +855,35 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         response: {
           200: {
             type: 'array',
-            items: { type: 'object' },
+            items: {
+              type: 'object',
+              properties: {
+                messageId: { type: 'string' },
+                subject: { type: 'string' },
+                body: { type: 'string' },
+                from: { type: 'string' },
+                to: { type: 'string' },
+                cc: { type: 'array', items: { type: 'string' } },
+                bcc: { type: 'array', items: { type: 'string' } },
+                attachments: { type: 'array', items: { type: 'string' } },
+                payload: { type: 'object' },
+                priority: { type: 'string', enum: ['low', 'normal', 'high', 'urgent'] },
+                status: {
+                  type: 'object',
+                  properties: {
+                    read: { type: 'boolean' },
+                    starred: { type: 'boolean' },
+                    deleted: { type: 'boolean' },
+                  },
+                },
+                taskId: { type: 'string' },
+                sentAt: { type: 'string' },
+                receivedAt: { type: 'string' },
+                updatedAt: { type: 'string' },
+                inReplyTo: { type: 'string' },
+                references: { type: 'array', items: { type: 'string' } },
+              },
+            },
           },
         },
       },
@@ -936,7 +964,7 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       const startTime = Date.now();
 
       try {
-        const { address } = request.params ? request.params : { address: request.body.address };
+        const address = (request.params as { address?: string })?.address || request.body.address;
         const result = await storage.registerAddress(request.body.address);
         const duration = (Date.now() - startTime) / 1000;
 

@@ -19,7 +19,7 @@ export interface ErrorResponse {
  * Convert ZodError to ValidationError
  */
 export function convertZodError(zodError: ZodError): ValidationError {
-  const details = zodError.errors.map((err) => ({
+  const details = zodError.issues.map((err) => ({
     field: err.path.join('.'),
     message: err.message,
   }));

@@ -13,7 +13,8 @@ const window = new JSDOM('').window;
 const purify = DOMPurify(window);
 
 // DOMPurify configuration for strict sanitization
-const STRICT_CONFIG: DOMPurify.Config = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const STRICT_CONFIG: any = {
   ALLOWED_TAGS: [], // No HTML tags allowed
   ALLOWED_ATTR: [], // No attributes allowed
   KEEP_CONTENT: true, // Keep text content
@@ -22,7 +23,8 @@ const STRICT_CONFIG: DOMPurify.Config = {
 };
 
 // DOMPurify configuration for rich text (if needed)
-const RICH_TEXT_CONFIG: DOMPurify.Config = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const RICH_TEXT_CONFIG: any = {
   ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'],
   ALLOWED_ATTR: ['href', 'title'],
   SANITIZE_DOM: true,
@@ -37,7 +39,7 @@ export function sanitizePlainText(input: string): string {
   if (!input || typeof input !== 'string') {
     return '';
   }
-  return purify.sanitize(input, STRICT_CONFIG).trim();
+  return String(purify.sanitize(input, STRICT_CONFIG)).trim();
 }
 
 /**
@@ -48,7 +50,7 @@ export function sanitizeEmailBody(input: string): string {
   if (!input || typeof input !== 'string') {
     return '';
   }
-  return purify.sanitize(input, RICH_TEXT_CONFIG).trim();
+  return String(purify.sanitize(input, RICH_TEXT_CONFIG)).trim();
 }
 
 /**

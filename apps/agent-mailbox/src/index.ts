@@ -81,22 +81,11 @@ async function buildServer() {
     await fastify.register(rateLimit, {
       max: config.rateLimit.maxRequests,
       timeWindow: config.rateLimit.windowMs,
-      addHeadersOnExceeding: {
-        'x-ratelimit-limit': true,
-        'x-ratelimit-remaining': true,
-        'x-ratelimit-reset': true,
-      },
-      addHeaders: {
-        'x-ratelimit-limit': true,
-        'x-ratelimit-remaining': true,
-        'x-ratelimit-reset': true,
-        'x-ratelimit-retry-after': true,
-      },
-      errorResponseBuilder: (req, context) => ({
+      errorResponseBuilder: (_req, context) => ({
         statusCode: 429,
         error: 'Too Many Requests',
-        message: `Rate limit exceeded. Maximum ${context.max} requests per ${Math.ceil(config.rateLimit.windowMs / 1000)} seconds.`,
-        retryAfter: Math.ceil(context.after / 1000),
+        message: `Rate limit exceeded. Maximum ${context.max} requests per ${Math.ceil(Number(config.rateLimit.windowMs) / 1000)} seconds.`,
+        retryAfter: Math.ceil(Number(context.after) / 1000),
       }),
     });
   }
@@ -104,21 +93,12 @@ async function buildServer() {
   // ==================== Swagger Documentation ====================
 
   await fastify.register(swagger, {
-    swagger: {
+    openapi: {
       info: {
         title: 'Agent Mailbox API',
         description: 'Email-style message system for multi-agent communication',
         version: '1.0.0',
       },
-      servers: [
-        { url: `http://localhost:${config.server.port}`, description: 'Development server' },
-      ],
-      tags: [
-        { name: 'mail', description: 'Mail operations' },
-        { name: 'health', description: 'Health check endpoints' },
-        { name: 'websocket', description: 'WebSocket subscription endpoints' },
-        { name: 'metrics', description: 'Prometheus metrics endpoints' },
-      ],
     },
   });
 

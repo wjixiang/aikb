@@ -37,7 +37,7 @@ export const outgoingMailSchema = z.object({
   cc: z.array(mailAddressSchema).optional(),
   bcc: z.array(mailAddressSchema).optional(),
   attachments: z.array(z.string().min(1)).max(10, 'Too many attachments').optional(),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
   priority: messagePrioritySchema,
   taskId: z.string().max(255).optional(),
   inReplyTo: z.string().optional(),
@@ -49,7 +49,7 @@ export const outgoingMailSchema = z.object({
 export const replyMailSchema = z.object({
   body: z.string().min(1, 'Reply body is required').max(100000, 'Body is too long'),
   attachments: z.array(z.string().min(1)).max(10, 'Too many attachments').optional(),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
   from: mailAddressSchema.optional(),
 });
 

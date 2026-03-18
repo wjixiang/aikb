@@ -417,6 +417,12 @@ export interface IMailStorage {
   getRegisteredAddresses(): Promise<MailAddress[]>;
 
   /**
+   * Check if the storage is healthy
+   * @returns True if storage is healthy
+   */
+  isHealthy(): Promise<boolean>;
+
+  /**
    * Close/cleanup storage connections
    */
   close(): Promise<void>;

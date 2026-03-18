@@ -1,12 +1,11 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { getMetrics, getMetricsContentType } from '../lib/metrics/index.js';
 import { createLogger } from '../lib/logger.js';
+import { IMailStorage } from '../lib/storage/type.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    mailStorage: {
-      isHealthy?: () => Promise<boolean>;
-    };
+    mailStorage: IMailStorage;
   }
 }
 
@@ -33,6 +32,10 @@ const metricsRouterPlugin: FastifyPluginAsync = async (
         200: {
           type: 'string',
           description: 'Prometheus metrics in text format',
+        },
+        500: {
+          type: 'string',
+          description: 'Error generating metrics',
         },
       },
     },

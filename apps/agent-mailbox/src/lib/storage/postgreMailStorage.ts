@@ -162,7 +162,7 @@ export class PostgreMailStorage implements IMailStorage {
     );
 
     if (!result.success) {
-      return { success: false, error: result.error };
+      return { success: false, error: (result as { success: false; error: string }).error };
     }
     return { success: true };
   }
@@ -461,7 +461,7 @@ export class PostgreMailStorage implements IMailStorage {
     );
 
     if (!result.success) {
-      return { success: false, error: result.error };
+      return { success: false, error: (result as { success: false; error: string }).error };
     }
     return { success: true };
   }
@@ -564,7 +564,7 @@ export class PostgreMailStorage implements IMailStorage {
     }, 'Failed to register address');
 
     if (!result.success) {
-      return { success: false, error: result.error };
+      return { success: false, error: (result as { success: false; error: string }).error };
     }
     return { success: true };
   }
@@ -868,9 +868,12 @@ export class PostgreMailStorage implements IMailStorage {
       if (result.success && result.data?.success) {
         succeeded++;
       } else {
+        const errMsg = result.success
+          ? ((result.data as { error?: string })?.error || 'Operation failed')
+          : ((result as { error: string }).error || 'Operation failed');
         errors.push({
           messageId: msgId,
-          error: (result.success ? result.data?.error : result.error) || 'Operation failed',
+          error: errMsg,
         });
       }
     }
@@ -881,6 +884,18 @@ export class PostgreMailStorage implements IMailStorage {
       failed: errors.length,
       errors: errors.length > 0 ? errors : undefined,
     };
+  }
+
+  /**
+   * Check if the storage is healthy
+   */
+  async isHealthy(): Promise<boolean> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
