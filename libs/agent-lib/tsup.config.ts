@@ -14,7 +14,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   treeshake: true,
-  esbuildOptions(options) {
-    options.external = ['@prisma/client-runtime-utils', 'pino'];
-  },
+  external: ['@prisma/client-runtime-utils', 'pino', '@apollo/client', 'graphql', '@apollo/client/dev'],
 });

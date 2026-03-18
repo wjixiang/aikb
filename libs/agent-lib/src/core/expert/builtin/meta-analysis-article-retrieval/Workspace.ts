@@ -8,7 +8,7 @@
  */
 
 import { ExpertWorkspaceBase, type ComponentDefinition } from '../../ExpertWorkspaceBase.js';
-import { VirtualWorkspace } from '../../../statefulContext/virtualWorkspace.js';
+import type { IVirtualWorkspace } from '../../../../components/index.js';
 import type { ValidationResult, ExportConfig, ExportResult } from '../../types.js';
 import { BibliographySearchComponent } from '../../../../components/index.js';
 
@@ -138,7 +138,7 @@ export class MetaAnalysisArticleRetrievalWorkspace extends ExpertWorkspaceBase {
      * 将检索结果导出为CSV格式
      */
     static override async exportHandler(
-        workspace: VirtualWorkspace,
+        workspace: IVirtualWorkspace,
         config: ExportConfig
     ): Promise<ExportResult> {
         try {
