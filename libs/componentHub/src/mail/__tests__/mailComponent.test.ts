@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach, type Mock } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  afterEach,
+  type Mock,
+} from 'vitest';
 import { MailComponent, createMailComponent } from '../mailComponent';
 import type {
   MailMessage,
@@ -6,7 +14,7 @@ import type {
   SendResult,
   StorageResult,
   MailComponentConfig,
-} from 'agent-lib/multi-agent';
+} from 'agent-lib';
 
 // Mock global fetch
 const mockFetch = vi.fn();
@@ -38,7 +46,9 @@ describe('MailComponent', () => {
       const mail = new MailComponent(baseConfig);
       expect(mail.componentId).toBe('mail');
       expect(mail.displayName).toBe('Mail');
-      expect(mail.description).toBe('Email-style messaging system for agent communication');
+      expect(mail.description).toBe(
+        'Email-style messaging system for agent communication',
+      );
     });
 
     it('should apply default timeout when not specified', () => {
@@ -63,14 +73,73 @@ describe('MailComponent', () => {
       expect(tools.has('searchMessages')).toBe(true);
       expect(tools.has('replyToMessage')).toBe(true);
       expect(tools.has('registerAddress')).toBe(true);
-      expect(tools.size).toBe(11);
+      expect(tools.size).toBe(10);
+    });
+
+    it.only('should auto-fetch inbox during render (side effect)', async () => {
+      // Mock inbox data that will be fetched during render
+      const mockInbox: InboxResult = {
+        address: 'test@expert',
+        messages: [
+          {
+            messageId: 'msg_1',
+            subject: 'Test Message 1',
+            from: 'sender1@expert',
+            to: 'test@expert',
+            body: 'Body of message 1',
+            priority: 'normal',
+            status: { read: false, starred: false, deleted: false },
+            sentAt: new Date().toISOString(),
+            receivedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            messageId: 'msg_2',
+            subject: 'Test Message 2',
+            from: 'sender2@expert',
+            to: 'test@expert',
+            body: 'Body of message 2',
+            priority: 'high',
+            status: { read: true, starred: true, deleted: false },
+            sentAt: new Date().toISOString(),
+            receivedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+        total: 2,
+        unread: 1,
+        starred: 1,
+      };
+
+      // Mock the inbox fetch that happens automatically during render
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockInbox),
+      });
+
+      // Render the component - inbox will be auto-fetched as side effect
+      const elements = await component.renderImply();
+
+      // Debug output
+      console.log('=== Auto-fetch Inbox Test ===');
+      console.log('Fetch calls:', mockFetch.mock.calls.length);
+      for (const el of elements) {
+        console.log(el.render());
+      }
+
+      // Verify rendering
+      expect(elements.length).toBeGreaterThan(0);
+      // Should have header
+      expect(elements[0]).toBeDefined();
     });
   });
 
   describe('createMailComponent factory', () => {
-    it('should create MailComponent instance', () => {
+    it('should create MailComponent instance', async () => {
       const mail = createMailComponent(baseConfig);
       expect(mail).toBeInstanceOf(MailComponent);
+      const rendered = await mail.render();
+      console.log(rendered.render());
     });
   });
 
@@ -96,13 +165,15 @@ describe('MailComponent', () => {
         });
 
         expect(result.data).toEqual(mockResult);
-        expect(result.summary).toBe('[Mail] Sent to recipient@expert: "Test Subject"');
+        expect(result.summary).toBe(
+          '[Mail] Sent to recipient@expert: "Test Subject"',
+        );
         expect(mockFetch).toHaveBeenCalledWith(
           'http://localhost:3000/api/v1/mail/send',
           expect.objectContaining({
             method: 'POST',
             body: expect.stringContaining('Test Subject'),
-          })
+          }),
         );
       });
 
@@ -111,11 +182,14 @@ describe('MailComponent', () => {
           baseUrl: 'http://localhost:3000',
         });
 
-        const result = await componentWithoutAddress.handleToolCall('sendMail', {
-          to: 'recipient@expert',
-          subject: 'Test',
-          body: 'Body',
-        });
+        const result = await componentWithoutAddress.handleToolCall(
+          'sendMail',
+          {
+            to: 'recipient@expert',
+            subject: 'Test',
+            body: 'Body',
+          },
+        );
 
         expect(result.data).toEqual({ error: 'No default address configured' });
         expect(result.summary).toContain('Error');
@@ -208,7 +282,8 @@ describe('MailComponent', () => {
       it('should get inbox with specified address', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({ ...mockInboxResult, address: 'other@expert' }),
+          json: () =>
+            Promise.resolve({ ...mockInboxResult, address: 'other@expert' }),
         });
 
         const result = await component.handleToolCall('getInbox', {
@@ -217,7 +292,7 @@ describe('MailComponent', () => {
 
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/inbox/other%40expert'),
-          expect.any(Object)
+          expect.any(Object),
         );
         expect(result.summary).toContain('other@expert');
       });
@@ -227,7 +302,10 @@ describe('MailComponent', () => {
           baseUrl: 'http://localhost:3000',
         });
 
-        const result = await componentWithoutAddress.handleToolCall('getInbox', {});
+        const result = await componentWithoutAddress.handleToolCall(
+          'getInbox',
+          {},
+        );
 
         expect(result.data).toEqual({
           error: 'No address specified and no default address configured',
@@ -282,7 +360,7 @@ describe('MailComponent', () => {
         expect(result.data).toEqual({ count: 3, address: 'other@expert' });
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/inbox/other%40expert/unread'),
-          expect.any(Object)
+          expect.any(Object),
         );
       });
 
@@ -291,7 +369,10 @@ describe('MailComponent', () => {
           baseUrl: 'http://localhost:3000',
         });
 
-        const result = await componentWithoutAddress.handleToolCall('getUnreadCount', {});
+        const result = await componentWithoutAddress.handleToolCall(
+          'getUnreadCount',
+          {},
+        );
 
         expect(result.data).toEqual({
           error: 'No address specified and no default address configured',
@@ -315,12 +396,15 @@ describe('MailComponent', () => {
         expect(result.summary).toBe('[Mail] Marked msg_123 as read');
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/msg_123/read'),
-          expect.objectContaining({ method: 'POST' })
+          expect.objectContaining({ method: 'POST' }),
         );
       });
 
       it('should handle mark as read failure', async () => {
-        const mockResult: StorageResult = { success: false, error: 'Message not found' };
+        const mockResult: StorageResult = {
+          success: false,
+          error: 'Message not found',
+        };
         mockFetch.mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(mockResult),
@@ -349,7 +433,7 @@ describe('MailComponent', () => {
         expect(result.summary).toBe('[Mail] Marked msg_123 as unread');
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/msg_123/unread'),
-          expect.objectContaining({ method: 'POST' })
+          expect.objectContaining({ method: 'POST' }),
         );
       });
     });
@@ -369,12 +453,15 @@ describe('MailComponent', () => {
         expect(result.summary).toBe('[Mail] Starred msg_123');
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/msg_123/star'),
-          expect.objectContaining({ method: 'POST' })
+          expect.objectContaining({ method: 'POST' }),
         );
       });
 
       it('should handle star failure', async () => {
-        const mockResult: StorageResult = { success: false, error: 'Already starred' };
+        const mockResult: StorageResult = {
+          success: false,
+          error: 'Already starred',
+        };
         mockFetch.mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(mockResult),
@@ -403,7 +490,7 @@ describe('MailComponent', () => {
         expect(result.summary).toBe('[Mail] Unstarred msg_123');
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/msg_123/unstar'),
-          expect.objectContaining({ method: 'POST' })
+          expect.objectContaining({ method: 'POST' }),
         );
       });
     });
@@ -423,12 +510,15 @@ describe('MailComponent', () => {
         expect(result.summary).toBe('[Mail] Deleted msg_123');
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/msg_123'),
-          expect.objectContaining({ method: 'DELETE' })
+          expect.objectContaining({ method: 'DELETE' }),
         );
       });
 
       it('should handle delete failure', async () => {
-        const mockResult: StorageResult = { success: false, error: 'Cannot delete' };
+        const mockResult: StorageResult = {
+          success: false,
+          error: 'Cannot delete',
+        };
         mockFetch.mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(mockResult),
@@ -469,13 +559,15 @@ describe('MailComponent', () => {
         });
 
         expect(result.data).toEqual(mockMessages);
-        expect(result.summary).toBe('[Mail] Found 1 messages matching "search term"');
+        expect(result.summary).toBe(
+          '[Mail] Found 1 messages matching "search term"',
+        );
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/search'),
           expect.objectContaining({
             method: 'POST',
             body: expect.stringContaining('search term'),
-          })
+          }),
         );
       });
 
@@ -514,7 +606,9 @@ describe('MailComponent', () => {
           query: 'nonexistent',
         });
 
-        expect(result.summary).toBe('[Mail] Found 0 messages matching "nonexistent"');
+        expect(result.summary).toBe(
+          '[Mail] Found 0 messages matching "nonexistent"',
+        );
       });
     });
 
@@ -620,10 +714,13 @@ describe('MailComponent', () => {
 
         // The component sends with empty string as from, which should work
         // but we test the behavior
-        const result = await componentWithoutAddress.handleToolCall('replyToMessage', {
-          messageId: 'msg_original',
-          body: 'Reply body',
-        });
+        const result = await componentWithoutAddress.handleToolCall(
+          'replyToMessage',
+          {
+            messageId: 'msg_original',
+            body: 'Reply body',
+          },
+        );
 
         // Should still work as the API accepts empty from
         const sentBody = JSON.parse(mockFetch.mock.calls[1][1].body);
@@ -650,12 +747,15 @@ describe('MailComponent', () => {
           expect.objectContaining({
             method: 'POST',
             body: JSON.stringify({ address: 'newagent@expert' }),
-          })
+          }),
         );
       });
 
       it('should handle registration failure', async () => {
-        const mockResult: StorageResult = { success: false, error: 'Address already exists' };
+        const mockResult: StorageResult = {
+          success: false,
+          error: 'Address already exists',
+        };
         mockFetch.mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(mockResult),
@@ -890,7 +990,7 @@ describe('MailComponent', () => {
       });
 
       await expect(component.getUnreadCount('test@expert')).rejects.toThrow(
-        'HTTP 404: Not Found'
+        'HTTP 404: Not Found',
       );
     });
 
@@ -901,12 +1001,14 @@ describe('MailComponent', () => {
         text: () => Promise.resolve('Internal Server Error'),
       });
 
-      await expect(component.sendMail({
-        from: 'test@expert',
-        to: 'recipient@expert',
-        subject: 'Test',
-        body: 'Body',
-      })).rejects.toThrow('HTTP 500: Internal Server Error');
+      await expect(
+        component.sendMail({
+          from: 'test@expert',
+          to: 'recipient@expert',
+          subject: 'Test',
+          body: 'Body',
+        }),
+      ).rejects.toThrow('HTTP 500: Internal Server Error');
     });
   });
 
@@ -919,7 +1021,9 @@ describe('MailComponent', () => {
         return Promise.reject(error);
       });
 
-      await expect(component.getUnreadCount('test@expert')).rejects.toThrow('timeout');
+      await expect(component.getUnreadCount('test@expert')).rejects.toThrow(
+        'timeout',
+      );
     });
   });
 

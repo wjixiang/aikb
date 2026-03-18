@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022"],
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -14,7 +14,12 @@
     "noEmit": false,
     "allowImportingTsExtensions": false,
     "noImplicitAny": false,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "agent-lib": ["../agent-lib/dist/index.d.ts"],
+      "agent-lib/*": ["../agent-lib/dist/src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": [

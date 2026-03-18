@@ -32,6 +32,7 @@ export {
   MailComponent,
   createMailComponent,
   type MailComponentConfig,
+  type MailComponentState,
 } from './mailComponent.js';
 
 // Export schema types for external use

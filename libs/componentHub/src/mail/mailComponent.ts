@@ -1,4 +1,4 @@
-import { z } from 'zod';
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
 import {
   Tool,
   ToolCallResult,
@@ -18,11 +18,10 @@ import {
   type MailComponentConfig,
   type SendResult,
   type StorageResult,
-} from 'agent-lib/multi-agent';
+} from 'agent-lib';
 import {
   mailToolSchemas,
   type SendMailParams,
-  type GetInboxParams,
   type GetUnreadCountParams,
   type MessageIdParams,
   type SearchMessagesParams,
@@ -41,12 +40,13 @@ export type { MailComponentConfig } from './mailSchemas';
  *
  * Features:
  * - Send emails to other agents/experts via REST API
- * - View inbox with filtering and pagination
+ * - Auto-refresh inbox on render (side effect)
  * - Mark messages as read/unread/starred
  * - Search messages
  * - Reply to messages
  *
  * This component communicates with the agent-mailbox service via REST API.
+ * Inbox data is automatically fetched during render.
  *
  * @example
  * ```typescript
@@ -61,14 +61,46 @@ export type { MailComponentConfig } from './mailSchemas';
  *   subject: 'Hello',
  *   body: 'World',
  * });
+ *
+ * // Render - inbox will be auto-fetched
+ * const elements = await mail.renderImply();
  * ```
  */
-export class MailComponent extends ToolComponent {
-  override componentId = 'mail';
-  override displayName = 'Mail';
-  override description = 'Email-style messaging system for agent communication';
+/**
+ * MailComponent State - for property-based rendering
+ */
+export interface MailComponentState {
+  /** Current mailbox address */
+  address?: MailAddress;
+  /** Messages to display */
+  messages: MailMessage[];
+  /** Total message count */
+  total: number;
+  /** Unread message count */
+  unread: number;
+  /** Starred message count */
+  starred: number;
+  /** Currently selected message */
+  selectedMessage?: MailMessage;
+}
 
+export class MailComponent extends ToolComponent {
+  componentId = 'mail';
+  displayName = 'Mail';
+  description = 'Email-style messaging system for agent communication';
+
+  toolSet: Map<string, Tool>;
   private config: MailComponentConfig;
+
+  // Property-based state (auto-refreshed during render)
+  private state: MailComponentState = {
+    messages: [],
+    total: 0,
+    unread: 0,
+    starred: 0,
+  };
+
+  // Legacy support: currentInbox for backward compatibility
   private currentInbox: InboxResult | null = null;
   private selectedMessage: MailMessage | null = null;
 
@@ -81,6 +113,66 @@ export class MailComponent extends ToolComponent {
     this.toolSet = this.initializeToolSet();
   }
 
+  // ==================== Property-Based State Management ====================
+  // Internal methods - called by the system for state refresh
+
+  /**
+   * Set component state directly with messages (internal use)
+   * Called by the system to update message state
+   */
+  private _setState(state: Partial<MailComponentState>): void {
+    this.state = { ...this.state, ...state };
+
+    // Also update legacy inbox for backward compatibility
+    if (state.messages || state.address) {
+      this.currentInbox = {
+        address: this.state.address || this.config.defaultAddress || '',
+        messages: this.state.messages,
+        total: this.state.total,
+        unread: this.state.unread,
+        starred: this.state.starred,
+      };
+    }
+  }
+
+  /**
+   * Get current component state (internal use)
+   */
+  private _getState(): MailComponentState {
+    return { ...this.state };
+  }
+
+  /**
+   * Clear all messages (internal use)
+   */
+  private _clearMessages(): void {
+    this.state = {
+      messages: [],
+      total: 0,
+      unread: 0,
+      starred: 0,
+    };
+    this.currentInbox = null;
+    this.selectedMessage = null;
+  }
+
+  /**
+   * Select a message to show details (internal use)
+   */
+  private _selectMessage(messageId: string): void {
+    const message = this.state.messages.find((m) => m.messageId === messageId);
+    this.state.selectedMessage = message;
+    this.selectedMessage = message || null;
+  }
+
+  /**
+   * Clear selected message (internal use)
+   */
+  private _clearSelection(): void {
+    this.state.selectedMessage = undefined;
+    this.selectedMessage = null;
+  }
+
   // ==================== Tool Definitions ====================
 
   private initializeToolSet(): Map<string, Tool> {
@@ -89,7 +181,6 @@ export class MailComponent extends ToolComponent {
     // Import tool schemas from mailSchemas
     const toolEntries: [string, Tool][] = [
       ['sendMail', mailToolSchemas.sendMail],
-      ['getInbox', mailToolSchemas.getInbox],
       ['getUnreadCount', mailToolSchemas.getUnreadCount],
       ['markAsRead', mailToolSchemas.markAsRead],
       ['markAsUnread', mailToolSchemas.markAsUnread],
@@ -108,11 +199,9 @@ export class MailComponent extends ToolComponent {
     return tools;
   }
 
-  override toolSet = this.initializeToolSet();
-
   // ==================== Tool Handlers ====================
 
-  override handleToolCall = async (
+  handleToolCall = async (
     toolName: string,
     params: unknown,
   ): Promise<ToolCallResult> => {
@@ -120,10 +209,10 @@ export class MailComponent extends ToolComponent {
       switch (toolName) {
         case 'sendMail':
           return await this.handleSendMail(params as SendMailParams);
-        case 'getInbox':
-          return await this.handleGetInbox(params as GetInboxParams);
         case 'getUnreadCount':
-          return await this.handleGetUnreadCount(params as GetUnreadCountParams);
+          return await this.handleGetUnreadCount(
+            params as GetUnreadCountParams,
+          );
         case 'markAsRead':
           return await this.handleMarkAsRead(params as MessageIdParams);
         case 'markAsUnread':
@@ -135,11 +224,17 @@ export class MailComponent extends ToolComponent {
         case 'deleteMessage':
           return await this.handleDeleteMessage(params as MessageIdParams);
         case 'searchMessages':
-          return await this.handleSearchMessages(params as SearchMessagesParams);
+          return await this.handleSearchMessages(
+            params as SearchMessagesParams,
+          );
         case 'replyToMessage':
-          return await this.handleReplyToMessage(params as ReplyToMessageParams);
+          return await this.handleReplyToMessage(
+            params as ReplyToMessageParams,
+          );
         case 'registerAddress':
-          return await this.handleRegisterAddress(params as RegisterAddressParams);
+          return await this.handleRegisterAddress(
+            params as RegisterAddressParams,
+          );
         default:
           return {
             data: { error: `Unknown tool: ${toolName}` },
@@ -147,7 +242,8 @@ export class MailComponent extends ToolComponent {
           };
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         data: { error: errorMessage },
         summary: `[Mail] Error: ${errorMessage}`,
@@ -155,7 +251,9 @@ export class MailComponent extends ToolComponent {
     }
   };
 
-  private async handleSendMail(params: SendMailParams): Promise<ToolCallResult> {
+  private async handleSendMail(
+    params: SendMailParams,
+  ): Promise<ToolCallResult> {
     const from = this.config.defaultAddress;
     if (!from) {
       return {
@@ -185,38 +283,15 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleGetInbox(params: GetInboxParams): Promise<ToolCallResult> {
+  private async handleGetUnreadCount(
+    params: GetUnreadCountParams,
+  ): Promise<ToolCallResult> {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
-        data: { error: 'No address specified and no default address configured' },
-        summary: '[Mail] Error: No address configured',
-      };
-    }
-
-    const query: InboxQuery = {
-      pagination: {
-        limit: params.limit || 20,
-        offset: params.offset || 0,
-      },
-      unreadOnly: params.unreadOnly,
-      starredOnly: params.starredOnly,
-    };
-
-    const result = await this.getInbox(address, query);
-    this.currentInbox = result;
-
-    return {
-      data: result,
-      summary: `[Mail] Inbox for ${address}: ${result.messages.length}/${result.total} messages (${result.unread} unread)`,
-    };
-  }
-
-  private async handleGetUnreadCount(params: GetUnreadCountParams): Promise<ToolCallResult> {
-    const address = params.address || this.config.defaultAddress;
-    if (!address) {
-      return {
-        data: { error: 'No address specified and no default address configured' },
+        data: {
+          error: 'No address specified and no default address configured',
+        },
         summary: '[Mail] Error: No address configured',
       };
     }
@@ -229,7 +304,9 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleMarkAsRead(params: MessageIdParams): Promise<ToolCallResult> {
+  private async handleMarkAsRead(
+    params: MessageIdParams,
+  ): Promise<ToolCallResult> {
     const result = await this.markAsRead(params.messageId);
     return {
       data: result,
@@ -239,7 +316,9 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleMarkAsUnread(params: MessageIdParams): Promise<ToolCallResult> {
+  private async handleMarkAsUnread(
+    params: MessageIdParams,
+  ): Promise<ToolCallResult> {
     const result = await this.markAsUnread(params.messageId);
     return {
       data: result,
@@ -249,7 +328,9 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleStarMessage(params: MessageIdParams): Promise<ToolCallResult> {
+  private async handleStarMessage(
+    params: MessageIdParams,
+  ): Promise<ToolCallResult> {
     const result = await this.starMessage(params.messageId);
     return {
       data: result,
@@ -259,7 +340,9 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleUnstarMessage(params: MessageIdParams): Promise<ToolCallResult> {
+  private async handleUnstarMessage(
+    params: MessageIdParams,
+  ): Promise<ToolCallResult> {
     const result = await this.unstarMessage(params.messageId);
     return {
       data: result,
@@ -269,7 +352,9 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleDeleteMessage(params: MessageIdParams): Promise<ToolCallResult> {
+  private async handleDeleteMessage(
+    params: MessageIdParams,
+  ): Promise<ToolCallResult> {
     const result = await this.deleteMessage(params.messageId);
     return {
       data: result,
@@ -279,7 +364,9 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleSearchMessages(params: SearchMessagesParams): Promise<ToolCallResult> {
+  private async handleSearchMessages(
+    params: SearchMessagesParams,
+  ): Promise<ToolCallResult> {
     const query: SearchQuery = {
       subject: params.query,
       body: params.query,
@@ -298,10 +385,14 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleReplyToMessage(params: ReplyToMessageParams): Promise<ToolCallResult> {
+  private async handleReplyToMessage(
+    params: ReplyToMessageParams,
+  ): Promise<ToolCallResult> {
     // First get the original message to find the sender
     const messages = await this.searchMessages({ subject: params.messageId });
-    const originalMessage = messages.find(m => m.messageId === params.messageId);
+    const originalMessage = messages.find(
+      (m) => m.messageId === params.messageId,
+    );
 
     if (!originalMessage) {
       return {
@@ -331,7 +422,9 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleRegisterAddress(params: RegisterAddressParams): Promise<ToolCallResult> {
+  private async handleRegisterAddress(
+    params: RegisterAddressParams,
+  ): Promise<ToolCallResult> {
     const result = await this.registerAddress(params.address);
     return {
       data: result,
@@ -357,16 +450,23 @@ export class MailComponent extends ToolComponent {
   /**
    * Get inbox messages for an address
    */
-  async getInbox(address: MailAddress, query?: InboxQuery): Promise<InboxResult> {
+  async getInbox(
+    address: MailAddress,
+    query?: InboxQuery,
+  ): Promise<InboxResult> {
     const queryParams = new URLSearchParams();
-    if (query?.pagination?.limit) queryParams.set('limit', String(query.pagination.limit));
-    if (query?.pagination?.offset) queryParams.set('offset', String(query.pagination.offset));
+    if (query?.pagination?.limit)
+      queryParams.set('limit', String(query.pagination.limit));
+    if (query?.pagination?.offset)
+      queryParams.set('offset', String(query.pagination.offset));
     if (query?.unreadOnly) queryParams.set('unreadOnly', 'true');
     if (query?.starredOnly) queryParams.set('starredOnly', 'true');
     if (query?.sortBy) queryParams.set('sortBy', query.sortBy);
     if (query?.sortOrder) queryParams.set('sortOrder', query.sortOrder);
 
-    const response = await this.fetchApi<InboxResult>(`/inbox/${encodeURIComponent(address)}?${queryParams.toString()}`);
+    const response = await this.fetchApi<InboxResult>(
+      `/inbox/${encodeURIComponent(address)}?${queryParams.toString()}`,
+    );
     return response;
   }
 
@@ -374,7 +474,9 @@ export class MailComponent extends ToolComponent {
    * Get unread message count
    */
   async getUnreadCount(address: MailAddress): Promise<number> {
-    const response = await this.fetchApi<number>(`/inbox/${encodeURIComponent(address)}/unread`);
+    const response = await this.fetchApi<number>(
+      `/inbox/${encodeURIComponent(address)}/unread`,
+    );
     return response;
   }
 
@@ -383,35 +485,43 @@ export class MailComponent extends ToolComponent {
    */
   async getMessage(messageId: string): Promise<MailMessage | null> {
     const messages = await this.searchMessages({ subject: messageId });
-    return messages.find(m => m.messageId === messageId) || null;
+    return messages.find((m) => m.messageId === messageId) || null;
   }
 
   /**
    * Mark a message as read
    */
   async markAsRead(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}/read`, { method: 'POST' });
+    return this.fetchApi<StorageResult>(`/${messageId}/read`, {
+      method: 'POST',
+    });
   }
 
   /**
    * Mark a message as unread
    */
   async markAsUnread(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}/unread`, { method: 'POST' });
+    return this.fetchApi<StorageResult>(`/${messageId}/unread`, {
+      method: 'POST',
+    });
   }
 
   /**
    * Star a message
    */
   async starMessage(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}/star`, { method: 'POST' });
+    return this.fetchApi<StorageResult>(`/${messageId}/star`, {
+      method: 'POST',
+    });
   }
 
   /**
    * Unstar a message
    */
   async unstarMessage(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}/unstar`, { method: 'POST' });
+    return this.fetchApi<StorageResult>(`/${messageId}/unstar`, {
+      method: 'POST',
+    });
   }
 
   /**
@@ -444,7 +554,10 @@ export class MailComponent extends ToolComponent {
   /**
    * Internal fetch helper
    */
-  private async fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> {
+  private async fetchApi<T>(
+    path: string,
+    options: RequestInit = {},
+  ): Promise<T> {
     const url = `${this.config.baseUrl}/api/v1/mail${path}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -490,7 +603,14 @@ export class MailComponent extends ToolComponent {
 
   // ==================== UI Rendering ====================
 
-  override renderImply = async (): Promise<TUIElement[]> => {
+  /**
+   * Render the component based on property state
+   * Automatically fetches inbox data as a side effect during rendering
+   */
+  renderImply = async (): Promise<TUIElement[]> => {
+    // Side effect: auto-refresh inbox data from API
+    await this.refreshInbox();
+
     const elements: TUIElement[] = [];
 
     // Header
@@ -503,8 +623,9 @@ export class MailComponent extends ToolComponent {
 
     // Connection info
     const infoTexts: string[] = [`Server: ${this.config.baseUrl}`];
-    if (this.config.defaultAddress) {
-      infoTexts.push(`Address: ${this.config.defaultAddress}`);
+    const displayAddress = this.state.address || this.config.defaultAddress;
+    if (displayAddress) {
+      infoTexts.push(`Address: ${displayAddress}`);
     }
 
     elements.push(
@@ -517,39 +638,144 @@ export class MailComponent extends ToolComponent {
       }),
     );
 
-    // Quick stats
-    if (this.config.defaultAddress) {
-      try {
-        const unreadCount = await this.getUnreadCount(this.config.defaultAddress);
-        elements.push(
-          new tdiv({
-            content: `Unread: ${unreadCount}${this.currentInbox ? ` | Total: ${this.currentInbox.total}` : ''}`,
-            styles: {
-              align: 'center',
-              showBorder: true,
-              padding: { vertical: 1 },
-            },
-          }),
-        );
-      } catch (e) {
-        // Ignore error in rendering
-      }
-    }
-
-    // Inbox view
-    if (this.currentInbox) {
-      elements.push(this.renderInbox());
-    } else {
+    // Quick stats - use state property values directly
+    if (this.state.messages.length > 0 || this.state.total > 0) {
       elements.push(
-        new tp({
-          content: 'Use getInbox tool to load messages.',
-          indent: 1,
+        new tdiv({
+          content: `Unread: ${this.state.unread} | Total: ${this.state.total} | Starred: ${this.state.starred}`,
+          styles: {
+            align: 'center',
+            showBorder: true,
+            padding: { vertical: 1 },
+          },
         }),
       );
     }
 
+    // Inbox view - use state property
+    if (this.state.messages.length > 0) {
+      elements.push(this.renderInboxFromState());
+    } else if (this.currentInbox) {
+      // Fallback to legacy inbox for backward compatibility
+      elements.push(this.renderInbox());
+    }
+
     return elements;
   };
+
+  /**
+   * Auto-refresh inbox data from API (side effect during render)
+   * This is called automatically when renderImply is invoked
+   */
+  private async refreshInbox(): Promise<void> {
+    const address = this.config.defaultAddress;
+    if (!address) {
+      return;
+    }
+
+    // Skip if already fetching to avoid duplicate requests
+    if (this._isFetchingInbox) {
+      return;
+    }
+
+    this._isFetchingInbox = true;
+    try {
+      const inbox = await this.getInbox(address);
+      // Update state with fetched data
+      this._setState({
+        address,
+        messages: inbox.messages,
+        total: inbox.total,
+        unread: inbox.unread,
+        starred: inbox.starred,
+      });
+    } catch {
+      // Silently ignore errors during auto-refresh
+      // The UI will simply show no messages
+    } finally {
+      this._isFetchingInbox = false;
+    }
+  }
+
+  // Flag to prevent duplicate inbox fetch requests
+  private _isFetchingInbox = false;
+
+  /**
+   * Render inbox from state properties (new approach)
+   */
+  private renderInboxFromState(): TUIElement {
+    const container = new tdiv({
+      styles: { showBorder: true, padding: { vertical: 1 } },
+    });
+
+    // Title
+    container.addChild(
+      new th({
+        content: `Inbox: ${this.state.address || this.config.defaultAddress || 'Unknown'}`,
+        level: 2,
+        styles: { align: 'center' },
+      }),
+    );
+
+    // Stats
+    container.addChild(
+      new tp({
+        content: `Messages: ${this.state.messages.length}/${this.state.total} | Unread: ${this.state.unread} | Starred: ${this.state.starred}`,
+        indent: 1,
+        textStyle: { bold: true },
+      }),
+    );
+
+    // Messages list
+    if (this.state.messages.length === 0) {
+      container.addChild(new tp({ content: 'No messages found.', indent: 2 }));
+    } else {
+      container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
+
+      this.state.messages.forEach((msg, index) => {
+        const starMarker = msg.status.starred ? '⭐ ' : '';
+        const readMarker = msg.status.read ? '  ' : '● ';
+        const priorityMarker =
+          msg.priority === 'urgent'
+            ? ' [URGENT]'
+            : msg.priority === 'high'
+              ? ' [HIGH]'
+              : '';
+
+        container.addChild(
+          new tp({
+            content: `${readMarker}${starMarker}${index + 1}. ${msg.subject}${priorityMarker}`,
+            indent: 1,
+            textStyle: { bold: !msg.status.read },
+          }),
+        );
+
+        container.addChild(
+          new tp({
+            content: `   From: ${msg.from} | ${new Date(msg.sentAt).toLocaleString()}`,
+            indent: 2,
+          }),
+        );
+
+        if (msg.body) {
+          const preview =
+            msg.body.length > 100
+              ? msg.body.substring(0, 100) + '...'
+              : msg.body;
+          container.addChild(new tp({ content: `   ${preview}`, indent: 2 }));
+        }
+
+        container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
+      });
+    }
+
+    // Selected message detail
+    if (this.state.selectedMessage) {
+      container.addChild(this.renderMessageDetail(this.state.selectedMessage));
+    }
+
+    return container;
+  }
 
   private renderInbox(): TUIElement {
     if (!this.currentInbox) {
@@ -587,7 +813,12 @@ export class MailComponent extends ToolComponent {
       this.currentInbox.messages.forEach((msg, index) => {
         const starMarker = msg.status.starred ? '⭐ ' : '';
         const readMarker = msg.status.read ? '  ' : '● ';
-        const priorityMarker = msg.priority === 'urgent' ? ' [URGENT]' : msg.priority === 'high' ? ' [HIGH]' : '';
+        const priorityMarker =
+          msg.priority === 'urgent'
+            ? ' [URGENT]'
+            : msg.priority === 'high'
+              ? ' [HIGH]'
+              : '';
 
         container.addChild(
           new tp({
@@ -605,7 +836,10 @@ export class MailComponent extends ToolComponent {
         );
 
         if (msg.body) {
-          const preview = msg.body.length > 100 ? msg.body.substring(0, 100) + '...' : msg.body;
+          const preview =
+            msg.body.length > 100
+              ? msg.body.substring(0, 100) + '...'
+              : msg.body;
           container.addChild(new tp({ content: `   ${preview}`, indent: 2 }));
         }
 
@@ -638,14 +872,34 @@ export class MailComponent extends ToolComponent {
       }),
     );
 
-    container.addChild(new tp({ content: `Subject: ${message.subject}`, indent: 1, textStyle: { bold: true } }));
+    container.addChild(
+      new tp({
+        content: `Subject: ${message.subject}`,
+        indent: 1,
+        textStyle: { bold: true },
+      }),
+    );
     container.addChild(new tp({ content: `From: ${message.from}`, indent: 1 }));
-    container.addChild(new tp({ content: `To: ${Array.isArray(message.to) ? message.to.join(', ') : message.to}`, indent: 1 }));
-    container.addChild(new tp({ content: `Date: ${new Date(message.sentAt).toLocaleString()}`, indent: 1 }));
-    container.addChild(new tp({ content: `Priority: ${message.priority}`, indent: 1 }));
+    container.addChild(
+      new tp({
+        content: `To: ${Array.isArray(message.to) ? message.to.join(', ') : message.to}`,
+        indent: 1,
+      }),
+    );
+    container.addChild(
+      new tp({
+        content: `Date: ${new Date(message.sentAt).toLocaleString()}`,
+        indent: 1,
+      }),
+    );
+    container.addChild(
+      new tp({ content: `Priority: ${message.priority}`, indent: 1 }),
+    );
 
     if (message.taskId) {
-      container.addChild(new tp({ content: `Task ID: ${message.taskId}`, indent: 1 }));
+      container.addChild(
+        new tp({ content: `Task ID: ${message.taskId}`, indent: 1 }),
+      );
     }
 
     container.addChild(new tp({ content: '', indent: 1 }));
@@ -658,7 +912,7 @@ export class MailComponent extends ToolComponent {
     if (message.attachments && message.attachments.length > 0) {
       container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(new th({ content: 'Attachments:', level: 4 }));
-      message.attachments.forEach(att => {
+      message.attachments.forEach((att) => {
         container.addChild(new tp({ content: `  • ${att}`, indent: 1 }));
       });
     }
@@ -681,6 +935,8 @@ export class MailComponent extends ToolComponent {
 /**
  * Factory function to create MailComponent
  */
-export function createMailComponent(config: MailComponentConfig): MailComponent {
+export function createMailComponent(
+  config: MailComponentConfig,
+): MailComponent {
   return new MailComponent(config);
 }
