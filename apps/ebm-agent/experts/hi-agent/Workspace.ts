@@ -6,8 +6,13 @@
  */
 
 import { ExpertWorkspaceBase } from 'agent-lib';
-import type { ValidationResult } from 'agent-lib';
 import { HelloComponent } from './components/HelloComponent.js';
+
+interface ValidationResult {
+  valid: boolean;
+  errors?: string[];
+  warnings?: string[];
+}
 
 /**
  * HiAgentWorkspace - 运行时工作空间

@@ -9,7 +9,7 @@
  *
  * @example
  * ```typescript
- * import { MailComponent, createMailComponent } from 'component-hub/mail';
+ * import { MailComponent, createMailComponent } from 'agent-lib';
  *
  * const mail = createMailComponent({
  *   baseUrl: 'http://localhost:3000',
@@ -52,6 +52,9 @@ export {
   saveDraftParamsSchema,
   editDraftParamsSchema,
   getDraftsParamsSchema,
+  deleteDraftParamsSchema,
+  insertDraftContentParamsSchema,
+  replaceDraftContentParamsSchema,
 } from './mailSchemas.js';
 
 // Export parameter types derived from Zod schemas
@@ -66,7 +69,13 @@ export type {
   SaveDraftParams,
   EditDraftParams,
   GetDraftsParams,
+  DeleteDraftParams,
+  InsertDraftContentParams,
+  ReplaceDraftContentParams,
   MailToolParams,
+  MailToolName,
+  MailToolReturnTypes,
+  ToolReturnType,
 } from './mailSchemas.js';
 
 // Re-export mail-related types from agent-lib for convenience

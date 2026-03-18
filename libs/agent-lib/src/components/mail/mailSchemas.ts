@@ -1,7 +1,15 @@
 import { z } from 'zod';
-import type { MailComponentConfig } from 'agent-lib';
+// Import types from multi-agent module (within agent-lib)
+import type {
+  SendResult,
+  InboxResult,
+  StorageResult,
+  MailAddress,
+  MailComponentConfig,
+} from '../../multi-agent/types.js';
 
-export type { MailComponentConfig };
+// Re-export types from multi-agent module
+export type { SendResult, InboxResult, StorageResult, MailAddress, MailComponentConfig };
 
 /**
  * Tool parameter schemas
@@ -243,3 +251,37 @@ export const mailToolSchemas = {
     paramsSchema: replaceDraftContentParamsSchema,
   },
 };
+
+/**
+ * Union type for all mail tool names
+ */
+export type MailToolName = keyof typeof mailToolSchemas;
+
+/**
+ * Tool name to return type mapping
+ * Used with MailToolName to get the return type for a specific tool
+ */
+export interface MailToolReturnTypes {
+  sendMail: SendResult;
+  getInbox: InboxResult;
+  getUnreadCount: { count: number };
+  markAsRead: StorageResult;
+  markAsUnread: StorageResult;
+  starMessage: StorageResult;
+  unstarMessage: StorageResult;
+  deleteMessage: StorageResult;
+  searchMessages: InboxResult;
+  replyToMessage: SendResult;
+  registerAddress: MailAddress;
+  saveDraft: StorageResult;
+  editDraft: StorageResult;
+  getDrafts: InboxResult;
+  deleteDraft: StorageResult;
+  insertDraftContent: StorageResult;
+  replaceDraftContent: StorageResult;
+}
+
+/**
+ * Helper type to get the return type for a specific mail tool
+ */
+export type ToolReturnType<T extends MailToolName> = MailToolReturnTypes[T];

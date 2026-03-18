@@ -10,7 +10,8 @@
  */
 
 import { z } from 'zod';
-import { tdiv, ToolComponent, Tool, ToolCallResult } from 'agent-lib/components/ui';
+import { tdiv, ToolComponent, Tool } from './ui/index.js';
+import type { ToolCallResult } from './core/types.js';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
 
@@ -357,7 +358,7 @@ export class KnowledgeManageComponent extends ToolComponent {
     /**
      * Handle tool calls
      */
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         switch (toolName) {
             case 'fetchDocuments':
                 await this.fetchDocuments();
@@ -410,7 +411,7 @@ export class KnowledgeManageComponent extends ToolComponent {
                 return { data: { query: params.query, results: this.searchResults.length }, summary: `[Knowledge] 搜索: ${params.query}, 找到 ${this.searchResults.length} 个结果` };
             case 'fetchEntities':
                 await this.fetchEntities();
-                return { data: { count: this.entities.length }, summary: `[Knowledge] 获取实体: ${this.entities.length} 个` };
+                return { data: { count: this.allEntities.length }, summary: `[Knowledge] 获取实体: ${this.allEntities.length} 个` };
             case 'filterEntities':
                 await this.filterEntities(params.nameContains, params.definitionContains);
                 return { data: { filters: params }, summary: `[Knowledge] 筛选实体` };

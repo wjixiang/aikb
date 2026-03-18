@@ -1,4 +1,4 @@
-import type { Tool } from 'agent-lib/components/ui';
+import type { Tool } from '../ui/index.js';
 import {
     setChecklistItemParamsSchema,
     setMultipleItemsParamsSchema,

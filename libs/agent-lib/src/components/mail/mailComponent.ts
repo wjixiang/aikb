@@ -7,7 +7,7 @@ import {
   tdiv,
   th,
   tp,
-} from 'agent-lib';
+} from '../ui/index.js';
 import {
   type MailAddress,
   type OutgoingMail,
@@ -18,9 +18,12 @@ import {
   type MailComponentConfig,
   type SendResult,
   type StorageResult,
-} from 'agent-lib';
+} from '../../multi-agent/types.js';
 import {
   mailToolSchemas,
+  type MailToolName,
+  type MailToolReturnTypes,
+  type ToolReturnType,
   type SendMailParams,
   type GetInboxParams,
   type GetUnreadCountParams,
@@ -333,10 +336,22 @@ export class MailComponent extends ToolComponent {
 
   // ==================== Tool Handlers ====================
 
-  handleToolCall = async (
+  /**
+   * Handle a tool call with type-safe return types
+   * @example
+   * // Returns Promise<ToolCallResult<SendResult>>
+   * const result = await mail.handleToolCall('sendMail', { to: '...', subject: '...', body: '...' });
+   *
+   * // Returns Promise<ToolCallResult<InboxResult>>
+   * const inbox = await mail.handleToolCall('getInbox', { limit: 10 });
+   */
+  handleToolCall: {
+    <T extends MailToolName>(toolName: T, params: unknown): Promise<ToolCallResult<ToolReturnType<T>>>;
+    (toolName: string, params: unknown): Promise<ToolCallResult<any>>;
+  } = async (
     toolName: string,
     params: unknown,
-  ): Promise<ToolCallResult> => {
+  ): Promise<ToolCallResult<any>> => {
     try {
       switch (toolName) {
         case 'sendMail':
@@ -399,7 +414,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleSendMail(
     params: SendMailParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const from = this.config.defaultAddress;
     if (!from) {
       return {
@@ -431,7 +446,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleGetInbox(
     params: GetInboxParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
@@ -461,7 +476,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleGetUnreadCount(
     params: GetUnreadCountParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
@@ -482,7 +497,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleMarkAsRead(
     params: MessageIdParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const result = await this.markAsRead(params.messageId);
     return {
       data: result,
@@ -494,7 +509,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleMarkAsUnread(
     params: MessageIdParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const result = await this.markAsUnread(params.messageId);
     return {
       data: result,
@@ -506,7 +521,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleStarMessage(
     params: MessageIdParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const result = await this.starMessage(params.messageId);
     return {
       data: result,
@@ -518,7 +533,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleUnstarMessage(
     params: MessageIdParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const result = await this.unstarMessage(params.messageId);
     return {
       data: result,
@@ -530,7 +545,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleDeleteMessage(
     params: MessageIdParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const result = await this.deleteMessage(params.messageId);
     return {
       data: result,
@@ -542,7 +557,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleSearchMessages(
     params: SearchMessagesParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const query: SearchQuery = {
       subject: params.query,
       body: params.query,
@@ -563,7 +578,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleReplyToMessage(
     params: ReplyToMessageParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     // First get the original message to find the sender
     const messages = await this.searchMessages({ subject: params.messageId });
     const originalMessage = messages.find(
@@ -600,7 +615,7 @@ export class MailComponent extends ToolComponent {
 
   private async handleRegisterAddress(
     params: RegisterAddressParams,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     const result = await this.registerAddress(params.address);
     return {
       data: result,
@@ -612,7 +627,7 @@ export class MailComponent extends ToolComponent {
 
   private handleSaveDraft(
     params: SaveDraftParams,
-  ): ToolCallResult {
+  ): ToolCallResult<any> {
     const from = this.config.defaultAddress;
     if (!from) {
       return {
@@ -644,7 +659,7 @@ export class MailComponent extends ToolComponent {
 
   private handleEditDraft(
     params: EditDraftParams,
-  ): ToolCallResult {
+  ): ToolCallResult<any> {
     const result = this.editDraft(params.draftId, {
       to: params.to,
       subject: params.subject,
@@ -665,7 +680,7 @@ export class MailComponent extends ToolComponent {
 
   private handleGetDrafts(
     params: GetDraftsParams,
-  ): ToolCallResult {
+  ): ToolCallResult<any> {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
@@ -689,7 +704,7 @@ export class MailComponent extends ToolComponent {
 
   private handleDeleteDraft(
     params: DeleteDraftParams,
-  ): ToolCallResult {
+  ): ToolCallResult<any> {
     const result = this.deleteDraft(params.draftId);
 
     return {
@@ -702,7 +717,7 @@ export class MailComponent extends ToolComponent {
 
   private handleInsertDraftContent(
     params: InsertDraftContentParams,
-  ): ToolCallResult {
+  ): ToolCallResult<any> {
     const result = this.insertDraftContent(params.draftId, params.content, params.position);
 
     return {
@@ -715,7 +730,7 @@ export class MailComponent extends ToolComponent {
 
   private handleReplaceDraftContent(
     params: ReplaceDraftContentParams,
-  ): ToolCallResult {
+  ): ToolCallResult<any> {
     const result = this.replaceDraftContent(params.draftId, params.search, params.replacement, params.replaceAll);
 
     return {

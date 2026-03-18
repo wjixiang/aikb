@@ -1,5 +1,6 @@
 import { injectable } from 'inversify';
-import { ToolComponent, ToolCallResult, tdiv } from 'agent-lib/components/ui';
+import { ToolComponent, tdiv } from '../ui/index.js';
+import type { ToolCallResult } from '../core/types.js';
 import { z } from 'zod';
 
 /**
@@ -50,7 +51,7 @@ export class PaperAnalysisComponent extends ToolComponent {
         ];
     };
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         if (toolName === 'calculate_complexity') {
             const result = await this.calculateComplexity(params.paper_content, params.dimensions);
             this.analysisResults.push(result);

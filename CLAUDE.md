@@ -105,8 +105,8 @@ pnpm expert:test           # Run Expert tests
 │   │       │   ├── di/       # Dependency injection (InversifyJS)
 │   │       │   └── memory/   # Agent memory
 │   │       ├── tools/          # Tool definitions
-│   │       └── baml_client/    # BAML integration
-│   ├── component-hub/     # Reusable agent components
+│   │       │   └── baml_client/    # BAML integration
+│   │       └── components/    # Built-in components (Mail, BibliographySearch, PICOS, PRISMA, etc.)
 │   ├── knowledgeBase/     # Knowledge graph system
 │   │   ├── knowledge-db/
 │   │   │   ├── entity-db/  # Entity storage (Prisma)
@@ -160,12 +160,13 @@ Key Expert classes:
 - `ExpertOrchestrator` - Multi-expert orchestration
 - `ExpertRegistry` - Expert configuration management
 
-### component-hub (`libs/componentHub`)
-Reusable agent components for EBM workflows:
-- `bibliographySearch` - PubMed literature search
-- `paperAnalysis` - Scientific paper analysis
-- `PICOS` - PICO framework extraction
-- `PRISMA` - PRISMA checklist compliance
+### Built-in Components (`agent-lib`)
+Reusable agent components for EBM workflows (now part of agent-lib):
+- `MailComponent` - Email-style messaging for agent communication
+- `BibliographySearchComponent` - PubMed literature search
+- `PaperAnalysisComponent` - Scientific paper analysis
+- `PicosComponent` - PICO framework extraction
+- `PrismaCheckListComponent` / `PrismaFlowComponent` - PRISMA checklist and flow diagram
 
 ### ebm-agent (`apps/ebm-agent`)
 Evidence-based medicine agent application using the Expert system:

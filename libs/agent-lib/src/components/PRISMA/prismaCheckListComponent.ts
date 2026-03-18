@@ -1,4 +1,5 @@
-import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui'
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js'
+import type { ToolCallResult } from '../core/types.js';
 import { createPrismaToolSet } from './prismaTools.js'
 import type {
     PrismaChecklistItem,
@@ -38,7 +39,7 @@ export interface ProgressResult {
 
 export class PrismaCheckListComponent extends ToolComponent {
     toolSet: Map<string, Tool>;
-    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult<any>>;
 
     // Internal state
     private checklistItems: Map<number, PrismaChecklistItem> = new Map();
@@ -366,7 +367,7 @@ export class PrismaCheckListComponent extends ToolComponent {
         }
     }
 
-    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult> {
+    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult<any>> {
         switch (toolName) {
             case 'set_checklist_item':
                 return this.handleSetChecklistItem(params);
@@ -389,7 +390,7 @@ export class PrismaCheckListComponent extends ToolComponent {
         }
     }
 
-    private handleSetChecklistItem(params: any): ToolCallResult {
+    private handleSetChecklistItem(params: any): ToolCallResult<any> {
         const { itemNumber, status, location, notes } = params;
 
         const item = this.checklistItems.get(itemNumber);
@@ -414,7 +415,7 @@ export class PrismaCheckListComponent extends ToolComponent {
         return { data: { itemNumber, status }, summary: `[PRISMA] 更新项目 ${itemNumber}: ${status}` };
     }
 
-    private handleSetMultipleItems(params: any): ToolCallResult {
+    private handleSetMultipleItems(params: any): ToolCallResult<any> {
         const { items } = params;
         let updatedCount = 0;
 
@@ -442,7 +443,7 @@ export class PrismaCheckListComponent extends ToolComponent {
         return { data: { updatedCount }, summary: `[PRISMA] 批量更新 ${updatedCount} 个项目` };
     }
 
-    private handleFilterChecklist(params: any): ToolCallResult {
+    private handleFilterChecklist(params: any): ToolCallResult<any> {
         const { section, status, topic } = params;
 
         let filtered = Array.from(this.checklistItems.values());
@@ -463,7 +464,7 @@ export class PrismaCheckListComponent extends ToolComponent {
         return { data: { count: filtered.length }, summary: `[PRISMA] 筛选结果: ${filtered.length} 个项目` };
     }
 
-    private handleExportChecklist(params: any): ToolCallResult {
+    private handleExportChecklist(params: any): ToolCallResult<any> {
         const { format, includeCompletedOnly } = params;
 
         let items = Array.from(this.checklistItems.values());
@@ -488,7 +489,7 @@ export class PrismaCheckListComponent extends ToolComponent {
         return { data: { format, count: items.length }, summary: `[PRISMA] 导出成功: ${format} 格式, ${items.length} 个项目` };
     }
 
-    private handleValidateChecklist(params: any): ToolCallResult {
+    private handleValidateChecklist(params: any): ToolCallResult<any> {
         const { requiredItems } = params;
 
         const required = requiredItems || Array.from({ length: 27 }, (_, i) => i + 1);
@@ -528,9 +529,14 @@ export class PrismaCheckListComponent extends ToolComponent {
             completedItems,
             notApplicableItems
         };
+
+        return {
+            data: { isValid, message, missingItems, completedItems, notApplicableItems },
+            summary: `[PRISMA] 验证完成: ${isValid ? '通过' : '未通过'}`
+        };
     }
 
-    private handleClearChecklist(params: any): ToolCallResult {
+    private handleClearChecklist(params: any): ToolCallResult<any> {
         const { confirm } = params;
 
         if (!confirm) {
@@ -557,7 +563,7 @@ export class PrismaCheckListComponent extends ToolComponent {
         return { data: { cleared: true }, summary: '[PRISMA] 已清除清单' };
     }
 
-    private handleGetProgress(): ToolCallResult {
+    private handleGetProgress(): ToolCallResult<any> {
         const items = Array.from(this.checklistItems.values());
 
         const completedItems = items.filter(item => item.status === 'completed').length;
@@ -605,7 +611,7 @@ export class PrismaCheckListComponent extends ToolComponent {
         };
     }
 
-    private handleSetManuscriptMetadata(params: any): ToolCallResult {
+    private handleSetManuscriptMetadata(params: any): ToolCallResult<any> {
         const { title, authors, registrationNumber, registrationDate, protocolLink } = params;
 
         this.metadata = {

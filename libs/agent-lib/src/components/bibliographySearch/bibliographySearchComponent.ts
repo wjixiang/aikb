@@ -1,12 +1,5 @@
-import {
-  Tool,
-  ToolComponent,
-  ToolCallResult,
-  TUIElement,
-  tdiv,
-  th,
-  tp,
-} from 'agent-lib';
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js';
+import type { ToolCallResult } from '../core/types.js';
 import {
   PubmedService,
   PubmedSearchParams,
@@ -22,7 +15,7 @@ import { createBibliographySearchToolSet } from './bibliographySearchTools.js';
 
 export class BibliographySearchComponent extends ToolComponent {
   toolSet: Map<string, Tool>;
-  handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+  handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult<any>>;
 
   private pubmedService: PubmedService;
   currentResults: {
@@ -371,7 +364,7 @@ export class BibliographySearchComponent extends ToolComponent {
   private async handleToolCallImpl(
     toolName: string,
     params: any,
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResult<any>> {
     switch (toolName) {
       case 'search_pubmed':
         return await this.handleSearch(params);
@@ -389,7 +382,7 @@ export class BibliographySearchComponent extends ToolComponent {
     }
   }
 
-  private async handleSearch(params: any): Promise<ToolCallResult> {
+  private async handleSearch(params: any): Promise<ToolCallResult<any>> {
     let searchTerm: string;
 
     // Build search term from strategy or use simple term
@@ -442,7 +435,7 @@ export class BibliographySearchComponent extends ToolComponent {
     }
   }
 
-  private async handleViewArticle(params: any): Promise<ToolCallResult> {
+  private async handleViewArticle(params: any): Promise<ToolCallResult<any>> {
     const { pmid } = params;
 
     if (!pmid) {
@@ -469,7 +462,7 @@ export class BibliographySearchComponent extends ToolComponent {
     }
   }
 
-  private async handleNavigatePage(params: any): Promise<ToolCallResult> {
+  private async handleNavigatePage(params: any): Promise<ToolCallResult<any>> {
     if (!this.currentResults) {
       return {
         data: { error: 'No search results to navigate' },
@@ -538,7 +531,7 @@ export class BibliographySearchComponent extends ToolComponent {
     }
   }
 
-  private handleClearResults(): ToolCallResult {
+  private handleClearResults(): ToolCallResult<any> {
     this.currentResults = null;
     this.currentArticleDetail = null;
     this.currentPage = 1;

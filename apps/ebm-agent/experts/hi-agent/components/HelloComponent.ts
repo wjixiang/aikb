@@ -65,7 +65,7 @@ export class HelloComponent extends ToolComponent {
     ];
   };
 
-  override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult> = async (toolName, params) => {
+  override handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult<any>> = async (toolName, params) => {
     const { a, b } = params;
     switch (toolName) {
       case 'add':

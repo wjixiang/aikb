@@ -1,33 +1,23 @@
 import { injectable, inject, optional } from 'inversify';
 import Anthropic from '@anthropic-ai/sdk';
-import {
-  ApiMessage,
-  MessageBuilder,
-  ExtendedContentBlock,
-} from '../memory/types.js';
+import { ApiMessage, MessageBuilder } from '../memory/types.js';
 import type { AgentStatus } from '../common/types.js';
 import { MessageTokenUsage, ToolUsage } from '../types/index.js';
-import { VirtualWorkspace } from '../statefulContext/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
-import type { ApiResponse, ToolCall } from '../api-client/index.js';
+import { VirtualWorkspace } from '../statefulContext/index.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
-import { ErrorHandlerPrompt } from '../common/ErrorHandlerPrompt.js';
 import {
   AgentError,
-  ConsecutiveMistakeError,
-  NoApiResponseError,
-  NoToolsUsedError,
 } from '../common/errors.js';
-import { PromptBuilder, FullPrompt } from '../prompts/PromptBuilder.js';
-import type { ApiClient } from '../api-client/index.js';
 import { generateWorkspaceGuide } from '../prompts/sections/workspaceGuide.js';
 import { generateActionPhaseGuidance } from '../prompts/sections/actionPhaseGuidance.js';
-import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
+import { MemoryModule } from '../memory/MemoryModule.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type {
   ThinkingPhaseResult,
   IThinkingModule,
 } from '../thinking/types.js';
+import type { ThinkingRound } from '../memory/Turn.js';
 import type {
   IActionModule,
   ActionPhaseResult,
@@ -36,8 +26,8 @@ import type {
 import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../statefulContext/index.js';
 import type { IMemoryModule } from '../memory/types.js';
-import type { IToolManager } from '../tools/IToolManager.js';
 import type { ILogger } from '../utils/logging/types.js';
+import type { Tool } from '../../components/core/types.js';
 
 // Tool result from execution - now defined in action/types.ts
 // interface ToolResult {
@@ -62,7 +52,7 @@ export const defaultAgentConfig: AgentConfig = {
 };
 
 export class NullCurrentTurnError extends AgentError {
-  override code: string = 'NullCurrentTurnError';
+  override code = 'NullCurrentTurnError';
   constructor(message: string) {
     super(message);
   }
@@ -77,15 +67,6 @@ export class NullCurrentTurnError extends AgentError {
  * - States are merged from all components in the workspace
  * - Simpler architecture without complex TaskExecutor dependency
  */
-/**
- * Stack item for recursive request loop
- */
-interface StackItem {
-  sender: 'user' | 'system';
-  content: Anthropic.Messages.ContentBlockParam[];
-  retryAttempt?: number;
-  userMessageWasRemoved?: boolean;
-}
 
 /**
  * Abort source types
@@ -257,7 +238,7 @@ export class Agent {
   /**
    * Complete agent task
    */
-  complete(tokenUsage?: MessageTokenUsage, toolUsage?: ToolUsage): void {
+  complete(): void {
     this._status = 'completed';
   }
 
@@ -328,9 +309,6 @@ export class Agent {
     const userContent: Anthropic.Messages.ContentBlockParam[] = [
       { type: 'text', text: `<task>${query}</task>` },
     ];
-    const stack: StackItem[] = [
-      { sender: 'user', content: userContent, retryAttempt: 0 },
-    ];
 
     // Track if we need to start a new turn
     let needsNewTurn = true;
@@ -351,7 +329,6 @@ export class Agent {
         // EXECUTE ACTION PHASE
         const actionResult = await this.executeActionPhase(
           thinkingResult,
-          lastToolResults,
         );
 
         // Store tool results for next thinking phase
@@ -389,7 +366,7 @@ export class Agent {
               }
             : { message: String(error), original: error };
         // Add cause if it exists
-        if (error instanceof Error && (error as any).cause) {
+        if (error instanceof Error && 'cause' in error) {
           this.memoryModule.getTurnStore().pushErrors([error]);
         }
         this.logger.error('Agent loop error', {
@@ -464,19 +441,17 @@ export class Agent {
    * Execute the action phase using ActionModule
    * @param currentWorkspaceContext - Current workspace context
    * @param thinkingResult - Result from thinking phase
-   * @param lastToolResults - Results from previous tool executions
    * @returns ActionPhaseResult from the action module
    */
   private async executeActionPhase(
     thinkingResult: ThinkingPhaseResult,
-    lastToolResults: ToolResult[],
   ): Promise<ActionPhaseResult> {
     const systemPrompt = await this.getSystemPrompt();
     const conversationHistory = this.memoryModule.getHistoryForPrompt();
 
     // Convert tools to OpenAI format (inline utility)
     const allTools = this.workspace.getAllTools();
-    const tools = allTools.map((t: { tool: any }) => t.tool);
+    const tools = allTools.map((t): Tool => t.tool);
     const converter = new DefaultToolCallConverter();
     const openaiTools = converter.convertTools(tools);
 
@@ -554,10 +529,10 @@ export class Agent {
    */
   private formatMemoryThinkingSummary(result: ThinkingPhaseResult): string {
     const rounds = result.rounds
-      .map((r: any) => {
+      .map((r: ThinkingRound) => {
         const recalled =
           r.recalledContexts?.length > 0
-            ? `\n  Recalled: ${r.recalledContexts.map((c: any) => `Turn ${c.turnNumber}`).join(', ')}`
+            ? `\n  Recalled: ${r.recalledContexts.map((c) => `Turn ${c.turnNumber}`).join(', ')}`
             : '';
 
         // Use summary if available, otherwise use content
@@ -579,27 +554,6 @@ ${rounds}`;
    */
   private isAborted(): boolean {
     return this._status === 'aborted';
-  }
-
-  /**
-   * Handle error and determine if should abort
-   */
-  private handleError(error: unknown, retryAttempt: number): boolean {
-    // Collect error
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    this._collectedErrors.push(errorMessage);
-
-    // Check if should abort
-    if (retryAttempt >= this.config.maxRetryAttempts) {
-      return true;
-    }
-
-    // Non-retryable errors
-    if (error instanceof ConsecutiveMistakeError) {
-      return true;
-    }
-
-    return false;
   }
 
   renderAgentPrompt() {

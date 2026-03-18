@@ -316,5 +316,5 @@ export interface ExpertConfig {
 
 ## 9. 依赖项
 
-- `MailComponent` from `component-hub/mail`
+- `MailComponent` from `agent-lib` (import from 'agent-lib')
 - `agent-mailbox` 服务运行中

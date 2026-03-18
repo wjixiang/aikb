@@ -21,8 +21,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.7.0",
   "dependencies": {
-    "agent-lib": "workspace:*",
-    "component-hub": "workspace:*"
+    "agent-lib": "workspace:*"
   },
   "devDependencies": {
     "@swc-node/register": "~1.9.1",

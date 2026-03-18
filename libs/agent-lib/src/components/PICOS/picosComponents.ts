@@ -1,4 +1,5 @@
-import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui'
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js'
+import type { ToolCallResult } from '../core/types.js';
 import { createPicosToolSet } from './picosTools.js'
 import type {
     Patient,
@@ -11,7 +12,7 @@ import type {
 
 export class PicosComponent extends ToolComponent {
     toolSet: Map<string, Tool>;
-    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult<any>>;
 
     currentPicos: PICOS = {};
     generatedQuestion: string | null = null;
@@ -249,7 +250,7 @@ export class PicosComponent extends ToolComponent {
         return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
     }
 
-    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult> {
+    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult<any>> {
         switch (toolName) {
             case 'set_picos_element':
                 return this.handleSetPicosElement(params);
@@ -266,7 +267,7 @@ export class PicosComponent extends ToolComponent {
         }
     }
 
-    private handleSetPicosElement(params: any): ToolCallResult {
+    private handleSetPicosElement(params: any): ToolCallResult<any> {
         const { element, data } = params;
 
         if (!['patient', 'intervention', 'comparison', 'outcome', 'studyDesign'].includes(element)) {
@@ -301,7 +302,7 @@ export class PicosComponent extends ToolComponent {
         return { data: { element }, summary: `[PICOS] 设置 ${element}` };
     }
 
-    private handleGenerateClinicalQuestion(params: any): ToolCallResult {
+    private handleGenerateClinicalQuestion(params: any): ToolCallResult<any> {
         const format = params.format || 'both';
 
         if (!this.currentPicos.patient && !this.currentPicos.intervention &&
@@ -347,7 +348,7 @@ export class PicosComponent extends ToolComponent {
         return { data: { question: this.generatedQuestion, format }, summary: `[PICOS] 生成临床问题` };
     }
 
-    private handleValidatePicos(): ToolCallResult {
+    private handleValidatePicos(): ToolCallResult<any> {
         const missingElements: string[] = [];
 
         if (!this.currentPicos.patient) missingElements.push('Patient/Problem');
@@ -378,7 +379,7 @@ export class PicosComponent extends ToolComponent {
         return { data: this.validationResult, summary: `[PICOS] 验证: ${isValid ? '完整' : '不完整'}` };
     }
 
-    private handleClearPicos(): ToolCallResult {
+    private handleClearPicos(): ToolCallResult<any> {
         this.currentPicos = {};
         this.generatedQuestion = null;
         this.validationResult = null;
@@ -387,7 +388,7 @@ export class PicosComponent extends ToolComponent {
         return { data: { cleared: true }, summary: `[PICOS] 已清除` };
     }
 
-    private handleExportPicos(params: any): ToolCallResult {
+    private handleExportPicos(params: any): ToolCallResult<any> {
         const format = params.format || 'markdown';
 
         switch (format) {

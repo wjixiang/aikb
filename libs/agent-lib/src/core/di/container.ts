@@ -11,9 +11,9 @@ import { defaultThinkingConfig } from '../thinking/types.js';
 import { ActionModule, defaultActionConfig } from '../action/ActionModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
-// Example components moved to componentHub
+// Example components moved to agent-lib components module
 // Users who need these components should import and register them themselves:
-// import { PicosComponent, BibliographySearchComponent, ... } from 'componentHub';
+// import { PicosComponent, BibliographySearchComponent, ... } from 'agent-lib';
 // container.bind(TYPES.Component).to(PicosComponent);
 // etc.
 import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../statefulContext/__tests__/testComponents.js';
@@ -181,10 +181,10 @@ export class AgentContainer {
             .to(MessageBus)
             .inSingletonScope();
 
-        // Tool Components moved to componentHub
-        // Users who need these components should install componentHub separately
+        // Tool Components are now in agent-lib components module
+        // Users who need these components should import from agent-lib
         // Example:
-        // import { PicosComponent } from 'componentHub';
+        // import { PicosComponent } from 'agent-lib';
         // this.container.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inSingletonScope();
 
         // Test Tool Components - Singleton scope for testing
@@ -508,8 +508,8 @@ export class AgentContainer {
         // Bind the agentContainer itself for DI token resolution
         agentContainer.bind<Container>(TYPES.Container).toConstantValue(agentContainer);
 
-        // Tool Components moved to componentHub
-        // Users who need these components should install componentHub separately
+        // Tool Components are now in agent-lib components module
+        // Users who need these components should import from agent-lib
 
         // Test Tool Components - Singleton scope for testing
         agentContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();

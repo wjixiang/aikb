@@ -2,10 +2,10 @@
  * Bookshelf Workspace (v2)
  * Virtual workspace for managing and searching through bookshelf content
  *
- * Note: This workspace example requires components from componentHub.
+ * Note: This workspace example requires components from agent-lib.
  * Import and register them manually:
  *
- * import { BookViewerComponent, KnowledgeManageComponent } from 'componentHub';
+ * import { BookViewerComponent, KnowledgeManageComponent } from 'agent-lib';
  * import { KmsWorkspace } from 'agent-lib';
  *
  * Or extend this class to add your own components.
@@ -16,7 +16,7 @@ import { VirtualWorkspace, ComponentRegistration } from '../statefulContext/inde
 /**
  * Knowledge Management Workspace
  *
- * This workspace requires components from componentHub.
+ * This workspace requires components from agent-lib.
  * Users should extend this class and add their own components.
  */
 export class KmsWorkspace extends VirtualWorkspace {

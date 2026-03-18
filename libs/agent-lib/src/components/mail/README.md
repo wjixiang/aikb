@@ -13,16 +13,16 @@ Email-style messaging component for agent-to-agent communication via the agent-m
 
 ## Installation
 
-The MailComponent is part of component-hub:
+The MailComponent is part of agent-lib:
 
 ```typescript
-import { MailComponent, createMailComponent } from 'component-hub/mail';
+import { MailComponent, createMailComponent } from 'agent-lib';
 ```
 
 ## Quick Start
 
 ```typescript
-import { createMailComponent } from 'component-hub/mail';
+import { createMailComponent } from 'agent-lib';
 
 // Create component
 const mail = createMailComponent({
@@ -192,8 +192,7 @@ interface MailComponentConfig {
 The MailComponent can be used within an Expert to enable email-based communication:
 
 ```typescript
-import { Expert } from 'agent-lib/expert';
-import { MailComponent } from 'component-hub/mail';
+import { Expert, MailComponent } from 'agent-lib';
 
 class CommunicationExpert extends Expert {
   private mailComponent: MailComponent;

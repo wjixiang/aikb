@@ -114,6 +114,12 @@ export interface ExpertConfig {
     agentConfig?: Partial<AgentConfig>;
 
     virtualWorkspaceConfig?: Partial<VirtualWorkspaceConfig>;
+
+    /**
+     * 邮件驱动配置
+     * 如果设置，Expert 将具备邮件通信能力
+     */
+    mailConfig?: ExpertMailConfig;
 }
 
 /**
@@ -266,6 +272,50 @@ export interface IExpertRegistry {
     listExperts(): ExpertSummary[];
 }
 
+// =============================================================================
+// Mail Component Configuration
+// =============================================================================
+
+/**
+ * MailComponent 工厂函数类型
+ * 由使用方（ebm-agent）提供
+ *
+ * @example
+ * ```typescript
+ * // 在 ebm-agent 中传入工厂函数
+ * import { createMailComponent } from 'agent-lib';
+ *
+ * const executor = new ExpertExecutor(registry, container, {
+ *   mailComponentFactory: (config) => createMailComponent(config)
+ * });
+ * ```
+ */
+
+/**
+ * Expert 邮件驱动配置
+ * 用于配置 Expert 的邮件通信能力
+ */
+export interface ExpertMailConfig {
+    /** 是否启用邮件驱动模式 */
+    enabled?: boolean;
+    /** 轮询间隔 (ms)，默认 30000 */
+    pollInterval?: number;
+    /** agent-mailbox 服务地址 */
+    baseUrl?: string;
+    /** API 密钥 */
+    apiKey?: string;
+}
+
+/**
+ * ExpertExecutor 构造函数选项
+ */
+export interface ExpertExecutorOptions {
+    /** 邮件配置 */
+    mailConfig?: ExpertMailConfig;
+    /** 是否在 createExpert 后自动启动消息驱动循环 */
+    autoStartExperts?: boolean;
+}
+
 /**
  * Expert Executor - responsible for creating and managing Expert instances
  */
@@ -278,7 +328,11 @@ export interface IExpertExecutor {
     getExpert(expertId: string): IExpertInstance | undefined;
     /** Release Expert instance */
     releaseExpert(expertId: string): void;
-    /** Execute Expert task */
+    /** Start Expert in message-driven mode (no explicit task data) */
+    startExpert(expertId: string, autoStart?: boolean): Promise<IExpertInstance>;
+    /** Stop all running experts */
+    stopAll(): Promise<void>;
+    /** Execute a task directly using ExpertExecuteRequest */
     execute(request: ExpertExecuteRequest): Promise<ExpertResult>;
 }
 
@@ -296,8 +350,14 @@ export interface IExpertInstance {
     suspend(): Promise<void>;
     /** Resume Expert */
     resume(): Promise<void>;
-    /** Execute task */
+    /** Execute task (legacy mode with explicit task data) */
     execute(task: ExpertTask, context?: Record<string, any>): Promise<ExpertResult>;
+    /** Start message-driven mode - poll inbox for tasks */
+    run(): Promise<void>;
+    /** Stop message-driven mode */
+    stop(): Promise<void>;
+    /** Check if running in message-driven mode */
+    isRunning(): boolean;
     /** Get current state summary */
     getStateSummary(): Promise<string>;
     /** Get artifacts */

@@ -6,7 +6,8 @@
 import { z } from 'zod';
 import { ApolloClient, InMemoryCache, HttpLink, gql, NormalizedCacheObject } from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
-import { ToolComponent, Tool, ToolCallResult, tdiv } from 'agent-lib/components/ui';
+import { ToolComponent, Tool, tdiv } from './ui/index.js';
+import type { ToolCallResult } from './core/types.js';
 
 loadDevMessages();
 loadErrorMessages();
@@ -370,7 +371,7 @@ export class BookViewerComponent extends ToolComponent {
     /**
      * Handle tool calls
      */
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         if (toolName === 'selectBook') {
             const bookName = params.bookName;
             console.log(`[BookViewer] Book changed to: ${bookName}`);
@@ -407,13 +408,13 @@ export class BookViewerComponent extends ToolComponent {
 
             if (!query || query.length === 0) {
                 this.searchResults = [];
-                return;
+                return { data: { results: [] }, summary: '[BookViewer] Search query is empty' };
             }
 
             if (!this.chunkEmbedGroupId) {
                 if (!this.bookId) {
                     console.warn('[BookViewer] No book selected for search');
-                    return;
+                    return { data: { error: 'No book selected for search' }, summary: '[BookViewer] No book selected for search' };
                 }
                 const defaultChunkEmbedGroupId = await getDefaultChunkEmbedGroup(this.bookId);
                 this.chunkEmbedGroupId = defaultChunkEmbedGroupId;
@@ -492,7 +493,7 @@ export class WorkspaceInfoComponent extends ToolComponent {
     /**
      * Handle tool calls
      */
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult> => {
+    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         if (toolName === 'updateTimestamp') {
             this.lastUpdated = new Date().toISOString();
             return {

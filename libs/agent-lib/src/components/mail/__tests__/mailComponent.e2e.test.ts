@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MailComponent } from '../mailComponent';
-import type { MailComponentConfig } from 'agent-lib/multi-agent';
+import type { MailComponentConfig } from '../mailSchemas.js';
 
 const TEST_ADDRESS = 'e2e-test@expert';
 const SECOND_ADDRESS = 'e2e-test-2@expert';

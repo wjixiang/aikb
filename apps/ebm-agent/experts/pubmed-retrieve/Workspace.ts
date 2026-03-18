@@ -5,10 +5,17 @@
  * 继承 ExpertWorkspaceBase 以获得输入/输出处理能力
  */
 
-import { ExpertWorkspaceBase } from 'agent-lib';
-import type { ValidationResult } from 'agent-lib';
-import { BibliographySearchComponent } from 'component-hub'
+import { ExpertWorkspaceBase, ToolComponent, BibliographySearchComponent } from 'agent-lib';
 // import { MyComponent } from './components/MyComponent.js';
+
+/**
+ * Validation result type for input validation
+ */
+interface ValidationResult {
+  valid: boolean;
+  errors?: string[];
+  warnings?: string[];
+}
 
 /**
  * PubmedRetrieveWorkspace - 运行时工作空间
@@ -44,7 +51,7 @@ export class PubmedRetrieveWorkspace extends ExpertWorkspaceBase {
    *   return [{ id: 'my-component', component: new MyComponent() }];
    * }
    */
-  static override getComponents() {
+  static override getComponents(): ToolComponent[] {
     return [
       new BibliographySearchComponent()
     ];

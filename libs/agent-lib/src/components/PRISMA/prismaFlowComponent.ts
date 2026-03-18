@@ -1,4 +1,5 @@
-import { Tool, ToolComponent, ToolCallResult, TUIElement, tdiv, th, tp } from 'agent-lib/components/ui'
+import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js'
+import type { ToolCallResult } from '../core/types.js';
 import { createPrismaFlowToolSet } from './prismaFlowTools.js'
 import type {
     DatabaseFlow,
@@ -16,7 +17,7 @@ export interface ValidationResult {
 
 export class PrismaFlowComponent extends ToolComponent {
     toolSet: Map<string, Tool>;
-    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult>;
+    handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult<any>>;
 
     // Internal state
     private databaseFlow: DatabaseFlow = {};
@@ -262,7 +263,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return container;
     }
 
-    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult> {
+    private async handleToolCallImpl(toolName: string, params: any): Promise<ToolCallResult<any>> {
         switch (toolName) {
             case 'set_identification':
                 return this.handleSetIdentification(params);
@@ -291,7 +292,7 @@ export class PrismaFlowComponent extends ToolComponent {
         }
     }
 
-    private handleSetIdentification(params: any): ToolCallResult {
+    private handleSetIdentification(params: any): ToolCallResult<any> {
         const { flow, databases, registers, websites, organisations, citationSearching, other } = params;
 
         if (flow === 'database') {
@@ -316,7 +317,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { flow }, summary: `[PRISMA Flow] 设置识别阶段: ${flow}` };
     }
 
-    private handleSetRecordsRemoved(params: any): ToolCallResult {
+    private handleSetRecordsRemoved(params: any): ToolCallResult<any> {
         const { duplicates, automationTools, otherReasons } = params;
 
         this.databaseFlow.recordsRemoved = {
@@ -332,7 +333,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { duplicates, automationTools, otherReasons }, summary: `[PRISMA Flow] 设置移除记录` };
     }
 
-    private handleSetScreening(params: any): ToolCallResult {
+    private handleSetScreening(params: any): ToolCallResult<any> {
         const { recordsScreened, recordsExcluded, exclusionReasons } = params;
 
         this.databaseFlow.screening = {
@@ -348,7 +349,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { recordsScreened, recordsExcluded }, summary: `[PRISMA Flow] 设置筛选: ${recordsScreened} 待筛选, ${recordsExcluded} 排除` };
     }
 
-    private handleSetRetrieval(params: any): ToolCallResult {
+    private handleSetRetrieval(params: any): ToolCallResult<any> {
         const { flow, reportsSought, reportsNotRetrieved } = params;
 
         const data = {
@@ -374,7 +375,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { flow, reportsSought, reportsNotRetrieved }, summary: `[PRISMA Flow] 设置检索: ${flow}` };
     }
 
-    private handleSetAssessment(params: any): ToolCallResult {
+    private handleSetAssessment(params: any): ToolCallResult<any> {
         const { flow, reportsAssessed, reportsExcluded, exclusionReasons } = params;
 
         const data = {
@@ -401,7 +402,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { flow, reportsAssessed, reportsExcluded }, summary: `[PRISMA Flow] 设置评估: ${flow}` };
     }
 
-    private handleSetIncluded(params: any): ToolCallResult {
+    private handleSetIncluded(params: any): ToolCallResult<any> {
         const { studiesIncluded, reportsIncluded } = params;
 
         this.included = {
@@ -416,7 +417,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { studiesIncluded, reportsIncluded }, summary: `[PRISMA Flow] 设置纳入研究: ${studiesIncluded} 研究, ${reportsIncluded} 报告` };
     }
 
-    private handleAddExclusionReason(params: any): ToolCallResult {
+    private handleAddExclusionReason(params: any): ToolCallResult<any> {
         const { phase, flow, reason, count } = params;
 
         const newReason: ExclusionReason = { reason, count };
@@ -449,7 +450,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { phase, flow, reason, count }, summary: `[PRISMA Flow] 添加排除原因: ${reason}` };
     }
 
-    private handleExportFlowDiagram(params: any): ToolCallResult {
+    private handleExportFlowDiagram(params: any): ToolCallResult<any> {
         const { format } = params;
 
         switch (format) {
@@ -469,7 +470,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { format }, summary: `[PRISMA Flow] 导出流程图: ${format} 格式` };
     }
 
-    private handleClearFlowDiagram(params: any): ToolCallResult {
+    private handleClearFlowDiagram(params: any): ToolCallResult<any> {
         const { confirm } = params;
 
         if (!confirm) {
@@ -485,7 +486,7 @@ export class PrismaFlowComponent extends ToolComponent {
         return { data: { cleared: true }, summary: `[PRISMA Flow] 已清除流程图` };
     }
 
-    private handleValidateFlowDiagram(): ToolCallResult {
+    private handleValidateFlowDiagram(): ToolCallResult<any> {
         const warnings: string[] = [];
         let isValid = true;
 
@@ -541,7 +542,7 @@ export class PrismaFlowComponent extends ToolComponent {
         };
     }
 
-    private handleAutoCalculate(params: any): ToolCallResult {
+    private handleAutoCalculate(params: any): ToolCallResult<any> {
         const { flow } = params;
 
         if (flow === 'database' || flow === 'both') {
