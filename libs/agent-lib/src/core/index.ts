@@ -14,7 +14,8 @@
 // Agent and Factory
 export { Agent, defaultAgentConfig } from './agent/agent.js';
 export { AgentFactory } from './agent/AgentFactory.js';
-export type { AgentConfig, AgentFactoryOptions } from './agent/AgentFactory.js';
+export type { AgentConfig } from './agent/agent.js';
+export type { AgentFactoryOptions } from './agent/AgentFactory.js';
 export * from './agent/ObservableAgent.js';
 
 // Assistant Message
@@ -42,7 +43,17 @@ export { createExpertConfig } from './expert/ExpertFactory.js';
 export type { ValidationResult, InputHandler, ExportConfig, ExportResult, ExpertConfig, ExpertComponentDefinition, ExpertTask, ExpertResult, IExpertInstance } from './expert/types.js';
 
 // Memory
-export * from './memory/index.js';
+export { TurnMemoryStore } from './memory/index.js';
+export type { ITurnMemoryStore } from './memory/index.js';
+export { TurnStatus } from './memory/index.js';
+export type { Turn, TurnThinkingRound, TurnMemoryExport } from './memory/index.js';
+export { createObservableTurnMemoryStore, ObservableTurnMemoryStoreFactory } from './memory/index.js';
+export type { TurnStoreObserverCallbacks } from './memory/index.js';
+export { ContextMemoryStore } from './memory/index.js';
+export type { ContextSnapshot, MemorySummary } from './memory/index.js';
+export { MemoryModule, defaultMemoryConfig } from './memory/index.js';
+export type { IMemoryModule, MemoryModuleConfig } from './memory/index.js';
+export type { ApiMessage, MessageBuilder, ThinkingBlock, ExtendedContentBlock, MessageAddedCallback } from './memory/index.js';
 
 // Prompts
 export * from './prompts/index.js';

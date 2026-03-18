@@ -3,7 +3,7 @@
  */
 
 import { MdElement } from './MdElement.js';
-import type { ElementMetadata } from '../core/types.js';
+import type { ElementMetadata } from '../../core/types.js';
 
 /**
  * Markdown text element (inline text)

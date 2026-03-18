@@ -10,7 +10,7 @@
 import { injectable } from 'inversify';
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import { Agent } from '../agent/agent.js';
-import type { IVirtualWorkspace } from '../statefulContext/types.js';
+import type { IVirtualWorkspace } from '../statefulContext/index.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { IThinkingModule } from '../thinking/types.js';
 import type { IActionModule } from '../action/types.js';

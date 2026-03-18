@@ -26,7 +26,7 @@ import { ApiMessage } from './types.js';
  * Observer callbacks for turn-level events
  */
 export interface TurnStoreObserverCallbacks {
-    onTurnCreated?: (turnId: string, turnNumber: number, workspaceContext: string, taskContext?: string) => void;
+    onTurnCreated?: (turnId: string, turnNumber: number, workspaceContext: string) => void;
     onTurnStatusChanged?: (turnId: string, status: TurnStatus) => void;
     onTurnMessageAdded?: (turnId: string, message: ApiMessage) => void;
     onThinkingPhaseCompleted?: (turnId: string, rounds: ThinkingRound[], tokensUsed: number) => void;
@@ -66,8 +66,7 @@ export function createObservableTurnMemoryStore(
                                 callbacks.onTurnCreated?.(
                                     turn.id,
                                     turn.turnNumber,
-                                    turn.workspaceContext,
-                                    turn.taskContext
+                                    turn.workspaceContext
                                 );
                                 break;
                             }

@@ -1,5 +1,5 @@
 // tsup.config.ts
-import { defineConfig } from 'tsup'
+import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: {
@@ -10,11 +10,11 @@ export default defineConfig({
     'src/components/utils/index': 'src/components/utils/index.ts',
   },
   format: ['esm'],
-  dts: false,
+  dts: true,
   sourcemap: true,
   clean: true,
   treeshake: true,
   esbuildOptions(options) {
-    options.external = ['@prisma/client-runtime-utils', 'pino']
+    options.external = ['@prisma/client-runtime-utils', 'pino'];
   },
-})
+});

@@ -18,14 +18,14 @@ import { ToolManager } from '../tools/ToolManager.js';
 // etc.
 import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../statefulContext/__tests__/testComponents.js';
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
-import type { VirtualWorkspaceConfig } from '../statefulContext/types.js';
+import type { VirtualWorkspaceConfig } from '../statefulContext/index.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ThinkingModuleConfig } from '../thinking/types.js';
 import type { ActionModuleConfig } from '../action/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import type { ApiClient } from '../api-client/index.js';
-import type { IVirtualWorkspace } from '../statefulContext/types.js';
+import type { IVirtualWorkspace } from '../statefulContext/index.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { IThinkingModule } from '../thinking/types.js';
 import type { IActionModule } from '../action/types.js';

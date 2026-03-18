@@ -71,8 +71,8 @@ export abstract class TUIElement {
         const isMarkdown = renderMode === 'markdown';
 
         // In markdown mode, zero out padding and margin for cleaner output
-        const effectivePadding = isMarkdown ? [0, 0, 0, 0] : padding;
-        const effectiveMargin = isMarkdown ? [0, 0, 0, 0] : margin;
+        const effectivePadding = isMarkdown ? [0, 0, 0, 0] as Spacing : padding;
+        const effectiveMargin = isMarkdown ? [0, 0, 0, 0] as Spacing : margin;
 
         // Calculate dimensions
         const contentDims = this.calculateContentDimensions(availableWidth, renderMode);

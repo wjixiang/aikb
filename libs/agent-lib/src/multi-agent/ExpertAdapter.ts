@@ -54,7 +54,7 @@ export class ExpertAdapter {
    * Get expert mail address
    */
   getAddress(): MailAddress {
-    return { type: 'expert', expertId: this.config.expertId };
+    return `${this.config.expertId}@expert`;
   }
 
   /**
@@ -176,8 +176,8 @@ export class ExpertAdapter {
     const attachments: string[] = [];
     if (expertResult.artifacts) {
       for (const artifact of expertResult.artifacts) {
-        if (artifact.metadata?.s3Key) {
-          attachments.push(artifact.metadata.s3Key);
+        if (artifact.metadata?.['s3Key']) {
+          attachments.push(artifact.metadata['s3Key'] as string);
         }
       }
     }

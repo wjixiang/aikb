@@ -511,6 +511,81 @@ export interface IMessageBus {
    * Check if message bus is ready
    */
   isReady(): boolean;
+
+  // =============================================================================
+  // Mail-style methods (for ExpertAdapter)
+  // =============================================================================
+
+  /**
+   * Send an email message
+   */
+  send(mail: OutgoingMail): Promise<MailMessage>;
+
+  /**
+   * Broadcast an email to multiple recipients
+   */
+  broadcast(mail: OutgoingMail): Promise<MailMessage[]>;
+
+  /**
+   * Subscribe to inbox for a mail address
+   */
+  subscribe(address: MailAddress, listener: IMailListener): SubscriptionId;
+
+  /**
+   * Get inbox messages
+   */
+  getInbox(address: MailAddress): MailMessage[];
+
+  /**
+   * Get unread messages
+   */
+  getUnreadMail(address: MailAddress): MailMessage[];
+
+  /**
+   * Get unread count
+   */
+  getUnreadCount(address: MailAddress): number;
+
+  /**
+   * Mark message as read
+   */
+  markAsRead(messageId: string): Promise<void>;
+
+  /**
+   * Mark message as unread
+   */
+  markAsUnread(messageId: string): Promise<void>;
+
+  /**
+   * Star a message
+   */
+  starMessage(messageId: string): Promise<void>;
+
+  /**
+   * Unstar a message
+   */
+  unstarMessage(messageId: string): Promise<void>;
+
+  /**
+   * Delete a message (soft delete)
+   */
+  deleteMessage(messageId: string): Promise<void>;
+
+  /**
+   * Permanently delete a message
+   */
+  permanentlyDeleteMessage(messageId: string): Promise<void>;
+
+  /**
+   * Search messages
+   */
+  search(query: {
+    from?: MailAddress;
+    to?: MailAddress;
+    subject?: string;
+    body?: string;
+    unread?: boolean;
+  }): MailMessage[];
 }
 
 // =============================================================================

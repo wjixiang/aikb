@@ -36,11 +36,11 @@ export class KmsWorkspace extends VirtualWorkspace {
         // });
 
         if (components?.bookViewer) {
-            this.registerComponent(components.bookViewer);
+            this.registerComponent(components.bookViewer.id, components.bookViewer.component, components.bookViewer.priority);
         }
 
         if (components?.knowledgeExplorer) {
-            this.registerComponent(components.knowledgeExplorer);
+            this.registerComponent(components.knowledgeExplorer.id, components.knowledgeExplorer.component, components.knowledgeExplorer.priority);
         }
     }
 }

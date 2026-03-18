@@ -38,7 +38,7 @@
  * ```
  */
 
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -123,8 +123,8 @@ export function getTestFiles(testDir: string): string[] {
         return [];
     }
     return readdirSync(testDir)
-        .filter(f => f.endsWith('.yaml') || f.endsWith('.yml'))
-        .map(f => join(testDir, f));
+        .filter((f: string) => f.endsWith('.yaml') || f.endsWith('.yml'))
+        .map((f: string) => join(testDir, f));
 }
 
 /**
@@ -248,7 +248,7 @@ export function printTestResults(result: TestSuiteResult): void {
 /**
  * Print test progress
  */
-export function printTestProgress(caseName: string, spinner: ora.Ora): void {
+export function printTestProgress(caseName: string, spinner: ReturnType<typeof ora>): void {
     spinner.start(chalk.cyan(`  Running: ${caseName}`));
 }
 
