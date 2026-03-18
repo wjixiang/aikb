@@ -16,12 +16,12 @@ import { fileURLToPath } from 'node:url'
 globalThis['__dirname'] = path.dirname(fileURLToPath(import.meta.url))
 
 import * as runtime from "@prisma/client/runtime/client"
-import * as $Enums from "./enums.js"
-import * as $Class from "./internal/class.js"
-import * as Prisma from "./internal/prismaNamespace.js"
+import * as $Enums from "./enums"
+import * as $Class from "./internal/class"
+import * as Prisma from "./internal/prismaNamespace"
 
-export * as $Enums from './enums.js'
-export * from "./enums.js"
+export * as $Enums from './enums'
+export * from "./enums"
 /**
  * ## Prisma Client
  * 
@@ -29,8 +29,8 @@ export * from "./enums.js"
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Tasks
- * const tasks = await prisma.task.findMany()
+ * // Fetch zero or more ExpertInstances
+ * const expertInstances = await prisma.expertInstance.findMany()
  * ```
  * 
  * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
@@ -40,17 +40,7 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
- * Model Task
+ * Model ExpertInstance
  * 
  */
-export type Task = Prisma.TaskModel
-/**
- * Model ConversationMessage
- * 
- */
-export type ConversationMessage = Prisma.ConversationMessageModel
-/**
- * Model TaskError
- * 
- */
-export type TaskError = Prisma.TaskErrorModel
+export type ExpertInstance = Prisma.ExpertInstanceModel

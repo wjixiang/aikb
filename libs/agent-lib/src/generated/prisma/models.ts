@@ -8,7 +8,5 @@
  *
  * 🟢 You can import this file directly.
  */
-export type * from './models/Task.js'
-export type * from './models/ConversationMessage.js'
-export type * from './models/TaskError.js'
-export type * from './commonInputTypes.js'
+export type * from './models/ExpertInstance'
+export type * from './commonInputTypes'

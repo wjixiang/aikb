@@ -17,8 +17,8 @@
 
 import * as runtime from "@prisma/client/runtime/index-browser"
 
-export type * from '../models.js'
-export type * from './prismaNamespace.js'
+export type * from '../models'
+export type * from './prismaNamespace'
 
 export const Decimal = runtime.Decimal
 
@@ -51,9 +51,7 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  Task: 'Task',
-  ConversationMessage: 'ConversationMessage',
-  TaskError: 'TaskError'
+  ExpertInstance: 'ExpertInstance'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -72,51 +70,20 @@ export const TransactionIsolationLevel = {
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const TaskScalarFieldEnum = {
+export const ExpertInstanceScalarFieldEnum = {
   id: 'id',
-  userId: 'userId',
-  taskInput: 'taskInput',
+  expertClassId: 'expertClassId',
+  instanceId: 'instanceId',
   status: 'status',
+  lastUnreadCount: 'lastUnreadCount',
+  lastCheckTimestamp: 'lastCheckTimestamp',
+  pollInterval: 'pollInterval',
+  consecutiveErrors: 'consecutiveErrors',
   createdAt: 'createdAt',
-  completedAt: 'completedAt',
-  abortedAt: 'abortedAt',
-  consecutiveMistakeCount: 'consecutiveMistakeCount',
-  consecutiveMistakeLimit: 'consecutiveMistakeLimit',
-  totalTokensIn: 'totalTokensIn',
-  totalTokensOut: 'totalTokensOut',
-  totalCacheWrites: 'totalCacheWrites',
-  totalCacheReads: 'totalCacheReads',
-  totalCost: 'totalCost',
-  contextTokens: 'contextTokens'
+  updatedAt: 'updatedAt'
 } as const
 
-export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
-
-
-export const ConversationMessageScalarFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  role: 'role',
-  content: 'content',
-  reasoning: 'reasoning',
-  timestamp: 'timestamp',
-  createdAt: 'createdAt'
-} as const
-
-export type ConversationMessageScalarFieldEnum = (typeof ConversationMessageScalarFieldEnum)[keyof typeof ConversationMessageScalarFieldEnum]
-
-
-export const TaskErrorScalarFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  code: 'code',
-  message: 'message',
-  retryable: 'retryable',
-  metadata: 'metadata',
-  createdAt: 'createdAt'
-} as const
-
-export type TaskErrorScalarFieldEnum = (typeof TaskErrorScalarFieldEnum)[keyof typeof TaskErrorScalarFieldEnum]
+export type ExpertInstanceScalarFieldEnum = (typeof ExpertInstanceScalarFieldEnum)[keyof typeof ExpertInstanceScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -127,42 +94,10 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
-export const JsonNullValueInput = {
-  JsonNull: 'JsonNull'
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
-export const NullableJsonNullValueInput = {
-  DbNull: 'DbNull',
-  JsonNull: 'JsonNull'
-} as const
-
-export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
-
-
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
-
-
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
-
-export const JsonNullValueFilter = {
-  DbNull: 'DbNull',
-  JsonNull: 'JsonNull',
-  AnyNull: 'AnyNull'
-} as const
-
-export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

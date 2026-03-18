@@ -12,7 +12,7 @@
  */
 
 import * as runtime from "@prisma/client/runtime/client"
-import type * as Prisma from "./prismaNamespace.js"
+import type * as Prisma from "./prismaNamespace"
 
 
 const config: runtime.GetPrismaClientConfig = {
@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.0.0",
   "engineVersion": "0c19ccc313cf9911a90d99d2ac2eb0280c76c513",
   "activeProvider": "postgresql",
-  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel Task {\n  id        String     @id @unique @default(dbgenerated(\"gen_random_uuid()\")) @db.Uuid\n  userId    String\n  taskInput String\n  status    TaskStatus @default(idle)\n\n  createdAt   DateTime\n  completedAt DateTime?\n  abortedAt   DateTime?\n\n  consecutiveMistakeCount Int @default(0)\n  consecutiveMistakeLimit Int @default(3)\n\n  // Token Usage\n  totalTokensIn        Int                   @default(0) @map(\"total_tokens_in\")\n  totalTokensOut       Int                   @default(0) @map(\"total_tokens_out\")\n  totalCacheWrites     Int                   @default(0) @map(\"total_cache_writes\")\n  totalCacheReads      Int                   @default(0) @map(\"total_cache_reads\")\n  totalCost            Decimal               @default(0) @db.Decimal(10, 4)\n  contextTokens        Int                   @default(0) @map(\"context_tokens\")\n  conversationMessages ConversationMessage[]\n  taskErrors           TaskError[]\n}\n\nenum TaskStatus {\n  idle\n  running\n  completed\n  aborted\n}\n\n// Conversation History - separate table for better query performance\nmodel ConversationMessage {\n  id     String @id @default(dbgenerated(\"gen_random_uuid()\")) @db.Uuid\n  taskId String @map(\"task_id\") @db.Uuid\n  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)\n\n  role      String  @db.VarChar(50) // 'user', 'assistant', 'system'\n  content   Json // Store content blocks as JSONB\n  reasoning String? @db.Text // Optional reasoning for assistant messages\n  timestamp BigInt  @map(\"timestamp\") // Unix timestamp in milliseconds\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  @@index([taskId])\n  @@index([timestamp])\n  @@map(\"conversation_messages\")\n}\n\n// Task Errors - separate table for error tracking\nmodel TaskError {\n  id     String @id @default(dbgenerated(\"gen_random_uuid()\")) @db.Uuid\n  taskId String @map(\"task_id\") @db.Uuid\n  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)\n\n  code      String  @db.VarChar(100)\n  message   String  @db.Text\n  retryable Boolean @default(false)\n  metadata  Json? // Additional error details\n\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  @@index([taskId])\n  @@index([code])\n  @@map(\"task_errors\")\n}\n",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Get a free hosted Postgres database in seconds: `npx create-db`\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel ExpertInstance {\n  id                 String   @id @default(uuid())\n  expertClassId      String\n  instanceId         String\n  status             String   @default(\"idle\")\n  lastUnreadCount    Int      @default(0)\n  lastCheckTimestamp DateTime @default(now())\n  pollInterval       Int      @default(30000)\n  consecutiveErrors  Int      @default(0)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@unique([expertClassId, instanceId])\n  @@index([status])\n  @@index([expertClassId])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -28,7 +28,7 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Task\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"taskInput\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"TaskStatus\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"completedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"abortedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"consecutiveMistakeCount\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"consecutiveMistakeLimit\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"totalTokensIn\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"total_tokens_in\"},{\"name\":\"totalTokensOut\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"total_tokens_out\"},{\"name\":\"totalCacheWrites\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"total_cache_writes\"},{\"name\":\"totalCacheReads\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"total_cache_reads\"},{\"name\":\"totalCost\",\"kind\":\"scalar\",\"type\":\"Decimal\"},{\"name\":\"contextTokens\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"context_tokens\"},{\"name\":\"conversationMessages\",\"kind\":\"object\",\"type\":\"ConversationMessage\",\"relationName\":\"ConversationMessageToTask\"},{\"name\":\"taskErrors\",\"kind\":\"object\",\"type\":\"TaskError\",\"relationName\":\"TaskToTaskError\"}],\"dbName\":null},\"ConversationMessage\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"taskId\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"task_id\"},{\"name\":\"task\",\"kind\":\"object\",\"type\":\"Task\",\"relationName\":\"ConversationMessageToTask\"},{\"name\":\"role\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"reasoning\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"timestamp\",\"kind\":\"scalar\",\"type\":\"BigInt\",\"dbName\":\"timestamp\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"}],\"dbName\":\"conversation_messages\"},\"TaskError\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"taskId\",\"kind\":\"scalar\",\"type\":\"String\",\"dbName\":\"task_id\"},{\"name\":\"task\",\"kind\":\"object\",\"type\":\"Task\",\"relationName\":\"TaskToTaskError\"},{\"name\":\"code\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"message\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"retryable\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"metadata\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"}],\"dbName\":\"task_errors\"}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"ExpertInstance\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expertClassId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"instanceId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lastUnreadCount\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"lastCheckTimestamp\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"pollInterval\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"consecutiveErrors\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')
@@ -58,8 +58,8 @@ export interface PrismaClientConstructor {
    * @example
    * ```
    * const prisma = new PrismaClient()
-   * // Fetch zero or more Tasks
-   * const tasks = await prisma.task.findMany()
+   * // Fetch zero or more ExpertInstances
+   * const expertInstances = await prisma.expertInstance.findMany()
    * ```
    * 
    * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
@@ -80,8 +80,8 @@ export interface PrismaClientConstructor {
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Tasks
- * const tasks = await prisma.task.findMany()
+ * // Fetch zero or more ExpertInstances
+ * const expertInstances = await prisma.expertInstance.findMany()
  * ```
  * 
  * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
@@ -175,34 +175,14 @@ export interface PrismaClient<
   }>>
 
       /**
-   * `prisma.task`: Exposes CRUD operations for the **Task** model.
+   * `prisma.expertInstance`: Exposes CRUD operations for the **ExpertInstance** model.
     * Example usage:
     * ```ts
-    * // Fetch zero or more Tasks
-    * const tasks = await prisma.task.findMany()
+    * // Fetch zero or more ExpertInstances
+    * const expertInstances = await prisma.expertInstance.findMany()
     * ```
     */
-  get task(): Prisma.TaskDelegate<ExtArgs, { omit: OmitOpts }>;
-
-  /**
-   * `prisma.conversationMessage`: Exposes CRUD operations for the **ConversationMessage** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more ConversationMessages
-    * const conversationMessages = await prisma.conversationMessage.findMany()
-    * ```
-    */
-  get conversationMessage(): Prisma.ConversationMessageDelegate<ExtArgs, { omit: OmitOpts }>;
-
-  /**
-   * `prisma.taskError`: Exposes CRUD operations for the **TaskError** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more TaskErrors
-    * const taskErrors = await prisma.taskError.findMany()
-    * ```
-    */
-  get taskError(): Prisma.TaskErrorDelegate<ExtArgs, { omit: OmitOpts }>;
+  get expertInstance(): Prisma.ExpertInstanceDelegate<ExtArgs, { omit: OmitOpts }>;
 }
 
 export function getPrismaClientClass(): PrismaClientConstructor {

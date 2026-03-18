@@ -90,7 +90,7 @@ vi.mock('../lib/storage/postgreMailStorage.js', () => {
         succeeded: 2,
         failed: 0,
       }),
-      registerAddress: vi.fn().mockResolvedValue({ success: true }),
+      registerAddress: vi.fn().mockResolvedValue({ success: true, registered: true }),
       isAddressRegistered: vi.fn().mockResolvedValue(true),
       getRegisteredAddresses: vi.fn().mockResolvedValue(['test@expert']),
       close: vi.fn().mockResolvedValue(undefined),

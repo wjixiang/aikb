@@ -954,6 +954,8 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
             type: 'object',
             properties: {
               success: { type: 'boolean' },
+              registered: { type: 'boolean', description: 'Whether the address was newly registered (true) or reactivated (false)' },
+              error: { type: 'string' },
             },
           },
         },
@@ -975,7 +977,8 @@ const mailRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         );
 
         if (result.success) {
-          logger.info('Address registered', { address: request.body.address });
+          const status = result.registered ? 'newly registered' : 'reactivated';
+          logger.info(`Address ${status}`, { address: request.body.address });
         } else {
           logger.warn('Failed to register address', { address: request.body.address, error: result.error });
         }

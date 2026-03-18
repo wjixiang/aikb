@@ -13,22 +13,12 @@
  * 🟢 You can import this file directly.
  */
 
-import * as Prisma from './internal/prismaNamespaceBrowser.js'
+import * as Prisma from './internal/prismaNamespaceBrowser'
 export { Prisma }
-export * as $Enums from './enums.js'
-export * from './enums.js';
+export * as $Enums from './enums'
+export * from './enums';
 /**
- * Model Task
+ * Model ExpertInstance
  * 
  */
-export type Task = Prisma.TaskModel
-/**
- * Model ConversationMessage
- * 
- */
-export type ConversationMessage = Prisma.ConversationMessageModel
-/**
- * Model TaskError
- * 
- */
-export type TaskError = Prisma.TaskErrorModel
+export type ExpertInstance = Prisma.ExpertInstanceModel

@@ -11,6 +11,7 @@ import {
   type MailMessage,
   type SendResult,
   type StorageResult,
+  type RegisterAddressResult,
   type InboxQuery,
   type InboxResult,
   type SearchQuery,
@@ -540,33 +541,48 @@ export class PostgreMailStorage implements IMailStorage {
 
   /**
    * Register a new mailbox address
+   * @returns RegisterAddressResult with registered=true if newly created, false if reactivated
    */
-  async registerAddress(address: MailAddress): Promise<StorageResult> {
+  async registerAddress(address: MailAddress): Promise<RegisterAddressResult> {
     const result = await this.executeWithErrorHandling(async () => {
       const { user, domain } = this.parseAddress(address);
       const currentTime = new Date();
 
-      await this.prisma.registeredAddress.upsert({
+      // Check if address already exists
+      const existing = await this.prisma.registeredAddress.findUnique({
         where: { address },
-        create: {
-          address,
-          user,
-          domain,
-          active: true,
-          registeredAt: currentTime,
-          lastActiveAt: currentTime,
-        },
-        update: {
-          active: true,
-          lastActiveAt: currentTime,
-        },
       });
+
+      if (existing) {
+        // Address exists, reactivate it
+        await this.prisma.registeredAddress.update({
+          where: { address },
+          data: {
+            active: true,
+            lastActiveAt: currentTime,
+          },
+        });
+        return { registered: false };
+      } else {
+        // Address doesn't exist, create new
+        await this.prisma.registeredAddress.create({
+          data: {
+            address,
+            user,
+            domain,
+            active: true,
+            registeredAt: currentTime,
+            lastActiveAt: currentTime,
+          },
+        });
+        return { registered: true };
+      }
     }, 'Failed to register address');
 
     if (!result.success) {
-      return { success: false, error: (result as { success: false; error: string }).error };
+      return { success: false, error: (result as { success: false; error: string }).error, registered: false };
     }
-    return { success: true };
+    return { success: true, registered: result.data.registered };
   }
 
   /**

@@ -212,7 +212,7 @@ export function createMockStorage(): PostgreMailStorage {
       succeeded: 0,
       failed: 0,
     }),
-    registerAddress: vi.fn().mockResolvedValue({ success: true }),
+    registerAddress: vi.fn().mockResolvedValue({ success: true, registered: true }),
     isAddressRegistered: vi.fn().mockResolvedValue(true),
     getRegisteredAddresses: vi.fn().mockResolvedValue([]),
     close: vi.fn().mockResolvedValue(undefined),

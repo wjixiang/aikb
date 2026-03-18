@@ -9,11 +9,7 @@
 * 🟢 You can import this file directly.
 */
 
-export const TaskStatus = {
-  idle: 'idle',
-  running: 'running',
-  completed: 'completed',
-  aborted: 'aborted'
-} as const
 
-export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus]
+
+// This file is empty because there are no enums in the schema.
+export {}

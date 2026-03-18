@@ -288,6 +288,14 @@ export interface StorageResult<T = void> {
 }
 
 /**
+ * Result of address registration operation
+ */
+export interface RegisterAddressResult extends StorageResult {
+  /** Whether the address was newly registered (true) or already existed (false) */
+  registered: boolean;
+}
+
+/**
  * Mail storage interface defining operations for storing and retrieving mail
  */
 export interface IMailStorage {
@@ -401,7 +409,7 @@ export interface IMailStorage {
    * @param address The address to register
    * @returns Result of the operation
    */
-  registerAddress(address: MailAddress): Promise<StorageResult>;
+  registerAddress(address: MailAddress): Promise<RegisterAddressResult>;
 
   /**
    * Check if an address is registered
