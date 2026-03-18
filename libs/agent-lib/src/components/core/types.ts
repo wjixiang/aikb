@@ -6,7 +6,23 @@
  */
 
 import type * as z from 'zod';
-import type { IToolManager } from '../../core';
+import type { IToolManager } from '../../core/index.js';
+import type { ToolComponent } from './toolComponent.js';
+
+/**
+ * Global component definition for workspace-level components
+ * These components are shared across all agents in the workspace
+ */
+export interface GlobalComponentDefinition {
+    /** Unique identifier for this global component */
+    componentId: string;
+    /** Factory function to create the component instance */
+    factory: () => ToolComponent | Promise<ToolComponent>;
+    /** Optional initialization config passed to factory */
+    initConfig?: Record<string, unknown>;
+    /** Priority for component registration (lower = earlier) */
+    priority?: number;
+}
 
 /**
  * Interface for VirtualWorkspace
@@ -62,6 +78,29 @@ export interface IVirtualWorkspace {
      * Get workspace configuration
      */
     getConfig(): VirtualWorkspaceConfig;
+
+    // ==================== Global Component Management ====================
+
+    /**
+     * Register a global component instance that can be shared across the workspace
+     * Global components are typically created once and reused (e.g., MailComponent)
+     */
+    registerGlobalComponent(id: string, component: ToolComponent, priority?: number): void;
+
+    /**
+     * Get a registered global component by ID
+     */
+    getGlobalComponent(id: string): ToolComponent | undefined;
+
+    /**
+     * Check if a global component is registered
+     */
+    hasGlobalComponent(id: string): boolean;
+
+    /**
+     * Get all registered global component IDs
+     */
+    getGlobalComponentIds(): string[];
 }
 
 /**
@@ -471,6 +510,12 @@ export interface VirtualWorkspaceConfig {
      * Set to 0 to disable the LOG section
      */
     toolCallLogCount?: number;
+    /**
+     * Global components to register at workspace level
+     * These components are shared across all agents in the workspace
+     * and can be accessed via the global component API
+     */
+    globalComponents?: GlobalComponentDefinition[];
 }
 
 /**

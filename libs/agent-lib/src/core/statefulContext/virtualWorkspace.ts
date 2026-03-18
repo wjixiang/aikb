@@ -48,6 +48,8 @@ export interface ToolCallSummary {
 export class VirtualWorkspace implements IVirtualWorkspace {
   private config: VirtualWorkspaceConfig;
   private componentRegistry: ComponentRegistry;
+  // Global components - shared across the workspace (e.g., MailComponent)
+  private globalComponents: Map<string, ToolComponent> = new Map();
 
   // Tool management system (injected)
   private toolManager: IToolManager;
@@ -94,6 +96,31 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     // Register all components from registry as tool providers
     this.registerComponentTools();
+
+    // Initialize global components from config (sync factories only)
+    if (config.globalComponents) {
+      this.initializeGlobalComponents(config.globalComponents);
+    }
+  }
+
+  /**
+   * Initialize global components from configuration
+   * Only synchronous factories are supported in constructor
+   */
+  private initializeGlobalComponents(definitions: import('../../components/index.js').GlobalComponentDefinition[]): void {
+    for (const def of definitions) {
+      if (def.factory) {
+        const instance = def.factory();
+        if (instance instanceof Promise) {
+          // For async factories, log warning - should be initialized separately
+          console.warn(
+            `[VirtualWorkspace] Async global component factory for "${def.componentId}" should be initialized via registerGlobalComponent()`,
+          );
+        } else if (instance instanceof ToolComponent) {
+          this.registerGlobalComponent(def.componentId, instance, def.priority);
+        }
+      }
+    }
   }
 
   /**
@@ -181,6 +208,51 @@ export class VirtualWorkspace implements IVirtualWorkspace {
    */
   getComponentKeys(): string[] {
     return this.componentRegistry.getIds();
+  }
+
+  // ==================== Global Component Management ====================
+
+  /**
+   * Register a global component instance that can be shared across the workspace
+   * Global components are typically created once and reused (e.g., MailComponent)
+   */
+  registerGlobalComponent(id: string, component: ToolComponent, priority?: number): void {
+    // Also register in component registry with tool provider
+    this.componentRegistry.register(id, component, priority);
+
+    // Also register as a tool provider with tool executed callback
+    const provider = new ComponentToolProvider(
+      id,
+      component,
+      this.notifyToolExecuted.bind(this),
+    );
+    this.toolManager.registerProvider(provider);
+
+    // Store in global components map for workspace-level access
+    this.globalComponents.set(id, component);
+
+    console.log(`[VirtualWorkspace] Registered global component: ${id}`);
+  }
+
+  /**
+   * Get a registered global component by ID
+   */
+  getGlobalComponent(id: string): ToolComponent | undefined {
+    return this.globalComponents.get(id);
+  }
+
+  /**
+   * Check if a global component is registered
+   */
+  hasGlobalComponent(id: string): boolean {
+    return this.globalComponents.has(id);
+  }
+
+  /**
+   * Get all registered global component IDs
+   */
+  getGlobalComponentIds(): string[] {
+    return Array.from(this.globalComponents.keys());
   }
 
   /**

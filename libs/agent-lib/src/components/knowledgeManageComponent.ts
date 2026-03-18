@@ -10,7 +10,9 @@
  */
 
 import { z } from 'zod';
-import { tdiv, ToolComponent, Tool } from './ui/index.js';
+import { ToolComponent } from './core/toolComponent.js';
+import { Tool } from './ui/index.js';
+import { tdiv } from './ui/tdiv.js';
 import type { ToolCallResult } from './core/types.js';
 // @ts-expect-error - Apollo client has default export at runtime but TS types are inconsistent
 import apollo from '@apollo/client';

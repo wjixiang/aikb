@@ -10,7 +10,6 @@ import type {
   IExpertInstance,
   ExpertConfig,
   ExpertComponentDefinition,
-  ExpertExecutorOptions,
 } from './types.js';
 import { ExpertRegistry } from './ExpertRegistry.js';
 import { ExpertInstance } from './ExpertInstance.js';
@@ -18,7 +17,8 @@ import type { Agent, AgentPrompt } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import { AgentContainer } from '../di/container.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
-import { ToolComponent, createMailComponent } from '../../components/index.js';
+import { ToolComponent } from '../../components/core/toolComponent.js';
+import { createMailComponent } from '../../components/index.js';
 import type { IExpertPersistenceStore, ExpertInstanceState } from './persistence/index.js';
 
 /**
@@ -32,17 +32,14 @@ export class ExpertExecutor implements IExpertExecutor {
   private expertInstances: Map<string, IExpertInstance> = new Map();
   private expertConfigs: Map<string, ExpertConfig> = new Map();
   private agentContainer: AgentContainer;
-  private options: ExpertExecutorOptions;
   private persistenceStore?: IExpertPersistenceStore;
 
   constructor(
     private registry: ExpertRegistry,
     container?: AgentContainer,
-    options?: ExpertExecutorOptions,
     persistenceStore?: IExpertPersistenceStore,
   ) {
     this.agentContainer = container || new AgentContainer();
-    this.options = options || {};
     this.persistenceStore = persistenceStore;
   }
 
@@ -113,23 +110,18 @@ export class ExpertExecutor implements IExpertExecutor {
   async startExpert(
     expertClassId: string,
     instanceId?: string,
-    autoStart = true,
   ): Promise<IExpertInstance> {
     const expert = await this.createExpert(expertClassId, instanceId);
 
     // Update status to running in persistence
     await this.saveInstanceState(expert);
 
-    // Start message-driven loop if enabled
-    if (autoStart && this.options.autoStartExperts) {
-      // Start in background - don't await
-      expert.start().catch((err) => {
-        console.error(
-          `[ExpertExecutor] Expert ${expertClassId}/${instanceId} start error:`,
-          err,
-        );
-      });
-    }
+    expert.start().catch((err) => {
+      console.error(
+        `[ExpertExecutor] Expert ${expertClassId}/${instanceId} start error:`,
+        err,
+      );
+    });
 
     return expert;
   }
@@ -309,24 +301,22 @@ export class ExpertExecutor implements IExpertExecutor {
       return;
     }
 
-    // Check if mail component already registered
-    if (workspace.getComponentRegistry().has('mail')) {
+    // Check if mail component already registered as global component
+    if (workspace.hasGlobalComponent('mail')) {
       console.log(
-        '[ExpertExecutor] MailComponent already registered, skipping',
+        '[ExpertExecutor] MailComponent already registered as global component, skipping',
       );
       return;
     }
 
     // Determine mail config: Expert's config takes precedence over global config
     const expertMailConfig = config.mailConfig;
-    const globalMailConfig = this.options.mailConfig;
 
     const baseUrl =
       expertMailConfig?.baseUrl ||
-      globalMailConfig?.baseUrl ||
       'http://localhost:3000';
 
-    const apiKey = expertMailConfig?.apiKey || globalMailConfig?.apiKey;
+    const apiKey = expertMailConfig?.apiKey
 
     // Create MailComponent with address format: {expertClassId}-{instanceId}@expert
     // e.g., pubmed-retrieve-abc123@expert
@@ -347,10 +337,10 @@ export class ExpertExecutor implements IExpertExecutor {
       );
     }
 
-    // Register as built-in component with highest priority (-1)
-    workspace.registerComponent('mail', mailComponent, -1);
+    // Register as global component via workspace API (highest priority -1)
+    workspace.registerGlobalComponent('mail', mailComponent, -1);
     console.log(
-      `[ExpertExecutor] Registered MailComponent for expert: ${mailAddress}`,
+      `[ExpertExecutor] Registered MailComponent as global component for expert: ${mailAddress}`,
     );
   }
 

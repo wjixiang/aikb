@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
+import { ToolComponent } from '../core/toolComponent.js';
 import {
   Tool,
   ToolCallResult,
-  ToolComponent,
   TUIElement,
   tdiv,
   th,

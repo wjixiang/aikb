@@ -7,7 +7,9 @@ import { z } from 'zod';
 // @ts-expect-error - Apollo client has default export at runtime but TS types are inconsistent
 import apollo from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
-import { ToolComponent, Tool, tdiv } from './ui/index.js';
+import { ToolComponent } from './core/toolComponent.js';
+import { Tool } from './ui/index.js';
+import { tdiv } from './ui/tdiv.js';
 import type { ToolCallResult } from './core/types.js';
 import type { ApolloClient, NormalizedCacheObject, InMemoryCache, HttpLink } from '@apollo/client';
 

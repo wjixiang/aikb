@@ -5,8 +5,8 @@
  * and provides access to component tools.
  */
 
-import { ToolComponent } from './ui/index.js';
-import type { Tool } from './ui/index.js';
+import { ToolComponent } from './core/toolComponent.js';
+import type { Tool } from './core/types.js';
 
 export interface ComponentRegistration {
     id: string;

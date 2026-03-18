@@ -5,7 +5,8 @@
  * Integrates original Skill functionality: prompt, components, lifecycle hooks
  */
 
-import type { IVirtualWorkspace, ToolComponent, VirtualWorkspaceConfig } from '../../components/index.js';
+import type { IVirtualWorkspace, VirtualWorkspaceConfig } from '../../components/index.js';
+import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { AgentConfig } from '../agent/agent.js';
 import type { AgentStatus } from '../common/types.js';
@@ -296,15 +297,6 @@ export interface ExpertMailConfig {
     apiKey?: string;
 }
 
-/**
- * ExpertExecutor 构造函数选项
- */
-export interface ExpertExecutorOptions {
-    /** 邮件配置 */
-    mailConfig?: ExpertMailConfig;
-    /** 是否在 createExpert 后自动启动消息驱动循环 */
-    autoStartExperts?: boolean;
-}
 
 /**
  * Expert Executor - responsible for creating and managing Expert instances

@@ -1,4 +1,6 @@
-import { Tool, ToolComponent, TUIElement, tdiv, th, tp } from '../ui/index.js'
+import { ToolComponent } from '../core/toolComponent.js';
+import { Tool } from '../core/types.js';
+import { TUIElement, tdiv, th, tp } from '../ui/index.js';
 import type { ToolCallResult } from '../core/types.js';
 import { createPrismaToolSet } from './prismaTools.js'
 import type {

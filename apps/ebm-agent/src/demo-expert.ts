@@ -14,13 +14,7 @@ async function main() {
 
   // 1. Create ExpertExecutor with mail configuration
   const registry = new ExpertRegistry();
-  const executor = new ExpertExecutor(registry, undefined, {
-    mailConfig: {
-      baseUrl: mailboxUrl,
-      enabled: true,
-    },
-    autoStartExperts: true,
-  });
+  const executor = new ExpertExecutor(registry, undefined);
 
   config.apiConfiguration = {
     apiProvider: 'minimax',

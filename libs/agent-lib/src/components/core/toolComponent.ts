@@ -1,7 +1,10 @@
 import { injectable } from 'inversify';
 import { renderToolSection } from '../utils/toolRendering.js';
 import { Tool, ToolCallResult } from './types.js';
-import { tdiv, TUIElement, MdDiv, MdElement } from '../ui/index.js';
+import { tdiv } from '../ui/tdiv.js';
+import { TUIElement } from '../ui/TUIElement.js';
+import { MdDiv } from '../ui/markdown/MdDiv.js';
+import { MdElement } from '../ui/markdown/MdElement.js';
 
 /**
  * ToolComponent - Abstract base class for components that provide tools

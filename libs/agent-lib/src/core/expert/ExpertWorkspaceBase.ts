@@ -15,7 +15,7 @@
  * ```
  */
 
-import { ToolComponent } from '../../components/index.js';
+import { ToolComponent } from '../../components/core/toolComponent.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import type { IVirtualWorkspace } from '../../components/index.js';
 import type { ExportResult, ExportConfig, InputHandler, ValidationResult } from './types.js';

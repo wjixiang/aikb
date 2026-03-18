@@ -33,7 +33,7 @@ describe('ExpertExecutor persistence integration', () => {
             listRunningInstances: vi.fn().mockResolvedValue([]),
         };
 
-        executor = new ExpertExecutor(registry, undefined, { autoStartExperts: false }, mockStore);
+        executor = new ExpertExecutor(registry, undefined, mockStore);
         // Register expert config via executor so it goes into expertConfigs Map
         executor.registerExpert(sampleConfig);
     });
@@ -82,7 +82,7 @@ describe('ExpertExecutor persistence integration', () => {
                 deleteInstance: vi.fn().mockResolvedValue(undefined),
                 listRunningInstances: listRunningFn,
             };
-            const executorWithData = new ExpertExecutor(registry, undefined, { autoStartExperts: false }, storeWithData);
+            const executorWithData = new ExpertExecutor(registry, undefined, storeWithData);
             // Register config to this new executor
             executorWithData.registerExpert(sampleConfig);
 
@@ -107,7 +107,7 @@ describe('ExpertExecutor persistence integration', () => {
                     },
                 ]),
             };
-            const executorWithData = new ExpertExecutor(registry, undefined, { autoStartExperts: false }, storeWithData);
+            const executorWithData = new ExpertExecutor(registry, undefined, storeWithData);
             // Register a different config so 'non-existent-expert' won't be found
             executorWithData.registerExpert(sampleConfig);
 
@@ -123,7 +123,7 @@ describe('ExpertExecutor persistence integration', () => {
                 deleteInstance: vi.fn().mockResolvedValue(undefined),
                 listRunningInstances: vi.fn().mockRejectedValue(new Error('DB error')),
             };
-            const executorWithError = new ExpertExecutor(registry, undefined, { autoStartExperts: false }, storeWithError);
+            const executorWithError = new ExpertExecutor(registry, undefined, storeWithError);
             executorWithError.registerExpert(sampleConfig);
 
             const recovered = await executorWithError.recoverRunningInstances();
@@ -146,7 +146,7 @@ describe('ExpertExecutor persistence methods', () => {
             deleteInstance: vi.fn().mockResolvedValue(undefined),
             listRunningInstances: vi.fn().mockResolvedValue([]),
         };
-        executor = new ExpertExecutor(registry, undefined, { autoStartExperts: false }, mockStore);
+        executor = new ExpertExecutor(registry, undefined, mockStore);
     });
 
     describe('getExpert', () => {
