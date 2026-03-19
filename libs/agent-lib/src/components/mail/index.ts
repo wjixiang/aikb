@@ -2,10 +2,10 @@
  * Mail Module - Email-style messaging for agent communication
  *
  * This module provides a MailComponent that allows agents to:
- * - Send and receive emails via the agent-mailbox service
- * - Manage inbox (read/unread, star, delete)
+ * - Send emails via the agent-mailbox service
  * - Search messages
  * - Reply to messages
+ * - Manage drafts
  *
  * @example
  * ```typescript
@@ -16,15 +16,16 @@
  *   defaultAddress: 'myagent@expert',
  * });
  *
- * // Send a message
- * await mail.sendMail({
- *   to: 'other@expert',
- *   subject: 'Hello',
- *   body: 'World',
+ * // Reply to a message
+ * await mail.handleToolCall('reply-createDraft', {
+ *   messageId: 'msg-123',
+ *   body: 'Thank you for your message...',
  * });
  *
- * // Get inbox
- * const inbox = await mail.getInbox('myagent@expert');
+ * // Send the reply
+ * await mail.handleToolCall('reply-sendDraft', {
+ *   draftId: 'draft-456',
+ * });
  * ```
  */
 
@@ -42,28 +43,28 @@ export {
 // Export schema types for external use
 export {
   mailToolSchemas,
-  getInboxParamsSchema,
-  getUnreadCountParamsSchema,
+  sendMailParamsSchema,
   messageIdParamsSchema,
   searchMessagesParamsSchema,
   replyToMessageParamsSchema,
-  registerAddressParamsSchema,
   editDraftParamsSchema,
-  getDraftsParamsSchema,
   deleteDraftParamsSchema,
+  insertDraftContentParamsSchema,
+  replaceDraftContentParamsSchema,
+  sendDraftParamsSchema,
 } from './mailSchemas.js';
 
 // Export parameter types derived from Zod schemas
 export type {
-  GetInboxParams,
-  GetUnreadCountParams,
+  SendMailParams,
   MessageIdParams,
   SearchMessagesParams,
   ReplyToMessageParams,
-  RegisterAddressParams,
   EditDraftParams,
-  GetDraftsParams,
   DeleteDraftParams,
+  InsertDraftContentParams,
+  ReplaceDraftContentParams,
+  SendDraftParams,
   MailToolParams,
   MailToolName,
   MailToolReturnTypes,

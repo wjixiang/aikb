@@ -64,13 +64,13 @@ describe('MailComponent - Reply Draft Mechanism', () => {
 
     describe('replyToMessage creates draft (not direct send)', () => {
         it('should create a draft reply instead of sending directly', async () => {
-            // Mock searchMessages to find the original message
+            // Mock getMessage to return a single message (not array like searchMessages)
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve(mockMessages),
+                json: () => Promise.resolve(mockMessages[0]),
             });
 
-            const result = await mailComponent.handleToolCall('replyToMessage', {
+            const result = await mailComponent.handleToolCall('reply-createDraft', {
                 messageId: 'msg-1',
                 body: 'Here is the result of task 1',
             });
@@ -89,14 +89,14 @@ describe('MailComponent - Reply Draft Mechanism', () => {
         });
 
         it('should return error if original message not found', async () => {
-            // Mock GET /message/:messageId to return 404
+            // Mock getMessage to return 404 (message not found)
             mockFetch.mockResolvedValueOnce({
                 ok: false,
                 status: 404,
                 json: () => Promise.resolve({ error: 'Message not found' }),
             });
 
-            const result = await mailComponent.handleToolCall('replyToMessage', {
+            const result = await mailComponent.handleToolCall('reply-createDraft', {
                 messageId: 'nonexistent',
                 body: 'Reply',
             });
@@ -108,23 +108,24 @@ describe('MailComponent - Reply Draft Mechanism', () => {
 
     describe('sendDraft sends the draft', () => {
         it('should send a draft and return success', async () => {
-            // First create a draft
+            // First create a draft - getMessage returns single message
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve(mockMessages),
+                json: () => Promise.resolve(mockMessages[0]),
             });
 
-            const draftResult = await mailComponent.handleToolCall('replyToMessage', {
+            const draftResult = await mailComponent.handleToolCall('reply-createDraft', {
                 messageId: 'msg-1',
                 body: 'Task 1 completed',
             });
 
             const draftData = draftResult.data as { success: boolean; draftId?: string };
             expect(draftData.success).toBe(true);
+            expect(draftData.draftId).toBeDefined();
             const draftId = draftData.draftId!;
 
             // Now send the draft
-            const sendResult = await mailComponent.handleToolCall('sendDraft', {
+            const sendResult = await mailComponent.handleToolCall('reply-sendDraft', {
                 draftId,
             });
 
@@ -135,7 +136,7 @@ describe('MailComponent - Reply Draft Mechanism', () => {
         });
 
         it('should return error if draft not found', async () => {
-            const result = await mailComponent.handleToolCall('sendDraft', {
+            const result = await mailComponent.handleToolCall('reply-sendDraft', {
                 draftId: 'nonexistent-draft',
             });
 
@@ -145,13 +146,13 @@ describe('MailComponent - Reply Draft Mechanism', () => {
 
     describe('draft storage', () => {
         it('should store reply drafts with inReplyTo field', async () => {
-            // Create draft for msg-1
+            // Create draft for msg-1 - getMessage returns single message
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve(mockMessages),
+                json: () => Promise.resolve(mockMessages[0]),
             });
 
-            const result = await mailComponent.handleToolCall('replyToMessage', {
+            const result = await mailComponent.handleToolCall('reply-createDraft', {
                 messageId: 'msg-1',
                 body: 'Reply content',
             });
@@ -162,18 +163,20 @@ describe('MailComponent - Reply Draft Mechanism', () => {
         });
 
         it('should delete draft after sending', async () => {
-            // Create draft
+            // Create draft - getMessage returns single message
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve(mockMessages),
+                json: () => Promise.resolve(mockMessages[0]),
             });
 
-            const draftResult = await mailComponent.handleToolCall('replyToMessage', {
+            const draftResult = await mailComponent.handleToolCall('reply-createDraft', {
                 messageId: 'msg-1',
                 body: 'Task 1 done',
             });
 
-            const draftData = draftResult.data as { draftId?: string };
+            const draftData = draftResult.data as { success: boolean; draftId?: string };
+            expect(draftData.success).toBe(true);
+            expect(draftData.draftId).toBeDefined();
             const draftId = draftData.draftId!;
 
             // Send draft
@@ -182,10 +185,10 @@ describe('MailComponent - Reply Draft Mechanism', () => {
                 json: () => Promise.resolve({ success: true, messageId: 'reply-123' }),
             });
 
-            await mailComponent.handleToolCall('sendDraft', { draftId });
+            await mailComponent.handleToolCall('reply-sendDraft', { draftId });
 
             // Try to send again - should fail because draft was deleted
-            const result = await mailComponent.handleToolCall('sendDraft', { draftId });
+            const result = await mailComponent.handleToolCall('reply-sendDraft', { draftId });
             expect(result.summary).toContain('Draft not found');
         });
     });
@@ -235,24 +238,24 @@ describe('MailComponent - Reply Draft Tracking', () => {
             },
         ];
 
-        // Create draft for task-a
+        // Create draft for task-a - getMessage returns single message
         mockFetch.mockResolvedValueOnce({
             ok: true,
-            json: () => Promise.resolve(messages),
+            json: () => Promise.resolve(messages[0]),
         });
 
-        const draftAResult = await mailComponent.handleToolCall('replyToMessage', {
+        const draftAResult = await mailComponent.handleToolCall('reply-createDraft', {
             messageId: 'task-a',
             body: 'Task A done',
         });
 
-        // Create draft for task-b
+        // Create draft for task-b - getMessage returns single message
         mockFetch.mockResolvedValueOnce({
             ok: true,
-            json: () => Promise.resolve(messages),
+            json: () => Promise.resolve(messages[1]),
         });
 
-        const draftBResult = await mailComponent.handleToolCall('replyToMessage', {
+        const draftBResult = await mailComponent.handleToolCall('reply-createDraft', {
             messageId: 'task-b',
             body: 'Task B done',
         });

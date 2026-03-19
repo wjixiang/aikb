@@ -63,31 +63,28 @@ export {
 
 export {
   mailToolSchemas,
-  getInboxParamsSchema,
-  getUnreadCountParamsSchema,
+  sendMailParamsSchema,
   messageIdParamsSchema,
   searchMessagesParamsSchema,
   replyToMessageParamsSchema,
-  registerAddressParamsSchema,
   saveDraftParamsSchema,
   editDraftParamsSchema,
-  getDraftsParamsSchema,
   deleteDraftParamsSchema,
   insertDraftContentParamsSchema,
   replaceDraftContentParamsSchema,
+  sendDraftParamsSchema,
 } from './mail/mailSchemas.js';
 
-// Note: SendMailParams, GetInboxParams, GetUnreadCountParams, MessageIdParams,
-// SearchMessagesParams, ReplyToMessageParams are exported from core/statefulContext
-// to avoid duplicate export conflicts
+// Note: SendMailParams, MessageIdParams, SearchMessagesParams, ReplyToMessageParams
+// are exported from core/statefulContext to avoid duplicate export conflicts
 export type {
-  RegisterAddressParams,
+  SendMailParams,
   SaveDraftParams,
   EditDraftParams,
-  GetDraftsParams,
   DeleteDraftParams,
   InsertDraftContentParams,
   ReplaceDraftContentParams,
+  SendDraftParams,
   MailToolParams,
   MailToolName,
   MailToolReturnTypes,

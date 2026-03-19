@@ -36,19 +36,6 @@ describe('MailComponent E2E', () => {
     await secondComponent.registerAddress(SECOND_ADDRESS);
   });
 
-  describe('Address Registration', () => {
-    it('should register a new address', async () => {
-      const result = await component.registerAddress('new-e2e-addr@expert');
-      expect(result.success).toBe(true);
-    });
-
-    it('should handle duplicate address gracefully', async () => {
-      const result = await component.registerAddress(TEST_ADDRESS);
-      // Either success or already exists is acceptable
-      expect(result.success === true || result.error).toBeDefined();
-    });
-  });
-
   describe('Send Mail', () => {
     it('should send mail to another address', async () => {
       const result = await component.sendMail({
@@ -204,20 +191,6 @@ describe('MailComponent E2E', () => {
       expect(result.summary).toContain('Sent');
     });
 
-    it('should handle getInbox tool call', async () => {
-      const result = await component.handleToolCall('getInbox', {});
-
-      expect(result.data).toBeDefined();
-      expect(result.summary).toContain(TEST_ADDRESS);
-    });
-
-    it('should handle getUnreadCount tool call', async () => {
-      const result = await component.handleToolCall('getUnreadCount', {});
-
-      expect(result.data).toBeDefined();
-      expect(result.summary).toContain('unread');
-    });
-
     it('should handle searchMessages tool call', async () => {
       const result = await component.handleToolCall('searchMessages', {
         query: 'test',
@@ -225,15 +198,6 @@ describe('MailComponent E2E', () => {
 
       expect(result.data).toBeDefined();
       expect(result.summary).toContain('Found');
-    });
-
-    it('should handle registerAddress tool call', async () => {
-      const result = await component.handleToolCall('registerAddress', {
-        address: 'tool-call-test@expert',
-      });
-
-      expect(result.data).toBeDefined();
-      expect(result.summary).toContain('Registered');
     });
 
     it('should return error for unknown tool', async () => {
@@ -252,7 +216,11 @@ describe('MailComponent E2E', () => {
         timeout: 1000,
       });
 
-      const result = await badComponent.handleToolCall('getInbox', {});
+      const result = await badComponent.handleToolCall('sendMail', {
+        to: 'test@expert',
+        subject: 'Test',
+        body: 'Body',
+      });
       expect(result.data).toHaveProperty('error');
     });
   });

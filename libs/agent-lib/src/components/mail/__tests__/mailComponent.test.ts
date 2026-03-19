@@ -5,7 +5,6 @@ import {
   beforeEach,
   vi,
   afterEach,
-  type Mock,
 } from 'vitest';
 import { MailComponent, createMailComponent } from '../mailComponent';
 import type {
@@ -14,7 +13,7 @@ import type {
   SendResult,
   StorageResult,
   MailComponentConfig,
-} from 'agent-lib';
+} from '../../../index';
 
 // Mock global fetch
 const mockFetch = vi.fn();
@@ -63,21 +62,16 @@ describe('MailComponent', () => {
     it('should initialize all tools in toolSet', () => {
       const tools = component.toolSet;
       expect(tools.has('sendMail')).toBe(true);
-      expect(tools.has('getInbox')).toBe(true);
-      expect(tools.has('getUnreadCount')).toBe(true);
-      expect(tools.has('markAsRead')).toBe(true);
-      expect(tools.has('markAsUnread')).toBe(true);
-      expect(tools.has('starMessage')).toBe(true);
-      expect(tools.has('unstarMessage')).toBe(true);
       expect(tools.has('deleteMessage')).toBe(true);
       expect(tools.has('searchMessages')).toBe(true);
-      expect(tools.has('replyToMessage')).toBe(true);
-      expect(tools.has('registerAddress')).toBe(true);
+      expect(tools.has('reply-createDraft')).toBe(true);
       expect(tools.has('saveDraft')).toBe(true);
-      expect(tools.has('editDraft')).toBe(true);
-      expect(tools.has('getDrafts')).toBe(true);
+      expect(tools.has('reply-editDraft')).toBe(true);
       expect(tools.has('deleteDraft')).toBe(true);
-      expect(tools.size).toBe(15);
+      expect(tools.has('insertDraftContent')).toBe(true);
+      expect(tools.has('replaceDraftContent')).toBe(true);
+      expect(tools.has('reply-sendDraft')).toBe(true);
+      expect(tools.size).toBe(10);
     });
 
     it('should auto-fetch inbox and drafts during render (side effect)', async () => {
@@ -89,13 +83,11 @@ describe('MailComponent', () => {
             messageId: 'msg_1',
             subject: 'Test Message 1',
             from: 'sender1@expert',
-            to: 'test@expert',
+            to: ['test@expert'],
             body: 'Body of message 1',
             priority: 'normal',
             status: { read: false, starred: false, deleted: false },
             sentAt: new Date().toISOString(),
-            receivedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
           },
           {
             messageId: 'msg_2',
@@ -254,258 +246,6 @@ describe('MailComponent', () => {
       });
     });
 
-    describe('getInbox', () => {
-      const mockInboxResult: InboxResult = {
-        address: 'test@expert',
-        messages: [
-          {
-            messageId: 'msg_1',
-            subject: 'Test Message',
-            from: 'sender@expert',
-            to: 'test@expert',
-            body: 'Message body',
-            priority: 'normal',
-            status: { read: false, starred: false, deleted: false },
-            sentAt: new Date().toISOString(),
-            receivedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ],
-        total: 1,
-        unread: 1,
-        starred: 0,
-      };
-
-      it('should get inbox with default address', async () => {
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockInboxResult),
-        });
-
-        const result = await component.handleToolCall('getInbox', {});
-
-        expect(result.data).toEqual(mockInboxResult);
-        expect(result.summary).toContain('test@expert');
-        expect(result.summary).toContain('1/1 messages');
-        expect(result.summary).toContain('1 unread');
-      });
-
-      it('should get inbox with specified address', async () => {
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({ ...mockInboxResult, address: 'other@expert' }),
-        });
-
-        const result = await component.handleToolCall('getInbox', {
-          address: 'other@expert',
-        });
-
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/inbox/other%40expert'),
-          expect.any(Object),
-        );
-        expect(result.summary).toContain('other@expert');
-      });
-
-      it('should return error when no address specified', async () => {
-        const componentWithoutAddress = new MailComponent({
-          baseUrl: 'http://localhost:3000',
-        });
-
-        const result = await componentWithoutAddress.handleToolCall(
-          'getInbox',
-          {},
-        );
-
-        expect(result.data).toEqual({
-          error: 'No address specified and no default address configured',
-        });
-        expect(result.summary).toContain('Error');
-      });
-
-      it('should pass query parameters correctly', async () => {
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockInboxResult),
-        });
-
-        await component.handleToolCall('getInbox', {
-          limit: 10,
-          offset: 5,
-          unreadOnly: true,
-          starredOnly: true,
-        });
-
-        const url = mockFetch.mock.calls[0][0];
-        expect(url).toContain('limit=10');
-        expect(url).toContain('offset=5');
-        expect(url).toContain('unreadOnly=true');
-        expect(url).toContain('starredOnly=true');
-      });
-    });
-
-    describe('getUnreadCount', () => {
-      it('should get unread count with default address', async () => {
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(5),
-        });
-
-        const result = await component.handleToolCall('getUnreadCount', {});
-
-        expect(result.data).toEqual({ count: 5, address: 'test@expert' });
-        expect(result.summary).toBe('[Mail] test@expert has 5 unread messages');
-      });
-
-      it('should get unread count with specified address', async () => {
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(3),
-        });
-
-        const result = await component.handleToolCall('getUnreadCount', {
-          address: 'other@expert',
-        });
-
-        expect(result.data).toEqual({ count: 3, address: 'other@expert' });
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/inbox/other%40expert/unread'),
-          expect.any(Object),
-        );
-      });
-
-      it('should return error when no address configured', async () => {
-        const componentWithoutAddress = new MailComponent({
-          baseUrl: 'http://localhost:3000',
-        });
-
-        const result = await componentWithoutAddress.handleToolCall(
-          'getUnreadCount',
-          {},
-        );
-
-        expect(result.data).toEqual({
-          error: 'No address specified and no default address configured',
-        });
-      });
-    });
-
-    describe('markAsRead', () => {
-      it('should mark message as read successfully', async () => {
-        const mockResult: StorageResult = { success: true };
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResult),
-        });
-
-        const result = await component.handleToolCall('markAsRead', {
-          messageId: 'msg_123',
-        });
-
-        expect(result.data).toEqual(mockResult);
-        expect(result.summary).toBe('[Mail] Marked msg_123 as read');
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/msg_123/read'),
-          expect.objectContaining({ method: 'POST' }),
-        );
-      });
-
-      it('should handle mark as read failure', async () => {
-        const mockResult: StorageResult = {
-          success: false,
-          error: 'Message not found',
-        };
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResult),
-        });
-
-        const result = await component.handleToolCall('markAsRead', {
-          messageId: 'msg_unknown',
-        });
-
-        expect(result.summary).toContain('Failed to mark as read');
-      });
-    });
-
-    describe('markAsUnread', () => {
-      it('should mark message as unread successfully', async () => {
-        const mockResult: StorageResult = { success: true };
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResult),
-        });
-
-        const result = await component.handleToolCall('markAsUnread', {
-          messageId: 'msg_123',
-        });
-
-        expect(result.summary).toBe('[Mail] Marked msg_123 as unread');
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/msg_123/unread'),
-          expect.objectContaining({ method: 'POST' }),
-        );
-      });
-    });
-
-    describe('starMessage', () => {
-      it('should star message successfully', async () => {
-        const mockResult: StorageResult = { success: true };
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResult),
-        });
-
-        const result = await component.handleToolCall('starMessage', {
-          messageId: 'msg_123',
-        });
-
-        expect(result.summary).toBe('[Mail] Starred msg_123');
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/msg_123/star'),
-          expect.objectContaining({ method: 'POST' }),
-        );
-      });
-
-      it('should handle star failure', async () => {
-        const mockResult: StorageResult = {
-          success: false,
-          error: 'Already starred',
-        };
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResult),
-        });
-
-        const result = await component.handleToolCall('starMessage', {
-          messageId: 'msg_123',
-        });
-
-        expect(result.summary).toContain('Failed to star');
-      });
-    });
-
-    describe('unstarMessage', () => {
-      it('should unstar message successfully', async () => {
-        const mockResult: StorageResult = { success: true };
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResult),
-        });
-
-        const result = await component.handleToolCall('unstarMessage', {
-          messageId: 'msg_123',
-        });
-
-        expect(result.summary).toBe('[Mail] Unstarred msg_123');
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/msg_123/unstar'),
-          expect.objectContaining({ method: 'POST' }),
-        );
-      });
-    });
-
     describe('deleteMessage', () => {
       it('should delete message successfully', async () => {
         const mockResult: StorageResult = { success: true };
@@ -623,7 +363,7 @@ describe('MailComponent', () => {
       });
     });
 
-    describe('replyToMessage', () => {
+    describe('reply-createDraft', () => {
       const originalMessage: MailMessage = {
         messageId: 'msg_original',
         subject: 'Original Subject',
@@ -654,7 +394,7 @@ describe('MailComponent', () => {
           json: () => Promise.resolve(mockSendResult),
         });
 
-        const result = await component.handleToolCall('replyToMessage', {
+        const result = await component.handleToolCall('reply-createDraft', {
           messageId: 'msg_original',
           body: 'Reply body',
         });
@@ -678,7 +418,7 @@ describe('MailComponent', () => {
           json: () => Promise.resolve([]),
         });
 
-        const result = await component.handleToolCall('replyToMessage', {
+        const result = await component.handleToolCall('reply-createDraft', {
           messageId: 'msg_unknown',
           body: 'Reply body',
         });
@@ -697,7 +437,7 @@ describe('MailComponent', () => {
           json: () => Promise.resolve({ success: true }),
         });
 
-        await component.handleToolCall('replyToMessage', {
+        await component.handleToolCall('reply-createDraft', {
           messageId: 'msg_original',
           body: 'Reply with attachments',
           attachments: ['s3://bucket/file.pdf'],
@@ -725,8 +465,8 @@ describe('MailComponent', () => {
 
         // The component sends with empty string as from, which should work
         // but we test the behavior
-        const result = await componentWithoutAddress.handleToolCall(
-          'replyToMessage',
+        await componentWithoutAddress.handleToolCall(
+          'reply-createDraft',
           {
             messageId: 'msg_original',
             body: 'Reply body',
@@ -736,47 +476,6 @@ describe('MailComponent', () => {
         // Should still work as the API accepts empty from
         const sentBody = JSON.parse(mockFetch.mock.calls[1][1].body);
         expect(sentBody.from).toBe('');
-      });
-    });
-
-    describe('registerAddress', () => {
-      it('should register address successfully', async () => {
-        const mockResult: StorageResult = { success: true };
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResult),
-        });
-
-        const result = await component.handleToolCall('registerAddress', {
-          address: 'newagent@expert',
-        });
-
-        expect(result.data).toEqual(mockResult);
-        expect(result.summary).toBe('[Mail] Registered newagent@expert');
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/register'),
-          expect.objectContaining({
-            method: 'POST',
-            body: JSON.stringify({ address: 'newagent@expert' }),
-          }),
-        );
-      });
-
-      it('should handle registration failure', async () => {
-        const mockResult: StorageResult = {
-          success: false,
-          error: 'Address already exists',
-        };
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResult),
-        });
-
-        const result = await component.handleToolCall('registerAddress', {
-          address: 'existing@expert',
-        });
-
-        expect(result.summary).toContain('Failed to register');
       });
     });
 
@@ -812,7 +511,7 @@ describe('MailComponent', () => {
       });
     });
 
-    describe('editDraft', () => {
+    describe('reply-editDraft', () => {
       it('should edit draft successfully (state-based)', async () => {
         // First save a draft to edit
         const saveResult = await component.handleToolCall('saveDraft', {
@@ -823,7 +522,7 @@ describe('MailComponent', () => {
         const draftId = saveResult.data.draftId;
 
         // Now edit the draft
-        const result = await component.handleToolCall('editDraft', {
+        const result = await component.handleToolCall('reply-editDraft', {
           draftId: draftId,
           subject: 'Updated Subject',
           body: 'Updated body',
@@ -836,70 +535,13 @@ describe('MailComponent', () => {
       });
 
       it('should return error when draft not found', async () => {
-        const result = await component.handleToolCall('editDraft', {
+        const result = await component.handleToolCall('reply-editDraft', {
           draftId: 'non_existent_draft',
           subject: 'Updated Subject',
         });
 
         expect(result.data.success).toBe(false);
         expect(result.data.error).toContain('not found');
-      });
-    });
-
-    describe('getDrafts', () => {
-      it('should get drafts with default address (state-based)', async () => {
-        // First save some drafts
-        await component.handleToolCall('saveDraft', {
-          to: 'recipient1@expert',
-          subject: 'Draft 1',
-          body: 'Body 1',
-        });
-        await component.handleToolCall('saveDraft', {
-          to: 'recipient2@expert',
-          subject: 'Draft 2',
-          body: 'Body 2',
-          priority: 'high',
-        });
-
-        const result = await component.handleToolCall('getDrafts', {});
-
-        expect(result.data.drafts.length).toBe(2);
-        expect(result.data.total).toBe(2);
-        expect(result.summary).toContain('test@expert');
-        expect(result.summary).toContain('2 drafts');
-        // No API call should be made
-        expect(mockFetch).not.toHaveBeenCalled();
-      });
-
-      it('should return error when no address configured', async () => {
-        const componentWithoutAddress = new MailComponent({
-          baseUrl: 'http://localhost:3000',
-        });
-
-        const result = await componentWithoutAddress.handleToolCall('getDrafts', {});
-
-        expect(result.data).toEqual({
-          error: 'No address specified and no default address configured',
-        });
-      });
-
-      it('should support pagination parameters (state-based)', async () => {
-        // Save more than limit drafts
-        for (let i = 0; i < 5; i++) {
-          await component.handleToolCall('saveDraft', {
-            to: `recipient${i}@expert`,
-            subject: `Draft ${i}`,
-            body: `Body ${i}`,
-          });
-        }
-
-        const result = await component.handleToolCall('getDrafts', {
-          limit: 2,
-          offset: 1,
-        });
-
-        expect(result.data.drafts.length).toBe(2);
-        expect(result.data.total).toBe(5);
       });
     });
 
@@ -934,203 +576,6 @@ describe('MailComponent', () => {
       });
     });
 
-    describe('Draft Rendering Tests', () => {
-      it.only('should render draft content correctly', async () => {
-        console.log('\n========== Draft Rendering Test ==========');
-
-        // Save a draft with all fields
-        const saveResult = await component.handleToolCall('saveDraft', {
-          to: 'recipient@expert',
-          subject: 'Test Draft Subject',
-          body: 'This is the draft body content.\nIt has multiple lines.',
-          priority: 'high',
-          taskId: 'task_123',
-          attachments: ['file1.pdf', 'file2.pdf'],
-          payload: { customField: 'customValue' },
-        });
-
-        console.log('Saved draft result:', JSON.stringify(saveResult.data, null, 2));
-        const draftId = saveResult.data.draftId;
-
-        // Get drafts to verify
-        const getResult = await component.handleToolCall('getDrafts', {});
-        console.log('\nGet drafts result:', JSON.stringify(getResult.data, null, 2));
-
-        // Render the component to see draft UI
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
-        });
-
-        const elements = await component.renderImply();
-
-        console.log('\n========== Rendered Elements ==========');
-        for (let i = 0; i < elements.length; i++) {
-          const rendered = elements[i].render();
-          console.log(`\n--- Element ${i} ---`);
-          console.log(rendered);
-        }
-
-        console.log('\n========== End of Draft Rendering Test ==========\n');
-
-        expect(saveResult.data.success).toBe(true);
-        expect(getResult.data.drafts.length).toBe(1);
-        expect(elements.length).toBeGreaterThan(0);
-      });
-
-      it('should render multiple drafts correctly', async () => {
-        console.log('\n========== Multiple Drafts Rendering Test ==========');
-
-        // Save multiple drafts
-        await component.handleToolCall('saveDraft', {
-          to: 'recipient1@expert',
-          subject: 'First Draft',
-          body: 'Body of first draft',
-          priority: 'normal',
-        });
-
-        await component.handleToolCall('saveDraft', {
-          to: 'recipient2@expert',
-          subject: 'Second Draft',
-          body: 'Body of second draft',
-          priority: 'high',
-        });
-
-        await component.handleToolCall('saveDraft', {
-          to: 'recipient3@expert',
-          subject: 'Urgent Draft',
-          body: 'This is an urgent message',
-          priority: 'urgent',
-        });
-
-        // Get drafts
-        const getResult = await component.handleToolCall('getDrafts', {});
-        console.log('\nAll drafts:', JSON.stringify(getResult.data, null, 2));
-
-        // Render
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
-        });
-
-        const elements = await component.renderImply();
-
-        console.log('\n========== Rendered Elements (Multiple Drafts) ==========');
-        for (let i = 0; i < elements.length; i++) {
-          const rendered = elements[i].render();
-          console.log(`\n--- Element ${i} ---`);
-          console.log(rendered);
-        }
-
-        console.log('\n========== End of Multiple Drafts Rendering Test ==========\n');
-
-        expect(getResult.data.drafts.length).toBe(3);
-        expect(getResult.data.total).toBe(3);
-      });
-
-      it('should render edited draft correctly', async () => {
-        console.log('\n========== Edited Draft Rendering Test ==========');
-
-        // Save a draft
-        const saveResult = await component.handleToolCall('saveDraft', {
-          to: 'original@expert',
-          subject: 'Original Subject',
-          body: 'Original body',
-          priority: 'normal',
-        });
-
-        const draftId = saveResult.data.draftId;
-        console.log('Original draft:', JSON.stringify(saveResult.data, null, 2));
-
-        // Edit the draft
-        const editResult = await component.handleToolCall('editDraft', {
-          draftId: draftId,
-          to: 'updated@expert',
-          subject: 'Updated Subject',
-          body: 'Updated body content',
-          priority: 'high',
-        });
-
-        console.log('Edit result:', JSON.stringify(editResult.data, null, 2));
-
-        // Get the updated draft
-        const getResult = await component.handleToolCall('getDrafts', {});
-        console.log('\nUpdated draft:', JSON.stringify(getResult.data, null, 2));
-
-        // Render
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
-        });
-
-        const elements = await component.renderImply();
-
-        console.log('\n========== Rendered Elements (Edited Draft) ==========');
-        for (let i = 0; i < elements.length; i++) {
-          const rendered = elements[i].render();
-          console.log(`\n--- Element ${i} ---`);
-          console.log(rendered);
-        }
-
-        console.log('\n========== End of Edited Draft Rendering Test ==========\n');
-
-        expect(editResult.data.success).toBe(true);
-        expect(getResult.data.drafts[0].subject).toBe('Updated Subject');
-      });
-
-      it('should render after draft deletion correctly', async () => {
-        console.log('\n========== Draft Deletion Rendering Test ==========');
-
-        // Save drafts
-        await component.handleToolCall('saveDraft', {
-          to: 'recipient1@expert',
-          subject: 'Draft 1',
-          body: 'Body 1',
-        });
-
-        const draft2Result = await component.handleToolCall('saveDraft', {
-          to: 'recipient2@expert',
-          subject: 'Draft 2',
-          body: 'Body 2',
-        });
-        const draftIdToDelete = draft2Result.data.draftId;
-
-        console.log('Drafts before deletion:', (await component.handleToolCall('getDrafts', {})).data);
-
-        // Delete one draft
-        const deleteResult = await component.handleToolCall('deleteDraft', {
-          draftId: draftIdToDelete,
-        });
-
-        console.log('Delete result:', JSON.stringify(deleteResult.data, null, 2));
-
-        // Get remaining drafts
-        const getResult = await component.handleToolCall('getDrafts', {});
-        console.log('\nDrafts after deletion:', JSON.stringify(getResult.data, null, 2));
-
-        // Render
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ messages: [], total: 0, unread: 0, starred: 0 }),
-        });
-
-        const elements = await component.renderImply();
-
-        console.log('\n========== Rendered Elements (After Deletion) ==========');
-        for (let i = 0; i < elements.length; i++) {
-          const rendered = elements[i].render();
-          console.log(`\n--- Element ${i} ---`);
-          console.log(rendered);
-        }
-
-        console.log('\n========== End of Draft Deletion Rendering Test ==========\n');
-
-        expect(deleteResult.data.success).toBe(true);
-        expect(getResult.data.drafts.length).toBe(1);
-        expect(getResult.data.total).toBe(1);
-      });
-    });
-
     describe('unknown tool', () => {
       it('should return error for unknown tool', async () => {
         const result = await component.handleToolCall('unknownTool', {});
@@ -1144,7 +589,11 @@ describe('MailComponent', () => {
       it('should handle fetch errors gracefully', async () => {
         mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-        const result = await component.handleToolCall('getUnreadCount', {});
+        const result = await component.handleToolCall('sendMail', {
+          to: 'test@expert',
+          subject: 'Test',
+          body: 'Body',
+        });
 
         expect(result.data).toEqual({ error: 'Network error' });
         expect(result.summary).toBe('[Mail] Error: Network error');
@@ -1234,6 +683,7 @@ describe('MailComponent', () => {
         const mockMessage: MailMessage = {
           messageId: 'msg_123',
           subject: 'Test',
+          body: 'Test message body',
           from: 'sender@expert',
           to: 'test@expert',
           priority: 'normal',
@@ -1467,46 +917,6 @@ describe('MailComponent', () => {
   // ==================== Edge Cases ====================
 
   describe('Edge Cases', () => {
-    it('should handle messages with array recipients', async () => {
-      const mockMessage: MailMessage = {
-        messageId: 'msg_1',
-        subject: 'Multi-recipient',
-        from: 'sender@expert',
-        to: ['test1@expert', 'test2@expert'],
-        body: 'Body',
-        priority: 'normal',
-        status: { read: true, starred: false, deleted: false },
-        sentAt: new Date().toISOString(),
-        receivedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Set inbox with this message - this is the first mock for getInbox
-      const mockInbox: InboxResult = {
-        address: 'test@expert',
-        messages: [mockMessage],
-        total: 1,
-        unread: 0,
-        starred: 0,
-      };
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockInbox),
-      });
-
-      await component.handleToolCall('getInbox', {});
-
-      // Mock for refreshInbox in renderImply (drafts from local state)
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockInbox),
-      });
-
-      const elements = await component.renderImply();
-      expect(elements.length).toBeGreaterThan(0);
-    });
-
     it('should handle messages with attachments and payload', async () => {
       const mockMessage: MailMessage = {
         messageId: 'msg_1',
@@ -1532,38 +942,6 @@ describe('MailComponent', () => {
 
       const message = await component.getMessage('msg_1');
       expect(message).toEqual(mockMessage);
-    });
-
-    it('should handle very long message body in rendering', async () => {
-      const longBody = 'a'.repeat(500);
-      const mockMessage: MailMessage = {
-        messageId: 'msg_1',
-        subject: 'Long Body',
-        from: 'sender@expert',
-        to: 'test@expert',
-        body: longBody,
-        priority: 'normal',
-        status: { read: false, starred: false, deleted: false },
-        sentAt: new Date().toISOString(),
-        receivedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const mockInbox: InboxResult = {
-        address: 'test@expert',
-        messages: [mockMessage],
-        total: 1,
-        unread: 1,
-        starred: 0,
-      };
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockInbox),
-      });
-
-      await component.handleToolCall('getInbox', {});
-      expect(component).toBeDefined();
     });
 
     it('should handle special characters in addresses', async () => {
@@ -1597,19 +975,6 @@ describe('MailComponent', () => {
 
       const url = mockFetch.mock.calls[0][0];
       expect(url).toContain('user%2Btest%40expert.com');
-    });
-
-    it('should properly encode message IDs in URLs', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ success: true }),
-      });
-
-      await component.markAsRead('msg-123-test');
-
-      const url = mockFetch.mock.calls[0][0];
-      // Note: mailComponent doesn't URL-encode the messageId in the path
-      expect(url).toContain('/msg-123-test/read');
     });
   });
 });

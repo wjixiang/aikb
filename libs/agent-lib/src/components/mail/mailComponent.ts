@@ -9,11 +9,8 @@ import {
   tp,
 } from '../ui/index.js';
 import {
-  type MailAddress,
   type OutgoingMail,
   type MailMessage,
-  type InboxQuery,
-  type InboxResult,
   type SearchQuery,
   type MailComponentConfig,
   type SendResult,
@@ -24,16 +21,14 @@ import {
   type MailToolName,
   type MailToolReturnTypes,
   type ToolReturnType,
-  type GetInboxParams,
-  type GetUnreadCountParams,
+  type SendMailParams,
   type MessageIdParams,
   type SearchMessagesParams,
   type ReplyToMessageParams,
-  type RegisterAddressParams,
   type EditDraftParams,
-  type GetDraftsParams,
   type DeleteDraftParams,
   type SendDraftParams,
+  SaveDraftParams,
 } from './mailSchemas';
 
 /**
@@ -45,16 +40,15 @@ export type { MailComponentConfig } from './mailSchemas';
 /**
  * MailComponent - Email-style messaging component for agent communication
  *
- * Reply Workflow (ONLY method to send emails):
- * 1. replyToMessage - Creates a draft reply to an existing message
- * 2. editDraft - (Optional) Edit the draft content
- * 3. sendDraft - Sends the draft as a reply
+ * Reply Workflow:
+ * 1. reply-createDraft - Creates a draft reply to an existing message
+ * 2. reply-editDraft - (Optional) Edit the draft content
+ * 3. reply-sendDraft - Sends the draft as a reply
  *
  * Other Features:
- * - Auto-refresh inbox on render (side effect)
- * - Mark messages as read/unread/starred
  * - Search messages
- * - Manage mailbox address registration
+ * - Delete messages
+ * - Manage drafts (saveDraft, editDraft, deleteDraft, insertDraftContent, replaceDraftContent)
  *
  * This component communicates with the agent-mailbox service via REST API.
  * Inbox data is automatically fetched during render.
@@ -67,19 +61,19 @@ export type { MailComponentConfig } from './mailSchemas';
  * });
  *
  * // Reply to a message (creates draft automatically)
- * await mail.handleToolCall('replyToMessage', {
+ * await mail.handleToolCall('reply-createDraft', {
  *   messageId: 'msg-123',
  *   body: 'Thank you for your message...',
  * });
  *
  * // Edit the draft if needed
- * await mail.handleToolCall('editDraft', {
+ * await mail.handleToolCall('reply-editDraft', {
  *   draftId: 'draft-456',
  *   body: 'Updated reply content...',
  * });
  *
  * // Send the draft as a reply
- * await mail.handleToolCall('sendDraft', {
+ * await mail.handleToolCall('reply-sendDraft', {
  *   draftId: 'draft-456',
  * });
  *
@@ -87,12 +81,13 @@ export type { MailComponentConfig } from './mailSchemas';
  * const elements = await mail.renderImply();
  * ```
  */
+
 /**
  * MailComponent State - for property-based rendering
  */
 export interface MailComponentState {
   /** Current mailbox address */
-  address?: MailAddress;
+  address?: string;
   /** Messages to display */
   messages: MailMessage[];
   /** Total message count */
@@ -319,22 +314,17 @@ export class MailComponent extends ToolComponent {
   private initializeToolSet(): Map<string, Tool> {
     const tools = new Map<string, Tool>();
 
-    // Import tool schemas from mailSchemas
     const toolEntries: [string, Tool][] = [
-      ['getInbox', mailToolSchemas.getInbox],
-      ['getUnreadCount', mailToolSchemas.getUnreadCount],
-      ['markAsRead', mailToolSchemas.markAsRead],
-      ['markAsUnread', mailToolSchemas.markAsUnread],
-      ['starMessage', mailToolSchemas.starMessage],
-      ['unstarMessage', mailToolSchemas.unstarMessage],
+      ['sendMail', mailToolSchemas.sendMail],
       ['deleteMessage', mailToolSchemas.deleteMessage],
       ['searchMessages', mailToolSchemas.searchMessages],
-      ['replyToMessage', mailToolSchemas.replyToMessage],
-      ['registerAddress', mailToolSchemas.registerAddress],
-      ['editDraft', mailToolSchemas.editDraft],
-      ['getDrafts', mailToolSchemas.getDrafts],
+      ['reply-createDraft', mailToolSchemas['reply-createDraft']],
+      ['saveDraft', mailToolSchemas.saveDraft],
+      ['reply-editDraft', mailToolSchemas['reply-editDraft']],
       ['deleteDraft', mailToolSchemas.deleteDraft],
-      ['sendDraft', mailToolSchemas.sendDraft],
+      ['insertDraftContent', mailToolSchemas.insertDraftContent],
+      ['replaceDraftContent', mailToolSchemas.replaceDraftContent],
+      ['reply-sendDraft', mailToolSchemas['reply-sendDraft']],
     ];
 
     toolEntries.forEach(([name, tool]) => {
@@ -348,12 +338,6 @@ export class MailComponent extends ToolComponent {
 
   /**
    * Handle a tool call with type-safe return types
-   * @example
-   * // Returns Promise<ToolCallResult<SendResult>>
-   * const result = await mail.handleToolCall('sendMail', { to: '...', subject: '...', body: '...' });
-   *
-   * // Returns Promise<ToolCallResult<InboxResult>>
-   * const inbox = await mail.handleToolCall('getInbox', { limit: 10 });
    */
   handleToolCall: {
     <T extends MailToolName>(toolName: T, params: unknown): Promise<ToolCallResult<ToolReturnType<T>>>;
@@ -364,41 +348,29 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> => {
     try {
       switch (toolName) {
-        case 'getInbox':
-          return await this.handleGetInbox(params as GetInboxParams);
-        case 'getUnreadCount':
-          return await this.handleGetUnreadCount(
-            params as GetUnreadCountParams,
-          );
-        case 'markAsRead':
-          return await this.handleMarkAsRead(params as MessageIdParams);
-        case 'markAsUnread':
-          return await this.handleMarkAsUnread(params as MessageIdParams);
-        case 'starMessage':
-          return await this.handleStarMessage(params as MessageIdParams);
-        case 'unstarMessage':
-          return await this.handleUnstarMessage(params as MessageIdParams);
+        case 'sendMail':
+          return await this.handleSendMail(params as SendMailParams);
         case 'deleteMessage':
           return await this.handleDeleteMessage(params as MessageIdParams);
         case 'searchMessages':
           return await this.handleSearchMessages(
             params as SearchMessagesParams,
           );
-        case 'replyToMessage':
+        case 'reply-createDraft':
           return await this.handleReplyToMessage(
             params as ReplyToMessageParams,
           );
-        case 'registerAddress':
-          return await this.handleRegisterAddress(
-            params as RegisterAddressParams,
-          );
-        case 'editDraft':
+        case 'saveDraft':
+          return this.handleSaveDraft(params as SaveDraftParams);
+        case 'reply-editDraft':
           return this.handleEditDraft(params as EditDraftParams);
-        case 'getDrafts':
-          return this.handleGetDrafts(params as GetDraftsParams);
         case 'deleteDraft':
           return this.handleDeleteDraft(params as DeleteDraftParams);
-        case 'sendDraft':
+        case 'insertDraftContent':
+          return this.handleInsertDraftContent(params as InsertDraftContentParams);
+        case 'replaceDraftContent':
+          return this.handleReplaceDraftContent(params as ReplaceDraftContentParams);
+        case 'reply-sendDraft':
           return this.handleSendDraft(params as SendDraftParams);
         default:
           return {
@@ -418,113 +390,6 @@ export class MailComponent extends ToolComponent {
     }
   };
 
-  private async handleGetInbox(
-    params: GetInboxParams,
-  ): Promise<ToolCallResult<any>> {
-    const address = params.address || this.config.defaultAddress;
-    if (!address) {
-      return {
-        success: false,
-        data: {
-          error: 'No address specified and no default address configured',
-        },
-        summary: '[Mail] Error: No address configured',
-      };
-    }
-
-    const query: InboxQuery = {
-      pagination: {
-        limit: params.limit || 20,
-        offset: params.offset || 0,
-      },
-      unreadOnly: params.unreadOnly,
-      starredOnly: params.starredOnly,
-    };
-
-    const result = await this.getInbox(address, query);
-
-    return {
-      success: true,
-      data: result,
-      summary: `[Mail] ${address}: ${result.messages.length}/${result.total} messages (${result.unread} unread)`,
-    };
-  }
-
-  private async handleGetUnreadCount(
-    params: GetUnreadCountParams,
-  ): Promise<ToolCallResult<any>> {
-    const address = params.address || this.config.defaultAddress;
-    if (!address) {
-      return {
-        success: false,
-        data: {
-          error: 'No address specified and no default address configured',
-        },
-        summary: '[Mail] Error: No address configured',
-      };
-    }
-
-    const count = await this.getUnreadCount(address);
-
-    return {
-      success: true,
-      data: { count, address },
-      summary: `[Mail] ${address} has ${count} unread messages`,
-    };
-  }
-
-  private async handleMarkAsRead(
-    params: MessageIdParams,
-  ): Promise<ToolCallResult<any>> {
-    const result = await this.markAsRead(params.messageId);
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Marked ${params.messageId} as read`
-        : `[Mail] Failed to mark as read: ${result.error}`,
-    };
-  }
-
-  private async handleMarkAsUnread(
-    params: MessageIdParams,
-  ): Promise<ToolCallResult<any>> {
-    const result = await this.markAsUnread(params.messageId);
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Marked ${params.messageId} as unread`
-        : `[Mail] Failed to mark as unread: ${result.error}`,
-    };
-  }
-
-  private async handleStarMessage(
-    params: MessageIdParams,
-  ): Promise<ToolCallResult<any>> {
-    const result = await this.starMessage(params.messageId);
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Starred ${params.messageId}`
-        : `[Mail] Failed to star: ${result.error}`,
-    };
-  }
-
-  private async handleUnstarMessage(
-    params: MessageIdParams,
-  ): Promise<ToolCallResult<any>> {
-    const result = await this.unstarMessage(params.messageId);
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Unstarred ${params.messageId}`
-        : `[Mail] Failed to unstar: ${result.error}`,
-    };
-  }
-
   private async handleDeleteMessage(
     params: MessageIdParams,
   ): Promise<ToolCallResult<any>> {
@@ -535,6 +400,29 @@ export class MailComponent extends ToolComponent {
       summary: result.success
         ? `[Mail] Deleted ${params.messageId}`
         : `[Mail] Failed to delete: ${result.error}`,
+    };
+  }
+
+  private async handleSendMail(
+    params: SendMailParams,
+  ): Promise<ToolCallResult<any>> {
+    const result = await this.sendMail({
+      from: this.config.defaultAddress || '',
+      to: params.to,
+      subject: params.subject,
+      body: params.body,
+      priority: params.priority,
+      taskId: params.taskId,
+      attachments: params.attachments,
+      payload: params.payload,
+    });
+
+    return {
+      success: result.success,
+      data: result,
+      summary: result.success
+        ? `[Mail] Sent: "${params.subject}"`
+        : `[Mail] Failed to send: ${result.error}`,
     };
   }
 
@@ -615,7 +503,103 @@ export class MailComponent extends ToolComponent {
         messageId: undefined,
         inReplyTo: params.messageId,
       },
-      summary: `[Mail] Reply draft created for "${originalMessage.subject}". Use sendDraft to send.`,
+      summary: `[Mail] Reply draft created for "${originalMessage.subject}". Use reply-sendDraft to send.`,
+    };
+  }
+
+  private handleSaveDraft(
+    params: SaveDraftParams,
+  ): ToolCallResult<any> {
+    const result = this.saveDraft({
+      from: this.config.defaultAddress || '',
+      to: params.to,
+      subject: params.subject,
+      body: params.body,
+      priority: params.priority,
+      taskId: params.taskId,
+      attachments: params.attachments,
+      payload: params.payload,
+    });
+
+    return {
+      success: result.success,
+      data: result,
+      summary: result.success
+        ? `[Mail] Draft saved: "${params.subject}"`
+        : `[Mail] Failed to save draft: ${result.error}`,
+    };
+  }
+
+  private handleEditDraft(
+    params: EditDraftParams,
+  ): ToolCallResult<any> {
+    const result = this.editDraft(params.draftId, {
+      to: params.to,
+      subject: params.subject,
+      body: params.body,
+      priority: params.priority,
+      taskId: params.taskId,
+      attachments: params.attachments,
+      payload: params.payload,
+    });
+
+    return {
+      success: result.success,
+      data: result,
+      summary: result.success
+        ? `[Mail] Draft edited: "${params.draftId}"`
+        : `[Mail] Failed to edit draft: ${result.error}`,
+    };
+  }
+
+  private handleDeleteDraft(
+    params: DeleteDraftParams,
+  ): ToolCallResult<any> {
+    const result = this.deleteDraft(params.draftId);
+
+    return {
+      success: result.success,
+      data: result,
+      summary: result.success
+        ? `[Mail] Draft deleted: "${params.draftId}"`
+        : `[Mail] Failed to delete draft: ${result.error}`,
+    };
+  }
+
+  private handleInsertDraftContent(
+    params: InsertDraftContentParams,
+  ): ToolCallResult<any> {
+    const result = this.insertDraftContent(
+      params.draftId,
+      params.content,
+      params.position,
+    );
+
+    return {
+      success: result.success,
+      data: result,
+      summary: result.success
+        ? `[Mail] Content inserted into draft "${params.draftId}"`
+        : `[Mail] Failed to insert content: ${result.error}`,
+    };
+  }
+
+  private handleReplaceDraftContent(
+    params: ReplaceDraftContentParams,
+  ): ToolCallResult<any> {
+    const result = this.replaceDraftContent(
+      params.draftId,
+      params.search,
+      params.replacement,
+      params.replaceAll,
+    );
+
+    return {
+      success: result.success,
+      data: result,
+      summary: result.success
+        ? `[Mail] Content replaced in draft "${params.draftId}"`
+        : `[Mail] Failed to replace content: ${result.error}`,
     };
   }
 
@@ -686,81 +670,6 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private async handleRegisterAddress(
-    params: RegisterAddressParams,
-  ): Promise<ToolCallResult<any>> {
-    const result = await this.registerAddress(params.address);
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Registered ${params.address}`
-        : `[Mail] Failed to register: ${result.error}`,
-    };
-  }
-
-  private handleEditDraft(
-    params: EditDraftParams,
-  ): ToolCallResult<any> {
-    const result = this.editDraft(params.draftId, {
-      to: params.to,
-      subject: params.subject,
-      body: params.body,
-      priority: params.priority,
-      taskId: params.taskId,
-      attachments: params.attachments,
-      payload: params.payload,
-    });
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Draft edited: "${params.draftId}"`
-        : `[Mail] Failed to edit draft: ${result.error}`,
-    };
-  }
-
-  private handleGetDrafts(
-    params: GetDraftsParams,
-  ): ToolCallResult<any> {
-    const address = params.address || this.config.defaultAddress;
-    if (!address) {
-      return {
-        success: false,
-        data: {
-          error: 'No address specified and no default address configured',
-        },
-        summary: '[Mail] Error: No address configured',
-      };
-    }
-
-    const result = this.getDrafts(address, {
-      limit: params.limit || 20,
-      offset: params.offset || 0,
-    });
-
-    return {
-      success: true,
-      data: result,
-      summary: `[Mail] ${address}: ${result.drafts.length} drafts`,
-    };
-  }
-
-  private handleDeleteDraft(
-    params: DeleteDraftParams,
-  ): ToolCallResult<any> {
-    const result = this.deleteDraft(params.draftId);
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Draft deleted: "${params.draftId}"`
-        : `[Mail] Failed to delete draft: ${result.error}`,
-    };
-  }
-
   // ==================== API Methods ====================
 
   /**
@@ -775,39 +684,6 @@ export class MailComponent extends ToolComponent {
   }
 
   /**
-   * Get inbox messages for an address
-   */
-  async getInbox(
-    address: MailAddress,
-    query?: InboxQuery,
-  ): Promise<InboxResult> {
-    const queryParams = new URLSearchParams();
-    if (query?.pagination?.limit)
-      queryParams.set('limit', String(query.pagination.limit));
-    if (query?.pagination?.offset)
-      queryParams.set('offset', String(query.pagination.offset));
-    if (query?.unreadOnly) queryParams.set('unreadOnly', 'true');
-    if (query?.starredOnly) queryParams.set('starredOnly', 'true');
-    if (query?.sortBy) queryParams.set('sortBy', query.sortBy);
-    if (query?.sortOrder) queryParams.set('sortOrder', query.sortOrder);
-
-    const response = await this.fetchApi<InboxResult>(
-      `/inbox/${encodeURIComponent(address)}?${queryParams.toString()}`,
-    );
-    return response;
-  }
-
-  /**
-   * Get unread message count
-   */
-  async getUnreadCount(address: MailAddress): Promise<number> {
-    const response = await this.fetchApi<number>(
-      `/inbox/${encodeURIComponent(address)}/unread`,
-    );
-    return response;
-  }
-
-  /**
    * Get a single message by ID
    */
   async getMessage(messageId: string): Promise<MailMessage | null> {
@@ -816,42 +692,6 @@ export class MailComponent extends ToolComponent {
     } catch (error) {
       return null;
     }
-  }
-
-  /**
-   * Mark a message as read
-   */
-  async markAsRead(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}/read`, {
-      method: 'POST',
-    });
-  }
-
-  /**
-   * Mark a message as unread
-   */
-  async markAsUnread(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}/unread`, {
-      method: 'POST',
-    });
-  }
-
-  /**
-   * Star a message
-   */
-  async starMessage(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}/star`, {
-      method: 'POST',
-    });
-  }
-
-  /**
-   * Unstar a message
-   */
-  async unstarMessage(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}/unstar`, {
-      method: 'POST',
-    });
   }
 
   /**
@@ -868,16 +708,6 @@ export class MailComponent extends ToolComponent {
     return this.fetchApi<MailMessage[]>('/search', {
       method: 'POST',
       body: JSON.stringify(query),
-    });
-  }
-
-  /**
-   * Register a new address
-   */
-  async registerAddress(address: MailAddress): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>('/register', {
-      method: 'POST',
-      body: JSON.stringify({ address }),
     });
   }
 
@@ -1008,10 +838,10 @@ export class MailComponent extends ToolComponent {
   }
 
   /**
-   * Get drafts for an address (state-based, no API)
+   * Get drafts for an address (state-based, no API) - Internal only, not exposed as tool
    */
   getDrafts(
-    _address: MailAddress,
+    _address: string,
     options?: { limit?: number; offset?: number },
   ): DraftsResult {
     const allDrafts = Array.from(this.draftsStore.values());
@@ -1147,7 +977,7 @@ export class MailComponent extends ToolComponent {
   /**
    * Replace content in a draft body (state-based)
    */
-  replaceDraftContent(draftId: string, search: string, replacement: string, replaceAll: boolean = false): DraftResult {
+  replaceDraftContent(draftId: string, search: string, replacement: string, replaceAll = false): DraftResult {
     try {
       const existingDraft = this.draftsStore.get(draftId);
       if (!existingDraft) {
@@ -1375,6 +1205,29 @@ export class MailComponent extends ToolComponent {
       drafts: draftsResult.drafts,
       draftsTotal: draftsResult.total,
     });
+  }
+
+  /**
+   * Get inbox messages for an address (internal use for rendering)
+   */
+  private async getInbox(
+    address: string,
+    query?: InboxQuery,
+  ): Promise<InboxResult> {
+    const queryParams = new URLSearchParams();
+    if (query?.pagination?.limit)
+      queryParams.set('limit', String(query.pagination.limit));
+    if (query?.pagination?.offset)
+      queryParams.set('offset', String(query.pagination.offset));
+    if (query?.unreadOnly) queryParams.set('unreadOnly', 'true');
+    if (query?.starredOnly) queryParams.set('starredOnly', 'true');
+    if (query?.sortBy) queryParams.set('sortBy', query.sortBy);
+    if (query?.sortOrder) queryParams.set('sortOrder', query.sortOrder);
+
+    const response = await this.fetchApi<InboxResult>(
+      `/inbox/${encodeURIComponent(address)}?${queryParams.toString()}`,
+    );
+    return response;
   }
 
   /**
@@ -1815,13 +1668,13 @@ export class MailComponent extends ToolComponent {
     );
     container.addChild(
       new tp({
-        content: '  - Use editDraft tool to modify this draft',
+        content: '  - Use reply-editDraft tool to modify this draft',
         indent: 2,
       }),
     );
     container.addChild(
       new tp({
-        content: '  - Use sendDraft to send this reply',
+        content: '  - Use reply-sendDraft to send this reply',
         indent: 2,
       }),
     );
@@ -1837,4 +1690,37 @@ export function createMailComponent(
   config: MailComponentConfig,
 ): MailComponent {
   return new MailComponent(config);
+}
+
+// Additional types needed for internal methods
+interface InsertDraftContentParams {
+  draftId: string;
+  content: string;
+  position: number;
+}
+
+interface ReplaceDraftContentParams {
+  draftId: string;
+  search: string;
+  replacement: string;
+  replaceAll: boolean;
+}
+
+interface InboxQuery {
+  unreadOnly?: boolean;
+  starredOnly?: boolean;
+  sortBy?: 'sentAt' | 'receivedAt' | 'subject' | 'priority';
+  sortOrder?: 'asc' | 'desc';
+  pagination?: {
+    limit?: number;
+    offset?: number;
+  };
+}
+
+interface InboxResult {
+  address: string;
+  messages: MailMessage[];
+  total: number;
+  unread: number;
+  starred: number;
 }

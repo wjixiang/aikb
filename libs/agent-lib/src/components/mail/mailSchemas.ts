@@ -2,26 +2,27 @@ import { z } from 'zod';
 // Import types from multi-agent module (within agent-lib)
 import type {
   SendResult,
-  InboxResult,
   StorageResult,
   MailAddress,
   MailComponentConfig,
 } from '../../multi-agent/types.js';
+// Import DraftResult and DraftsResult from mailComponent for local use
+import type { DraftResult, DraftsResult } from './mailComponent.js';
 
 // Re-export types from multi-agent module
-export type { SendResult, InboxResult, StorageResult, MailAddress, MailComponentConfig };
+export type { SendResult, StorageResult, MailAddress, MailComponentConfig };
+
+// Re-export DraftResult and DraftsResult from mailComponent
+export type { DraftResult, DraftsResult } from './mailComponent.js';
 
 /**
  * Tool parameter schemas
  */
 
-// GetInbox parameters
-export type GetInboxParams = z.infer<typeof getInboxParamsSchema>;
+// SendMail parameters
+export type SendMailParams = z.infer<typeof sendMailParamsSchema>;
 
-// GetUnreadCount parameters
-export type GetUnreadCountParams = z.infer<typeof getUnreadCountParamsSchema>;
-
-// Message ID parameters (for markAsRead, markAsUnread, starMessage, unstarMessage, deleteMessage)
+// Message ID parameters (for deleteMessage)
 export type MessageIdParams = z.infer<typeof messageIdParamsSchema>;
 
 // SearchMessages parameters
@@ -30,17 +31,11 @@ export type SearchMessagesParams = z.infer<typeof searchMessagesParamsSchema>;
 // ReplyToMessage parameters
 export type ReplyToMessageParams = z.infer<typeof replyToMessageParamsSchema>;
 
-// RegisterAddress parameters
-export type RegisterAddressParams = z.infer<typeof registerAddressParamsSchema>;
-
 // SaveDraft parameters
 export type SaveDraftParams = z.infer<typeof saveDraftParamsSchema>;
 
 // EditDraft parameters
 export type EditDraftParams = z.infer<typeof editDraftParamsSchema>;
-
-// GetDrafts parameters
-export type GetDraftsParams = z.infer<typeof getDraftsParamsSchema>;
 
 // DeleteDraft parameters
 export type DeleteDraftParams = z.infer<typeof deleteDraftParamsSchema>;
@@ -54,16 +49,15 @@ export type ReplaceDraftContentParams = z.infer<typeof replaceDraftContentParams
 // SendDraft parameters
 export type SendDraftParams = z.infer<typeof sendDraftParamsSchema>;
 
-export const getInboxParamsSchema = z.object({
-  address: z.string().optional().describe('Mailbox address to query (defaults to component defaultAddress)'),
-  limit: z.number().default(20).describe('Maximum number of messages to return'),
-  offset: z.number().default(0).describe('Number of messages to skip'),
-  unreadOnly: z.boolean().default(false).describe('Filter to show only unread messages'),
-  starredOnly: z.boolean().default(false).describe('Filter to show only starred messages'),
-});
-
-export const getUnreadCountParamsSchema = z.object({
-  address: z.string().optional().describe('Mailbox address (defaults to component defaultAddress)'),
+// SendMail parameters
+export const sendMailParamsSchema = z.object({
+  to: z.string().describe('Recipient address'),
+  subject: z.string().describe('Email subject line'),
+  body: z.string().describe('Email body content'),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal').describe('Message priority'),
+  taskId: z.string().optional().describe('Associated task ID'),
+  attachments: z.array(z.string()).optional().describe('S3 keys of attachments'),
+  payload: z.record(z.unknown()).optional().describe('Additional JSON payload data'),
 });
 
 export const messageIdParamsSchema = z.object({
@@ -86,10 +80,6 @@ export const replyToMessageParamsSchema = z.object({
   payload: z.record(z.unknown()).optional().describe('Additional JSON payload data'),
 });
 
-export const registerAddressParamsSchema = z.object({
-  address: z.string().describe('Address to register (e.g., "myagent@expert")'),
-});
-
 export const saveDraftParamsSchema = z.object({
   to: z.string().describe('Recipient address (e.g., "pubmed@expert", "analysis@expert")'),
   subject: z.string().describe('Email subject line'),
@@ -109,12 +99,6 @@ export const editDraftParamsSchema = z.object({
   taskId: z.string().optional().describe('New associated task ID'),
   attachments: z.array(z.string()).optional().describe('New S3 keys of attachments'),
   payload: z.record(z.unknown()).optional().describe('New additional JSON payload data'),
-});
-
-export const getDraftsParamsSchema = z.object({
-  address: z.string().optional().describe('Mailbox address to query (defaults to component defaultAddress)'),
-  limit: z.number().default(20).describe('Maximum number of drafts to return'),
-  offset: z.number().default(0).describe('Number of drafts to skip'),
 });
 
 export const deleteDraftParamsSchema = z.object({
@@ -147,15 +131,12 @@ export const sendDraftParamsSchema = z.object({
  * Union type for all mail tool parameters
  */
 export type MailToolParams =
-  | GetInboxParams
-  | GetUnreadCountParams
+  | SendMailParams
   | MessageIdParams
   | SearchMessagesParams
   | ReplyToMessageParams
-  | RegisterAddressParams
   | SaveDraftParams
   | EditDraftParams
-  | GetDraftsParams
   | DeleteDraftParams
   | InsertDraftContentParams
   | ReplaceDraftContentParams
@@ -165,82 +146,28 @@ export type MailToolParams =
  * Tool schemas map
  */
 export const mailToolSchemas = {
-  getInbox: {
-    toolName: 'getInbox',
-    desc: 'Get inbox messages with optional filtering by read status, starred status, or address.',
-    paramsSchema: getInboxParamsSchema,
+  sendMail: {
+    toolName: 'sendMail',
+    desc: 'Send an email message directly.',
+    paramsSchema: sendMailParamsSchema,
     examples: [
       {
-        description: 'Get first 20 messages from inbox',
-        params: { limit: 20, offset: 0, unreadOnly: false },
-        expectedResult: 'Returns array of messages with id, subject, from, date, read status, etc.',
+        description: 'Send a simple email',
+        params: {
+          to: 'recipient@expert',
+          subject: 'Hello',
+          body: 'This is a test email.',
+        },
+        expectedResult: 'Returns success with messageId',
       },
       {
-        description: 'Get only unread messages',
-        params: { limit: 10, unreadOnly: true },
-        expectedResult: 'Returns only unread messages',
-      },
-      {
-        description: 'Get messages from specific address',
-        params: { address: 'task@agent', limit: 50 },
-        expectedResult: 'Returns messages from the specified mailbox address',
-      },
-    ],
-  },
-  getUnreadCount: {
-    toolName: 'getUnreadCount',
-    desc: 'Get the count of unread messages for an address. Use this to check if there are new tasks.',
-    paramsSchema: getUnreadCountParamsSchema,
-    examples: [
-      {
-        description: 'Check unread count for default address',
-        params: {},
-        expectedResult: 'Returns { count: number }',
-      },
-    ],
-  },
-  markAsRead: {
-    toolName: 'markAsRead',
-    desc: 'Mark a message as read after you have processed it.',
-    paramsSchema: messageIdParamsSchema,
-    examples: [
-      {
-        description: 'Mark a message as read',
-        params: { messageId: 'msg-123abc' },
-        expectedResult: 'Message status updated to read',
-      },
-    ],
-  },
-  markAsUnread: {
-    toolName: 'markAsUnread',
-    desc: 'Mark a message as unread.',
-    paramsSchema: messageIdParamsSchema,
-    examples: [
-      {
-        description: 'Mark a message as unread',
-        params: { messageId: 'msg-123abc' },
-      },
-    ],
-  },
-  starMessage: {
-    toolName: 'starMessage',
-    desc: 'Star a message to mark it as important.',
-    paramsSchema: messageIdParamsSchema,
-    examples: [
-      {
-        description: 'Star an important message',
-        params: { messageId: 'msg-123abc' },
-      },
-    ],
-  },
-  unstarMessage: {
-    toolName: 'unstarMessage',
-    desc: 'Remove star from a message.',
-    paramsSchema: messageIdParamsSchema,
-    examples: [
-      {
-        description: 'Remove star from message',
-        params: { messageId: 'msg-123abc' },
+        description: 'Send email with priority',
+        params: {
+          to: 'urgent@expert',
+          subject: 'Urgent Request',
+          body: 'Please respond ASAP.',
+          priority: 'urgent',
+        },
       },
     ],
   },
@@ -278,9 +205,9 @@ export const mailToolSchemas = {
       },
     ],
   },
-  replyToMessage: {
-    toolName: 'replyToMessage',
-    desc: 'Create a draft reply to an existing message. This is the FIRST step of the reply workflow.',
+  'reply-createDraft': {
+    toolName: 'reply-createDraft',
+    desc: 'Create a draft reply to an existing message. This creates a draft that can be edited and sent.',
     paramsSchema: replyToMessageParamsSchema,
     examples: [
       {
@@ -289,7 +216,7 @@ export const mailToolSchemas = {
           messageId: 'msg-123abc',
           body: 'Thank you for your message. I will process your request and get back to you shortly.',
         },
-        expectedResult: 'Returns draftId which is used in sendDraft',
+        expectedResult: 'Returns draftId which is used in reply-sendDraft',
       },
       {
         description: 'Reply with attachment reference',
@@ -298,18 +225,6 @@ export const mailToolSchemas = {
           body: 'Here is the analysis you requested.',
           attachments: ['results.pdf'],
         },
-      },
-    ],
-  },
-  registerAddress: {
-    toolName: 'registerAddress',
-    desc: 'Register a mailbox address for this agent. Must be called before receiving messages.',
-    paramsSchema: registerAddressParamsSchema,
-    examples: [
-      {
-        description: 'Register a new mailbox address',
-        params: { address: 'myagent@expert' },
-        expectedResult: 'Address registered and ready to receive messages',
       },
     ],
   },
@@ -330,9 +245,9 @@ export const mailToolSchemas = {
       },
     ],
   },
-  editDraft: {
-    toolName: 'editDraft',
-    desc: 'Edit an existing draft. Use to modify subject, body, recipient, or priority.',
+  'reply-editDraft': {
+    toolName: 'reply-editDraft',
+    desc: 'Edit an existing reply draft. Use to modify subject, body, recipient, or priority.',
     paramsSchema: editDraftParamsSchema,
     examples: [
       {
@@ -349,18 +264,6 @@ export const mailToolSchemas = {
           draftId: 'draft-789xyz',
           priority: 'urgent',
         },
-      },
-    ],
-  },
-  getDrafts: {
-    toolName: 'getDrafts',
-    desc: 'Get all saved drafts from mailbox.',
-    paramsSchema: getDraftsParamsSchema,
-    examples: [
-      {
-        description: 'Get all drafts',
-        params: { limit: 20 },
-        expectedResult: 'Returns array of drafts',
       },
     ],
   },
@@ -419,9 +322,9 @@ export const mailToolSchemas = {
       },
     ],
   },
-  sendDraft: {
-    toolName: 'sendDraft',
-    desc: 'Send a draft email. If draft was created with replyToMessage, it will be sent as a reply. This is the FINAL step of the reply workflow.',
+  'reply-sendDraft': {
+    toolName: 'reply-sendDraft',
+    desc: 'Send a reply draft. This is the FINAL step of the reply workflow.',
     paramsSchema: sendDraftParamsSchema,
     examples: [
       {
@@ -448,23 +351,16 @@ export type MailToolName = keyof typeof mailToolSchemas;
  * Used with MailToolName to get the return type for a specific tool
  */
 export interface MailToolReturnTypes {
-  getInbox: InboxResult;
-  getUnreadCount: { count: number };
-  markAsRead: StorageResult;
-  markAsUnread: StorageResult;
-  starMessage: StorageResult;
-  unstarMessage: StorageResult;
+  sendMail: SendResult;
   deleteMessage: StorageResult;
-  searchMessages: InboxResult;
-  replyToMessage: SendResult;
-  registerAddress: MailAddress;
-  saveDraft: StorageResult<{ draftId: string }>;
-  editDraft: StorageResult<void>;
-  getDrafts: InboxResult;
-  deleteDraft: StorageResult<void>;
-  insertDraftContent: StorageResult<void>;
-  replaceDraftContent: StorageResult<void>;
-  sendDraft: SendResult;
+  searchMessages: StorageResult;
+  'reply-createDraft': SendResult;
+  saveDraft: DraftResult;
+  'reply-editDraft': DraftResult;
+  deleteDraft: DraftResult;
+  insertDraftContent: DraftResult;
+  replaceDraftContent: DraftResult;
+  'reply-sendDraft': SendResult;
 }
 
 /**
