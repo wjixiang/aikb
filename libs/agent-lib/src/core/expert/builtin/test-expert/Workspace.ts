@@ -3,12 +3,9 @@
  *
  * 职责：
  * 1. 导入和注册组件
- * 2. 输入验证和转换
- * 3. 输出格式化和导出
  */
 
 import { ExpertWorkspaceBase } from '../../ExpertWorkspaceBase.js';
-import type { ValidationResult } from '../../types.js';
 
 /**
  * TestExpertWorkspace
@@ -34,46 +31,5 @@ export class TestExpertWorkspace extends ExpertWorkspaceBase {
       // new MyComponent(),
       // () => new AnotherComponent(),
     ];
-  }
-
-  // ==================== 输入处理 ====================
-
-  /**
-   * 验证输入
-   * 重写以实现自定义验证逻辑
-   */
-  static override validateInput(input: Record<string, any>): ValidationResult {
-    const errors: string[] = [];
-
-    // 示例验证：检查必需字段
-    if (!input['query'] && !input['input']) {
-      errors.push('Missing required field: query or input');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  }
-
-  /**
-   * 转换输入格式
-   * 重写以实现输入转换（如添加默认值、格式转换等）
-   */
-  static override transformInput(input: Record<string, any>): Record<string, any> {
-    return {
-      ...input,
-      timestamp: Date.now(),
-    };
-  }
-
-  // ==================== 输出处理 ====================
-
-  /**
-   * 格式化输出
-   * 重写以实现自定义输出格式
-   */
-  static override formatOutput(workspace: any): Record<string, any> {
-    return super.formatOutput(workspace);
   }
 }

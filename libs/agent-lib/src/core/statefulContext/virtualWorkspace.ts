@@ -544,7 +544,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     container.addChild(
       new MdHeading(
         {
-          content: `### Recent Tool Calls${sliderIndicator}`,
+          content: `Recent Tool Calls${sliderIndicator}`,
         },
         [],
         1,

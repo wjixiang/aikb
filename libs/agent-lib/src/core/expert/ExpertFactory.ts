@@ -33,13 +33,8 @@ import YAML from 'yaml';
 import type {
     ExpertConfig,
     ExpertComponentDefinition,
-    InputHandler,
-    ExportConfig,
-    ExportResult,
-    ExpertExportConfig
 } from './types.js';
-import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
-import type { IVirtualWorkspace } from '../../components/index.js';
+import type { VirtualWorkspaceConfig } from '../../components/index.js';
 import { ExpertWorkspaceBase } from './ExpertWorkspaceBase.js';
 
 /**
@@ -55,16 +50,16 @@ interface ExpertConfigJson {
     tags?: string[];
     triggers?: string[];
     whenToUse?: string;
-    export?: ExportConfigJson;
-}
-
-/**
- * 导出配置JSON接口
- */
-interface ExportConfigJson {
-    autoExport?: boolean;
-    bucket?: string;
-    defaultPath?: string;
+    /**
+     * VirtualWorkspace 配置
+     * 支持从 config.json 配置以下选项：
+     * - renderMode: 'tui' | 'markdown' (默认: 'markdown')
+     * - toolCallLogCount: number (默认: 3, 设为0禁用)
+     */
+    virtualWorkspace?: {
+        renderMode?: 'tui' | 'markdown';
+        toolCallLogCount?: number;
+    };
 }
 
 /**
@@ -259,17 +254,9 @@ export function createExpertConfig(
         // 组件（从 Workspace 获取）
         components: buildComponents(workspace),
 
-        // 输入处理（从Workspace获取）
-        input: workspace.getInputHandler(),
-
-        // 导出配置（从Workspace获取）
-        exportConfig: config.export ? {
-            autoExport: config.export.autoExport,
-            bucket: config.export.bucket,
-            defaultPath: config.export.defaultPath,
-            exportHandler: (ws: IVirtualWorkspace, cfg: ExportConfig) =>
-                workspace.exportHandler(ws, cfg),
-        } : undefined,
+        // VirtualWorkspace 配置（从 config.json 的 virtualWorkspace 字段读取）
+        // 注意：ExpertExecutor 中还会覆盖 id 和 name，但 renderMode、toolCallLogCount 等会使用这里的值
+        virtualWorkspaceConfig: config.virtualWorkspace as VirtualWorkspaceConfig | undefined,
     };
 }
 

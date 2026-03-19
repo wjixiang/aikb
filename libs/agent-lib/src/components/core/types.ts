@@ -504,7 +504,7 @@ export interface VirtualWorkspaceConfig {
     /**
      * Components to register directly with the workspace
      */
-    components?: any[];
+    components?: ToolComponent[];
     /**
      * Number of recent tool calls to show in the LOG section (default: 3)
      * Set to 0 to disable the LOG section

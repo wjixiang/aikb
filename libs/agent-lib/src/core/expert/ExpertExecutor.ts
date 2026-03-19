@@ -173,13 +173,14 @@ export class ExpertExecutor implements IExpertExecutor {
     };
 
     // Configure workspace for this Expert
+    // Defaults are set first, then expertConfig takes precedence
     const workspaceConfig: VirtualWorkspaceConfig = {
-      renderMode: 'markdown',
-      ...config.virtualWorkspaceConfig,
       id: `expert-${expertClassId}-${resolvedInstanceId}-workspace`,
       name: `${config.displayName} Workspace`,
+      renderMode: 'markdown',
       expertMode: true,
       alwaysRenderAllComponents: true,
+      ...config.virtualWorkspaceConfig,  // Expert config overrides defaults
     };
 
     // Create agent using AgentContainer

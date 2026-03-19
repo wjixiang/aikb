@@ -5,7 +5,7 @@
  * Integrates original Skill functionality: prompt, components, lifecycle hooks
  */
 
-import type { IVirtualWorkspace, VirtualWorkspaceConfig } from '../../components/index.js';
+import type { VirtualWorkspaceConfig } from '../../components/index.js';
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { AgentConfig } from '../agent/agent.js';
@@ -80,18 +80,6 @@ export interface ExpertConfig {
     onComponentDeactivate?: (component: ToolComponent) => Promise<void>;
 
     /**
-     * Export configuration for workspace
-     * Controls how Expert results are exported to storage
-     */
-    exportConfig?: ExpertExportConfig;
-
-    /**
-     * Input handler for task input processing
-     * Validates, transforms input and loads external data
-     */
-    input?: InputHandler;
-
-    /**
      * API configuration for the Expert's underlying Agent
      * Controls API provider, model, and related settings
      * 
@@ -129,49 +117,6 @@ export interface ExpertConfig {
 /**
  * Export configuration for Expert results
  */
-export interface ExpertExportConfig {
-    /** Whether to auto-export after task completion */
-    autoExport?: boolean;
-    /** Default bucket for export */
-    bucket?: string;
-    /**
-     * Default path template
-     * Supports placeholders: {expertId}, {timestamp}, {taskId}
-     * Note: Format extension should be included in the path
-     */
-    defaultPath?: string;
-    /**
-     * Custom export handler
-     * Full control over:
-     * - Export format (via file extension in path)
-     * - Content type
-     * - Export logic
-     */
-    exportHandler?: (
-        workspace: IVirtualWorkspace,
-        config: ExportConfig
-    ) => Promise<ExportResult>;
-}
-
-/**
- * Export configuration for a single export operation
- */
-export interface ExportConfig {
-    bucket: string;
-    path: string;
-}
-
-/**
- * Export result
- */
-export interface ExportResult {
-    success: boolean;
-    filePath?: string;
-    url?: string;
-    contentType?: string;
-    error?: string;
-}
-
 /**
  * Expert Summary - for display and selection
  */
@@ -429,63 +374,6 @@ export interface Example {
 }
 
 /**
- * Validation result
- */
-export interface ValidationResult {
-    valid: boolean;
-    errors?: string[];
-    warnings?: string[];
-}
-
-/**
- * External data loaded during input processing (e.g., from S3)
- */
-export interface ExternalData {
-    /** S3 file paths list, loaded and merged into context */
-    s3Keys?: string[];
-    /** Other external data sources */
-    [key: string]: any;
-}
-
-/**
- * Execution context for input handler
- */
-export interface ExecutionContext {
-    /** Virtual workspace */
-    workspace: any;
-    /** Expert ID */
-    expertId: string;
-    /** Task information */
-    task: ExpertTask;
-    /** Additional context */
-    context?: Record<string, any>;
-}
-
-/**
- * Input handler for task input processing
- */
-export interface InputHandler {
-    /** Validate input parameters */
-    validate?: (input: any) => ValidationResult;
-    /** Transform input before processing */
-    transform?: (input: any) => any;
-    /** Load external data (e.g., S3 files) */
-    loadExternalData?: (input: any, context: ExecutionContext) => Promise<ExternalData>;
-}
-
-/**
- * Output handler for result export
- */
-export interface OutputHandler {
-    /** Default export format */
-    format: 'json' | 'csv' | 'xml' | 'custom';
-    /** Custom export function */
-    export?: (workspace: any, config: ExportConfig) => Promise<ExportResult>;
-    /** Post-process output */
-    postprocess?: (output: any) => any;
-}
-
-/**
  * SOP definition structure
  */
 export interface SOPDefinition {
@@ -501,6 +389,15 @@ export interface SOPDefinition {
     steps: StepDefinition[];
     /** Examples */
     examples?: Example[];
+}
+
+/**
+ * Validation result
+ */
+export interface ValidationResult {
+    valid: boolean;
+    errors?: string[];
+    warnings?: string[];
 }
 
 /**
@@ -578,10 +475,6 @@ export interface ExpertSchema {
     sop: SOPDefinition;
     /** Component definitions */
     components: ComponentDefinition[];
-    /** Input handler */
-    input?: InputHandler;
-    /** Output handler */
-    output: OutputHandler;
     /** Lifecycle hooks */
     lifecycle?: LifecycleHooks;
 }
