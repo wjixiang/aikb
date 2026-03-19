@@ -124,6 +124,7 @@ export interface ReplyToMessageParams {
 export interface SendResult {
     success: boolean;
     messageId?: string;
+    sentAt?: string;
     error?: string;
 }
 
@@ -133,15 +134,31 @@ export interface InboxResult {
     total: number;
     unread: number;
     starred: number;
+    /** Local drafts (not from server) */
+    drafts?: Array<{
+        draftId: string;
+        to: string;
+        subject: string;
+        body: string;
+        priority: string;
+        taskId?: string;
+        attachments?: string[];
+        payload?: Record<string, unknown>;
+        createdAt: string;
+        updatedAt: string;
+    }>;
+    draftsTotal?: number;
 }
 
 export interface MailMessage {
     messageId: string;
     from: string;
-    to: string[];
+    to: string | string[];
     subject: string;
     body: string;
     sentAt: string;
+    receivedAt?: string;
+    updatedAt?: string;
     priority: string;
     status: {
         read: boolean;
@@ -154,8 +171,9 @@ export interface MailMessage {
     payload?: Record<string, unknown>;
 }
 
-export interface StorageResult {
+export interface StorageResult<T = void> {
     success: boolean;
+    data?: T;
     error?: string;
 }
 

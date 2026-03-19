@@ -99,7 +99,7 @@ export class NoToolsUsedError extends AgentError {
   readonly code = 'NO_TOOLS_USED';
 
   constructor(cause?: Error) {
-    super('LLM did not use any tools', cause);
+    super('Last response did not use any tools. View tool-use guidence carefully to use proper tool-calling to interact with workspace', cause);
   }
 }
 
@@ -161,13 +161,3 @@ export class UnrepliedMailError extends AgentError {
   }
 }
 
-/**
- * Error thrown when LLM returns no tool calls in a response
- */
-export class NoToolUseError extends AgentError {
-  readonly code = 'NO_TOOL_USE';
-
-  constructor(cause?: Error) {
-    super('LLM did not use any tools in the response', cause);
-  }
-}

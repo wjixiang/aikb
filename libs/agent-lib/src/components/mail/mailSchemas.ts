@@ -60,6 +60,12 @@ export const sendMailParamsSchema = z.object({
   payload: z.record(z.unknown()).optional().describe('Additional JSON payload data'),
 });
 
+// GetUnreadCount parameters
+export type GetUnreadCountParams = z.infer<typeof getUnreadCountParamsSchema>;
+export const getUnreadCountParamsSchema = z.object({
+  address: z.string().optional().describe('Mailbox address (uses default if not provided)'),
+});
+
 export const messageIdParamsSchema = z.object({
   messageId: z.string().describe('ID of the message'),
 });
@@ -339,6 +345,23 @@ export const mailToolSchemas = {
       },
     ],
   },
+  getUnreadCount: {
+    toolName: 'getUnreadCount',
+    desc: 'Get the count of unread messages for a mailbox address.',
+    paramsSchema: getUnreadCountParamsSchema,
+    examples: [
+      {
+        description: 'Get unread count for default address',
+        params: {},
+        expectedResult: 'Returns { count: number }',
+      },
+      {
+        description: 'Get unread count for specific address',
+        params: { address: 'agent@expert' },
+        expectedResult: 'Returns { count: number }',
+      },
+    ],
+  },
 };
 
 /**
@@ -361,6 +384,7 @@ export interface MailToolReturnTypes {
   insertDraftContent: DraftResult;
   replaceDraftContent: DraftResult;
   'reply-sendDraft': SendResult;
+  getUnreadCount: { count: number };
 }
 
 /**

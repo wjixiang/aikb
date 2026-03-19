@@ -78,7 +78,6 @@ export {
 // Note: SendMailParams, MessageIdParams, SearchMessagesParams, ReplyToMessageParams
 // are exported from core/statefulContext to avoid duplicate export conflicts
 export type {
-  SendMailParams,
   SaveDraftParams,
   EditDraftParams,
   DeleteDraftParams,

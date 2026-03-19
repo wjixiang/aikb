@@ -6,8 +6,7 @@ import { TYPES } from '../types.js';
 import { Agent } from '../../agent/agent.js';
 import { VirtualWorkspace } from '../../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
-import { TurnMemoryStore } from '../../memory/TurnMemoryStore.js';
-import { IVirtualWorkspace } from '../../statefulContext/types.js';
+import { IVirtualWorkspace } from '../../statefulContext/index.js';
 import { IMemoryModule } from '../../memory/types.js';
 
 
@@ -121,16 +120,6 @@ describe('AgentContainer', () => {
             const memoryModule = agent.getMemoryModule();
             expect(memoryModule).toBeDefined();
             expect(memoryModule).toBeInstanceOf(MemoryModule);
-        });
-
-        it('should inject TurnMemoryStore into MemoryModule', () => {
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            const memoryModule = agent.getMemoryModule() as MemoryModule;
-            const turnStore = memoryModule.getTurnStore();
-            expect(turnStore).toBeDefined();
-            expect(turnStore).toBeInstanceOf(TurnMemoryStore);
         });
 
         it('should use provided workspace when specified', () => {
@@ -263,10 +252,6 @@ describe('AgentContainer', () => {
             const mem2 = agent2.getMemoryModule();
             expect(mem1).not.toBe(mem2);
 
-            // Each memory module should have its own turn store
-            const store1 = mem1.getTurnStore();
-            const store2 = mem2.getTurnStore();
-            expect(store1).not.toBe(store2);
         });
     });
 });

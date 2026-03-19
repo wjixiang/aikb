@@ -21,7 +21,8 @@ from enum import Enum
 from typing import Any, Callable, Optional
 from concurrent.futures import ThreadPoolExecutor
 
-from docling.datamodel.base_models import ConversionStatus as DoclingConversionStatus, ImageRefMode, InputFormat
+from docling.datamodel.base_models import ConversionStatus as DoclingConversionStatus, InputFormat
+from docling_core.types.doc import ImageRefMode
 from docling.datamodel.document import ConversionResult
 from docling.datamodel.settings import settings as docling_settings
 from docling.document_converter import DocumentConverter
@@ -102,6 +103,7 @@ EXTENSION_TO_FORMAT: dict[str, InputFormatType] = {
 }
 
 # 输入格式到 docling InputFormat 的映射
+# 注意: TEXT 和 XML 格式 docling 不直接支持,已在 InputFormatType 中移除
 FORMAT_TO_DOCLING: dict[InputFormatType, InputFormat] = {
     InputFormatType.PDF: InputFormat.PDF,
     InputFormatType.DOCX: InputFormat.DOCX,
@@ -109,8 +111,6 @@ FORMAT_TO_DOCLING: dict[InputFormatType, InputFormat] = {
     InputFormatType.XLSX: InputFormat.XLSX,
     InputFormatType.HTML: InputFormat.HTML,
     InputFormatType.MARKDOWN: InputFormat.MD,
-    InputFormatType.TEXT: InputFormat.TXT,
-    InputFormatType.XML: InputFormat.XML,
     InputFormatType.IMAGE: InputFormat.IMAGE,
 }
 

@@ -85,7 +85,8 @@
       "Bash(/mnt/disk1/project/project/aikb/libs/agent-lib/dist/index.d.ts:*)",
       "Bash(pip install:*)",
       "Bash(.venv/bin/python -m mypy services/docling_service.py --ignore-missing-imports)",
-      "Bash(.venv/bin/pip install:*)"
+      "Bash(.venv/bin/pip install:*)",
+      "WebSearch"
     ]
   }
 }

@@ -161,9 +161,9 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                 //     },
                 //     'Request completed successfully'
                 // );
-                // console.debug(chalk.bgCyanBright("systemPrompt\n", systemPrompt))
-                // console.debug(chalk.bgBlueBright("workspaceContext\n", workspaceContext))
-                // console.debug(chalk.bgGreen("memoryContext\n", memoryContext))
+                console.debug(chalk.bgCyanBright("systemPrompt\n", systemPrompt))
+                console.debug(chalk.bgBlueBright("workspaceContext\n", workspaceContext))
+                console.debug(chalk.bgGreen("memoryContext\n", memoryContext))
                 this.logger.info({
                     response: response
                 }, "Get reponse successfully")

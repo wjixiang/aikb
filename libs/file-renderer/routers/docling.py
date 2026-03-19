@@ -87,11 +87,11 @@ docling_service = DoclingService()
 
 def _map_service_options(options: ConversionOptions) -> ServiceConversionOptions:
     """将API选项映射到服务选项"""
-    from docling.datamodel.base_models import ImageRefMode
+    from docling_core.types.doc import ImageRefMode
 
     image_mode = ImageRefMode.REFERENCED
     if options.image_extraction.export_mode == ImageExportMode.OMITTED:
-        image_mode = ImageRefMode.OMITTED
+        image_mode = ImageRefMode.PLACEHOLDER
     elif options.image_extraction.export_mode == ImageExportMode.EMBEDDED:
         image_mode = ImageRefMode.EMBEDDED
 

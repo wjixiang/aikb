@@ -28,6 +28,7 @@ import {
   type EditDraftParams,
   type DeleteDraftParams,
   type SendDraftParams,
+  type GetUnreadCountParams,
   SaveDraftParams,
 } from './mailSchemas';
 
@@ -325,6 +326,7 @@ export class MailComponent extends ToolComponent {
       ['insertDraftContent', mailToolSchemas.insertDraftContent],
       ['replaceDraftContent', mailToolSchemas.replaceDraftContent],
       ['reply-sendDraft', mailToolSchemas['reply-sendDraft']],
+      ['getUnreadCount', mailToolSchemas.getUnreadCount],
     ];
 
     toolEntries.forEach(([name, tool]) => {
@@ -372,6 +374,8 @@ export class MailComponent extends ToolComponent {
           return this.handleReplaceDraftContent(params as ReplaceDraftContentParams);
         case 'reply-sendDraft':
           return this.handleSendDraft(params as SendDraftParams);
+        case 'getUnreadCount':
+          return this.handleGetUnreadCount(params as GetUnreadCountParams);
         default:
           return {
             success: false,
@@ -670,6 +674,35 @@ export class MailComponent extends ToolComponent {
     };
   }
 
+  private async handleGetUnreadCount(
+    params: GetUnreadCountParams,
+  ): Promise<ToolCallResult<{ count: number }>> {
+    const address = params.address || this.config.defaultAddress;
+    if (!address) {
+      return {
+        success: false,
+        data: { error: 'No address provided and no default address configured' } as any,
+        summary: '[Mail] Error: No address provided',
+      };
+    }
+
+    try {
+      const inbox = await this.getInbox(address, { unreadOnly: true, pagination: { limit: 1, offset: 0 } });
+      return {
+        success: true,
+        data: { count: inbox.unread },
+        summary: `[Mail] Unread count for ${address}: ${inbox.unread}`,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        data: { error: errorMessage } as any,
+        summary: `[Mail] Failed to get unread count: ${errorMessage}`,
+      };
+    }
+  }
+
   // ==================== API Methods ====================
 
   /**
@@ -708,6 +741,16 @@ export class MailComponent extends ToolComponent {
     return this.fetchApi<MailMessage[]>('/search', {
       method: 'POST',
       body: JSON.stringify(query),
+    });
+  }
+
+  /**
+   * Register a new mailbox address
+   */
+  async registerAddress(address: string): Promise<{ success: boolean; error?: string }> {
+    return this.fetchApi<{ success: boolean; error?: string }>('/register', {
+      method: 'POST',
+      body: JSON.stringify({ address }),
     });
   }
 

@@ -30,7 +30,7 @@ import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.
 export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
   name: 'Default Workspace',
-  renderMode: 'markdown',
+  renderMode: 'tui',
   toolCallLogCount: 10,
   expertMode: false,
   alwaysRenderAllComponents: false,

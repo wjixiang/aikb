@@ -196,30 +196,4 @@ export interface IMemoryModule {
    */
   clear(): void;
 
-  // ==================== No-op Methods (deprecated) ====================
-
-  /**
-   * @deprecated No-op in simplified mode
-   */
-  startTurn(workspaceContext: string, taskContext?: string): any;
-
-  /**
-   * @deprecated No-op in simplified mode
-   */
-  completeTurn(): void;
-
-  /**
-   * @deprecated Returns null in simplified mode
-   */
-  getCurrentTurn(): any;
-
-  /**
-   * @deprecated Returns null in simplified mode
-   */
-  getTurnStore(): any;
-
-  /**
-   * @deprecated No-op in simplified mode
-   */
-  performThinkingPhase(workspaceContext: string, toolResults?: any[]): Promise<any>;
 }

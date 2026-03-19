@@ -7,7 +7,7 @@ File API Router - 文件管理路由
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, File, Query, UploadFile, status
+from fastapi import APIRouter, File, Path, Query, UploadFile, status
 
 from config import Settings, get_settings
 from lib.exceptions import FileNotFoundException, FileTooLargeException
@@ -169,7 +169,7 @@ async def upload_file(
     },
 )
 async def get_file(
-    file_id: str = Query(
+    file_id: str = Path(
         ...,
         description="文件唯一标识符(UUID)",
         examples=["550e8400-e29b-41d4-a716-446655440000"],
@@ -234,7 +234,7 @@ async def get_file(
     },
 )
 async def download_file(
-    file_id: str = Query(
+    file_id: str = Path(
         ...,
         description="文件唯一标识符(UUID)",
         examples=["550e8400-e29b-41d4-a716-446655440000"],
@@ -306,7 +306,7 @@ async def download_file(
     },
 )
 async def delete_file(
-    file_id: str = Query(
+    file_id: str = Path(
         ...,
         description="文件唯一标识符(UUID)",
         examples=["550e8400-e29b-41d4-a716-446655440000"],

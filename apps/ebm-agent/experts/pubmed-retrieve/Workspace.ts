@@ -62,9 +62,9 @@ export class PubmedRetrieveWorkspace extends ExpertWorkspaceBase {
   /**
    * 验证输入
    */
-  static override validateInput(input: Record<string, any>): ValidationResult {
-    return { valid: true };
-  }
+  // static override validateInput(input: Record<string, any>): ValidationResult {
+  //   return { valid: true };
+  // }
 
   /**
    * 转换输入格式

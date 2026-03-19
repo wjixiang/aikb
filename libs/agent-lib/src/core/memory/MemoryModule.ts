@@ -135,7 +135,7 @@ export class MemoryModule implements IMemoryModule {
     private isSummaryMessage(message: ApiMessage): boolean {
         const text = this.extractText(message.content);
         return text.includes('[Previous conversation summarized:') ||
-               text.includes('[LLM Summary:');
+            text.includes('[LLM Summary:');
     }
 
     /**
@@ -157,24 +157,10 @@ export class MemoryModule implements IMemoryModule {
     // ==================== History Retrieval ====================
 
     /**
-     * Get all historical messages, including saved errors as system messages
+     * Get all historical messages
      */
     getAllMessages(): ApiMessage[] {
-        const result: ApiMessage[] = [];
-
-        // Prepend errors as system messages (same format as getHistoryForPrompt)
-        for (const error of this.savedErrors) {
-            result.push({
-                role: 'system',
-                content: [{ type: 'text' as const, text: `[Error: ${error.message}]` }],
-                ts: Date.now(),
-            });
-        }
-
-        // Add all messages
-        result.push(...this.messages);
-
-        return result;
+        return [...this.messages];
     }
 
     /**
@@ -483,45 +469,8 @@ export class MemoryModule implements IMemoryModule {
         const lastText = this.extractText(messages[messages.length - 1]?.content || '').substring(0, 100);
 
         return `${messages.length} messages (${userMsgs} user, ${assistantMsgs} assistant, ${toolResults} tool results). ` +
-               `First exchange: "${firstText}...". ` +
-               `Last exchange: "${lastText}...".`;
-    }
-
-    // ==================== No-op Methods (for interface compatibility) ====================
-
-    /**
-     * @deprecated No-op in simplified mode
-     */
-    startTurn(workspaceContext: string, taskContext?: string): any {
-        return null;
-    }
-
-    /**
-     * @deprecated No-op in simplified mode
-     */
-    completeTurn(): void {
-        // No-op
-    }
-
-    /**
-     * @deprecated Use getAllMessages() instead
-     */
-    getCurrentTurn(): any {
-        return null;
-    }
-
-    /**
-     * @deprecated Returns null in simplified mode
-     */
-    getTurnStore(): any {
-        return null;
-    }
-
-    /**
-     * @deprecated No-op in simplified mode
-     */
-    performThinkingPhase(workspaceContext: string, toolResults?: any[]): Promise<any> {
-        return Promise.resolve({ summary: '', thinkingState: null, actionPlan: null });
+            `First exchange: "${firstText}...". ` +
+            `Last exchange: "${lastText}...".`;
     }
 
     // ==================== Import/Export ====================
