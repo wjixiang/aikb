@@ -41,58 +41,60 @@ function generateConfigJson(config: ExpertTemplateConfig): string {
 }
 
 /**
- * 生成sop.yaml模板
+ * 生成sop.md模板
  */
-function generateSopYaml(config: ExpertTemplateConfig): string {
-  return `# Expert Standard Operating Procedure (SOP)
-# This file defines the Expert's behavior and prompts
+function generateSopMd(config: ExpertTemplateConfig): string {
+  return `# ${config.displayName} - Standard Operating Procedure
 
-overview: |-
-  ${config.displayName} - ${config.description}
+## Overview
 
-responsibilities:
-  - Process user input
-  - Execute tasks
-  - Generate output
+${config.displayName} - ${config.description}
 
-constraints:
-  - Always validate input before processing
-  - Handle errors gracefully
+## Responsibilities
 
-parameters:
-  - name: input
-    type: string
-    required: true
-    description: The input to process
+- Process user input
+- Execute tasks
+- Generate output
 
-steps:
-  - phase: THINKING
-    description: Analyze the input and plan the execution
-    details: |-
-      1. Parse and validate the input
-      2. Identify the required actions
-      3. Plan the execution sequence
+## Constraints
 
-  - phase: ACTION
-    description: Execute the planned actions
-    details: |-
-      1. Execute the planned actions
-      2. Monitor progress
-      3. Handle any errors
+- Always validate input before processing
+- Handle errors gracefully
 
-  - phase: OUTPUT
-    description: Generate and format the output
-    details: |-
-      1. Collect results
-      2. Format output
-      3. Export if configured
+## Workflow
 
-examples:
-  - input: |-
-      {"query": "example query"}
-    output: |-
-      {"status": "success", "result": "processed"}
-    description: Basic example showing input/output format
+### Thinking Phase
+
+Analyze the input and plan the execution:
+
+1. Parse and validate the input
+2. Identify the required actions
+3. Plan the execution sequence
+
+### Action Phase
+
+Execute the planned actions:
+
+1. Execute the planned actions
+2. Monitor progress
+3. Handle any errors
+
+### Output Phase
+
+Generate and format the output:
+
+1. Collect results
+2. Format output
+3. Export if configured
+
+## Examples
+
+**Basic Example:**
+
+\`\`\`json
+Input: {"query": "example query"}
+Output: {"status": "success", "result": "processed"}
+\`\`\`
 `;
 }
 
@@ -262,9 +264,9 @@ export async function createExpert(expertName: string, outputDir?: string): Prom
     writeFileSync(join(expertDir, 'config.json'), generateConfigJson(config));
     console.log(chalk.green('  ✓ Created config.json'));
 
-    // 写入sop.yaml
-    writeFileSync(join(expertDir, 'sop.yaml'), generateSopYaml(config));
-    console.log(chalk.green('  ✓ Created sop.yaml'));
+    // 写入sop.md
+    writeFileSync(join(expertDir, 'sop.md'), generateSopMd(config));
+    console.log(chalk.green('  ✓ Created sop.md'));
 
     // 写入Workspace.ts - 传递isExternal标志
     writeFileSync(join(expertDir, 'Workspace.ts'), generateWorkspaceTs(config, isExternal));
@@ -281,7 +283,7 @@ export async function createExpert(expertName: string, outputDir?: string): Prom
     }
     console.log(chalk.gray('Next steps:'));
     console.log(chalk.gray(`  1. Edit config.json to add metadata`));
-    console.log(chalk.gray(`  2. Edit sop.yaml to define behavior`));
+    console.log(chalk.gray(`  2. Edit sop.md to define behavior`));
     console.log(chalk.gray(`  3. Edit Workspace.ts to add components`));
     console.log(chalk.gray(`  4. Import and use the Expert in your application\n`));
 

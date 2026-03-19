@@ -159,10 +159,10 @@ export async function runDemo(
         console.log(chalk.gray(`   Description: ${expertConfig.description}`));
         console.log(chalk.gray(`   Components: ${expertConfig.components?.length || 0}`));
 
-        if (expertConfig.prompt?.capability) {
-            console.log(chalk.gray(`\n   Capability:`));
-            const capLines = expertConfig.prompt.capability.split('\n').slice(0, 5);
-            for (const line of capLines) {
+        if (expertConfig.sop) {
+            console.log(chalk.gray(`\n   SOP:`));
+            const sopLines = expertConfig.sop.split('\n').slice(0, 5);
+            for (const line of sopLines) {
                 console.log(chalk.gray(`     ${line}`));
             }
         }
@@ -279,20 +279,15 @@ export async function runDemo(
 /**
  * Build task prompt from expert config and input
  *
- * NOTE: Expert's capability and direction are already set in agentPrompt (systemPrompt)
+ * NOTE: Expert's SOP is already set in agentSop (systemPrompt)
  * This function only adds task-specific information
  */
 function buildTaskPrompt(expertConfig: ExpertConfig, taskDescription: string): string {
-    // In demo mode, show the full prompt including capability/direction for visibility
-    // In production, these are in systemPrompt via agentPrompt
+    // In demo mode, show the full SOP for visibility
     let prompt = '';
 
-    if (expertConfig.prompt?.capability) {
-        prompt += `## Expert Capability\n${expertConfig.prompt.capability}\n\n`;
-    }
-
-    if (expertConfig.prompt?.direction) {
-        prompt += `## Expert Direction\n${expertConfig.prompt.direction}\n\n`;
+    if (expertConfig.sop) {
+        prompt += `## Expert SOP\n${expertConfig.sop}\n\n`;
     }
 
     prompt += `## Task\n${taskDescription}\n`;

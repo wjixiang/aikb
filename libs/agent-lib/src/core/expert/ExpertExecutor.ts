@@ -13,7 +13,7 @@ import type {
 } from './types.js';
 import { ExpertRegistry } from './ExpertRegistry.js';
 import { ExpertInstance } from './ExpertInstance.js';
-import type { Agent, AgentPrompt } from '../agent/agent.js';
+import type { Agent, SOP } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import { AgentContainer } from '../di/container.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
@@ -166,11 +166,8 @@ export class ExpertExecutor implements IExpertExecutor {
       return existing;
     }
 
-    // Create agent with Expert's prompt configuration
-    const agentPrompt: AgentPrompt = {
-      capability: config.prompt?.capability || config.responsibilities,
-      direction: config.prompt?.direction || '',
-    };
+    // Create agent with Expert's SOP
+    const agentSop: SOP = config.sop || '';
 
     // Configure workspace for this Expert
     // Defaults are set first, then expertConfig takes precedence
@@ -181,7 +178,7 @@ export class ExpertExecutor implements IExpertExecutor {
 
     // Create agent using AgentContainer
     const agent = this.agentContainer.createAgent({
-      agentPrompt,
+      agentSop,
       virtualWorkspaceConfig: workspaceConfig,
       taskId: `expert-${expertClassId}-${resolvedInstanceId}`,
       // Pass API and agent configuration from ExpertConfig

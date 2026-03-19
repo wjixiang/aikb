@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Agent, AgentConfig, AgentPrompt } from './agent.js';
+import { Agent, AgentConfig, SOP } from './agent.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
@@ -101,13 +101,13 @@ export class AgentFactory {
    * This factory method provides a convenient facade over the container.
    *
    * @param workspace - The VirtualWorkspace instance
-   * @param agentPrompt - The agent prompt configuration
+   * @param agentSop - The agent SOP (Standard Operating Procedure)
    * @param options - Optional configuration for the agent
    * @returns A configured Agent instance (optionally wrapped with ObservableAgent)
    */
   static create(
     workspace: VirtualWorkspace,
-    agentPrompt: AgentPrompt,
+    agentSop: SOP,
     options: AgentFactoryOptions = {},
     mocks?: TestOverrides,
   ): Agent {
@@ -134,7 +134,7 @@ export class AgentFactory {
     const agent = container.createAgent({
       config: configPartial,
       apiConfiguration: apiConfigPartial,
-      agentPrompt,
+      agentSop,
       taskId,
       workspace, // Pass the workspace to container for backward compatibility
       observers, // Pass observers to container - it will handle wrapping
@@ -160,12 +160,12 @@ export class AgentFactory {
    *
    * The container handles all dependency injection and optional observer wrapping.
    *
-   * @param agentPrompt - The agent prompt configuration
+   * @param agentSop - The agent SOP (Standard Operating Procedure)
    * @param options - Optional configuration for the agent
    * @returns A configured Agent instance (optionally wrapped with ObservableAgent)
    */
   static createWithContainer(
-    agentPrompt: AgentPrompt,
+    agentSop: SOP,
     options: Omit<AgentFactoryOptions, 'apiClient'> & {
       workspace?: VirtualWorkspace;
     } = {},
@@ -176,7 +176,7 @@ export class AgentFactory {
     return container.createAgent({
       config: options.config,
       apiConfiguration: options.apiConfiguration,
-      agentPrompt,
+      agentSop,
       taskId: options.taskId,
       workspace: options.workspace,
       virtualWorkspaceConfig: options.virtualWorkspaceConfig, // Pass workspace config to container

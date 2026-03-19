@@ -106,7 +106,7 @@ export const TYPES = {
     AgentConfig: Symbol('AgentConfig'),
 
     /**
-     * AgentPrompt - Prompt configuration with capability and direction
+     * AgentPrompt - SOP (Standard Operating Procedure) for the agent
      */
     AgentPrompt: Symbol('AgentPrompt'),
 

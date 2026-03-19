@@ -68,10 +68,11 @@ export interface AbortInfo {
   details?: Record<string, unknown>;
 }
 
-export interface AgentPrompt {
-  capability: string;
-  direction: string;
-}
+/**
+ * SOP - Standard Operating Procedure for the Agent
+ * This is the markdown content defining the agent's behavior and capabilities
+ */
+export type SOP = string;
 
 /**
  * Result of a tool execution
@@ -139,7 +140,7 @@ export class Agent {
   // Tool manager for executing tools
   private toolManager: IToolManager;
 
-  private agentPrompt: AgentPrompt;
+  private agentSop: SOP;
   private logger: pino.Logger;
 
   constructor(
@@ -147,7 +148,7 @@ export class Agent {
     @optional()
     public config: AgentConfig = defaultAgentConfig,
     @inject(TYPES.IVirtualWorkspace) workspace: IVirtualWorkspace,
-    @inject(TYPES.AgentPrompt) agentPrompt: AgentPrompt,
+    @inject(TYPES.AgentPrompt) agentSop: SOP,
     @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
     @inject(TYPES.ApiClient) apiClient: ApiClient,
     @inject(TYPES.IToolManager) toolManager: IToolManager,
@@ -157,7 +158,7 @@ export class Agent {
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'debug' });
     this.workspace = workspace as unknown as VirtualWorkspace;
     this._taskId = taskId || crypto.randomUUID();
-    this.agentPrompt = agentPrompt;
+    this.agentSop = agentSop;
     this._currentPollInterval = 30000;
 
     // Use injected dependencies
@@ -793,7 +794,7 @@ export class Agent {
         }
       } else {
         // No tool calls, throw error
-        // throw new NoToolsUsedError();
+        throw new NoToolsUsedError();
       }
     }
 
@@ -900,16 +901,6 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
 5. Repeat until task is complete
 6. Call attempt_completion to finish
 
-## CRITICAL: Tool Calling Format
-
-When you decide to use a tool, you MUST use the tool_calls format in your response.
-
-**Available Tools:** The list of available tools is provided separately. Always use a tool when you need to:
-- Search for information
-- Get data or content
-- Perform an action
-- Send messages
-
 **Important Rules:**
 - Call ONLY ONE tool per response
 - After receiving the tool result, analyze it and decide if more tool calls are needed
@@ -926,17 +917,12 @@ When you decide to use a tool, you MUST use the tool_calls format in your respon
 - Use different tools or parameters to work around failures
 `)
 
-    // 1. Role definition
-    if (this.agentPrompt.capability) {
-      parts.push(`# Role\n${this.agentPrompt.capability}`);
+    // 1. SOP (Standard Operating Procedure)
+    if (this.agentSop) {
+      parts.push(`# Standard Operating Procedure\n${this.agentSop}`);
     }
 
-    // 2. Core guidelines
-    if (this.agentPrompt.direction) {
-      parts.push(`# Guidelines\n${this.agentPrompt.direction}`);
-    }
-
-    // 3. Tool usage principles
+    // 2. Tool usage principles
     parts.push(`# Tool Usage
 - Call only ONE tool per response
 - After receiving the result, analyze it and call another tool if needed

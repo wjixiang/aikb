@@ -1,7 +1,7 @@
 /**
  * Expert Factory - 简化Expert创建的工具函数
  *
- * 自动加载config.json和sop.yaml，减少样板代码
+ * 自动加载config.json和sop.md，减少样板代码
  *
  * 使用方式：
  * ```typescript
@@ -29,7 +29,6 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import YAML from 'yaml';
 import type {
     ExpertConfig,
     ExpertComponentDefinition,
@@ -63,73 +62,6 @@ interface ExpertConfigJson {
 }
 
 /**
- * SOP YAML接口
- */
-interface SOPDefinitionJson {
-    overview: string;
-    responsibilities?: string[];
-    constraints?: string[];
-    parameters?: ParameterDefinitionJson[];
-    steps?: StepDefinitionJson[];
-    examples?: ExampleJson[];
-    // Extended SOP fields
-    searchStrategy?: {
-        thinking?: { description?: string; details?: string };
-        action?: { description?: string; details?: string };
-        output?: { description?: string; details?: string };
-    };
-    picoGuide?: {
-        description?: string;
-        population?: string;
-        intervention?: string;
-        comparison?: string;
-        outcome?: string;
-        studyTypes?: string[];
-    };
-    commonFilters?: {
-        studyDesign?: string[];
-        language?: string[];
-        dateRange?: string[];
-        availability?: string[];
-        species?: string[];
-    };
-    errorHandling?: {
-        noResults?: string[];
-        tooManyResults?: string[];
-        apiErrors?: string[];
-    };
-}
-
-/**
- * 参数定义接口
- */
-interface ParameterDefinitionJson {
-    name: string;
-    type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 's3Key[]';
-    required: boolean;
-    description: string;
-    default?: any;
-}
-
-/**
- * 步骤定义接口
- */
-interface StepDefinitionJson {
-    phase: string;
-    description: string;
-    details?: string;
-}
-
-/**
- * 示例接口
- */
-interface ExampleJson {
-    input: string;
-    output: string;
-    description?: string;
-}
-
-/**
  * 加载JSON配置文件
  */
 function loadConfig(configPath: string): ExpertConfigJson {
@@ -138,154 +70,11 @@ function loadConfig(configPath: string): ExpertConfigJson {
 }
 
 /**
- * 加载SOP YAML文件
+ * 加载SOP Markdown文件
+ * SOP is stored as plain markdown text
  */
-function loadSOP(sopPath: string): SOPDefinitionJson {
-    const content = readFileSync(sopPath, 'utf-8');
-    return YAML.parse(content);
-}
-
-/**
- * 构建Capability Prompt
- */
-function buildCapability(sop: SOPDefinitionJson): string {
-    const parts: string[] = [];
-
-    parts.push('## Overview\n' + sop.overview);
-
-    if (sop.responsibilities?.length) {
-        parts.push('\n## Responsibilities\n' + sop.responsibilities.map(r => `- ${r}`).join('\n'));
-    }
-
-    if (sop.constraints?.length) {
-        parts.push('\n## Constraints\n' + sop.constraints.map(c => `- ${c}`).join('\n'));
-    }
-
-    return parts.join('\n');
-}
-
-/**
- * 构建Direction Prompt
- */
-function buildDirection(sop: SOPDefinitionJson): string {
-    const parts: string[] = [];
-
-    // Search Strategy (thinking, action, output phases)
-    if (sop.searchStrategy) {
-        parts.push('## Search Strategy\n');
-        const { thinking, action, output } = sop.searchStrategy;
-
-        if (thinking) {
-            parts.push(`### Thinking Phase\n${thinking.description || ''}`);
-            if (thinking.details) {
-                parts.push(`\n${thinking.details}`);
-            }
-        }
-
-        if (action) {
-            parts.push(`\n### Action Phase\n${action.description || ''}`);
-            if (action.details) {
-                parts.push(`\n${action.details}`);
-            }
-        }
-
-        if (output) {
-            parts.push(`\n### Output Phase\n${output.description || ''}`);
-            if (output.details) {
-                parts.push(`\n${output.details}`);
-            }
-        }
-    }
-
-    // PICO Guide
-    if (sop.picoGuide) {
-        parts.push('\n## PICO Guide\n');
-        const { description, population, intervention, comparison, outcome, studyTypes } = sop.picoGuide;
-
-        if (description) {
-            parts.push(`${description}\n`);
-        }
-
-        if (population) {
-            parts.push(`**Population (P):** ${population}\n`);
-        }
-        if (intervention) {
-            parts.push(`**Intervention (I):** ${intervention}\n`);
-        }
-        if (comparison) {
-            parts.push(`**Comparison (C):** ${comparison}\n`);
-        }
-        if (outcome) {
-            parts.push(`**Outcome (O):** ${outcome}\n`);
-        }
-        if (studyTypes?.length) {
-            parts.push(`\n**Study Types:**\n${studyTypes.map(t => `- ${t}`).join('\n')}\n`);
-        }
-    }
-
-    // Common Filters
-    if (sop.commonFilters) {
-        parts.push('\n## Common Filters\n');
-        const { studyDesign, language, dateRange, availability, species } = sop.commonFilters;
-
-        if (studyDesign?.length) {
-            parts.push(`**Study Design:**\n${studyDesign.map(f => `- ${f}`).join('\n')}\n`);
-        }
-        if (language?.length) {
-            parts.push(`**Language:**\n${language.map(f => `- ${f}`).join('\n')}\n`);
-        }
-        if (dateRange?.length) {
-            parts.push(`**Date Range:**\n${dateRange.map(f => `- ${f}`).join('\n')}\n`);
-        }
-        if (availability?.length) {
-            parts.push(`**Availability:**\n${availability.map(f => `- ${f}`).join('\n')}\n`);
-        }
-        if (species?.length) {
-            parts.push(`**Species:**\n${species.map(f => `- ${f}`).join('\n')}\n`);
-        }
-    }
-
-    // Error Handling
-    if (sop.errorHandling) {
-        parts.push('\n## Error Handling\n');
-        const { noResults, tooManyResults, apiErrors } = sop.errorHandling;
-
-        if (noResults?.length) {
-            parts.push(`**No Results:**\n${noResults.map(e => `- ${e}`).join('\n')}\n`);
-        }
-        if (tooManyResults?.length) {
-            parts.push(`**Too Many Results:**\n${tooManyResults.map(e => `- ${e}`).join('\n')}\n`);
-        }
-        if (apiErrors?.length) {
-            parts.push(`**API Errors:**\n${apiErrors.map(e => `- ${e}`).join('\n')}\n`);
-        }
-    }
-
-    // Steps (legacy/additional)
-    if (sop.steps?.length) {
-        parts.push('\n## Workflow Steps\n');
-        for (const step of sop.steps) {
-            const phaseName = step.phase.replace(/_/g, ' ');
-            parts.push(`### Phase: ${phaseName}\n${step.description}`);
-            if (step.details) {
-                parts.push(`\n${step.details}`);
-            }
-        }
-    }
-
-    // Examples
-    if (sop.examples?.length) {
-        parts.push('\n## Examples\n');
-        for (const example of sop.examples) {
-            if (example.description) {
-                parts.push(`**${example.description}**\n`);
-            }
-            parts.push(`**Input:**\n\`\`\`\n${example.input}\n\`\`\``);
-            parts.push(`**Output:**\n\`\`\`\n${example.output}\n\`\`\`\n`);
-        }
-    }
-
-    return parts.join('\n');
+function loadSOP(sopPath: string): string {
+    return readFileSync(sopPath, 'utf-8');
 }
 
 /**
@@ -350,9 +139,9 @@ export function createExpertConfig(
     const __filename = fileURLToPath(metaUrl);
     const __dirname = dirname(__filename);
 
-    // 加载配置文件
+    // 加载配置文件和SOP
     const config = loadConfig(join(__dirname, 'config.json'));
-    const sop = loadSOP(join(__dirname, 'sop.yaml'));
+    const sop = loadSOP(join(__dirname, 'sop.md'));
 
     return {
         // 基本信息
@@ -362,14 +151,13 @@ export function createExpertConfig(
         whenToUse: config.whenToUse,
         triggers: config.triggers,
 
-        // Prompt（从SOP自动构建）
-        prompt: {
-            capability: buildCapability(sop),
-            direction: buildDirection(sop),
-        },
+        // SOP - 直接使用markdown内容
+        sop,
 
-        // 职责和能力
-        responsibilities: sop.responsibilities?.join('; ') || '',
+        // 职责（可选）
+        responsibilities: '',
+
+        // 能力标签
         capabilities: config.tags || [],
 
         // 组件（从 Workspace 获取）
@@ -380,4 +168,3 @@ export function createExpertConfig(
         virtualWorkspaceConfig: config.virtualWorkspace as VirtualWorkspaceConfig | undefined,
     };
 }
-

@@ -5,14 +5,13 @@
  *
  * 使用简化架构：
  * - config.json: Expert元数据
- * - sop.yaml: 标准操作流程
+ * - sop.md: 标准操作流程（Markdown格式）
  * - Workspace.ts: 工作空间（组件定义）
  */
 
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import YAML from 'yaml';
 import type { ExpertConfig, ExpertComponentDefinition } from '../../types.js';
 import { TYPES } from '../../../di/types.js';
 
@@ -29,58 +28,11 @@ function loadConfig() {
 }
 
 /**
- * Load SOP definition from sop.yaml
+ * Load SOP from markdown file
  */
-function loadSOP() {
-    const sopPath = join(__dirname, 'sop.yaml');
-    return YAML.parse(readFileSync(sopPath, 'utf-8'));
-}
-
-/**
- * Build Capability Prompt from SOP
- */
-function buildCapability(sop: any): string {
-    const parts: string[] = [];
-
-    parts.push('## Overview\n' + sop.overview);
-
-    if (sop.constraints?.length) {
-        parts.push('## Constraints\n' + sop.constraints.map((c: string) => `- ${c}`).join('\n'));
-    }
-
-    return parts.join('\n\n');
-}
-
-/**
- * Build Direction Prompt from SOP
- */
-function buildDirection(sop: any): string {
-    const parts: string[] = [];
-
-    // Steps
-    if (sop.steps?.length) {
-        parts.push('## Steps\n');
-        for (const step of sop.steps) {
-            parts.push(`### ${step.phase}\n${step.description}`);
-            if (step.details) {
-                parts.push(`\n${step.details}`);
-            }
-        }
-    }
-
-    // Examples
-    if (sop.examples?.length) {
-        parts.push('\n## Examples\n');
-        for (const example of sop.examples) {
-            parts.push(`**Input:**\n\`\`\`\n${example.input}\n\`\`\``);
-            parts.push(`**Output:**\n\`\`\`\n${example.output}\n\`\`\``);
-            if (example.description) {
-                parts.push(example.description);
-            }
-        }
-    }
-
-    return parts.join('\n');
+function loadSOP(): string {
+    const sopPath = join(__dirname, 'sop.md');
+    return readFileSync(sopPath, 'utf-8');
 }
 
 /**
@@ -99,7 +51,7 @@ function buildComponents(config: any): ExpertComponentDefinition[] {
 /**
  * Create Expert Configuration
  *
- * Factory function that creates ExpertConfig from config.json and sop.yaml
+ * Factory function that creates ExpertConfig from config.json and sop.md
  */
 export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig {
     const config = loadConfig();
@@ -113,14 +65,10 @@ export default function createMetaAnalysisArticleRetrievalExpert(): ExpertConfig
         whenToUse: config.whenToUse,
         triggers: config.triggers,
 
-        // Prompt (built from SOP)
-        prompt: {
-            capability: buildCapability(sop),
-            direction: buildDirection(sop),
-        },
+        // SOP - 直接使用markdown内容
+        sop,
 
-        // Responsibilities and capabilities
-        responsibilities: sop.responsibilities?.join('; ') || '',
+        // Capabilities
         capabilities: config.tags || [],
 
         // Components

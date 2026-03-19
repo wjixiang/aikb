@@ -12,7 +12,7 @@ import { ToolManager } from '../tools/ToolManager.js';
 // container.bind(TYPES.Component).to(PicosComponent);
 // etc.
 import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../statefulContext/__tests__/testComponents.js';
-import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
+import type { AgentConfig, SOP } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
@@ -61,10 +61,9 @@ export interface AgentCreationOptions {
     apiConfiguration?: Partial<ProviderSettings>;
 
     /**
-     * Agent prompt configuration
-     * Defines the agent's capability and direction
+     * Agent SOP (Standard Operating Procedure)
      */
-    agentPrompt?: AgentPrompt;
+    agentSop?: SOP;
 
     /**
      * Optional task ID for tracking
@@ -320,10 +319,7 @@ export class AgentContainer {
                 apiModelId: 'glm-4.5',
             };
 
-        const agentPrompt: AgentPrompt = options.agentPrompt || {
-            capability: 'Default agent capability',
-            direction: 'Default agent direction',
-        };
+        const agentSop: SOP = options.agentSop || 'Default SOP';
 
         const workspaceConfig: VirtualWorkspaceConfig = options.virtualWorkspaceConfig
             ? {
@@ -350,7 +346,7 @@ export class AgentContainer {
         agentContainer
             .bind<ProviderSettings>(TYPES.ProviderSettings)
             .toConstantValue(providerSettings);
-        agentContainer.bind<AgentPrompt>(TYPES.AgentPrompt).toConstantValue(agentPrompt);
+        agentContainer.bind<SOP>(TYPES.AgentPrompt).toConstantValue(agentSop);
         agentContainer
             .bind<VirtualWorkspaceConfig>(TYPES.VirtualWorkspaceConfig)
             .toConstantValue(workspaceConfig);

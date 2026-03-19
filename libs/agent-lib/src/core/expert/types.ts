@@ -51,7 +51,7 @@ export interface ExpertConfig {
     triggers?: string[];
 
     /** Responsibility description - when Controller should delegate to this Expert */
-    responsibilities: string;
+    responsibilities?: string;
 
     /** Capability description */
     capabilities: string[];
@@ -59,13 +59,8 @@ export interface ExpertConfig {
     /** Component definitions (original Skill components) */
     components: ExpertComponentDefinition[];
 
-    /** Prompt enhancement (original Skill prompt) */
-    prompt: {
-        /** Capability description */
-        capability: string;
-        /** Direction guidance */
-        direction: string;
-    };
+    /** SOP - Standard Operating Procedure in Markdown format */
+    sop: string;
 
     /** Additional system prompt */
     systemPrompt?: string;
@@ -397,52 +392,10 @@ export interface Example {
 }
 
 /**
- * SOP definition structure
+ * SOP (Standard Operating Procedure) - Markdown content defining Expert behavior
+ * This is the raw markdown content that will be injected into the agent's system prompt
  */
-export interface SOPDefinition {
-    /** Capability overview */
-    overview: string;
-    /** Responsibilities */
-    responsibilities?: string[];
-    /** Constraints */
-    constraints?: string[];
-    /** Parameter definitions */
-    parameters?: ParameterDefinition[];
-    /** Workflow steps */
-    steps?: StepDefinition[];
-    /** Examples */
-    examples?: Example[];
-    // Extended SOP fields for domain-specific guidance
-    /** Search strategy with thinking/action/output phases */
-    searchStrategy?: {
-        thinking?: { description?: string; details?: string };
-        action?: { description?: string; details?: string };
-        output?: { description?: string; details?: string };
-    };
-    /** PICO framework guide for evidence-based searches */
-    picoGuide?: {
-        description?: string;
-        population?: string;
-        intervention?: string;
-        comparison?: string;
-        outcome?: string;
-        studyTypes?: string[];
-    };
-    /** Common filter presets */
-    commonFilters?: {
-        studyDesign?: string[];
-        language?: string[];
-        dateRange?: string[];
-        availability?: string[];
-        species?: string[];
-    };
-    /** Error handling guidance */
-    errorHandling?: {
-        noResults?: string[];
-        tooManyResults?: string[];
-        apiErrors?: string[];
-    };
-}
+export type SOP = string;
 
 /**
  * Component definition
@@ -505,8 +458,8 @@ export interface ExpertMetadata {
 export interface ExpertSchema {
     /** Metadata */
     metadata: ExpertMetadata;
-    /** SOP definition */
-    sop: SOPDefinition;
+    /** SOP - Standard Operating Procedure in Markdown format */
+    sop: string;
     /** Component definitions */
     components: ComponentDefinition[];
     /** Lifecycle hooks */

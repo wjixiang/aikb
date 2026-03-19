@@ -30,11 +30,8 @@ export interface ExpertDefinitionConfig {
     /** Can be extracted from capability.md */
     capabilities?: string[];
 
-    /** Prompt enhancement */
-    prompt: {
-        capability: string;
-        direction: string;
-    };
+    /** SOP (Standard Operating Procedure) */
+    sop: string;
 
     /** Optional components managed by this expert */
     components?: ExpertComponentDefinition[];
@@ -77,7 +74,7 @@ export class ExpertDefinition {
             triggers: this.config.triggers ?? this.config.tags,
             responsibilities: this.config.responsibilities ?? '',
             capabilities: this.config.capabilities ?? [],
-            prompt: this.config.prompt,
+            sop: this.config.sop,
             components: this.config.components ?? [],
             systemPrompt: this.config.systemPrompt,
             autoActivate: this.config.autoActivate,

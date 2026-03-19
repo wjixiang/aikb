@@ -21,7 +21,7 @@ export interface ExpertCLIConfig {
 }
 
 // Re-export types for consumers
-export type { ExpertMetadata, SOPDefinition, ParameterDefinition, StepDefinition, Example } from '../types.js';
+export type { ExpertMetadata, ParameterDefinition, StepDefinition, Example } from '../types.js';
 export type { ExpertTestDefinition, TestCase, TestExpectation, TestResult, TestSuiteResult } from './test.js';
 
 /**
