@@ -16,7 +16,6 @@ import {
 import { ToolSource } from '../tools/IToolProvider.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
-import { GlobalToolProvider } from '../tools/index.js';
 import { ToolManager } from '../tools/ToolManager.js';
 import {
   ComponentRegistry,
@@ -64,7 +63,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   // Tool management system (injected)
   private toolManager: IToolManager;
-  private globalToolProvider: GlobalToolProvider;
 
   // Tool call log for the LOG section
   private toolCallLog: ToolCallSummary[] = [];
@@ -96,12 +94,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     // ToolManager is injected when available, otherwise create a new instance
     // This allows both DI container usage and direct instantiation
     this.toolManager = toolManager ?? new ToolManager();
-
-    // Initialize global tool provider with tool executed callback
-    this.globalToolProvider = new GlobalToolProvider(
-      this.notifyToolExecuted.bind(this),
-    );
-    this.toolManager.registerProvider(this.globalToolProvider);
 
     // Register all components from registry as tool providers
     this.registerComponentTools();
@@ -960,6 +952,50 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       };
     }
     return null;
+  }
+
+  /**
+   * Export data from all registered components
+   * Executes exportData on each component and returns a record of results
+   * @param options - Optional export options to pass to all components
+   * @returns Record mapping component ID to its export result
+   */
+  async exportResult(options?: import('../../components/index.js').ExportOptions): Promise<Record<string, import('../../components/index.js').ExportResult>> {
+    const results: Record<string, import('../../components/index.js').ExportResult> = {};
+
+    // Export from component registry components
+    const registrations = this.componentRegistry.getAllRegistrations();
+    for (const registration of registrations) {
+      try {
+        const result = await registration.component.exportData(options);
+        results[registration.id] = result;
+      } catch (error) {
+        results[registration.id] = {
+          data: { error: error instanceof Error ? error.message : String(error) },
+          format: options?.format ?? 'json',
+          metadata: { componentId: registration.id, error: true },
+        };
+      }
+    }
+
+    // Export from global components
+    for (const [id, component] of this.globalComponents) {
+      // Skip if already exported from registry
+      if (results[id]) continue;
+
+      try {
+        const result = await component.exportData(options);
+        results[id] = result;
+      } catch (error) {
+        results[id] = {
+          data: { error: error instanceof Error ? error.message : String(error) },
+          format: options?.format ?? 'json',
+          metadata: { componentId: id, error: true },
+        };
+      }
+    }
+
+    return results;
   }
 }
 export type { ComponentRegistration };

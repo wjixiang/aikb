@@ -1,4 +1,4 @@
-import { ToolComponent } from '../core/toolComponent.js';
+import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
 import { Tool } from '../core/types.js';
 import { TUIElement, tdiv, th, tp } from '../ui/index.js';
 import type { ToolCallResult } from '../core/types.js';
@@ -734,5 +734,16 @@ export class PrismaCheckListComponent extends ToolComponent {
      */
     getMetadata(): ManuscriptMetadata {
         return { ...this.metadata };
+    }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: this.getChecklist(),
+            format: options?.format ?? 'json',
+            metadata: {
+                componentId: this.componentId,
+                exportedAt: new Date().toISOString(),
+            },
+        };
     }
 }

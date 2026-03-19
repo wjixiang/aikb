@@ -18,6 +18,7 @@ model ExpertInstance {
   instanceId    String
   status        String   @default("idle")
   agentStatus   String   @default("idle")
+  resultData    Json?    // JSON storing exported component data from exportResult()
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

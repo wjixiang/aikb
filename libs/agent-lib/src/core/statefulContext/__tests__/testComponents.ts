@@ -1,4 +1,4 @@
-import { ToolComponent, type Tool, type ToolCallResult, type TUIElement, tdiv } from '../../../components/index.js';
+import { ToolComponent, type Tool, type ToolCallResult, type TUIElement, type ExportOptions, tdiv } from '../../../components/index.js';
 import * as z from 'zod';
 
 /**
@@ -25,6 +25,10 @@ export class TestComponent extends ToolComponent {
     handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         return { success: true, data: { success: true } };
     };
+
+    async exportData(options?: ExportOptions) {
+        return { data: {}, format: options?.format ?? 'json', metadata: { componentId: this.componentId } };
+    }
 }
 
 /**
@@ -50,6 +54,10 @@ export class TestComponent2 extends ToolComponent {
     handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         return { success: true, data: { success: true } };
     };
+
+    async exportData(options?: ExportOptions) {
+        return { data: {}, format: options?.format ?? 'json', metadata: { componentId: this.componentId } };
+    }
 }
 
 /**
@@ -75,6 +83,10 @@ export class AnotherComponent extends ToolComponent {
     handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
         return { success: true, data: { success: true } };
     };
+
+    async exportData(options?: ExportOptions) {
+        return { data: {}, format: options?.format ?? 'json', metadata: { componentId: this.componentId } };
+    }
 }
 
 /**
@@ -126,6 +138,14 @@ export class TestToolComponentA extends ToolComponent {
     getSearchResults(): string[] {
         return this.searchResults;
     }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: { searchQuery: this.searchQuery, searchResults: this.searchResults },
+            format: options?.format ?? 'json',
+            metadata: { componentId: this.componentId },
+        };
+    }
 }
 
 /**
@@ -168,6 +188,14 @@ export class TestToolComponentB extends ToolComponent {
     getCounter(): number {
         return this.counter;
     }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: { counter: this.counter },
+            format: options?.format ?? 'json',
+            metadata: { componentId: this.componentId },
+        };
+    }
 }
 
 /**
@@ -208,5 +236,13 @@ export class TestToolComponentC extends ToolComponent {
 
     getFlag(): boolean {
         return this.flag;
+    }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: { flag: this.flag },
+            format: options?.format ?? 'json',
+            metadata: { componentId: this.componentId },
+        };
     }
 }

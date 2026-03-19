@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { ToolComponent } from '../core/toolComponent.js';
+import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
 import {
   Tool,
   ToolCallResult,
@@ -9,50 +9,28 @@ import {
   tp,
 } from '../ui/index.js';
 import {
-  type OutgoingMail,
   type MailMessage,
-  type SearchQuery,
   type MailComponentConfig,
-  type SendResult,
-  type StorageResult,
 } from '../../multi-agent/types.js';
 import {
   mailToolSchemas,
   type MailToolName,
-  type MailToolReturnTypes,
   type ToolReturnType,
-  type SendMailParams,
-  type MessageIdParams,
-  type SearchMessagesParams,
-  type ReplyToMessageParams,
-  type EditDraftParams,
-  type DeleteDraftParams,
-  type SendDraftParams,
+  type GetInboxParams,
+  type MarkAsReadParams,
   type GetUnreadCountParams,
-  SaveDraftParams,
 } from './mailSchemas';
 
 /**
  * MailComponent Configuration
- * (Re-exported from mailSchemas.ts for backward compatibility)
  */
 export type { MailComponentConfig } from './mailSchemas';
 
 /**
- * MailComponent - Email-style messaging component for agent communication
+ * MailComponent - Simplified email component for agent communication
  *
- * Reply Workflow:
- * 1. reply-createDraft - Creates a draft reply to an existing message
- * 2. reply-editDraft - (Optional) Edit the draft content
- * 3. reply-sendDraft - Sends the draft as a reply
- *
- * Other Features:
- * - Search messages
- * - Delete messages
- * - Manage drafts (saveDraft, editDraft, deleteDraft, insertDraftContent, replaceDraftContent)
- *
- * This component communicates with the agent-mailbox service via REST API.
- * Inbox data is automatically fetched during render.
+ * Provides only read access to mailbox for task instructions.
+ * Does NOT support sending or replying to emails.
  *
  * @example
  * ```typescript
@@ -61,119 +39,13 @@ export type { MailComponentConfig } from './mailSchemas';
  *   defaultAddress: 'myagent@expert',
  * });
  *
- * // Reply to a message (creates draft automatically)
- * await mail.handleToolCall('reply-createDraft', {
- *   messageId: 'msg-123',
- *   body: 'Thank you for your message...',
- * });
+ * // Get inbox messages (task instructions)
+ * const messages = await mail.handleToolCall('getInbox', { limit: 20 });
  *
- * // Edit the draft if needed
- * await mail.handleToolCall('reply-editDraft', {
- *   draftId: 'draft-456',
- *   body: 'Updated reply content...',
- * });
- *
- * // Send the draft as a reply
- * await mail.handleToolCall('reply-sendDraft', {
- *   draftId: 'draft-456',
- * });
- *
- * // Render - inbox will be auto-fetched
- * const elements = await mail.renderImply();
+ * // Mark message as read after processing
+ * await mail.handleToolCall('markAsRead', { messageId: 'msg-123' });
  * ```
  */
-
-/**
- * MailComponent State - for property-based rendering
- */
-export interface MailComponentState {
-  /** Current mailbox address */
-  address?: string;
-  /** Messages to display */
-  messages: MailMessage[];
-  /** Total message count */
-  total: number;
-  /** Unread message count */
-  unread: number;
-  /** Starred message count */
-  starred: number;
-  /** Currently selected message */
-  selectedMessage?: MailMessage;
-  /** Drafts list */
-  drafts: Array<{
-    draftId: string;
-    to: string;
-    subject: string;
-    body: string;
-    priority: string;
-    taskId?: string;
-    attachments?: DraftAttachment[];
-    payload?: Record<string, unknown>;
-    createdAt: string;
-    updatedAt: string;
-  }>;
-  /** Drafts total count */
-  draftsTotal: number;
-  /** Currently selected draft for editing */
-  selectedDraft?: {
-    draftId: string;
-    to: string;
-    subject: string;
-    body: string;
-    priority: string;
-  };
-}
-
-/**
- * Draft data for saving/editing drafts
- */
-export interface DraftData {
-  from: string;
-  to: string;
-  subject: string;
-  body: string;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
-  taskId?: string;
-  attachments?: string[];
-  payload?: Record<string, unknown>;
-}
-
-export interface DraftUpdate {
-  to?: string;
-  subject?: string;
-  body?: string;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
-  taskId?: string;
-  attachments?: string[];
-  payload?: Record<string, unknown>;
-}
-
-export interface DraftResult {
-  success: boolean;
-  draftId?: string;
-  error?: string;
-}
-
-/**
- * Attachment interface for draft attachments
- */
-export interface DraftAttachment {
-  name: string;
-  url?: string;
-}
-
-export interface DraftsResult {
-  drafts: Array<{
-    draftId: string;
-    to: string;
-    subject: string;
-    body: string;
-    priority: string;
-    createdAt: string;
-    updatedAt: string;
-  }>;
-  total: number;
-}
 
 export class MailComponent extends ToolComponent {
   override componentId = 'mail';
@@ -182,42 +54,6 @@ export class MailComponent extends ToolComponent {
 
   toolSet: Map<string, Tool>;
   private config: MailComponentConfig;
-
-  // Property-based state (auto-refreshed during render)
-  private state: MailComponentState = {
-    messages: [],
-    total: 0,
-    unread: 0,
-    starred: 0,
-    drafts: [],
-    draftsTotal: 0,
-  };
-
-  // Local in-memory storage for drafts (replaces API)
-  private draftsStore: Map<string, {
-    draftId: string;
-    from: string;
-    to: string;
-    subject: string;
-    body: string;
-    priority: string;
-    taskId?: string;
-    attachments?: DraftAttachment[];
-    payload?: Record<string, unknown>;
-    // Reply tracking - if set, this draft is a reply to the specified message
-    inReplyTo?: string;
-    createdAt: string;
-    updatedAt: string;
-  }> = new Map();
-
-  // Generate unique draft ID
-  private generateDraftId(): string {
-    return `draft_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  }
-
-  // Legacy support: currentInbox for backward compatibility
-  private currentInbox: InboxResult | null = null;
-  private selectedMessage: MailMessage | null = null;
 
   constructor(config: MailComponentConfig) {
     super();
@@ -228,104 +64,14 @@ export class MailComponent extends ToolComponent {
     this.toolSet = this.initializeToolSet();
   }
 
-  // ==================== Property-Based State Management ====================
-  // Internal methods - called by the system for state refresh
-
-  /**
-   * Set component state directly with messages (internal use)
-   * Called by the system to update message state
-   */
-  private _setState(state: Partial<MailComponentState>): void {
-    this.state = { ...this.state, ...state };
-
-    // Also update legacy inbox for backward compatibility
-    if (state.messages || state.address) {
-      this.currentInbox = {
-        address: this.state.address || this.config.defaultAddress || '',
-        messages: this.state.messages,
-        total: this.state.total,
-        unread: this.state.unread,
-        starred: this.state.starred,
-      };
-    }
-  }
-
-  /**
-   * Select a draft for editing
-   */
-  private _selectDraft(draft: {
-    draftId: string;
-    to: string;
-    subject: string;
-    body: string;
-    priority: string;
-  }): void {
-    this.state.selectedDraft = draft;
-  }
-
-  /**
-   * Clear selected draft
-   */
-  private _clearDraftSelection(): void {
-    this.state.selectedDraft = undefined;
-  }
-
-  /**
-   * Get current component state (internal use)
-   */
-  private _getState(): MailComponentState {
-    return { ...this.state };
-  }
-
-  /**
-   * Clear all messages (internal use)
-   */
-  private _clearMessages(): void {
-    this.state = {
-      messages: [],
-      total: 0,
-      unread: 0,
-      starred: 0,
-      drafts: [],
-      draftsTotal: 0,
-    };
-    this.currentInbox = null;
-    this.selectedMessage = null;
-  }
-
-  /**
-   * Select a message to show details (internal use)
-   */
-  private _selectMessage(messageId: string): void {
-    const message = this.state.messages.find((m) => m.messageId === messageId);
-    this.state.selectedMessage = message;
-    this.selectedMessage = message || null;
-  }
-
-  /**
-   * Clear selected message (internal use)
-   */
-  private _clearSelection(): void {
-    this.state.selectedMessage = undefined;
-    this.selectedMessage = null;
-  }
-
   // ==================== Tool Definitions ====================
 
   private initializeToolSet(): Map<string, Tool> {
     const tools = new Map<string, Tool>();
 
     const toolEntries: [string, Tool][] = [
-      ['sendMail', mailToolSchemas.sendMail],
-      ['deleteMessage', mailToolSchemas.deleteMessage],
-      ['searchMessages', mailToolSchemas.searchMessages],
-      ['reply-createDraft', mailToolSchemas['reply-createDraft']],
-      ['saveDraft', mailToolSchemas.saveDraft],
-      ['reply-editDraft', mailToolSchemas['reply-editDraft']],
-      ['deleteDraft', mailToolSchemas.deleteDraft],
-      ['insertDraftContent', mailToolSchemas.insertDraftContent],
-      ['replaceDraftContent', mailToolSchemas.replaceDraftContent],
-      ['reply-sendDraft', mailToolSchemas['reply-sendDraft']],
+      ['getInbox', mailToolSchemas.getInbox],
+      ['markAsRead', mailToolSchemas.markAsRead],
       ['getUnreadCount', mailToolSchemas.getUnreadCount],
     ];
 
@@ -338,9 +84,6 @@ export class MailComponent extends ToolComponent {
 
   // ==================== Tool Handlers ====================
 
-  /**
-   * Handle a tool call with type-safe return types
-   */
   handleToolCall: {
     <T extends MailToolName>(toolName: T, params: unknown): Promise<ToolCallResult<ToolReturnType<T>>>;
     (toolName: string, params: unknown): Promise<ToolCallResult<any>>;
@@ -350,32 +93,12 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> => {
     try {
       switch (toolName) {
-        case 'sendMail':
-          return await this.handleSendMail(params as SendMailParams);
-        case 'deleteMessage':
-          return await this.handleDeleteMessage(params as MessageIdParams);
-        case 'searchMessages':
-          return await this.handleSearchMessages(
-            params as SearchMessagesParams,
-          );
-        case 'reply-createDraft':
-          return await this.handleReplyToMessage(
-            params as ReplyToMessageParams,
-          );
-        case 'saveDraft':
-          return this.handleSaveDraft(params as SaveDraftParams);
-        case 'reply-editDraft':
-          return this.handleEditDraft(params as EditDraftParams);
-        case 'deleteDraft':
-          return this.handleDeleteDraft(params as DeleteDraftParams);
-        case 'insertDraftContent':
-          return this.handleInsertDraftContent(params as InsertDraftContentParams);
-        case 'replaceDraftContent':
-          return this.handleReplaceDraftContent(params as ReplaceDraftContentParams);
-        case 'reply-sendDraft':
-          return this.handleSendDraft(params as SendDraftParams);
+        case 'getInbox':
+          return await this.handleGetInbox(params as GetInboxParams);
+        case 'markAsRead':
+          return await this.handleMarkAsRead(params as MarkAsReadParams);
         case 'getUnreadCount':
-          return this.handleGetUnreadCount(params as GetUnreadCountParams);
+          return await this.handleGetUnreadCount(params as GetUnreadCountParams);
         default:
           return {
             success: false,
@@ -394,284 +117,72 @@ export class MailComponent extends ToolComponent {
     }
   };
 
-  private async handleDeleteMessage(
-    params: MessageIdParams,
-  ): Promise<ToolCallResult<any>> {
-    const result = await this.deleteMessage(params.messageId);
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Deleted ${params.messageId}`
-        : `[Mail] Failed to delete: ${result.error}`,
-    };
-  }
-
-  private async handleSendMail(
-    params: SendMailParams,
-  ): Promise<ToolCallResult<any>> {
-    const result = await this.sendMail({
-      from: this.config.defaultAddress || '',
-      to: params.to,
-      subject: params.subject,
-      body: params.body,
-      priority: params.priority,
-      taskId: params.taskId,
-      attachments: params.attachments,
-      payload: params.payload,
-    });
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Sent: "${params.subject}"`
-        : `[Mail] Failed to send: ${result.error}`,
-    };
-  }
-
-  private async handleSearchMessages(
-    params: SearchMessagesParams,
-  ): Promise<ToolCallResult<any>> {
-    const query: SearchQuery = {
-      subject: params.query,
-      body: params.query,
-      from: params.from,
-      to: params.to,
-      unread: params.unread,
-      starred: params.starred,
-      priority: params.priority,
-    };
-
-    const results = await this.searchMessages(query);
-
-    return {
-      success: true,
-      data: results,
-      summary: `[Mail] Found ${results.length} messages matching "${params.query}"`,
-    };
-  }
-
-  private async handleReplyToMessage(
-    params: ReplyToMessageParams,
-  ): Promise<ToolCallResult<any>> {
-    // First get the original message to find the sender
-    const originalMessage = await this.getMessage(params.messageId);
-
-    if (!originalMessage) {
+  private async handleGetInbox(
+    params: GetInboxParams,
+  ): Promise<ToolCallResult<{ messages: MailMessage[]; total: number; unread: number }>> {
+    const address = this.config.defaultAddress;
+    if (!address) {
       return {
         success: false,
-        data: { error: `Message ${params.messageId} not found` },
-        summary: '[Mail] Error: Original message not found',
+        data: { error: 'No address configured' } as any,
+        summary: '[Mail] Error: No address configured',
       };
     }
 
-    // Validate that the original message has a valid sender
-    if (!originalMessage.from || originalMessage.from.trim() === '') {
-      return {
-        success: false,
-        data: { error: `Message ${params.messageId} has no sender information` },
-        summary: '[Mail] Error: Cannot reply - original message has no sender',
-      };
-    }
-
-    // Create a draft reply instead of sending directly
-    const draft = {
-      from: this.config.defaultAddress || '',
-      to: originalMessage.from,
-      subject: `Re: ${originalMessage.subject}`,
-      body: params.body,
-      priority: 'normal' as const,
-      taskId: originalMessage.taskId,
-      attachments: params.attachments,
-      payload: params.payload,
-      // Store inReplyTo so sendDraft knows to send as a reply
-      inReplyTo: params.messageId,
-    };
-
-    const result = this.saveDraft(draft);
-
-    if (!result.success) {
-      return {
-        success: false,
-        data: result,
-        summary: `[Mail] Failed to create reply draft: ${result.error}`,
-      };
-    }
-
-    return {
-      success: true,
-      data: {
-        success: true,
-        draftId: result.draftId,
-        messageId: undefined,
-        inReplyTo: params.messageId,
-      },
-      summary: `[Mail] Reply draft created for "${originalMessage.subject}". Use reply-sendDraft to send.`,
-    };
-  }
-
-  private handleSaveDraft(
-    params: SaveDraftParams,
-  ): ToolCallResult<any> {
-    const result = this.saveDraft({
-      from: this.config.defaultAddress || '',
-      to: params.to,
-      subject: params.subject,
-      body: params.body,
-      priority: params.priority,
-      taskId: params.taskId,
-      attachments: params.attachments,
-      payload: params.payload,
-    });
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Draft saved: "${params.subject}"`
-        : `[Mail] Failed to save draft: ${result.error}`,
-    };
-  }
-
-  private handleEditDraft(
-    params: EditDraftParams,
-  ): ToolCallResult<any> {
-    const result = this.editDraft(params.draftId, {
-      to: params.to,
-      subject: params.subject,
-      body: params.body,
-      priority: params.priority,
-      taskId: params.taskId,
-      attachments: params.attachments,
-      payload: params.payload,
-    });
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Draft edited: "${params.draftId}"`
-        : `[Mail] Failed to edit draft: ${result.error}`,
-    };
-  }
-
-  private handleDeleteDraft(
-    params: DeleteDraftParams,
-  ): ToolCallResult<any> {
-    const result = this.deleteDraft(params.draftId);
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Draft deleted: "${params.draftId}"`
-        : `[Mail] Failed to delete draft: ${result.error}`,
-    };
-  }
-
-  private handleInsertDraftContent(
-    params: InsertDraftContentParams,
-  ): ToolCallResult<any> {
-    const result = this.insertDraftContent(
-      params.draftId,
-      params.content,
-      params.position,
-    );
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Content inserted into draft "${params.draftId}"`
-        : `[Mail] Failed to insert content: ${result.error}`,
-    };
-  }
-
-  private handleReplaceDraftContent(
-    params: ReplaceDraftContentParams,
-  ): ToolCallResult<any> {
-    const result = this.replaceDraftContent(
-      params.draftId,
-      params.search,
-      params.replacement,
-      params.replaceAll,
-    );
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Content replaced in draft "${params.draftId}"`
-        : `[Mail] Failed to replace content: ${result.error}`,
-    };
-  }
-
-  private async handleSendDraft(
-    params: SendDraftParams,
-  ): Promise<ToolCallResult<any>> {
-    // Find the draft
-    const draft = this.draftsStore.get(params.draftId);
-    if (!draft) {
-      return {
-        success: false,
-        data: { error: `Draft ${params.draftId} not found` },
-        summary: '[Mail] Error: Draft not found',
-      };
-    }
-
-    // Determine the inReplyTo - use param if provided, otherwise use draft's inReplyTo
-    const inReplyTo = params.inReplyTo || draft.inReplyTo;
-
-    // Prepare the mail
-    const mail: OutgoingMail = {
-      from: draft.from,
-      to: draft.to,
-      subject: draft.subject,
-      body: draft.body,
-      priority: draft.priority as 'low' | 'normal' | 'high' | 'urgent',
-      taskId: draft.taskId,
-      attachments: draft.attachments?.map(a => a.url || a.name),
-      payload: draft.payload,
-    };
-
-    // If this is a reply, add inReplyTo
-    if (inReplyTo) {
-      mail.inReplyTo = inReplyTo;
-    }
-
-    // Send the mail
-    const result = await this.sendMail(mail);
-
-    if (result.success) {
-      // Delete the draft after successful sending
-      this.draftsStore.delete(params.draftId);
-      this._setState({
-        drafts: Array.from(this.draftsStore.values()).map(d => ({
-          draftId: d.draftId,
-          to: d.to,
-          subject: d.subject,
-          body: d.body,
-          priority: d.priority,
-          taskId: d.taskId,
-          attachments: d.attachments,
-          payload: d.payload,
-          createdAt: d.createdAt,
-          updatedAt: d.updatedAt,
-        })),
-        draftsTotal: this.draftsStore.size,
+    try {
+      const result = await this.getInbox(address, {
+        pagination: { limit: params.limit, offset: params.offset },
+        unreadOnly: params.unreadOnly,
       });
+
+      return {
+        success: true,
+        data: {
+          messages: result.messages,
+          total: result.total,
+          unread: result.unread,
+        },
+        summary: `[Mail] Got ${result.messages.length} messages (total: ${result.total}, unread: ${result.unread})`,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        data: { error: errorMessage } as any,
+        summary: `[Mail] Failed to get inbox: ${errorMessage}`,
+      };
+    }
+  }
+
+  private async handleMarkAsRead(
+    params: MarkAsReadParams,
+  ): Promise<ToolCallResult<{ success: boolean }>> {
+    const address = this.config.defaultAddress;
+    if (!address) {
+      return {
+        success: false,
+        data: { error: 'No address configured' } as any,
+        summary: '[Mail] Error: No address configured',
+      };
     }
 
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? inReplyTo
-          ? `[Mail] Reply sent successfully`
-          : `[Mail] Draft sent: "${draft.subject}"`
-        : `[Mail] Failed to send: ${result.error}`,
-    };
+    try {
+      const result = await this.markAsRead(address, params.messageId);
+      return {
+        success: result.success,
+        data: { success: result.success },
+        summary: result.success
+          ? `[Mail] Marked ${params.messageId} as read`
+          : `[Mail] Failed to mark as read`,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        data: { error: errorMessage } as any,
+        summary: `[Mail] Failed to mark as read: ${errorMessage}`,
+      };
+    }
   }
 
   private async handleGetUnreadCount(
@@ -681,8 +192,8 @@ export class MailComponent extends ToolComponent {
     if (!address) {
       return {
         success: false,
-        data: { error: 'No address provided and no default address configured' } as any,
-        summary: '[Mail] Error: No address provided',
+        data: { error: 'No address configured' } as any,
+        summary: '[Mail] Error: No address configured',
       };
     }
 
@@ -706,46 +217,20 @@ export class MailComponent extends ToolComponent {
   // ==================== API Methods ====================
 
   /**
-   * Send an email message (internal use only, not exposed as tool)
+   * Mark a message as read
    */
-  async sendMail(mail: OutgoingMail): Promise<SendResult> {
-    const response = await this.fetchApi<SendResult>('/send', {
-      method: 'POST',
-      body: JSON.stringify(mail),
-    });
-    return response;
+  async markAsRead(address: string, messageId: string): Promise<{ success: boolean; error?: string }> {
+    return this.fetchApi<{ success: boolean; error?: string }>(
+      `/${encodeURIComponent(messageId)}/read`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ address }),
+      },
+    );
   }
 
   /**
-   * Get a single message by ID
-   */
-  async getMessage(messageId: string): Promise<MailMessage | null> {
-    try {
-      return await this.fetchApi<MailMessage>(`/message/${encodeURIComponent(messageId)}`);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  /**
-   * Delete a message (soft delete)
-   */
-  async deleteMessage(messageId: string): Promise<StorageResult> {
-    return this.fetchApi<StorageResult>(`/${messageId}`, { method: 'DELETE' });
-  }
-
-  /**
-   * Search messages
-   */
-  async searchMessages(query: SearchQuery): Promise<MailMessage[]> {
-    return this.fetchApi<MailMessage[]>('/search', {
-      method: 'POST',
-      body: JSON.stringify(query),
-    });
-  }
-
-  /**
-   * Register a new mailbox address
+   * Register a new mailbox address (external use)
    */
   async registerAddress(address: string): Promise<{ success: boolean; error?: string }> {
     return this.fetchApi<{ success: boolean; error?: string }>('/register', {
@@ -755,339 +240,138 @@ export class MailComponent extends ToolComponent {
   }
 
   /**
-   * Save an email as a draft (state-based, no API)
+   * Get inbox messages
    */
-  saveDraft(draft: DraftData): DraftResult {
+  async getInbox(
+    address: string,
+    query?: {
+      pagination?: { limit?: number; offset?: number };
+      unreadOnly?: boolean;
+    },
+  ): Promise<{ messages: MailMessage[]; total: number; unread: number }> {
+    const queryParams = new URLSearchParams();
+    if (query?.pagination?.limit)
+      queryParams.set('limit', String(query.pagination.limit));
+    if (query?.pagination?.offset)
+      queryParams.set('offset', String(query.pagination.offset));
+    if (query?.unreadOnly) queryParams.set('unreadOnly', 'true');
+
+    return this.fetchApi<{ messages: MailMessage[]; total: number; unread: number }>(
+      `/inbox/${encodeURIComponent(address)}?${queryParams.toString()}`,
+    );
+  }
+
+  // ==================== API Methods (kept for external use) ====================
+
+  /**
+   * Send an email message (external use only)
+   */
+  async sendMail(mail: {
+    from: string;
+    to: string;
+    subject: string;
+    body: string;
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+    taskId?: string;
+    attachments?: string[];
+    payload?: Record<string, unknown>;
+  }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    return this.fetchApi<{ success: boolean; messageId?: string; error?: string }>('/send', {
+      method: 'POST',
+      body: JSON.stringify(mail),
+    });
+  }
+
+  /**
+   * Get a single message by ID (external use only)
+   */
+  async getMessage(messageId: string): Promise<MailMessage | null> {
     try {
-      const draftId = this.generateDraftId();
-      const now = new Date().toISOString();
-
-      // Convert string[] attachments to DraftAttachment[]
-      const attachments: DraftAttachment[] | undefined = draft.attachments?.map(s3Key => ({
-        name: s3Key.split('/').pop() || s3Key,
-        url: s3Key,
-      }));
-
-      const newDraft = {
-        draftId,
-        from: draft.from,
-        to: draft.to,
-        subject: draft.subject,
-        body: draft.body,
-        priority: draft.priority || 'normal',
-        taskId: draft.taskId,
-        attachments,
-        payload: draft.payload,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      // Store in local memory
-      this.draftsStore.set(draftId, newDraft);
-
-      // Update state
-      this._setState({
-        drafts: Array.from(this.draftsStore.values()).map(d => ({
-          draftId: d.draftId,
-          to: d.to,
-          subject: d.subject,
-          body: d.body,
-          priority: d.priority,
-          taskId: d.taskId,
-          attachments: d.attachments,
-          payload: d.payload,
-          createdAt: d.createdAt,
-          updatedAt: d.updatedAt,
-        })),
-        draftsTotal: this.draftsStore.size,
-      });
-
-      return {
-        success: true,
-        draftId,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
+      return await this.fetchApi<MailMessage>(`/message/${encodeURIComponent(messageId)}`);
+    } catch {
+      return null;
     }
   }
 
+  // ==================== UI Rendering ====================
+
   /**
-   * Edit an existing draft (state-based, no API)
+   * Render the component for display
    */
-  editDraft(draftId: string, update: DraftUpdate): DraftResult {
-    try {
-      const existingDraft = this.draftsStore.get(draftId);
-      if (!existingDraft) {
-        return {
-          success: false,
-          error: `Draft ${draftId} not found`,
-        };
+  renderImply = async (): Promise<TUIElement[]> => {
+    const address = this.config.defaultAddress;
+    const elements: TUIElement[] = [];
+
+    // Header
+    elements.push(
+      new th({
+        content: 'Mail Component',
+        styles: { align: 'center' },
+      }),
+    );
+
+    // Connection info
+    elements.push(
+      new tdiv({
+        content: `Server: ${this.config.baseUrl} | Address: ${address || 'Not configured'}`,
+        styles: {
+          align: 'center',
+          padding: { vertical: 1 },
+        },
+      }),
+    );
+
+    // Get and display messages
+    if (address) {
+      try {
+        const inbox = await this.getInbox(address);
+        elements.push(
+          new tp({
+            content: `Messages: ${inbox.messages.length}/${inbox.total} | Unread: ${inbox.unread}`,
+            indent: 1,
+            textStyle: { bold: true },
+          }),
+        );
+
+        if (inbox.messages.length > 0) {
+          elements.push(new tp({ content: '─'.repeat(60), indent: 1 }));
+
+          inbox.messages.forEach((msg, index) => {
+            const unreadMarker = !msg.status?.read ? '[UNREAD] ' : '';
+            elements.push(
+              new tp({
+                content: `${index + 1}. ${unreadMarker}${msg.subject}`,
+                indent: 1,
+                textStyle: { bold: !msg.status?.read },
+              }),
+            );
+            elements.push(
+              new tp({
+                content: `   From: ${msg.from} | ${new Date(msg.sentAt).toLocaleString()}`,
+                indent: 2,
+              }),
+            );
+          });
+        } else {
+          elements.push(new tp({ content: 'No messages.', indent: 1 }));
+        }
+      } catch (error) {
+        elements.push(
+          new tp({
+            content: `Error loading inbox: ${error instanceof Error ? error.message : String(error)}`,
+            indent: 1,
+          }),
+        );
       }
-
-      // Convert string[] attachments to DraftAttachment[] if needed
-      let attachments: DraftAttachment[] | undefined = (update as any).attachments;
-      if (attachments && attachments.length > 0 && typeof attachments[0] === 'string') {
-        attachments = (attachments as unknown as string[]).map((s3Key: string) => ({
-          name: s3Key.split('/').pop() || s3Key,
-          url: s3Key,
-        }));
-      }
-
-      const updatedDraft = {
-        ...existingDraft,
-        to: update.to ?? existingDraft.to,
-        subject: update.subject ?? existingDraft.subject,
-        body: update.body ?? existingDraft.body,
-        priority: update.priority ?? existingDraft.priority,
-        taskId: update.taskId ?? existingDraft.taskId,
-        attachments: attachments ?? existingDraft.attachments,
-        payload: update.payload ?? existingDraft.payload,
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Store in local memory
-      this.draftsStore.set(draftId, updatedDraft);
-
-      // Update state
-      this._setState({
-        drafts: Array.from(this.draftsStore.values()).map(d => ({
-          draftId: d.draftId,
-          to: d.to,
-          subject: d.subject,
-          body: d.body,
-          priority: d.priority,
-          taskId: d.taskId,
-          attachments: d.attachments,
-          payload: d.payload,
-          createdAt: d.createdAt,
-          updatedAt: d.updatedAt,
-        })),
-        draftsTotal: this.draftsStore.size,
-      });
-
-      return {
-        success: true,
-        draftId,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
+    } else {
+      elements.push(new tp({ content: 'Not configured - no default address.', indent: 1 }));
     }
-  }
 
-  /**
-   * Get drafts for an address (state-based, no API) - Internal only, not exposed as tool
-   */
-  getDrafts(
-    _address: string,
-    options?: { limit?: number; offset?: number },
-  ): DraftsResult {
-    const allDrafts = Array.from(this.draftsStore.values());
+    return elements;
+  };
 
-    const limit = options?.limit || 20;
-    const offset = options?.offset || 0;
+  // ==================== Internal Fetch ====================
 
-    const paginatedDrafts = allDrafts.slice(offset, offset + limit);
-
-    return {
-      drafts: paginatedDrafts.map(d => ({
-        draftId: d.draftId,
-        to: d.to,
-        subject: d.subject,
-        body: d.body,
-        priority: d.priority,
-        taskId: d.taskId,
-        attachments: d.attachments,
-        payload: d.payload,
-        createdAt: d.createdAt,
-        updatedAt: d.updatedAt,
-      })),
-      total: allDrafts.length,
-    };
-  }
-
-  /**
-   * Delete a draft (state-based, no API)
-   */
-  deleteDraft(draftId: string): DraftResult {
-    try {
-      const existingDraft = this.draftsStore.get(draftId);
-      if (!existingDraft) {
-        return {
-          success: false,
-          error: `Draft ${draftId} not found`,
-        };
-      }
-
-      // Delete from local memory
-      this.draftsStore.delete(draftId);
-
-      // Clear selected draft if it was deleted
-      if (this.state.selectedDraft?.draftId === draftId) {
-        this._clearDraftSelection();
-      }
-
-      // Update state
-      this._setState({
-        drafts: Array.from(this.draftsStore.values()).map(d => ({
-          draftId: d.draftId,
-          to: d.to,
-          subject: d.subject,
-          body: d.body,
-          priority: d.priority,
-          taskId: d.taskId,
-          attachments: d.attachments,
-          payload: d.payload,
-          createdAt: d.createdAt,
-          updatedAt: d.updatedAt,
-        })),
-        draftsTotal: this.draftsStore.size,
-      });
-
-      return {
-        success: true,
-        draftId,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  /**
-   * Insert content at a specific position in a draft body (state-based)
-   */
-  insertDraftContent(draftId: string, content: string, position: number): DraftResult {
-    try {
-      const existingDraft = this.draftsStore.get(draftId);
-      if (!existingDraft) {
-        return {
-          success: false,
-          error: `Draft ${draftId} not found`,
-        };
-      }
-
-      const currentBody = existingDraft.body || '';
-      // Validate position
-      const validPosition = Math.max(0, Math.min(position, currentBody.length));
-      const newBody = currentBody.slice(0, validPosition) + content + currentBody.slice(validPosition);
-
-      const updatedDraft = {
-        ...existingDraft,
-        body: newBody,
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Store in local memory
-      this.draftsStore.set(draftId, updatedDraft);
-
-      // Update state
-      this._setState({
-        drafts: Array.from(this.draftsStore.values()).map(d => ({
-          draftId: d.draftId,
-          to: d.to,
-          subject: d.subject,
-          body: d.body,
-          priority: d.priority,
-          taskId: d.taskId,
-          attachments: d.attachments,
-          payload: d.payload,
-          createdAt: d.createdAt,
-          updatedAt: d.updatedAt,
-        })),
-        draftsTotal: this.draftsStore.size,
-      });
-
-      return {
-        success: true,
-        draftId,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  /**
-   * Replace content in a draft body (state-based)
-   */
-  replaceDraftContent(draftId: string, search: string, replacement: string, replaceAll = false): DraftResult {
-    try {
-      const existingDraft = this.draftsStore.get(draftId);
-      if (!existingDraft) {
-        return {
-          success: false,
-          error: `Draft ${draftId} not found`,
-        };
-      }
-
-      const currentBody = existingDraft.body || '';
-
-      // Check if search string exists
-      if (!currentBody.includes(search)) {
-        return {
-          success: false,
-          error: `Search text "${search}" not found in draft body`,
-        };
-      }
-
-      let newBody: string;
-      if (replaceAll) {
-        newBody = currentBody.split(search).join(replacement);
-      } else {
-        newBody = currentBody.replace(search, replacement);
-      }
-
-      const updatedDraft = {
-        ...existingDraft,
-        body: newBody,
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Store in local memory
-      this.draftsStore.set(draftId, updatedDraft);
-
-      // Update state
-      this._setState({
-        drafts: Array.from(this.draftsStore.values()).map(d => ({
-          draftId: d.draftId,
-          to: d.to,
-          subject: d.subject,
-          body: d.body,
-          priority: d.priority,
-          taskId: d.taskId,
-          attachments: d.attachments,
-          payload: d.payload,
-          createdAt: d.createdAt,
-          updatedAt: d.updatedAt,
-        })),
-        draftsTotal: this.draftsStore.size,
-      });
-
-      return {
-        success: true,
-        draftId,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  /**
-   * Internal fetch helper
-   */
   private async fetchApi<T>(
     path: string,
     options: RequestInit = {},
@@ -1097,7 +381,6 @@ export class MailComponent extends ToolComponent {
       'Content-Type': 'application/json',
     };
 
-    // Merge custom headers if provided
     if (options.headers) {
       const customHeaders = options.headers as Record<string, string>;
       Object.entries(customHeaders).forEach(([key, value]) => {
@@ -1135,594 +418,30 @@ export class MailComponent extends ToolComponent {
     }
   }
 
-  // ==================== UI Rendering ====================
-
-  /**
-   * Render the component based on property state
-   * Automatically fetches inbox data as a side effect during rendering
-   */
-  renderImply = async (): Promise<TUIElement[]> => {
-    // Side effect: auto-refresh inbox and drafts data from local state
-    await this.refreshInbox();
-    this.refreshDrafts();
-
-    const elements: TUIElement[] = [];
-
-    // Header
-    elements.push(
-      new th({
-        content: 'Mail Component',
-        styles: { align: 'center' },
-      }),
-    );
-
-    // Connection info
-    const infoTexts: string[] = [`Server: ${this.config.baseUrl}`];
-    const displayAddress = this.state.address || this.config.defaultAddress;
-    if (displayAddress) {
-      infoTexts.push(`Address: ${displayAddress}`);
-    }
-
-    elements.push(
-      new tdiv({
-        content: infoTexts.join(' | '),
-        styles: {
-          align: 'center',
-          padding: { vertical: 1 },
-        },
-      }),
-    );
-
-    // Inbox view
-    const messages = this.state.messages || [];
-    if (messages.length > 0) {
-      elements.push(this.renderInboxFromState());
-    } else if (this.currentInbox) {
-      elements.push(this.renderInbox());
-    }
-
-    // Drafts section
-    elements.push(new tp({ content: '', indent: 1 }));
-    elements.push(new tp({ content: '═'.repeat(60), indent: 1 }));
-    elements.push(new tp({ content: '', indent: 1 }));
-
-    // Show draft editor if a draft is selected
-    if (this.state.selectedDraft) {
-      elements.push(this.renderDraftEditor());
-    } else {
-      elements.push(this.renderDraftsList());
-    }
-
-    return elements;
-  };
-
-  /**
-   * Auto-refresh inbox data from API (side effect during render)
-   * This is called automatically when renderImply is invoked
-   */
-  private async refreshInbox(): Promise<void> {
+  async exportData(options?: ExportOptions) {
     const address = this.config.defaultAddress;
     if (!address) {
-      return;
+      return {
+        data: { config: this.config, messages: [] },
+        format: options?.format ?? 'json',
+        metadata: { componentId: this.componentId },
+      };
     }
 
-    // Skip if already fetching to avoid duplicate requests
-    if (this._isFetchingInbox) {
-      return;
-    }
-
-    this._isFetchingInbox = true;
-    try {
-      const inbox = await this.getInbox(address);
-      // Update state with fetched data
-      this._setState({
-        address,
+    const inbox = await this.getInbox(address);
+    return {
+      data: {
+        config: this.config,
         messages: inbox.messages,
         total: inbox.total,
         unread: inbox.unread,
-        starred: inbox.starred,
-      });
-    } catch {
-      // Silently ignore errors during auto-refresh
-      // The UI will simply show no messages
-    } finally {
-      this._isFetchingInbox = false;
-    }
-  }
-
-  // Flag to prevent duplicate inbox fetch requests
-  private _isFetchingInbox = false;
-
-  /**
-   * Auto-refresh drafts data from local state
-   */
-  private refreshDrafts(): void {
-    const address = this.config.defaultAddress;
-    if (!address) {
-      return;
-    }
-
-    // Get drafts from local state
-    const draftsResult = this.getDrafts(address);
-    this._setState({
-      drafts: draftsResult.drafts,
-      draftsTotal: draftsResult.total,
-    });
-  }
-
-  /**
-   * Get inbox messages for an address (internal use for rendering)
-   */
-  private async getInbox(
-    address: string,
-    query?: InboxQuery,
-  ): Promise<InboxResult> {
-    const queryParams = new URLSearchParams();
-    if (query?.pagination?.limit)
-      queryParams.set('limit', String(query.pagination.limit));
-    if (query?.pagination?.offset)
-      queryParams.set('offset', String(query.pagination.offset));
-    if (query?.unreadOnly) queryParams.set('unreadOnly', 'true');
-    if (query?.starredOnly) queryParams.set('starredOnly', 'true');
-    if (query?.sortBy) queryParams.set('sortBy', query.sortBy);
-    if (query?.sortOrder) queryParams.set('sortOrder', query.sortOrder);
-
-    const response = await this.fetchApi<InboxResult>(
-      `/inbox/${encodeURIComponent(address)}?${queryParams.toString()}`,
-    );
-    return response;
-  }
-
-  /**
-   * Render inbox from state properties (new approach)
-   */
-  private renderInboxFromState(): TUIElement {
-    const container = new tdiv({
-      styles: { showBorder: true, padding: { vertical: 1 } },
-    });
-
-    // Title
-    container.addChild(
-      new th({
-        content: `Inbox: ${this.state.address || this.config.defaultAddress || 'Unknown'}`,
-        level: 2,
-        styles: { align: 'center' },
-      }),
-    );
-
-    // Stats
-    const stateMessages = this.state.messages || [];
-    const repliedCount = Array.from(this.draftsStore.values()).filter(d => d.inReplyTo).length;
-    container.addChild(
-      new tp({
-        content: `Messages: ${stateMessages.length}/${this.state.total} | Replied: ${repliedCount} | Starred: ${this.state.starred}`,
-        indent: 1,
-        textStyle: { bold: true },
-      }),
-    );
-
-    // Messages list
-    if (stateMessages.length === 0) {
-      container.addChild(new tp({ content: 'No messages found.', indent: 2 }));
-    } else {
-      container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
-
-      stateMessages.forEach((msg, index) => {
-        const starMarker = msg.status.starred ? '[STARRED]' : '';
-
-        // Check if we've created a reply draft for this message
-        const hasReplyDraft = Array.from(this.draftsStore.values()).some(
-          d => d.inReplyTo === msg.messageId
-        );
-        const replyMarker = hasReplyDraft ? '[REPLIED]' : '[NOT REPLIED]';
-
-        const priorityMarker =
-          msg.priority === 'urgent'
-            ? ' [URGENT]'
-            : msg.priority === 'high'
-              ? ' [HIGH]'
-              : '';
-
-        container.addChild(
-          new tp({
-            content: `${replyMarker}${starMarker}${index + 1}. ${msg.subject}${priorityMarker}`,
-            indent: 1,
-            textStyle: { bold: !msg.status.read },
-          }),
-        );
-
-        container.addChild(
-          new tp({
-            content: `   From: ${msg.from} | ${new Date(msg.sentAt).toLocaleString()}`,
-            indent: 2,
-          }),
-        );
-
-        if (msg.body) {
-          const preview =
-            msg.body.length > 100
-              ? msg.body.substring(0, 100) + '...'
-              : msg.body;
-          container.addChild(new tp({ content: `   ${preview}`, indent: 2 }));
-        }
-
-        container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
-      });
-    }
-
-    // Selected message detail
-    if (this.state.selectedMessage) {
-      container.addChild(this.renderMessageDetail(this.state.selectedMessage));
-    }
-
-    return container;
-  }
-
-  private renderInbox(): TUIElement {
-    if (!this.currentInbox) {
-      return new tdiv({ content: 'No inbox data' });
-    }
-
-    const container = new tdiv({
-      styles: { showBorder: true, padding: { vertical: 1 } },
-    });
-
-    // Title
-    container.addChild(
-      new th({
-        content: `Inbox: ${this.currentInbox.address}`,
-        level: 2,
-        styles: { align: 'center' },
-      }),
-    );
-
-    // Stats
-    const inboxMessages = this.currentInbox?.messages || [];
-    const repliedCount = Array.from(this.draftsStore.values()).filter(d => d.inReplyTo).length;
-    const mailStatusBox = new tp({
-      content: `Messages: ${inboxMessages.length}/${this.currentInbox.total} | Replied: ${repliedCount} | Starred: ${this.currentInbox.starred}`,
-      indent: 1,
-    });
-
-    container.addChild(mailStatusBox);
-
-    // Messages list
-    if (inboxMessages.length === 0) {
-      container.addChild(new tp({ content: 'No messages found.', indent: 2 }));
-    } else {
-      container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
-
-      inboxMessages.forEach((msg, index) => {
-        const starMarker = msg.status.starred ? '[STARRED]' : '';
-
-        // Check if we've created a reply draft for this message
-        const hasReplyDraft = Array.from(this.draftsStore.values()).some(
-          d => d.inReplyTo === msg.messageId
-        );
-        const replyMarker = hasReplyDraft ? '[REPLIED]' : '[NOT REPLIED]';
-
-        const priorityMarker =
-          msg.priority === 'urgent'
-            ? ' [URGENT]'
-            : msg.priority === 'high'
-              ? ' [HIGH]'
-              : '';
-
-        container.addChild(
-          new tp({
-            content: `${replyMarker}${starMarker}${index + 1}. ${msg.subject}${priorityMarker}`,
-            indent: 1,
-            textStyle: { bold: !msg.status.read },
-          }),
-        );
-
-        container.addChild(
-          new tp({
-            content: `   From: ${msg.from} | ${new Date(msg.sentAt).toLocaleString()}`,
-            indent: 2,
-          }),
-        );
-
-        if (msg.body) {
-          const preview =
-            msg.body.length > 100
-              ? msg.body.substring(0, 100) + '...'
-              : msg.body;
-          container.addChild(new tp({ content: `   ${preview}`, indent: 2 }));
-        }
-
-        container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
-      });
-    }
-
-    // Selected message detail
-    if (this.selectedMessage) {
-      container.addChild(this.renderMessageDetail(this.selectedMessage));
-    }
-
-    return container;
-  }
-
-  private renderMessageDetail(message: MailMessage): TUIElement {
-    const container = new tdiv({
-      styles: {
-        showBorder: true,
-        padding: { vertical: 1 },
-        margin: { top: 1 },
       },
-    });
-
-    container.addChild(
-      new th({
-        content: 'Message Detail',
-        level: 3,
-        styles: { align: 'center' },
-      }),
-    );
-
-    container.addChild(
-      new tp({
-        content: `Subject: ${message.subject}`,
-        indent: 1,
-        textStyle: { bold: true },
-      }),
-    );
-    container.addChild(new tp({ content: `From: ${message.from}`, indent: 1 }));
-    container.addChild(
-      new tp({
-        content: `To: ${Array.isArray(message.to) ? message.to.join(', ') : message.to}`,
-        indent: 1,
-      }),
-    );
-    container.addChild(
-      new tp({
-        content: `Date: ${new Date(message.sentAt).toLocaleString()}`,
-        indent: 1,
-      }),
-    );
-    container.addChild(
-      new tp({ content: `Priority: ${message.priority}`, indent: 1 }),
-    );
-
-    if (message.taskId) {
-      container.addChild(
-        new tp({ content: `Task ID: ${message.taskId}`, indent: 1 }),
-      );
-    }
-
-    container.addChild(new tp({ content: '', indent: 1 }));
-
-    if (message.body) {
-      container.addChild(new th({ content: 'Body:', level: 4 }));
-      container.addChild(new tp({ content: message.body, indent: 1 }));
-    }
-
-    if (message.attachments && message.attachments.length > 0) {
-      container.addChild(new tp({ content: '', indent: 1 }));
-      container.addChild(new th({ content: 'Attachments:', level: 4 }));
-      message.attachments.forEach((att) => {
-        container.addChild(new tp({ content: `  • ${att}`, indent: 1 }));
-      });
-    }
-
-    if (message.payload) {
-      container.addChild(new tp({ content: '', indent: 1 }));
-      container.addChild(new th({ content: 'Payload:', level: 4 }));
-      container.addChild(
-        new tp({
-          content: JSON.stringify(message.payload, null, 2),
-          indent: 1,
-        }),
-      );
-    }
-
-    return container;
-  }
-
-  /**
-   * Render drafts list view
-   */
-  private renderDraftsList(): TUIElement {
-    const container = new tdiv({
-      styles: { showBorder: true, padding: { vertical: 1 } },
-    });
-
-    // Title
-    container.addChild(
-      new th({
-        content: 'Drafts',
-        level: 2,
-        styles: { align: 'center' },
-      }),
-    );
-
-    // Stats
-    const drafts = this.state.drafts || [];
-    container.addChild(
-      new tp({
-        content: `Total drafts: ${drafts.length}/${this.state.draftsTotal}`,
-        indent: 1,
-        textStyle: { bold: true },
-      }),
-    );
-
-    // Drafts list
-    if (drafts.length === 0) {
-      container.addChild(new tp({ content: 'No drafts found.', indent: 2 }));
-    } else {
-      container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
-
-      drafts.forEach((draft, index) => {
-        container.addChild(
-          new tp({
-            content: `${index + 1}. ${draft.subject || '(No Subject)'}`,
-            indent: 1,
-            textStyle: { bold: true },
-          }),
-        );
-
-        container.addChild(
-          new tp({
-            content: `   To: ${draft.to || '(No recipient)'} | Priority: ${draft.priority}`,
-            indent: 2,
-          }),
-        );
-
-        // Render taskId if present
-        if (draft.taskId) {
-          container.addChild(
-            new tp({
-              content: `   Task ID: ${draft.taskId}`,
-              indent: 2,
-            }),
-          );
-        }
-
-        if (draft.body) {
-          const preview =
-            draft.body.length > 80
-              ? draft.body.substring(0, 80) + '...'
-              : draft.body;
-          container.addChild(new tp({ content: `   ${preview}`, indent: 2 }));
-        }
-
-        // Render attachments if present
-        if (draft.attachments && draft.attachments.length > 0) {
-          container.addChild(
-            new tp({
-              content: `   Attachments: ${draft.attachments.map(a => a.name).join(', ')}`,
-              indent: 2,
-            }),
-          );
-        }
-
-        // Render payload indicator if present
-        if (draft.payload) {
-          const payloadKeys = Object.keys(draft.payload);
-          container.addChild(
-            new tp({
-              content: `   Payload: {${payloadKeys.join(', ')}}`,
-              indent: 2,
-              textStyle: { italic: true },
-            }),
-          );
-        }
-
-        container.addChild(
-          new tp({
-            content: `   Updated: ${new Date(draft.updatedAt).toLocaleString()}`,
-            indent: 2,
-          }),
-        );
-
-        container.addChild(new tp({ content: '─'.repeat(60), indent: 1 }));
-      });
-    }
-
-    return container;
-  }
-
-  /**
-   * Render draft editor view
-   */
-  private renderDraftEditor(): TUIElement {
-    const draft = this.state.selectedDraft;
-    if (!draft) {
-      return new tdiv({ content: 'No draft selected' });
-    }
-
-    const container = new tdiv({
-      styles: { showBorder: true, padding: { vertical: 1 } },
-    });
-
-    // Title
-    container.addChild(
-      new th({
-        content: 'Edit Draft',
-        level: 2,
-        styles: { align: 'center' },
-      }),
-    );
-
-    container.addChild(new tp({ content: '', indent: 1 }));
-
-    // Draft ID (read-only)
-    container.addChild(
-      new tp({
-        content: `Draft ID: ${draft.draftId}`,
-        indent: 1,
-        textStyle: { bold: true },
-      }),
-    );
-
-    // To
-    container.addChild(
-      new tp({
-        content: `To: ${draft.to || '(empty)'}`,
-        indent: 1,
-      }),
-    );
-
-    // Subject
-    container.addChild(
-      new tp({
-        content: `Subject: ${draft.subject || '(no subject)'}`,
-        indent: 1,
-      }),
-    );
-
-    // Priority
-    container.addChild(
-      new tp({
-        content: `Priority: ${draft.priority}`,
-        indent: 1,
-      }),
-    );
-
-    container.addChild(new tp({ content: '', indent: 1 }));
-    container.addChild(new tp({ content: '─'.repeat(40), indent: 1 }));
-    container.addChild(new tp({ content: '', indent: 1 }));
-
-    // Body
-    container.addChild(
-      new th({
-        content: 'Body:',
-        level: 4,
-      }),
-    );
-
-    if (draft.body) {
-      container.addChild(new tp({ content: draft.body, indent: 1 }));
-    } else {
-      container.addChild(new tp({ content: '(empty)', indent: 1, textStyle: { italic: true } }));
-    }
-
-    container.addChild(new tp({ content: '', indent: 1 }));
-    container.addChild(new tp({ content: '─'.repeat(40), indent: 1 }));
-
-    // Instructions
-    container.addChild(new tp({ content: '', indent: 1 }));
-    container.addChild(
-      new tp({
-        content: 'Actions:',
-        indent: 1,
-        textStyle: { bold: true },
-      }),
-    );
-    container.addChild(
-      new tp({
-        content: '  - Use reply-editDraft tool to modify this draft',
-        indent: 2,
-      }),
-    );
-    container.addChild(
-      new tp({
-        content: '  - Use reply-sendDraft to send this reply',
-        indent: 2,
-      }),
-    );
-
-    return container;
+      format: options?.format ?? 'json',
+      metadata: {
+        componentId: this.componentId,
+        exportedAt: new Date().toISOString(),
+      },
+    };
   }
 }
 
@@ -1733,37 +452,4 @@ export function createMailComponent(
   config: MailComponentConfig,
 ): MailComponent {
   return new MailComponent(config);
-}
-
-// Additional types needed for internal methods
-interface InsertDraftContentParams {
-  draftId: string;
-  content: string;
-  position: number;
-}
-
-interface ReplaceDraftContentParams {
-  draftId: string;
-  search: string;
-  replacement: string;
-  replaceAll: boolean;
-}
-
-interface InboxQuery {
-  unreadOnly?: boolean;
-  starredOnly?: boolean;
-  sortBy?: 'sentAt' | 'receivedAt' | 'subject' | 'priority';
-  sortOrder?: 'asc' | 'desc';
-  pagination?: {
-    limit?: number;
-    offset?: number;
-  };
-}
-
-interface InboxResult {
-  address: string;
-  messages: MailMessage[];
-  total: number;
-  unread: number;
-  starred: number;
 }

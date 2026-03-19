@@ -293,8 +293,8 @@ export class ExpertExecutor implements IExpertExecutor {
     // Register MailComponent
     await this.registerMailComponent(workspace, config, instanceId);
 
-    // Register FileSystemComponent
-    await this.registerFileSystemComponent(workspace, config, instanceId);
+    // // Register FileSystemComponent
+    // await this.registerFileSystemComponent(workspace, config, instanceId);
   }
 
   /**
@@ -340,42 +340,42 @@ export class ExpertExecutor implements IExpertExecutor {
     console.log(`[ExpertExecutor] Registered MailComponent: ${mailAddress}`);
   }
 
-  /**
-   * Register FileSystemComponent as a global component
-   * Enables file storage capabilities via file-renderer service
-   */
-  private async registerFileSystemComponent(
-    workspace: VirtualWorkspace,
-    config: ExpertConfig,
-    _instanceId: string,
-  ): Promise<void> {
-    // Check if fileSystem is disabled in config
-    if (config.fileSystemConfig?.enabled === false) {
-      return;
-    }
+  // /**
+  //  * Register FileSystemComponent as a global component
+  //  * Enables file storage capabilities via file-renderer service
+  //  */
+  // private async registerFileSystemComponent(
+  //   workspace: VirtualWorkspace,
+  //   config: ExpertConfig,
+  //   _instanceId: string,
+  // ): Promise<void> {
+  //   // Check if fileSystem is disabled in config
+  //   if (config.fileSystemConfig?.enabled === false) {
+  //     return;
+  //   }
 
-    // Check if fileSystem component already registered
-    if (workspace.hasGlobalComponent('fileSystem')) {
-      console.log('[ExpertExecutor] FileSystemComponent already registered, skipping');
-      return;
-    }
+  //   // Check if fileSystem component already registered
+  //   if (workspace.hasGlobalComponent('fileSystem')) {
+  //     console.log('[ExpertExecutor] FileSystemComponent already registered, skipping');
+  //     return;
+  //   }
 
-    // Determine config: FILE_RENDERER_URL env var > config > defaults
-    const baseUrl =
-      process.env['FILE_RENDERER_URL'] ||
-      config.fileSystemConfig?.baseUrl ||
-      'http://localhost:8000';
+  //   // Determine config: FILE_RENDERER_URL env var > config > defaults
+  //   const baseUrl =
+  //     process.env['FILE_RENDERER_URL'] ||
+  //     config.fileSystemConfig?.baseUrl ||
+  //     'http://localhost:8000';
 
-    const fileSystemComponent = createFileSystemComponent({
-      baseUrl,
-      defaultPrefix: config.fileSystemConfig?.defaultPrefix || 'agent-files/',
-      apiKey: config.fileSystemConfig?.apiKey,
-      timeout: config.fileSystemConfig?.timeout || 30000,
-    });
+  //   const fileSystemComponent = createFileSystemComponent({
+  //     baseUrl,
+  //     defaultPrefix: config.fileSystemConfig?.defaultPrefix || 'agent-files/',
+  //     apiKey: config.fileSystemConfig?.apiKey,
+  //     timeout: config.fileSystemConfig?.timeout || 30000,
+  //   });
 
-    workspace.registerGlobalComponent('fileSystem', fileSystemComponent, 10);
-    console.log(`[ExpertExecutor] Registered FileSystemComponent for expert: ${config.expertId}`);
-  }
+  //   workspace.registerGlobalComponent('fileSystem', fileSystemComponent, 10);
+  //   console.log(`[ExpertExecutor] Registered FileSystemComponent for expert: ${config.expertId}`);
+  // }
 
   /**
    * Save instance state to persistence store

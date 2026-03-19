@@ -84,16 +84,32 @@ export class PrismaExpertPersistenceStore implements IExpertPersistenceStore {
     return results.map(this.mapToState);
   }
 
+  async saveResult(expertClassId: string, instanceId: string, resultData: Record<string, unknown>): Promise<void> {
+    await this.prisma.expertInstance.update({
+      where: {
+        expertClassId_instanceId: {
+          expertClassId,
+          instanceId,
+        },
+      },
+      data: {
+        resultData: resultData as any,
+      },
+    });
+  }
+
   private mapToState(record: {
     expertClassId: string;
     instanceId: string;
     status: string;
     agentStatus: string;
+    resultData?: any;
   }): ExpertInstanceState {
     return {
       expertClassId: record.expertClassId,
       instanceId: record.instanceId,
       status: record.status as AgentStatus,
+      resultData: record.resultData as Record<string, unknown> | undefined,
     };
   }
 }

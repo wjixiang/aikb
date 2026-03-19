@@ -119,6 +119,18 @@ export interface MemoryModuleConfig {
 export type ThinkingPhaseResult = import('../thinking/types.js').ThinkingPhaseResult;
 
 /**
+ * Workspace context entry for memory storage
+ */
+export interface WorkspaceContextEntry {
+  /** The rendered workspace context string */
+  content: string;
+  /** Timestamp when this context was captured */
+  ts: number;
+  /** Iteration number when this context was captured */
+  iteration: number;
+}
+
+/**
  * Interface for MemoryModule
  * Defines the contract for simplified memory management
  */
@@ -144,6 +156,28 @@ export interface IMemoryModule {
    * Get history for prompt injection
    */
   getHistoryForPrompt(): ApiMessage[];
+
+  // ==================== Workspace Context Management ====================
+
+  /**
+   * Record a workspace context snapshot
+   */
+  recordWorkspaceContext(context: string, iteration: number): void;
+
+  /**
+   * Get all workspace context entries
+   */
+  getWorkspaceContexts(): WorkspaceContextEntry[];
+
+  /**
+   * Get workspace contexts formatted for prompt injection
+   */
+  getWorkspaceContextsForPrompt(): ApiMessage[];
+
+  /**
+   * Clear workspace contexts
+   */
+  clearWorkspaceContexts(): void;
 
   // ==================== Error Management ====================
 

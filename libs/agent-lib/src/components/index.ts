@@ -47,44 +47,22 @@ export * from './core/index.js';
 /**
  * Mail Module
  *
- * Email-style messaging for agent communication.
- * Allows agents to send/receive emails via the agent-mailbox service.
+ * Simplified email component for agent communication.
+ * Provides read-only access to mailbox for task instructions.
  */
 export {
   MailComponent,
   createMailComponent,
   type MailComponentConfig,
-  type MailComponentState,
-  type DraftData,
-  type DraftUpdate,
-  type DraftResult,
-  type DraftsResult,
 } from './mail/mailComponent.js';
 
 export {
   mailToolSchemas,
-  sendMailParamsSchema,
-  messageIdParamsSchema,
-  searchMessagesParamsSchema,
-  replyToMessageParamsSchema,
-  saveDraftParamsSchema,
-  editDraftParamsSchema,
-  deleteDraftParamsSchema,
-  insertDraftContentParamsSchema,
-  replaceDraftContentParamsSchema,
-  sendDraftParamsSchema,
+  getInboxParamsSchema,
+  markAsReadParamsSchema,
 } from './mail/mailSchemas.js';
 
-// Note: SendMailParams, MessageIdParams, SearchMessagesParams, ReplyToMessageParams
-// are exported from core/statefulContext to avoid duplicate export conflicts
 export type {
-  SaveDraftParams,
-  EditDraftParams,
-  DeleteDraftParams,
-  InsertDraftContentParams,
-  ReplaceDraftContentParams,
-  SendDraftParams,
-  MailToolParams,
   MailToolName,
   MailToolReturnTypes,
   ToolReturnType,

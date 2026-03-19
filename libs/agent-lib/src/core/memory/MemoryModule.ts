@@ -9,7 +9,7 @@
  */
 
 import { injectable, inject, optional } from 'inversify';
-import { ApiMessage } from './types.js';
+import { ApiMessage, WorkspaceContextEntry } from './types.js';
 import type { IMemoryModule, MemoryModuleConfig } from './types.js';
 import { TYPES } from '../di/types.js';
 import { tiktoken } from '../utils/tiktoken.js';
@@ -69,6 +69,9 @@ export class MemoryModule implements IMemoryModule {
 
     // Simple message storage
     private messages: ApiMessage[] = [];
+
+    // Workspace context storage (for storing workspace state at each iteration)
+    private workspaceContexts: WorkspaceContextEntry[] = [];
 
     // Error storage
     private savedErrors: Error[] = [];
@@ -267,6 +270,53 @@ export class MemoryModule implements IMemoryModule {
         result.push(...this.messages);
 
         return result;
+    }
+
+    // ==================== Workspace Context Management ====================
+
+    /**
+     * Record a workspace context snapshot
+     */
+    recordWorkspaceContext(context: string, iteration: number): void {
+        this.workspaceContexts.push({
+            content: context,
+            ts: Date.now(),
+            iteration,
+        });
+        this.logger.debug(`[MemoryModule] Recorded workspace context for iteration ${iteration}`);
+    }
+
+    /**
+     * Get all workspace context entries
+     */
+    getWorkspaceContexts(): WorkspaceContextEntry[] {
+        return [...this.workspaceContexts];
+    }
+
+    /**
+     * Get workspace contexts formatted for prompt injection
+     * Returns them as system messages with special formatting
+     */
+    getWorkspaceContextsForPrompt(): ApiMessage[] {
+        if (this.workspaceContexts.length === 0) {
+            return [];
+        }
+
+        return this.workspaceContexts.map(ctx => ({
+            role: 'system' as const,
+            content: [{
+                type: 'text' as const,
+                text: `[Workspace Context (Iteration ${ctx.iteration})]\n${ctx.content}`,
+            }],
+            ts: ctx.ts,
+        }));
+    }
+
+    /**
+     * Clear workspace contexts
+     */
+    clearWorkspaceContexts(): void {
+        this.workspaceContexts = [];
     }
 
     // ==================== Error Management ====================
@@ -481,6 +531,7 @@ export class MemoryModule implements IMemoryModule {
     export() {
         return {
             messages: this.messages,
+            workspaceContexts: this.workspaceContexts,
             config: this.config,
             savedErrors: this.savedErrors,
         };
@@ -493,6 +544,9 @@ export class MemoryModule implements IMemoryModule {
         if (data.messages) {
             this.messages = data.messages;
         }
+        if (data.workspaceContexts) {
+            this.workspaceContexts = data.workspaceContexts;
+        }
         if (data.savedErrors) {
             this.savedErrors = data.savedErrors;
         }
@@ -504,6 +558,7 @@ export class MemoryModule implements IMemoryModule {
      */
     clear() {
         this.messages = [];
+        this.workspaceContexts = [];
         this.savedErrors = [];
         this._cachedTokenCount = null;
     }

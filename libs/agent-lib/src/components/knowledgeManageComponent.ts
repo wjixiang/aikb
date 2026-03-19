@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { ToolComponent } from './core/toolComponent.js';
+import { ToolComponent, ExportOptions } from './core/toolComponent.js';
 import { Tool } from './ui/index.js';
 import { tdiv } from './ui/tdiv.js';
 import type { ToolCallResult } from './core/types.js';
@@ -763,5 +763,23 @@ export class KnowledgeManageComponent extends ToolComponent {
 
             return false;
         });
+    }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: {
+                allDocuments: this.allDocuments,
+                allEntities: this.allEntities,
+                selectedDocumentId: this.selectedDocumentId,
+                currentDocument: this.currentDocument,
+                searchResults: this.searchResults,
+                backlinks: this.backlinks,
+            },
+            format: options?.format ?? 'json',
+            metadata: {
+                componentId: this.componentId,
+                exportedAt: new Date().toISOString(),
+            },
+        };
     }
 }

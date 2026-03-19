@@ -7,11 +7,35 @@ import { MdDiv } from '../ui/markdown/MdDiv.js';
 import { MdElement } from '../ui/markdown/MdElement.js';
 
 /**
+ * Result of an export operation
+ */
+export interface ExportResult<T = unknown> {
+  /** Exported data */
+  data: T;
+  /** Export format used */
+  format: string;
+  /** Optional metadata about the export */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Options for export operations
+ */
+export interface ExportOptions {
+  /** Target format (e.g., 'json', 'csv', 'xml') */
+  format?: string;
+  /** Optional filter criteria */
+  filter?: Record<string, unknown>;
+  /** Additional export parameters */
+  params?: Record<string, unknown>;
+}
+
+/**
  * ToolComponent - Abstract base class for components that provide tools
  *
  * Components can be managed by Skills, which control their lifecycle
  * and tool availability. Components can define their own state, lifecycle hooks,
- * and rendering logic.
+ * rendering logic, and custom export functionality.
  *
  * @note This class is decorated with @injectable() for InversifyJS IoC integration.
  * Components can be resolved via DI container using their TYPE symbols from di/types.ts.
@@ -62,6 +86,13 @@ export abstract class ToolComponent {
     setState(state: any): void {
         // Override in subclasses to implement state restoration
     }
+
+    /**
+     * Export component data with custom logic
+     * @param options - Export options (format, filter, params)
+     * @returns ExportResult containing exported data and metadata
+     */
+    abstract exportData(options?: ExportOptions): Promise<ExportResult>;
 
     /**
      * Render tool section for this component

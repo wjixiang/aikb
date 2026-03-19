@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { ToolComponent } from '../core/toolComponent.js';
+import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
 import {
   Tool,
   ToolCallResult,
@@ -864,6 +864,17 @@ export class FileSystemComponent extends ToolComponent {
     }
 
     return container;
+  }
+
+  async exportData(options?: ExportOptions) {
+    return {
+      data: this._getState(),
+      format: options?.format ?? 'json',
+      metadata: {
+        componentId: this.componentId,
+        exportedAt: new Date().toISOString(),
+      },
+    };
   }
 }
 

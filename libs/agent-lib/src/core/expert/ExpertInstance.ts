@@ -19,6 +19,15 @@ import type { IExpertPersistenceStore, ExpertInstanceState } from './persistence
 import type { AgentStatus } from '../common/types.js';
 
 /**
+ * Export result from a component - mirrors ExportResult from components
+ */
+interface ComponentExportResult {
+    data: unknown;
+    format: string;
+    metadata?: Record<string, unknown>;
+}
+
+/**
  * Expert instance implementation - thin wrapper around Agent
  */
 @injectable()
@@ -58,10 +67,13 @@ export class ExpertInstance implements IExpertInstance {
     /**
      * Start Expert in message-driven mode
      * Delegates to Agent's startMailDrivenMode
+     * Automatically exports and persists component results when agent completes
      */
     async start(): Promise<void> {
         const pollInterval = this.config.mailConfig?.pollInterval || 30000;
         await this.agent.startMailDrivenMode(pollInterval);
+        // Agent completed - export and persist results
+        await this.exportAndPersistResults();
     }
 
     /**
@@ -78,6 +90,7 @@ export class ExpertInstance implements IExpertInstance {
         this.agent.abort('Expert stopped by user', 'manual');
         this.agent.stopMailDrivenMode();
         await this.persistState();
+        await this.exportAndPersistResults();
     }
 
     async getStateSummary(): Promise<string> {
@@ -116,6 +129,7 @@ ${componentSummaries.join('\n') || 'No components'}
         }
         this.agent.stopMailDrivenMode();
         await this.persistState();
+        await this.exportAndPersistResults();
         this.artifacts = [];
         this.logger.info(`Expert ${this.expertId} disposed`);
     }
@@ -152,6 +166,34 @@ ${componentSummaries.join('\n') || 'No components'}
             await this.persistenceStore.saveInstance(state);
         } catch (err) {
             this.logger.error(`Expert ${this.expertId}: Failed to persist state: ${err}`);
+        }
+    }
+
+    /**
+     * Export all component data and persist results
+     * Called when agent task completes (success, abort, or dispose)
+     */
+    private async exportAndPersistResults(): Promise<void> {
+        if (!this.persistenceStore) {
+            this.logger.debug(`Expert ${this.expertId}: No persistence store, skipping result export`);
+            return;
+        }
+
+        try {
+            const workspace = this.agent.workspace;
+            const exportResults = await workspace.exportResult();
+
+            // Build result data record
+            const resultData: Record<string, ComponentExportResult> = {};
+            for (const [componentId, result] of Object.entries(exportResults)) {
+                resultData[componentId] = result;
+            }
+
+            // Save results to persistence store
+            await this.persistenceStore.saveResult(this.expertId, this.instanceId, resultData);
+            this.logger.info(`Expert ${this.expertId}: Exported and persisted results from ${Object.keys(resultData).length} components`);
+        } catch (err) {
+            this.logger.error(`Expert ${this.expertId}: Failed to export and persist results: ${err}`);
         }
     }
 

@@ -1,4 +1,4 @@
-import { ToolComponent } from '../core/toolComponent.js';
+import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
 import { Tool } from '../core/types.js';
 import { TUIElement, tdiv, th, tp } from '../ui/index.js';
 import type { ToolCallResult } from '../core/types.js';
@@ -29,6 +29,7 @@ export class BibliographySearchComponent extends ToolComponent {
   currentPage = 1;
   currentRetrivalStrategy: RetrivalStrategy | null = null;
   currentSearchParams: PubmedSearchParams | null = null;
+  savedArticles: Map<string, ArticleProfile> = new Map();
 
   constructor() {
     super();
@@ -54,31 +55,27 @@ export class BibliographySearchComponent extends ToolComponent {
       }),
     );
 
-    const strategyElement = new tdiv({
-      content: 'Retrieval Strategy',
-      styles: {
-        showBorder: true,
-        align: 'center',
-      },
-    });
-
     // // Render current article detail if available
     if (this.currentArticleDetail) {
       elements.push(this.renderArticleDetail(this.currentArticleDetail));
-      // return elements;
     }
 
     // Render search results if available
     if (this.currentResults) {
       elements.push(this.renderSearchResults());
-    } else {
-      // Render welcome message
+    } else if (!this.currentArticleDetail) {
+      // Render welcome message only when no article detail is shown
       elements.push(
         new tdiv({
           content:
             'Welcome to Bibliography Search. Use tools to find articles.',
         }),
       );
+    }
+
+    // Render favorites section if there are saved articles
+    if (this.savedArticles.size > 0) {
+      elements.push(this.renderFavorites());
     }
 
     return elements;
@@ -236,6 +233,73 @@ export class BibliographySearchComponent extends ToolComponent {
     return container;
   }
 
+  renderFavorites(): TUIElement {
+    const container = new tdiv({
+      styles: { showBorder: true },
+    });
+
+    container.addChild(
+      new tdiv({
+        content: 'My Favorites',
+        styles: {
+          align: 'center',
+        },
+      }),
+    );
+
+    container.addChild(
+      new tp({
+        content: `${this.savedArticles.size} article(s) saved`,
+        indent: 1,
+        textStyle: { bold: true },
+      }),
+    );
+
+    // Add saved articles
+    this.savedArticles.forEach((article, pmid) => {
+      const articleBox = new tdiv({
+        styles: { showBorder: false, padding: { vertical: 1 } },
+      });
+
+      articleBox.addChild(
+        new tp({
+          content: `PMID: ${pmid}`,
+          indent: 1,
+          textStyle: { bold: true },
+        }),
+      );
+
+      articleBox.addChild(
+        new tp({
+          content: `  Title: ${article.title}`,
+          indent: 1,
+        }),
+      );
+
+      if (article.authors) {
+        articleBox.addChild(
+          new tp({
+            content: `  Authors: ${article.authors}`,
+            indent: 1,
+          }),
+        );
+      }
+
+      if (article.journalCitation) {
+        articleBox.addChild(
+          new tp({
+            content: `  Journal: ${article.journalCitation}`,
+            indent: 1,
+          }),
+        );
+      }
+
+      container.addChild(articleBox);
+    });
+
+    return container;
+  }
+
   private renderArticleDetail(article: ArticleDetail): TUIElement {
     const container = new tdiv({
       content: 'Article Detail',
@@ -368,6 +432,12 @@ export class BibliographySearchComponent extends ToolComponent {
         return await this.handleNavigatePage(params);
       case 'clear_results':
         return this.handleClearResults();
+      case 'save_article':
+        return this.handleSaveArticle(params);
+      case 'remove_from_favorites':
+        return this.handleRemoveFromFavorites(params);
+      case 'get_favorites':
+        return this.handleGetFavorites(params);
       default:
         return {
           success: false,
@@ -546,5 +616,116 @@ export class BibliographySearchComponent extends ToolComponent {
     this.currentRetrivalStrategy = null;
     this.currentSearchParams = null;
     return { success: true, data: { cleared: true }, summary: '[Bibliography] 已清除结果' };
+  }
+
+  private handleSaveArticle(params: any): ToolCallResult<any> {
+    const { pmid } = params;
+
+    if (!pmid) {
+      return {
+        success: false,
+        data: { error: 'PMID is required' },
+        summary: '[Bibliography] 错误: 未提供 PMID',
+      };
+    }
+
+    // Try to find the article in current results or current article detail
+    let articleToSave: ArticleProfile | null = null;
+
+    // Check current results
+    if (this.currentResults) {
+      articleToSave = this.currentResults.articleProfiles.find(a => a.pmid === pmid) ?? null;
+    }
+
+    // Check if viewing the article detail
+    if (!articleToSave && this.currentArticleDetail && this.currentArticleDetail.pmid === pmid) {
+      articleToSave = {
+        doi: null,
+        pmid: this.currentArticleDetail.pmid,
+        title: this.currentArticleDetail.title,
+        authors: this.currentArticleDetail.authors?.map(a => a.name).join(', ') || '',
+        journalCitation: this.currentArticleDetail.journalInfo?.title || '',
+        snippet: this.currentArticleDetail.abstract,
+      };
+    }
+
+    if (!articleToSave) {
+      return {
+        success: false,
+        data: { error: 'Article not found. Please search or view the article first.' },
+        summary: '[Bibliography] 错误: 文献未找到，请先搜索或查看该文献',
+      };
+    }
+
+    this.savedArticles.set(pmid, articleToSave);
+    return {
+      success: true,
+      data: { pmid, title: articleToSave.title, totalFavorites: this.savedArticles.size },
+      summary: `[Bibliography] 已收藏: ${articleToSave.title?.substring(0, 30) || pmid}...`,
+    };
+  }
+
+  private handleRemoveFromFavorites(params: any): ToolCallResult<any> {
+    const { pmid } = params;
+
+    if (!pmid) {
+      return {
+        success: false,
+        data: { error: 'PMID is required' },
+        summary: '[Bibliography] 错误: 未提供 PMID',
+      };
+    }
+
+    if (!this.savedArticles.has(pmid)) {
+      return {
+        success: false,
+        data: { error: 'Article not in favorites' },
+        summary: '[Bibliography] 错误: 该文献不在收藏夹中',
+      };
+    }
+
+    const removed = this.savedArticles.get(pmid);
+    this.savedArticles.delete(pmid);
+    return {
+      success: true,
+      data: { pmid, removedTitle: removed?.title, remainingFavorites: this.savedArticles.size },
+      summary: `[Bibliography] 已取消收藏: ${removed?.title?.substring(0, 30) || pmid}...`,
+    };
+  }
+
+  private handleGetFavorites(_params: any): ToolCallResult<any> {
+    const favorites = Array.from(this.savedArticles.entries()).map(([pmid, article]) => ({
+      pmid,
+      title: article.title,
+      authors: article.authors,
+      journalCitation: article.journalCitation,
+    }));
+
+    return {
+      success: true,
+      data: {
+        favorites,
+        total: this.savedArticles.size,
+      },
+      summary: `[Bibliography] 收藏夹: ${this.savedArticles.size} 篇文献`,
+    };
+  }
+
+  async exportData(options?: ExportOptions) {
+    return {
+      data: {
+        currentResults: this.currentResults,
+        currentArticleDetail: this.currentArticleDetail,
+        currentPage: this.currentPage,
+        currentRetrivalStrategy: this.currentRetrivalStrategy,
+        currentSearchParams: this.currentSearchParams,
+        savedArticles: Array.from(this.savedArticles.entries()),
+      },
+      format: options?.format ?? 'json',
+      metadata: {
+        componentId: this.componentId,
+        exportedAt: new Date().toISOString(),
+      },
+    };
   }
 }

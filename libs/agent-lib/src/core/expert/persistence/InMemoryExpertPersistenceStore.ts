@@ -49,4 +49,12 @@ export class InMemoryExpertPersistenceStore implements IExpertPersistenceStore {
     }
     return states;
   }
+
+  async saveResult(expertClassId: string, instanceId: string, resultData: Record<string, unknown>): Promise<void> {
+    const key = this.getKey(expertClassId, instanceId);
+    const state = this.instances.get(key);
+    if (state) {
+      state.resultData = resultData;
+    }
+  }
 }

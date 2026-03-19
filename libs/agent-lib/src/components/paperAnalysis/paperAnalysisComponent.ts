@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ToolComponent } from '../core/toolComponent.js';
+import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
 import { tdiv } from '../ui/tdiv.js';
 import type { ToolCallResult } from '../core/types.js';
 import { z } from 'zod';
@@ -79,5 +79,13 @@ export class PaperAnalysisComponent extends ToolComponent {
 
     private async comparePapers(paperA: string, paperB: string, aspects?: string[]): Promise<any> {
         return { comparison: 'Completed', aspects: aspects?.join(', ') || 'all' };
+    }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: { analysisResults: this.analysisResults },
+            format: options?.format ?? 'json',
+            metadata: { componentId: this.componentId },
+        };
     }
 }

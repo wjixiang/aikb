@@ -1,4 +1,4 @@
-import { ToolComponent } from '../core/toolComponent.js';
+import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
 import { Tool } from '../core/types.js';
 import { TUIElement, tdiv, th, tp } from '../ui/index.js';
 import type { ToolCallResult } from '../core/types.js';
@@ -493,5 +493,21 @@ export class PicosComponent extends ToolComponent {
 
         // Join with AND for PubMed-style search
         return searchParts.join(' AND ');
+    }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: {
+                currentPicos: this.currentPicos,
+                generatedQuestion: this.generatedQuestion,
+                validationResult: this.validationResult,
+                exportResult: this.exportResult,
+            },
+            format: options?.format ?? 'json',
+            metadata: {
+                componentId: this.componentId,
+                exportedAt: new Date().toISOString(),
+            },
+        };
     }
 }

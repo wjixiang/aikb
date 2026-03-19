@@ -1,4 +1,4 @@
-import { ToolComponent } from '../core/toolComponent.js';
+import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
 import { Tool } from '../core/types.js';
 import { TUIElement, tdiv, th, tp } from '../ui/index.js';
 import type { ToolCallResult } from '../core/types.js';
@@ -681,6 +681,17 @@ export class PrismaFlowComponent extends ToolComponent {
             databaseFlow: this.databaseFlow,
             otherMethodsFlow: this.otherMethodsFlow,
             included: this.included
+        };
+    }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: this.getFlowDiagram(),
+            format: options?.format ?? 'json',
+            metadata: {
+                componentId: this.componentId,
+                exportedAt: new Date().toISOString(),
+            },
         };
     }
 }

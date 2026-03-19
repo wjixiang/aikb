@@ -13,6 +13,7 @@ export interface ExpertInstanceState {
   expertClassId: string;
   instanceId: string;
   status: AgentStatus;
+  resultData?: Record<string, unknown>;
 }
 
 /**
@@ -44,4 +45,10 @@ export interface IExpertPersistenceStore {
    * List all running instances
    */
   listRunningInstances(): Promise<ExpertInstanceState[]>;
+
+  /**
+   * Save task result data for an Expert instance
+   * Called when a task completes to persist exported component data
+   */
+  saveResult(expertClassId: string, instanceId: string, resultData: Record<string, unknown>): Promise<void>;
 }

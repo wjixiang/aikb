@@ -7,7 +7,7 @@ import { z } from 'zod';
 // @ts-expect-error - Apollo client has default export at runtime but TS types are inconsistent
 import apollo from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
-import { ToolComponent } from './core/toolComponent.js';
+import { ToolComponent, ExportOptions } from './core/toolComponent.js';
 import { Tool } from './ui/index.js';
 import { tdiv } from './ui/tdiv.js';
 import type { ToolCallResult } from './core/types.js';
@@ -459,6 +459,19 @@ export class BookViewerComponent extends ToolComponent {
     getSearchResults(): string[] {
         return this.searchResults;
     }
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: {
+                currentBook: this.currentBook,
+                bookName: this.bookName,
+                content: this.content,
+                searchResults: this.searchResults,
+            },
+            format: options?.format ?? 'json',
+            metadata: { componentId: this.componentId },
+        };
+    }
 }
 
 /**
@@ -511,4 +524,12 @@ export class WorkspaceInfoComponent extends ToolComponent {
         }
         return { success: false, data: { error: `Unknown tool: ${toolName}` } };
     };
+
+    async exportData(options?: ExportOptions) {
+        return {
+            data: { lastUpdated: this.lastUpdated },
+            format: options?.format ?? 'json',
+            metadata: { componentId: this.componentId },
+        };
+    }
 }
