@@ -30,7 +30,7 @@ import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.
 export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
   name: 'Default Workspace',
-  renderMode: 'tui',
+  renderMode: 'markdown',
   toolCallLogCount: 10,
   expertMode: false,
   alwaysRenderAllComponents: false,
@@ -368,20 +368,28 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         summary =
           result.length > 200 ? result.substring(0, 200) + '...' : result;
       } else if (typeof result === 'object') {
-        // Common patterns for tool results
-        const keys = Object.keys(result);
-
-        // If it has a 'result' or 'data' key, use that
-        if ('result' in result && typeof result.result === 'string') {
+        // Priority 1: Use custom summary if provided by component
+        if ('summary' in result && typeof result.summary === 'string') {
+          summary = result.summary;
+        } else if ('error' in result && typeof result.error === 'string') {
+          // Priority 2: Use error field if present
+          summary = `Error: ${result.error}`;
+        } else if ('data' in result && typeof result.data === 'object') {
+          // Priority 3: Check if data has an error field
+          const data = result.data as any;
+          if ('error' in data && typeof data.error === 'string') {
+            summary = `Error: ${data.error}`;
+          } else {
+            summary = JSON.stringify(result.data).length > 200
+              ? JSON.stringify(result.data).substring(0, 200) + '...'
+              : JSON.stringify(result.data);
+          }
+        } else if ('result' in result && typeof result.result === 'string') {
+          // Priority 4: Use result field
           summary =
             result.result.length > 200
               ? result.result.substring(0, 200) + '...'
               : result.result;
-        } else if ('data' in result) {
-          summary =
-            JSON.stringify(result.data).length > 200
-              ? JSON.stringify(result.data).substring(0, 200) + '...'
-              : JSON.stringify(result.data);
         } else if ('message' in result) {
           summary =
             result.message.length > 200
@@ -389,7 +397,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
               : result.message;
         } else {
           // Otherwise, just list the keys
-          summary = `[${keys.join(', ')}]`;
+          summary = `[${Object.keys(result).join(', ')}]`;
         }
       } else {
         summary = String(result);
