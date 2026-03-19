@@ -15,18 +15,18 @@ import {
     ExtendedContentBlock,
 } from '../memory/types.js';
 import { ToolUsage } from '../types/index.js';
-import type { ApiResponse, ChatCompletionTool } from '../api-client/index.js';
+import type { ApiClient, ApiResponse, ChatCompletionTool } from '../api-client/index.js';
 import { TYPES } from '../di/types.js';
 // Define Logger type locally to avoid pino ESM import issues
 type Logger = import('pino').Logger;
 import type { IToolManager } from '../tools/index.js';
 import type { ITurnMemoryStore } from '../memory/TurnMemoryStore.interface.js';
-import type { MemoryModuleConfig } from '../memory/types.js';
 import {
     IActionModule,
     ActionModuleConfig,
     ActionPhaseResult,
     ToolResult,
+    ActionStep,
 } from './types.js';
 import { NoToolsUsedError } from '../common/errors.js';
 import { Turn } from '../memory/Turn.js';
@@ -48,14 +48,14 @@ export const defaultActionConfig: ActionModuleConfig = {
 @injectable()
 export class ActionModule implements IActionModule {
     private config: ActionModuleConfig;
-    private apiClient: any; // ApiClient
+    private apiClient: ApiClient; // ApiClient
     private logger: Logger;
     private toolManager: IToolManager;
     private turnMemoryStore: ITurnMemoryStore;
 
 
     constructor(
-        @inject(TYPES.ApiClient) apiClient: any,
+        @inject(TYPES.ApiClient) apiClient: ApiClient,
         @inject(TYPES.Logger) logger: Logger,
         @inject(TYPES.IToolManager) toolManager: IToolManager,
         @inject(TYPES.ITurnMemoryStore) turnMemoryStore: ITurnMemoryStore,
@@ -87,6 +87,8 @@ export class ActionModule implements IActionModule {
      * Perform action phase
      * @param toolManager - Optional tool manager to use. If provided, uses this instead of injected one.
      *                      This allows using the workspace's tool manager to ensure all registered tools are available.
+     * @param actionPlan - Optional structured action plan from thinking phase.
+     *                      If provided, actions will be executed according to the plan.
      */
     async performActionPhase(
         workspaceContext: string,
@@ -94,6 +96,8 @@ export class ActionModule implements IActionModule {
         conversationHistory: ApiMessage[],
         tools: ChatCompletionTool[],
         isAborted: () => boolean,
+        toolManager?: IToolManager,
+        actionPlan?: ActionStep[],
     ): Promise<ActionPhaseResult> {
         this.logger.info('Starting action phase execution');
 
@@ -104,29 +108,68 @@ export class ActionModule implements IActionModule {
         let didAttemptCompletion = false;
 
         try {
-            // 1. Make API request
-            this.logger.info('Making API request in action phase');
-            apiResponse = await this.makeApiRequest(
-                systemPrompt,
-                workspaceContext,
-                conversationHistory,
-                tools
-            );
-            this.logger.info({
-                hasToolCalls: !!apiResponse.toolCalls,
-                toolCallsCount: apiResponse.toolCalls?.length || 0,
-                hasTextResponse: !!apiResponse.textResponse
-            }, 'API request completed successfully');
+            // Use the provided toolManager or fall back to injected one
+            const effectiveToolManager = toolManager || this.toolManager;
 
-            // 2. Convert API response to assistant message
-            assistantMessage = this.convertApiResponseToApiMessage(apiResponse);
+            // If actionPlan is provided, execute from plan
+            if (actionPlan && actionPlan.length > 0) {
+                // Execute from plan directly without LLM call
+                this.logger.info({ actionPlanLength: actionPlan.length }, 'Executing from action plan (no LLM call)');
 
-            // 3. Execute tool calls
-            this.logger.info('Starting tool execution');
-            const executionResult = await this.executeToolCalls(apiResponse, isAborted);
-            toolResults = executionResult.toolResults;
-            userMessageContent = executionResult.userMessageContent;
-            didAttemptCompletion = executionResult.didAttemptCompletion;
+                // Execute from plan
+                const executionResult = await this.executeFromPlan(actionPlan, isAborted, effectiveToolManager);
+                toolResults = executionResult.toolResults;
+                userMessageContent = executionResult.userMessageContent;
+                didAttemptCompletion = executionResult.didAttemptCompletion;
+
+                // If execution failed at a step, propagate the error
+                if (executionResult.failedStep) {
+                    throw new Error(`Action step ${executionResult.failedStep.stepId} failed: ${executionResult.failedStep.reasoning}`);
+                }
+
+                // Build assistant message from plan execution (no LLM response)
+                assistantMessage = {
+                    role: 'assistant' as const,
+                    content: [{
+                        type: 'text' as const,
+                        text: `Executing action plan with ${actionPlan.length} steps`,
+                    }],
+                    ts: Date.now(),
+                };
+
+                // Set apiResponse to empty response since we didn't call LLM
+                apiResponse = {
+                    toolCalls: [],
+                    textResponse: `Executed ${toolResults.length} steps from action plan`,
+                    requestTime: 0,
+                    tokenUsage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+                };
+            } else {
+                // Original behavior: LLM decides tool calls
+                // 1. Make API request
+                this.logger.info('Making API request in action phase');
+                apiResponse = await this.makeApiRequest(
+                    systemPrompt,
+                    workspaceContext,
+                    conversationHistory,
+                    tools
+                );
+                this.logger.info({
+                    hasToolCalls: !!apiResponse.toolCalls,
+                    toolCallsCount: apiResponse.toolCalls?.length || 0,
+                    hasTextResponse: !!apiResponse.textResponse
+                }, 'API request completed successfully');
+
+                // 2. Convert API response to assistant message
+                assistantMessage = this.convertApiResponseToApiMessage(apiResponse);
+
+                // 3. Execute tool calls
+                this.logger.info('Starting tool execution');
+                const executionResult = await this.executeToolCalls(apiResponse, isAborted, effectiveToolManager);
+                toolResults = executionResult.toolResults;
+                userMessageContent = executionResult.userMessageContent;
+                didAttemptCompletion = executionResult.didAttemptCompletion;
+            }
 
             this.logger.info({
                 toolResultsCount: toolResults.length,
@@ -276,18 +319,19 @@ Please take these errors into consideration and avoid repeating the same mistake
     /**
      * Execute tool calls and build response
      * Supports multiple tool calls in a single response
-     * @param toolManager - The tool manager to use for executing tools. If not provided, uses the injected one.
+     * @param toolManager - The tool manager to use for executing tools.
      */
     private async executeToolCalls(
         response: ApiResponse,
         isAborted: () => boolean,
-        // toolManager?: IToolManager,
+        toolManager: IToolManager,
     ): Promise<{
         toolResults: ToolResult[];
         userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam>;
         didAttemptCompletion: boolean;
     }> {
         // Use provided toolManager or fall back to injected one
+        const effectiveToolManager = toolManager || this.toolManager;
 
         const userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam> = [];
         const toolResults: ToolResult[] = [];
@@ -358,12 +402,12 @@ Please take these errors into consideration and avoid repeating the same mistake
 
                     // Execute tool through IToolManager
                     this.logger.info({ toolName: toolCall.name, params: parsedParams }, `Executing tool: ${toolCall.name}`);
-                    result = await this.toolManager.executeTool(toolCall.name, parsedParams);
+                    result = await effectiveToolManager.executeTool(toolCall.name, parsedParams);
                     this.logger.info({ toolName: toolCall.name, result }, `Tool execution completed: ${toolCall.name}`);
                 }
 
                 // Get component key for the tool (for logging/display purposes)
-                const toolSourceInfo = this.toolManager.getToolSource(toolCall.name);
+                const toolSourceInfo = effectiveToolManager.getToolSource(toolCall.name);
                 const componentKey = toolSourceInfo?.componentKey;
 
                 const toolResult: ToolResult = {
@@ -388,7 +432,7 @@ Please take these errors into consideration and avoid repeating the same mistake
                 this.turnMemoryStore.pushErrors([new Error(`Tool ${toolCall.name} failed: ${errorMessage}`)]);
 
                 // Get component key for the tool (for logging/display purposes)
-                const toolSourceInfo = this.toolManager.getToolSource(toolCall.name);
+                const toolSourceInfo = effectiveToolManager.getToolSource(toolCall.name);
                 const componentKey = toolSourceInfo?.componentKey;
 
                 const toolResult: ToolResult = {
@@ -450,6 +494,119 @@ Please take these errors into consideration and avoid repeating the same mistake
             didAttemptCompletion
         }, `Tool execution completed. Total tools executed: ${toolResults.length}`);
         return { toolResults, userMessageContent, didAttemptCompletion };
+    }
+
+    /**
+     * Execute actions from a structured action plan
+     * Used when thinking phase produces an action plan
+     */
+    private async executeFromPlan(
+        plan: ActionStep[],
+        isAborted: () => boolean,
+        toolManager: IToolManager,
+    ): Promise<{
+        toolResults: ToolResult[];
+        userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam>;
+        didAttemptCompletion: boolean;
+        failedStep?: ActionStep;
+    }> {
+        const toolResults: ToolResult[] = [];
+        const userMessageContent: Array<Anthropic.TextBlockParam | Anthropic.ToolResultBlockParam> = [];
+        let didAttemptCompletion = false;
+        let failedStep: ActionStep | undefined;
+
+        this.logger.info({ planLength: plan.length }, 'Starting execution from action plan');
+
+        for (const step of plan) {
+            if (isAborted()) {
+                this.logger.info('Execution aborted');
+                break;
+            }
+
+            try {
+                // Check if dependencies are satisfied
+                if (step.dependsOn && step.dependsOn.length > 0) {
+                    const depsSatisfied = step.dependsOn.every(depId => {
+                        const depResult = toolResults.find(r => r.stepId === depId);
+                        return depResult?.success === true;
+                    });
+
+                    if (!depsSatisfied) {
+                        this.logger.info({ stepId: step.stepId, dependsOn: step.dependsOn }, 'Skipping step due to unsatisfied dependencies');
+                        continue;
+                    }
+                }
+
+                this.logger.info({ stepId: step.stepId, toolName: step.toolName, reasoning: step.reasoning }, 'Executing planned action step');
+
+                // Execute the tool
+                const result = await toolManager.executeTool(step.toolName, step.parameters);
+
+                // Get component key
+                const toolSourceInfo = toolManager.getToolSource(step.toolName);
+                const componentKey = toolSourceInfo?.componentKey;
+
+                const toolResult: ToolResult = {
+                    toolName: step.toolName,
+                    success: true,
+                    result,
+                    timestamp: Date.now(),
+                    componentKey,
+                    stepId: step.stepId,
+                };
+                toolResults.push(toolResult);
+
+                const userMessageContentItem = {
+                    type: 'tool_result' as const,
+                    tool_use_id: step.stepId,
+                    content: JSON.stringify(result),
+                };
+                userMessageContent.push(userMessageContentItem);
+
+                // Check if this was a completion step
+                if (step.toolName === 'attempt_completion') {
+                    didAttemptCompletion = true;
+                    this.logger.info({ stepId: step.stepId }, 'Action plan completed successfully');
+                    break;
+                }
+            } catch (error) {
+                this.logger.error({ stepId: step.stepId, toolName: step.toolName, error }, 'Action step failed');
+
+                const errorMessage = error instanceof Error ? error.message : String(error);
+
+                // Push error to turn memory store for potential retry
+                this.turnMemoryStore.pushErrors([new Error(`Action step ${step.stepId} (${step.toolName}) failed: ${errorMessage}`)]);
+
+                const toolResult: ToolResult = {
+                    toolName: step.toolName,
+                    success: false,
+                    result: errorMessage,
+                    timestamp: Date.now(),
+                    stepId: step.stepId,
+                };
+                toolResults.push(toolResult);
+
+                const userMessageContentItem = {
+                    type: 'tool_result' as const,
+                    tool_use_id: step.stepId,
+                    content: JSON.stringify({ error: errorMessage }),
+                };
+                userMessageContent.push(userMessageContentItem);
+
+                // Record failed step and exit
+                failedStep = step;
+                break;
+            }
+        }
+
+        this.logger.info({
+            toolResultsCount: toolResults.length,
+            completedSteps: toolResults.filter(r => r.success).length,
+            failedSteps: toolResults.filter(r => !r.success).length,
+            didAttemptCompletion,
+        }, `Action plan execution completed. Total steps executed: ${toolResults.length}`);
+
+        return { toolResults, userMessageContent, didAttemptCompletion, failedStep };
     }
 
     /**

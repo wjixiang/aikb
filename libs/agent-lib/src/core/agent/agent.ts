@@ -650,9 +650,15 @@ export class Agent {
       const currentWorkspaceContext = await this.workspace.render();
       this.memoryModule.startTurn(currentWorkspaceContext);
 
+      // Get available tools for thinking phase (to pass as reference)
+      const allTools = this.workspace.getAllTools();
+      const tools = allTools.map((t): Tool => t.tool);
+      const converter = new DefaultToolCallConverter();
+      const openaiTools = converter.convertTools(tools);
+
       try {
         // EXECUTE THINKING PHASE
-        const thinkingResult = await this.executeThinkingPhase(lastToolResults);
+        const thinkingResult = await this.executeThinkingPhase(lastToolResults, openaiTools);
 
         // EXECUTE ACTION PHASE
         const actionResult = await this.executeActionPhase(
@@ -716,15 +722,18 @@ export class Agent {
    * Execute the thinking phase using ThinkingModule
    * @param currentWorkspaceContext - Current workspace context
    * @param lastToolResults - Results from previous tool executions
+   * @param availableTools - Available action tools for planning reference
    * @returns ThinkingPhaseResult from the thinking module
    */
   private async executeThinkingPhase(
     lastToolResults: ToolResult[],
+    availableTools?: any[],
   ): Promise<ThinkingPhaseResult> {
     const currentTurn = this.memoryModule.getCurrentTurn();
     const currentWorkspaceContext = await this.workspace.render();
     const thinkingResult = await this.thinkingModule.performThinkingPhase(
       currentWorkspaceContext,
+      availableTools,
       lastToolResults,
     );
 
@@ -810,6 +819,7 @@ export class Agent {
         openaiTools,
         () => this.isAborted(),
         this.workspace.getToolManager(), // Use workspace's toolManager to ensure tools are available
+        thinkingResult.actionPlan, // Pass action plan from thinking phase
       );
     this.logger.info(`Action phase successfully proformed`);
 

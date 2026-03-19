@@ -34,6 +34,26 @@ export interface ToolResult {
     timestamp: number;
     /** Component key that provided this tool (if applicable) */
     componentKey?: string;
+    /** Step ID for planned actions (if applicable) */
+    stepId?: string;
+}
+
+/**
+ * A planned action step from thinking phase action plan
+ */
+export interface ActionStep {
+    /** Unique step identifier */
+    stepId: string;
+    /** Tool name to execute */
+    toolName: string;
+    /** Tool parameters */
+    parameters: Record<string, any>;
+    /** Why this action is needed */
+    reasoning: string;
+    /** Step IDs this action depends on */
+    dependsOn?: string[];
+    /** Status of this step */
+    status: 'planned' | 'completed' | 'failed';
 }
 
 /**
@@ -71,6 +91,8 @@ export interface IActionModule {
      * @param toolManager - Optional tool manager to use for tool execution.
      *                      If provided, this will be used instead of the injected one.
      *                      This ensures tools registered in the workspace are available.
+     * @param actionPlan - Optional structured action plan from thinking phase.
+     *                      If provided, actions will be executed according to the plan.
      */
     performActionPhase(
         workspaceContext: string,
@@ -78,7 +100,8 @@ export interface IActionModule {
         conversationHistory: ApiMessage[],
         tools: ChatCompletionTool[],
         isAborted: () => boolean,
-        toolManager?: IToolManager
+        toolManager?: IToolManager,
+        actionPlan?: ActionStep[]
     ): Promise<ActionPhaseResult>;
 
     /**

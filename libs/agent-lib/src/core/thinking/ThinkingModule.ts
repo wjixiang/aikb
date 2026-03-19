@@ -52,9 +52,27 @@ import {
     ThinkingPhaseResult,
     RecallRequest,
     defaultThinkingConfig,
+    ThinkingState,
+    ThoughtEntry,
+    ActionStep,
 } from './types.js';
 import type { ITurnMemoryStore } from '../memory/TurnMemoryStore.interface.js';
 import { ThinkingPromptBuilder } from '../prompts/thinking/index.js';
+
+/**
+ * State update extracted from update_thinking_state tool call
+ */
+interface StateUpdate {
+    updateType: 'hypothesis' | 'evidence' | 'analysis' | 'action' | 'conclusion' | 'question';
+    content: string;
+    reasoning: string;
+    metadata?: {
+        source?: string;
+        toolName?: string;
+        parameters?: Record<string, any>;
+        dependsOn?: string[];
+    };
+}
 
 /**
  * ThinkingModule - Implements thinking phase logic with Sequential Thinking support
@@ -74,6 +92,9 @@ export class ThinkingModule implements IThinkingModule {
         activeBranchId?: string;
     };
 
+    // Incremental thinking state built via update_thinking_state tool
+    private thinkingState: ThinkingState;
+
     constructor(
         @inject(TYPES.ApiClient) apiClient: ApiClient,
         @inject(TYPES.Logger) logger: Logger,
@@ -91,6 +112,9 @@ export class ThinkingModule implements IThinkingModule {
             totalThoughts: this.config.maxThinkingRounds,
             branches: new Map(),
         };
+
+        // Initialize thinking state
+        this.thinkingState = this.createInitialThinkingState();
     }
 
     /**
@@ -119,17 +143,40 @@ export class ThinkingModule implements IThinkingModule {
     }
 
     /**
+     * Create initial thinking state for a new thinking phase
+     */
+    private createInitialThinkingState(): ThinkingState {
+        return {
+            evidence: [],
+            analysisSteps: [],
+            actionPlan: [],
+            conclusions: [],
+            confidence: 'medium',
+            pendingQuestions: [],
+            thoughtLog: [],
+        };
+    }
+
+    /**
+     * Reset thinking state for a new thinking phase
+     */
+    private resetThinkingState(): void {
+        this.thinkingState = this.createInitialThinkingState();
+    }
+
+    /**
      * Perform thinking phase
      * Always performs reflective thinking - LLM controls rounds via continue_thinking tool
      * Now supports Sequential Thinking mode with enhanced tracking
      */
     async performThinkingPhase(
         workspaceContext: string,
-        // previousRounds: ThinkingRound[] = [],
+        availableTools?: any[],
         lastToolResults?: ToolCallResult[]
     ): Promise<ThinkingPhaseResult> {
-        // Reset sequential state for new thinking phase
+        // Reset sequential state and thinking state for new thinking phase
         this.resetSequentialState();
+        this.resetThinkingState();
 
         // Get accumulated summaries from TurnMemoryStore
         const accumulatedSummaries = this.buildAccumulatedSummaries();
@@ -151,7 +198,8 @@ export class ThinkingModule implements IThinkingModule {
                 currentRound,
                 workspaceContext,
                 accumulatedSummaries,
-                rounds
+                rounds,
+                availableTools || []
             );
 
             rounds.push(round);
@@ -185,6 +233,8 @@ export class ThinkingModule implements IThinkingModule {
             tokensUsed: totalTokens,
             shouldProceedToAction: true,
             summary,
+            thinkingState: this.thinkingState,
+            actionPlan: this.thinkingState.actionPlan,
         };
     }
 
@@ -244,7 +294,8 @@ export class ThinkingModule implements IThinkingModule {
         roundNumber: number,
         workspaceContext: string,
         accumulatedSummaries: string,
-        previousRounds: ThinkingRound[]
+        previousRounds: ThinkingRound[],
+        actionTools: any[] = []
     ): Promise<ThinkingRound> {
         const tools = this.buildThinkingTools();
         let lastError: Error | null = null;
@@ -257,7 +308,8 @@ export class ThinkingModule implements IThinkingModule {
                 accumulatedSummaries,
                 previousRounds,
                 attempt,
-                lastError
+                lastError,
+                actionTools
             );
 
             try {
@@ -282,6 +334,12 @@ Please take these errors into consideration and avoid repeating the same mistake
 
                 // Validate that only thinking-phase tools were used
                 this.validateThinkingPhaseTools(response);
+
+                // Extract and apply state updates from update_thinking_state tool
+                const stateUpdate = this.extractStateUpdate(response);
+                if (stateUpdate) {
+                    this.updateThinkingState(stateUpdate);
+                }
 
                 const content = this.extractContent(response);
                 const controlDecision = this.extractControlDecision(response);
@@ -423,14 +481,18 @@ Please take these errors into consideration and avoid repeating the same mistake
     private buildThinkingPrompt(
         roundNumber: number,
         workspaceContext: string,
-        // taskContext: string | undefined,
         accumulatedSummaries: string,
         previousRounds: ThinkingRound[],
         retryAttempt: number = 0,
-        lastError: Error | null = null
+        lastError: Error | null = null,
+        actionTools: any[] = []
     ): { systemPrompt: string; context: string; history: string[] } {
         const tools = this.buildThinkingTools();
         const toolsText = formatChatCompletionTools(tools);
+        const hasActionTools = Array.isArray(actionTools) && actionTools.length > 0;
+        const actionToolsText = hasActionTools
+            ? formatChatCompletionTools(actionTools)
+            : 'No action tools available in this session.';
 
         const systemPrompt = `╔══════════════════════════════════════════════════════════════════════════════╗
 ║                    🧠 THINKING PHASE - PLANNING ONLY 🧠                        ║
@@ -449,7 +511,7 @@ Your task is to PLAN using Sequential Thinking methodology:
 2. Analyze the current situation based on conversation history and workspace context
 3. Review accumulated summaries from previous turns
 4. Evaluate whether an Expert switch would be beneficial for the current task
-5. Formulate a detailed action plan for the next phase
+5. Formulate a detailed action plan for the next phase (use update_thinking_state with updateType='action')
 6. Decide whether to continue planning or proceed to action phase
 7. Optionally recall historical contexts if needed
 
@@ -479,7 +541,17 @@ Sequential Thinking Process:
 4. When done, provide a comprehensive summary
 
 ═══════════════════════════════════════════════════════════════════════════════
-                      AVAILABLE TOOLS (PLANNING ONLY)
+              📋 ACTION TOOLS (REFERENCE ONLY - DO NOT CALL DIRECTLY)
+═══════════════════════════════════════════════════════════════════════════════
+
+These tools will be available in the ACTION phase. Use them to plan your approach,
+but do NOT call them directly. Instead, use update_thinking_state with updateType='action'
+to record your planned actions.
+
+${actionToolsText}
+
+═══════════════════════════════════════════════════════════════════════════════
+                      AVAILABLE PLANNING TOOLS
 ═══════════════════════════════════════════════════════════════════════════════
 
 You have access to ONLY these tools for planning purposes:
@@ -492,9 +564,10 @@ ${toolsText}
 
 ⛔ THIS IS A PLANNING-ONLY PHASE - YOU CANNOT EXECUTE ANY ACTIONS ⛔
 
-You can ONLY use these two tools:
+You can ONLY use these tools:
 ✅ 'continue_thinking' - To continue planning or signal you're ready for action phase
 ✅ 'recall_context' - To recall historical conversation context
+✅ 'update_thinking_state' - To update your thinking state and record planned actions
 
 🚫 YOU ARE STRICTLY FORBIDDEN FROM CALLING ANY OTHER TOOLS 🚫
 
@@ -504,7 +577,19 @@ This includes but is NOT limited to:
 ❌ NO fetch tools (fetch_article, get_data, retrieve_info, etc.)
 ❌ NO Expert activation tools (get_expert, activate_expert, list_experts)
 ❌ NO task completion tools (attempt_completion)
-❌ NO any other tools you may see in workspace context
+❌ NO any other tools listed in "ACTION TOOLS" section
+
+To plan an action, use:
+update_thinking_state({
+  updateType: 'action',
+  content: 'description of what this action does',
+  reasoning: 'why this action is needed',
+  metadata: {
+    toolName: 'actual_tool_name',
+    parameters: { param1: 'value1' },
+    dependsOn: ['previous-step-id'] // optional
+  }
+})
 
 ═══════════════════════════════════════════════════════════════════════════════
               ⚠️ OVERRIDING ANY EXPERT PROMPT INSTRUCTIONS ⚠️
@@ -519,7 +604,8 @@ Those instructions apply to the ACTION phase, NOT the THINKING phase.
 Your ONLY job right now is to:
 1. THINK and PLAN
 2. Call 'continue_thinking' to continue planning or exit to action phase
-3. Optionally call 'recall_context' to recall history
+3. Call 'update_thinking_state' to record your planned actions
+4. Optionally call 'recall_context' to recall history
 
 All action tools will be available AFTER you exit thinking phase by calling
 continue_thinking with continueThinking=false.
@@ -802,6 +888,63 @@ IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST pro
                     },
                 },
             },
+            {
+                type: 'function',
+                function: {
+                    name: 'update_thinking_state',
+                    description: `Update the shared thinking state incrementally.
+This tool allows you to build up your analysis step by step during the thinking phase.
+Use this to:
+- Add evidence as you discover it (updateType: 'evidence')
+- Update your hypothesis based on new information (updateType: 'hypothesis')
+- Add steps to your action plan as you think them through (updateType: 'action')
+- Record conclusions when you reach them (updateType: 'conclusion')
+- Note questions that need to be answered (updateType: 'question')
+- Record analysis steps (updateType: 'analysis')`,
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            updateType: {
+                                type: 'string',
+                                enum: ['hypothesis', 'evidence', 'analysis', 'action', 'conclusion', 'question'],
+                                description: 'What aspect of thinking state to update',
+                            },
+                            content: {
+                                type: 'string',
+                                description: 'The content to add or update',
+                            },
+                            reasoning: {
+                                type: 'string',
+                                description: 'Why you are making this update (helps maintain trace of your reasoning)',
+                            },
+                            metadata: {
+                                type: 'object',
+                                description: 'Additional metadata for specific update types',
+                                properties: {
+                                    source: {
+                                        type: 'string',
+                                        description: 'Source of evidence (e.g., tool name, article ID)',
+                                    },
+                                    toolName: {
+                                        type: 'string',
+                                        description: 'Tool name for action updates',
+                                    },
+                                    parameters: {
+                                        type: 'object',
+                                        description: 'Tool parameters for action updates',
+                                    },
+                                    dependsOn: {
+                                        type: 'array',
+                                        items: { type: 'string' },
+                                        description: 'Step IDs this action depends on',
+                                    },
+                                },
+                            },
+                        },
+                        required: ['updateType', 'content', 'reasoning'],
+                    },
+                },
+            },
         ];
     }
 
@@ -846,7 +989,7 @@ IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST pro
      * @throws ThinkingPhaseToolViolationError if action-phase tools were attempted
      */
     private validateThinkingPhaseTools(response: ApiResponse): void {
-        const allowedTools = ['continue_thinking', 'recall_context'];
+        const allowedTools = ['continue_thinking', 'recall_context', 'update_thinking_state'];
 
         const violatingTools = response.toolCalls
             .filter(tc => !allowedTools.includes(tc.name))
@@ -859,6 +1002,98 @@ IMPORTANT: When deciding to stop thinking (continueThinking=false), you MUST pro
             );
             throw new ThinkingPhaseToolViolationError(violatingTools);
         }
+    }
+
+    /**
+     * Extract state update from update_thinking_state tool call
+     */
+    private extractStateUpdate(response: ApiResponse): StateUpdate | null {
+        if (!response.toolCalls) {
+            return null;
+        }
+
+        const stateUpdateCall = response.toolCalls.find(
+            (tc: any) => tc.name === 'update_thinking_state'
+        );
+
+        if (!stateUpdateCall) {
+            return null;
+        }
+
+        try {
+            const args = JSON.parse(stateUpdateCall.arguments);
+            return {
+                updateType: args.updateType,
+                content: args.content,
+                reasoning: args.reasoning,
+                metadata: args.metadata,
+            };
+        } catch (e) {
+            this.logger.warn({ error: e }, 'Failed to parse update_thinking_state arguments');
+            return null;
+        }
+    }
+
+    /**
+     * Update thinking state based on extracted state update
+     */
+    private updateThinkingState(update: StateUpdate): void {
+        const entry: ThoughtEntry = {
+            thoughtNumber: this.sequentialState.thoughtNumber,
+            updateType: update.updateType,
+            content: update.content,
+            reasoning: update.reasoning,
+            timestamp: Date.now(),
+        };
+
+        this.thinkingState.thoughtLog.push(entry);
+
+        switch (update.updateType) {
+            case 'hypothesis':
+                this.thinkingState.hypothesis = update.content;
+                this.thinkingState.hypothesisVerified = false;
+                break;
+
+            case 'evidence':
+                this.thinkingState.evidence.push({
+                    source: update.metadata?.source || 'unknown',
+                    content: update.content,
+                    relevance: update.metadata?.source,
+                });
+                break;
+
+            case 'analysis':
+                this.thinkingState.analysisSteps.push({
+                    stepId: `analysis-${this.thinkingState.analysisSteps.length + 1}`,
+                    description: update.content,
+                    result: update.metadata?.source,
+                });
+                break;
+
+            case 'action':
+                this.thinkingState.actionPlan.push({
+                    stepId: `action-${this.thinkingState.actionPlan.length + 1}`,
+                    toolName: update.metadata?.toolName || 'unknown',
+                    parameters: update.metadata?.parameters || {},
+                    reasoning: update.reasoning,
+                    dependsOn: update.metadata?.dependsOn,
+                    status: 'planned',
+                });
+                break;
+
+            case 'conclusion':
+                this.thinkingState.conclusions.push(update.content);
+                break;
+
+            case 'question':
+                this.thinkingState.pendingQuestions.push(update.content);
+                break;
+        }
+
+        this.logger.debug(
+            { updateType: update.updateType, content: update.content },
+            'Thinking state updated'
+        );
     }
 
     /**

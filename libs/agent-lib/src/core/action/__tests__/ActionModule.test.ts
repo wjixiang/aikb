@@ -76,6 +76,8 @@ describe('ActionModule', () => {
             expect(config.apiRequestTimeout).toBe(60000);
             expect(config.maxToolRetryAttempts).toBe(3);
             expect(config.enableParallelExecution).toBe(true);
+            expect(config.maxApiRetryAttempts).toBe(3);
+            expect(config.apiRetryDelayMs).toBe(1000);
         });
     });
 
@@ -288,6 +290,197 @@ describe('ActionModule', () => {
             // Verify only first tool was executed
             expect(result.toolResults).toHaveLength(1);
             expect(result.toolResults[0].toolName).toBe('tool1');
+        });
+    });
+
+    describe('API retry mechanism', () => {
+        it('should retry API request on failure and push errors to TurnMemoryStore', async () => {
+            // Mock API response for successful retry
+            const mockApiResponse = {
+                toolCalls: [
+                    {
+                        id: 'test-tool-1',
+                        call_id: 'call-1',
+                        type: 'function_call' as const,
+                        name: 'test_tool',
+                        arguments: JSON.stringify({ param: 'value' }),
+                    },
+                ],
+                textResponse: 'Success after retry',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 100,
+                    completionTokens: 50,
+                    totalTokens: 150,
+                },
+            };
+
+            // First call fails, second succeeds
+            let callCount = 0;
+            vi.mocked(mockApiClient.makeRequest).mockImplementation(async () => {
+                callCount++;
+                if (callCount === 1) {
+                    throw new Error('Temporary API error');
+                }
+                return mockApiResponse;
+            });
+
+            vi.mocked(mockToolManager.executeTool).mockResolvedValue({
+                success: true,
+                result: 'tool result',
+            });
+
+            // Update config with short retry delay
+            actionModule.updateConfig({
+                maxApiRetryAttempts: 3,
+                apiRetryDelayMs: 10,
+            });
+
+            const result = await actionModule.performActionPhase(
+                'test workspace context',
+                'test system prompt',
+                [],
+                [],
+                () => false
+            );
+
+            // Verify API was called twice (first failed, second succeeded)
+            expect(mockApiClient.makeRequest).toHaveBeenCalledTimes(2);
+
+            // Verify errors were pushed to TurnMemoryStore for retry context
+            expect(mockTurnMemoryStore.pushErrors).toHaveBeenCalled();
+
+            // Verify result is from successful retry
+            expect(result.apiResponse).toEqual(mockApiResponse);
+        });
+
+        it('should exhaust retries and throw when API keeps failing', async () => {
+            // Mock API to always fail
+            vi.mocked(mockApiClient.makeRequest).mockRejectedValue(
+                new Error('Persistent API failure')
+            );
+
+            // Update config with max retries
+            actionModule.updateConfig({
+                maxApiRetryAttempts: 2,
+                apiRetryDelayMs: 10,
+            });
+
+            // Expect error to be thrown after retries exhausted
+            await expect(
+                actionModule.performActionPhase(
+                    'test workspace context',
+                    'test system prompt',
+                    [],
+                    [],
+                    () => false
+                )
+            ).rejects.toThrow('Persistent API failure');
+
+            // Verify API was called maxApiRetryAttempts + 1 times
+            expect(mockApiClient.makeRequest).toHaveBeenCalledTimes(3);
+        });
+
+        it('should include previous errors in retry prompt', async () => {
+            // Mock API response
+            const mockApiResponse = {
+                toolCalls: [
+                    {
+                        id: 'test-tool-1',
+                        call_id: 'call-1',
+                        type: 'function_call' as const,
+                        name: 'test_tool',
+                        arguments: JSON.stringify({ param: 'value' }),
+                    },
+                ],
+                textResponse: 'Success',
+                requestTime: 100,
+                tokenUsage: {
+                    promptTokens: 100,
+                    completionTokens: 50,
+                    totalTokens: 150,
+                },
+            };
+
+            let callCount = 0;
+            vi.mocked(mockApiClient.makeRequest).mockImplementation(async () => {
+                callCount++;
+                if (callCount === 1) {
+                    throw new Error('First error');
+                }
+                return mockApiResponse;
+            });
+
+            vi.mocked(mockToolManager.executeTool).mockResolvedValue({
+                success: true,
+                result: 'tool result',
+            });
+
+            actionModule.updateConfig({
+                maxApiRetryAttempts: 3,
+                apiRetryDelayMs: 10,
+            });
+
+            await actionModule.performActionPhase(
+                'test workspace context',
+                'test system prompt',
+                [],
+                [],
+                () => false
+            );
+
+            // Verify popErrors was called to get previous errors
+            expect(mockTurnMemoryStore.popErrors).toHaveBeenCalled();
+        });
+
+        it('should push error to TurnMemoryStore before retry', async () => {
+            let callCount = 0;
+            vi.mocked(mockApiClient.makeRequest).mockImplementation(async () => {
+                callCount++;
+                if (callCount === 1) {
+                    throw new Error('API Error 1');
+                }
+                return {
+                    toolCalls: [
+                        {
+                            id: 'test-tool-1',
+                            call_id: 'call-1',
+                            type: 'function_call' as const,
+                            name: 'test_tool',
+                            arguments: JSON.stringify({ param: 'value' }),
+                        },
+                    ],
+                    textResponse: 'Success',
+                    requestTime: 100,
+                    tokenUsage: { promptTokens: 10, completionTokens: 10, totalTokens: 20 },
+                };
+            });
+
+            vi.mocked(mockToolManager.executeTool).mockResolvedValue({
+                success: true,
+                result: 'tool result',
+            });
+
+            actionModule.updateConfig({
+                maxApiRetryAttempts: 2,
+                apiRetryDelayMs: 10,
+            });
+
+            await actionModule.performActionPhase(
+                'test workspace context',
+                'test system prompt',
+                [],
+                [],
+                () => false
+            );
+
+            // Verify pushErrors was called when API failed
+            const pushCalls = vi.mocked(mockTurnMemoryStore.pushErrors).mock.calls;
+            expect(pushCalls.length).toBeGreaterThan(0);
+
+            // Verify error message contains "API request failed"
+            const pushedErrors = pushCalls.flatMap(call => call[0] as Error[]);
+            expect(pushedErrors.some(e => e.message.includes('API request failed'))).toBe(true);
         });
     });
 

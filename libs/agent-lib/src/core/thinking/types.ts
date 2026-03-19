@@ -59,6 +59,98 @@ export interface ThinkingPhaseResult {
     shouldProceedToAction: boolean;
     /** Summary generated */
     summary?: string;
+    /** Thinking state built incrementally during thinking phase */
+    thinkingState?: ThinkingState;
+    /** Action plan extracted from thinking state */
+    actionPlan?: ActionStep[];
+}
+
+/**
+ * A single entry in the thought log
+ */
+export interface ThoughtEntry {
+    /** Thought number when this entry was created */
+    thoughtNumber: number;
+    /** Type of update */
+    updateType: 'hypothesis' | 'evidence' | 'analysis' | 'action' | 'conclusion' | 'question';
+    /** Content of the entry */
+    content: string;
+    /** Why this update was made */
+    reasoning: string;
+    /** When this entry was created */
+    timestamp: number;
+}
+
+/**
+ * Evidence gathered during thinking
+ */
+export interface Evidence {
+    /** Source of the evidence (e.g., tool name, article ID) */
+    source: string;
+    /** Content of the evidence */
+    content: string;
+    /** Relevance to the hypothesis */
+    relevance?: string;
+}
+
+/**
+ * A step in the analysis process
+ */
+export interface AnalysisStep {
+    /** Unique step identifier */
+    stepId: string;
+    /** Description of the analysis step */
+    description: string;
+    /** Result of this analysis step (filled after execution) */
+    result?: string;
+}
+
+/**
+ * A planned action to be executed in action phase
+ */
+export interface ActionStep {
+    /** Unique step identifier */
+    stepId: string;
+    /** Tool name to execute */
+    toolName: string;
+    /** Tool parameters */
+    parameters: Record<string, any>;
+    /** Why this action is needed */
+    reasoning: string;
+    /** Step IDs this action depends on */
+    dependsOn?: string[];
+    /** Status of this step */
+    status: 'planned' | 'completed' | 'failed';
+}
+
+/**
+ * Confidence level
+ */
+export type ConfidenceLevel = 'low' | 'medium' | 'high';
+
+/**
+ * Thinking state - incrementally built during thinking phase
+ * This is the shared state object that LLM updates via update_thinking_state tool
+ */
+export interface ThinkingState {
+    /** Current hypothesis or assumption */
+    hypothesis?: string;
+    /** Whether the hypothesis has been verified */
+    hypothesisVerified?: boolean;
+    /** Evidence gathered */
+    evidence: Evidence[];
+    /** Analysis steps performed */
+    analysisSteps: AnalysisStep[];
+    /** Action plan for execution */
+    actionPlan: ActionStep[];
+    /** Conclusions reached */
+    conclusions: string[];
+    /** Confidence in current analysis */
+    confidence: ConfidenceLevel;
+    /** Questions that need to be answered */
+    pendingQuestions: string[];
+    /** Log of all thought updates */
+    thoughtLog: ThoughtEntry[];
 }
 
 /**
@@ -145,14 +237,12 @@ export interface IThinkingModule {
     /**
      * Perform thinking phase
      * @param workspaceContext - Current workspace state
-     * @param taskContext - Optional task context (user's goal)
-     * @param previousRounds - Previous thinking rounds in current phase
+     * @param availableTools - Available action tools for planning (optional, for action plan generation)
      * @param lastToolResults - Results from previous tool executions
      */
     performThinkingPhase(
         workspaceContext: string,
-        // taskContext?: string,
-        // previousRounds?: ThinkingRound[],
+        availableTools?: any[],
         lastToolResults?: ToolCallResult[]
     ): Promise<ThinkingPhaseResult>;
 
