@@ -943,16 +943,48 @@ When you decide to use a tool, you MUST use the tool_calls format in your respon
 - When all tasks are complete, call attempt_completion to finish
 - If a tool fails, analyze the error and try an alternative approach`);
 
-    // 3.1 Tool descriptions
+    // 3.1 Tool descriptions (grouped by component with examples)
     const allTools = this.workspace.getAllTools();
     if (allTools.length > 0) {
-      const toolDescriptions = allTools.map(t => {
-        const tool = t.tool;
-        const desc = tool.desc || 'No description';
-        return `## ${tool.toolName}
-${desc}`;
-      }).join('\n\n');
-      parts.push(`# Available Tools\n${toolDescriptions}`);
+      // Group tools by component
+      const toolsByComponent = new Map<string, typeof allTools>();
+      for (const t of allTools) {
+        const key = t.componentKey || 'global';
+        const existing = toolsByComponent.get(key);
+        if (existing) {
+          existing.push(t);
+        } else {
+          toolsByComponent.set(key, [t]);
+        }
+      }
+
+      const componentSections: string[] = [];
+      for (const [componentKey, tools] of toolsByComponent) {
+        const toolDescriptions = tools.map(t => {
+          const tool = t.tool;
+          const desc = tool.desc || 'No description';
+
+          // Format examples if available
+          let examplesStr = '';
+          if (tool.examples && tool.examples.length > 0) {
+            const exampleLines = tool.examples.map(ex => {
+              const paramsStr = Object.entries(ex.params)
+                .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+                .join(', ');
+              return `**${ex.description}**\n\`\`\`json\n{${paramsStr}}\n\`\`\``;
+            }).join('\n');
+            examplesStr = `\n\n**Examples:**\n${exampleLines}`;
+          }
+
+          return `### ${tool.toolName}
+${desc}${examplesStr}`;
+        }).join('\n\n');
+
+        const componentLabel = componentKey === 'global' ? 'Global Tools' : `${componentKey} Tools`;
+        componentSections.push(`## ${componentLabel}\n\n${toolDescriptions}`);
+      }
+
+      parts.push(`# Available Tools\n\n${componentSections.join('\n\n---\n\n')}`);
     }
 
     // 4. Mail component (if available)
