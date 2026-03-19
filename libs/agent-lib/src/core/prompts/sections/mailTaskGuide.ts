@@ -28,8 +28,18 @@ You are operating in MAIL-DRIVEN TASK MODE. Tasks are received via email message
 After each task completion:
 1. Call \`getInbox\` to check for unread messages
 2. If there are unread messages, process them one by one
-3. Use \`sendMail\` to send results back to the sender
-4. Repeat until inbox is empty
+3. Use \`replyToMessage\` to send results back to the sender (creates a draft)
+4. Use \`sendDraft\` to send the reply draft
+5. Repeat until all task emails have been replied to
+
+## CRITICAL: Mandatory Reply Rule
+
+**BEFORE attempting to complete the task (using \`attempt_completion\`), you MUST reply to ALL task emails.**
+
+- Use \`replyToMessage\` to create a reply draft for each received task email
+- Use \`sendDraft\` to send each reply draft
+- Check the inbox view - if any message shows "[NOT REPLIED]", you MUST reply to it before calling \`attempt_completion\`
+- The \`attempt_completion\` tool will be BLOCKED if there are unreplied task emails remaining
 
 ## Important Notes
 
@@ -37,13 +47,15 @@ After each task completion:
 - Reply to the original message using \`replyToMessage\` to maintain conversation thread
 - Include relevant output/artifacts in your response
 - If a task cannot be completed, send an error response explaining why
+- You must reply to EVERY task email before attempting completion
 
 ## Available Mail Tools
 
 - \`getInbox\`: Get list of messages in your inbox
 - \`getUnreadCount\`: Get count of unread messages
 - \`sendMail\`: Send a new email message
-- \`replyToMessage\`: Reply to an existing message
+- \`replyToMessage\`: Create a reply draft (reply to existing message)
+- \`sendDraft\`: Send a reply draft
 - \`markAsRead\`: Mark a message as read
 
 `;

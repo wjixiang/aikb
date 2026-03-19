@@ -10,6 +10,22 @@ import {
 } from '../../statefulContext/globalTools.js';
 
 /**
+ * Callback types for mail reply tracking
+ */
+export type ReplySentCallback = (mailId: string) => void;
+export type GetUnrepliedMailIdsCallback = () => string[];
+export type GetCurrentUnrepliedMailIdsCallback = () => Promise<string[]>;
+
+/**
+ * Options for configuring reply tracking in GlobalToolProvider
+ */
+export interface ReplyTrackingOptions {
+    onReplySent?: ReplySentCallback;
+    getUnrepliedMailIds?: GetUnrepliedMailIdsCallback;
+    getCurrentUnrepliedMailIds?: GetCurrentUnrepliedMailIdsCallback;
+}
+
+/**
  * Global tool provider
  *
  * Provides always-available global tools:
@@ -32,6 +48,13 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
      */
     private onToolExecuted?: ToolExecutedCallback;
 
+    /**
+     * Callbacks for mail reply tracking
+     */
+    private onReplySent?: ReplySentCallback;
+    private getUnrepliedMailIds?: GetUnrepliedMailIdsCallback;
+    private getCurrentUnrepliedMailIds?: GetCurrentUnrepliedMailIdsCallback;
+
     constructor(onToolExecuted?: ToolExecutedCallback) {
         super();
         this.tools = new Map();
@@ -44,6 +67,16 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
      */
     setOnToolExecuted(callback: ToolExecutedCallback): void {
         this.onToolExecuted = callback;
+    }
+
+    /**
+     * Set callbacks for mail reply tracking
+     * Used by Agent to track replies and check for unreplied emails
+     */
+    setReplyTrackingCallbacks(callbacks: ReplyTrackingOptions): void {
+        this.onReplySent = callbacks.onReplySent;
+        this.getUnrepliedMailIds = callbacks.getUnrepliedMailIds;
+        this.getCurrentUnrepliedMailIds = callbacks.getCurrentUnrepliedMailIds;
     }
 
     /**
@@ -86,12 +119,42 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
             // Execute the appropriate global tool
             let result: any;
             switch (name) {
-                case 'attempt_completion':
+                case 'attempt_completion': {
+                    // Check for unreplied emails BEFORE allowing completion
+                    // Use async callback to get real-time state from mailbox
+                    let unrepliedIds: string[] = [];
+                    if (this.getCurrentUnrepliedMailIds) {
+                        unrepliedIds = await this.getCurrentUnrepliedMailIds();
+                    } else {
+                        // Fallback to synchronous cache-based check
+                        unrepliedIds = this.getUnrepliedMailIds?.() || [];
+                    }
+
+                    if (unrepliedIds.length > 0) {
+                        result = {
+                            success: false,
+                            completed: false,
+                            result: JSON.stringify({
+                                error: 'UnrepliedMailError',
+                                unrepliedMailIds: unrepliedIds,
+                                message: `Cannot complete: ${unrepliedIds.length} unreplied email(s) remaining. Reply to all emails before completing.`,
+                            }),
+                        };
+                        // Notify callback
+                        if (this.onToolExecuted) {
+                            this.onToolExecuted(name, params, result, false, 'global');
+                        }
+                        return result;
+                    }
                     result = this.handleAttemptCompletion(params);
                     break;
+                }
                 default:
                     throw new Error(`Unknown global tool: ${name}`);
             }
+
+            // Note: replyToMessage and sendMail tracking is handled by ComponentToolProvider
+            // The Agent tracks replies via memoryModule analysis after each requestLoop
 
             // Notify callback if registered (for real-time tool result updates)
             if (this.onToolExecuted) {

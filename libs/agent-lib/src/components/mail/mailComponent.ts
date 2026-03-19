@@ -24,7 +24,6 @@ import {
   type MailToolName,
   type MailToolReturnTypes,
   type ToolReturnType,
-  type SendMailParams,
   type GetInboxParams,
   type GetUnreadCountParams,
   type MessageIdParams,
@@ -37,6 +36,7 @@ import {
   type DeleteDraftParams,
   type InsertDraftContentParams,
   type ReplaceDraftContentParams,
+  type SendDraftParams,
 } from './mailSchemas';
 
 /**
@@ -197,6 +197,8 @@ export class MailComponent extends ToolComponent {
     taskId?: string;
     attachments?: DraftAttachment[];
     payload?: Record<string, unknown>;
+    // Reply tracking - if set, this draft is a reply to the specified message
+    inReplyTo?: string;
     createdAt: string;
     updatedAt: string;
   }> = new Map();
@@ -308,7 +310,6 @@ export class MailComponent extends ToolComponent {
 
     // Import tool schemas from mailSchemas
     const toolEntries: [string, Tool][] = [
-      ['sendMail', mailToolSchemas.sendMail],
       ['getInbox', mailToolSchemas.getInbox],
       ['getUnreadCount', mailToolSchemas.getUnreadCount],
       ['markAsRead', mailToolSchemas.markAsRead],
@@ -325,6 +326,7 @@ export class MailComponent extends ToolComponent {
       ['deleteDraft', mailToolSchemas.deleteDraft],
       ['insertDraftContent', mailToolSchemas.insertDraftContent],
       ['replaceDraftContent', mailToolSchemas.replaceDraftContent],
+      ['sendDraft', mailToolSchemas.sendDraft],
     ];
 
     toolEntries.forEach(([name, tool]) => {
@@ -354,8 +356,6 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> => {
     try {
       switch (toolName) {
-        case 'sendMail':
-          return await this.handleSendMail(params as SendMailParams);
         case 'getInbox':
           return await this.handleGetInbox(params as GetInboxParams);
         case 'getUnreadCount':
@@ -396,6 +396,8 @@ export class MailComponent extends ToolComponent {
           return this.handleInsertDraftContent(params as InsertDraftContentParams);
         case 'replaceDraftContent':
           return this.handleReplaceDraftContent(params as ReplaceDraftContentParams);
+        case 'sendDraft':
+          return this.handleSendDraft(params as SendDraftParams);
         default:
           return {
             data: { error: `Unknown tool: ${toolName}` },
@@ -411,38 +413,6 @@ export class MailComponent extends ToolComponent {
       };
     }
   };
-
-  private async handleSendMail(
-    params: SendMailParams,
-  ): Promise<ToolCallResult<any>> {
-    const from = this.config.defaultAddress;
-    if (!from) {
-      return {
-        data: { error: 'No default address configured' },
-        summary: '[Mail] Error: No default address configured',
-      };
-    }
-
-    const mail: OutgoingMail = {
-      from,
-      to: params.to,
-      subject: params.subject,
-      body: params.body,
-      priority: params.priority || 'normal',
-      taskId: params.taskId,
-      attachments: params.attachments,
-      payload: params.payload,
-    };
-
-    const result = await this.sendMail(mail);
-
-    return {
-      data: result,
-      summary: result.success
-        ? `[Mail] Sent to ${params.to}: "${params.subject}"`
-        : `[Mail] Failed to send: ${result.error}`,
-    };
-  }
 
   private async handleGetInbox(
     params: GetInboxParams,
@@ -592,24 +562,102 @@ export class MailComponent extends ToolComponent {
       };
     }
 
-    const reply: OutgoingMail = {
+    // Create a draft reply instead of sending directly
+    const draft = {
       from: this.config.defaultAddress || '',
       to: originalMessage.from,
       subject: `Re: ${originalMessage.subject}`,
       body: params.body,
-      inReplyTo: params.messageId,
+      priority: 'normal' as const,
       taskId: originalMessage.taskId,
       attachments: params.attachments,
       payload: params.payload,
+      // Store inReplyTo so sendDraft knows to send as a reply
+      inReplyTo: params.messageId,
     };
 
-    const result = await this.sendMail(reply);
+    const result = this.saveDraft(draft);
+
+    if (!result.success) {
+      return {
+        data: result,
+        summary: `[Mail] Failed to create reply draft: ${result.error}`,
+      };
+    }
+
+    return {
+      data: {
+        success: true,
+        draftId: result.draftId,
+        messageId: undefined,
+        inReplyTo: params.messageId,
+      },
+      summary: `[Mail] Reply draft created for "${originalMessage.subject}". Use sendDraft to send.`,
+    };
+  }
+
+  private async handleSendDraft(
+    params: SendDraftParams,
+  ): Promise<ToolCallResult<any>> {
+    // Find the draft
+    const draft = this.draftsStore.get(params.draftId);
+    if (!draft) {
+      return {
+        data: { error: `Draft ${params.draftId} not found` },
+        summary: '[Mail] Error: Draft not found',
+      };
+    }
+
+    // Determine the inReplyTo - use param if provided, otherwise use draft's inReplyTo
+    const inReplyTo = params.inReplyTo || draft.inReplyTo;
+
+    // Prepare the mail
+    const mail: OutgoingMail = {
+      from: draft.from,
+      to: draft.to,
+      subject: draft.subject,
+      body: draft.body,
+      priority: draft.priority as 'low' | 'normal' | 'high' | 'urgent',
+      taskId: draft.taskId,
+      attachments: draft.attachments?.map(a => a.url || a.name),
+      payload: draft.payload,
+    };
+
+    // If this is a reply, add inReplyTo
+    if (inReplyTo) {
+      mail.inReplyTo = inReplyTo;
+    }
+
+    // Send the mail
+    const result = await this.sendMail(mail);
+
+    if (result.success) {
+      // Delete the draft after successful sending
+      this.draftsStore.delete(params.draftId);
+      this._setState({
+        drafts: Array.from(this.draftsStore.values()).map(d => ({
+          draftId: d.draftId,
+          to: d.to,
+          subject: d.subject,
+          body: d.body,
+          priority: d.priority,
+          taskId: d.taskId,
+          attachments: d.attachments,
+          payload: d.payload,
+          createdAt: d.createdAt,
+          updatedAt: d.updatedAt,
+        })),
+        draftsTotal: this.draftsStore.size,
+      });
+    }
 
     return {
       data: result,
       summary: result.success
-        ? `[Mail] Replied to "${originalMessage.subject}"`
-        : `[Mail] Failed to send reply: ${result.error}`,
+        ? inReplyTo
+          ? `[Mail] Reply sent successfully`
+          : `[Mail] Draft sent: "${draft.subject}"`
+        : `[Mail] Failed to send: ${result.error}`,
     };
   }
 
@@ -1373,9 +1421,10 @@ export class MailComponent extends ToolComponent {
 
     // Stats
     const stateMessages = this.state.messages || [];
+    const repliedCount = Array.from(this.draftsStore.values()).filter(d => d.inReplyTo).length;
     container.addChild(
       new tp({
-        content: `Messages: ${stateMessages.length}/${this.state.total} | Unread: ${this.state.unread} | Starred: ${this.state.starred}`,
+        content: `Messages: ${stateMessages.length}/${this.state.total} | Replied: ${repliedCount} | Starred: ${this.state.starred}`,
         indent: 1,
         textStyle: { bold: true },
       }),
@@ -1389,7 +1438,13 @@ export class MailComponent extends ToolComponent {
 
       stateMessages.forEach((msg, index) => {
         const starMarker = msg.status.starred ? '[STARRED]' : '';
-        const readMarker = msg.status.read ? '[UNREAD]' : '[READ]';
+
+        // Check if we've created a reply draft for this message
+        const hasReplyDraft = Array.from(this.draftsStore.values()).some(
+          d => d.inReplyTo === msg.messageId
+        );
+        const replyMarker = hasReplyDraft ? '[REPLIED]' : '[NOT REPLIED]';
+
         const priorityMarker =
           msg.priority === 'urgent'
             ? ' [URGENT]'
@@ -1399,7 +1454,7 @@ export class MailComponent extends ToolComponent {
 
         container.addChild(
           new tp({
-            content: `${readMarker}${starMarker}${index + 1}. ${msg.subject}${priorityMarker}`,
+            content: `${replyMarker}${starMarker}${index + 1}. ${msg.subject}${priorityMarker}`,
             indent: 1,
             textStyle: { bold: !msg.status.read },
           }),
@@ -1452,8 +1507,9 @@ export class MailComponent extends ToolComponent {
 
     // Stats
     const inboxMessages = this.currentInbox?.messages || [];
+    const repliedCount = Array.from(this.draftsStore.values()).filter(d => d.inReplyTo).length;
     const mailStatusBox = new tp({
-      content: `Messages: ${inboxMessages.length}/${this.currentInbox.total} | Unread: ${this.currentInbox.unread} | Starred: ${this.currentInbox.starred}`,
+      content: `Messages: ${inboxMessages.length}/${this.currentInbox.total} | Replied: ${repliedCount} | Starred: ${this.currentInbox.starred}`,
       indent: 1,
     });
 
@@ -1467,7 +1523,13 @@ export class MailComponent extends ToolComponent {
 
       inboxMessages.forEach((msg, index) => {
         const starMarker = msg.status.starred ? '[STARRED]' : '';
-        const readMarker = msg.status.read ? '[UNDREAD]' : '[READ]';
+
+        // Check if we've created a reply draft for this message
+        const hasReplyDraft = Array.from(this.draftsStore.values()).some(
+          d => d.inReplyTo === msg.messageId
+        );
+        const replyMarker = hasReplyDraft ? '[REPLIED]' : '[NOT REPLIED]';
+
         const priorityMarker =
           msg.priority === 'urgent'
             ? ' [URGENT]'
@@ -1477,7 +1539,7 @@ export class MailComponent extends ToolComponent {
 
         container.addChild(
           new tp({
-            content: `${readMarker}${starMarker}${index + 1}. ${msg.subject}${priorityMarker}`,
+            content: `${replyMarker}${starMarker}${index + 1}. ${msg.subject}${priorityMarker}`,
             indent: 1,
             textStyle: { bold: !msg.status.read },
           }),

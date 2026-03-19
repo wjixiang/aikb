@@ -124,6 +124,10 @@ export class Agent {
   private _consecutiveErrors = 0;
   private _currentPollInterval: number;
 
+  // Mail reply tracking state
+  private _receivedMailIds: Set<string> = new Set();
+  private _repliedMailIds: Set<string> = new Set();
+
   // Memory module (dependency injected, always present)
   private memoryModule: IMemoryModule;
 
@@ -277,9 +281,143 @@ export class Agent {
       this._status = 'running';
     }
 
+    // Track received emails before processing
+    await this.trackReceivedEmails();
+
     // Trigger agent to check mailbox
     // The LLM will check inbox, process tasks, and send results
     await this.requestLoop('Check your inbox for new task emails and process them.');
+  }
+
+  /**
+   * Track all received emails for mandatory reply verification
+   * Called at the start of each mail task to record which emails need replies
+   */
+  private async trackReceivedEmails(): Promise<void> {
+    const mailComponent = this.getMailComponent();
+    if (!mailComponent) {
+      return;
+    }
+
+    try {
+      // Get all messages to build the full set of emails received before this task
+      const result = await mailComponent.handleToolCall('getInbox', {
+        limit: 100,
+        unreadOnly: false,
+      });
+
+      if (result?.data?.messages) {
+        // Record all message IDs received at the start of this task
+        // These are the emails that MUST be replied to before completion
+        const messageIds = result.data.messages.map((m: any) => m.messageId);
+        this._receivedMailIds = new Set(messageIds);
+        this._repliedMailIds.clear();
+        this.logger.info(`[MailReplyCheck] Tracking ${messageIds.length} received emails for mandatory reply`);
+      }
+    } catch (error) {
+      this.logger.warn(`[MailReplyCheck] Failed to track received emails: ${error}`);
+    }
+  }
+
+  /**
+   * Check current unreplied emails by fetching fresh inbox data
+   * This is called at attempt_completion time to get accurate state
+   */
+  public async getCurrentUnrepliedMailIds(): Promise<string[]> {
+    const mailComponent = this.getMailComponent();
+    if (!mailComponent) {
+      return [];
+    }
+
+    try {
+      const result = await mailComponent.handleToolCall('getInbox', {
+        limit: 100,
+        unreadOnly: false,
+      });
+
+      if (result?.data?.messages) {
+        // Get messages that were in the original received set but haven't been replied to
+        // A message is considered "replied" if there's a reply with inReplyTo pointing to it
+        // For simplicity, we check if the message has been read (status.read)
+        // A more robust implementation would check the sent folder for replies
+        const currentMessageIds = new Set(result.data.messages.map((m: any) => m.messageId));
+
+        // Return messages that:
+        // 1. Were in our tracking set (received before/during this task)
+        // 2. Are still in the inbox (not deleted)
+        // 3. Have not been marked as read (indicating they haven't been processed)
+        const unreplied: string[] = [];
+        for (const msgId of this._receivedMailIds) {
+          if (currentMessageIds.has(msgId)) {
+            const msg = result.data.messages.find((m: any) => m.messageId === msgId);
+            if (msg && !msg.status?.read) {
+              unreplied.push(msgId);
+            }
+          }
+        }
+        return unreplied;
+      }
+    } catch (error) {
+      this.logger.warn(`[MailReplyCheck] Failed to check unreplied emails: ${error}`);
+    }
+    return [];
+  }
+
+  /**
+   * Mark a mail as replied
+   * Called when the agent sends a reply to an email
+   */
+  public markMailAsReplied(mailId: string): void {
+    if (this._receivedMailIds.has(mailId)) {
+      this._repliedMailIds.add(mailId);
+      this.logger.info(`[MailReplyCheck] Marked ${mailId} as replied (${this._repliedMailIds.size}/${this._receivedMailIds.size})`);
+    }
+  }
+
+  /**
+   * Get list of unreplied mail IDs (from cache)
+   */
+  public getUnrepliedMailIds(): string[] {
+    return Array.from(this._receivedMailIds).filter(id => !this._repliedMailIds.has(id));
+  }
+
+  /**
+   * Check if all received emails have been replied to
+   */
+  public hasAllReplied(): boolean {
+    return this.getUnrepliedMailIds().length === 0;
+  }
+
+  /**
+   * Check if in mail-driven mode with pending replies
+   */
+  public hasPendingReplies(): boolean {
+    return this._isMailDrivenRunning && !this.hasAllReplied();
+  }
+
+  /**
+   * Set up mail reply tracking callbacks for GlobalToolProvider
+   * This enables the mandatory reply check before allowing attempt_completion
+   */
+  private setupMailReplyTracking(): void {
+    try {
+      const toolManager = this.workspace.getToolManager();
+      const globalProvider = toolManager.getProvider('global-tools') as any;
+
+      if (globalProvider && typeof globalProvider.setReplyTrackingCallbacks === 'function') {
+        globalProvider.setReplyTrackingCallbacks({
+          onReplySent: (mailId: string) => this.markMailAsReplied(mailId),
+          getUnrepliedMailIds: () => this.getUnrepliedMailIds(),
+          // Also provide async version for real-time checking
+          getCurrentUnrepliedMailIds: () => this.getCurrentUnrepliedMailIds(),
+        });
+        this.logger.info('[MailReplyCheck] Reply tracking callbacks set up successfully');
+      } else {
+        this.logger.warn('[MailReplyCheck] GlobalToolProvider not found or does not support reply tracking');
+      }
+    } catch (error) {
+      this.logger.warn(`[MailReplyCheck] Failed to set up reply tracking: ${error}`);
+    }
   }
 
   /**
@@ -309,6 +447,10 @@ export class Agent {
     this._mailDrivenConfig.pollInterval = pollInterval;
     this._consecutiveErrors = 0;
     this._lastUnreadCount = 0;
+
+    // Set up mail reply tracking callbacks for GlobalToolProvider
+    this.setupMailReplyTracking();
+
     // Don't set status to 'running' here - stay idle until actually processing a task
     // _status remains whatever it was before (typically 'idle')
 

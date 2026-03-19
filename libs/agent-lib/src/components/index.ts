@@ -63,7 +63,6 @@ export {
 
 export {
   mailToolSchemas,
-  sendMailParamsSchema,
   getInboxParamsSchema,
   getUnreadCountParamsSchema,
   messageIdParamsSchema,

@@ -15,9 +15,6 @@ export type { SendResult, InboxResult, StorageResult, MailAddress, MailComponent
  * Tool parameter schemas
  */
 
-// SendMail parameters
-export type SendMailParams = z.infer<typeof sendMailParamsSchema>;
-
 // GetInbox parameters
 export type GetInboxParams = z.infer<typeof getInboxParamsSchema>;
 
@@ -54,15 +51,8 @@ export type InsertDraftContentParams = z.infer<typeof insertDraftContentParamsSc
 // ReplaceDraftContent parameters
 export type ReplaceDraftContentParams = z.infer<typeof replaceDraftContentParamsSchema>;
 
-export const sendMailParamsSchema = z.object({
-  to: z.string().describe('Recipient address (e.g., "pubmed@expert", "analysis@expert")'),
-  subject: z.string().describe('Email subject line'),
-  body: z.string().describe('Email body content'),
-  priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal').describe('Message priority'),
-  taskId: z.string().optional().describe('Associated task ID'),
-  attachments: z.array(z.string()).optional().describe('S3 keys of attachments'),
-  payload: z.record(z.unknown()).optional().describe('Additional JSON payload data'),
-});
+// SendDraft parameters
+export type SendDraftParams = z.infer<typeof sendDraftParamsSchema>;
 
 export const getInboxParamsSchema = z.object({
   address: z.string().optional().describe('Mailbox address to query (defaults to component defaultAddress)'),
@@ -146,11 +136,17 @@ export const replaceDraftContentParamsSchema = z.object({
   replaceAll: z.boolean().default(false).describe('Replace all occurrences or just the first one'),
 });
 
+// SendDraft parameters - send a draft (optionally as a reply)
+export const sendDraftParamsSchema = z.object({
+  draftId: z.string().describe('ID of the draft to send'),
+  // Optional: override the reply-to target when sending
+  inReplyTo: z.string().optional().describe('Message ID this draft is replying to (auto-detected from draft if not provided)'),
+});
+
 /**
  * Union type for all mail tool parameters
  */
 export type MailToolParams =
-  | SendMailParams
   | GetInboxParams
   | GetUnreadCountParams
   | MessageIdParams
@@ -159,17 +155,16 @@ export type MailToolParams =
   | RegisterAddressParams
   | SaveDraftParams
   | EditDraftParams
-  | GetDraftsParams;
+  | GetDraftsParams
+  | DeleteDraftParams
+  | InsertDraftContentParams
+  | ReplaceDraftContentParams
+  | SendDraftParams;
 
 /**
  * Tool schemas map
  */
 export const mailToolSchemas = {
-  sendMail: {
-    toolName: 'sendMail',
-    desc: 'Send an email message to another agent or expert.',
-    paramsSchema: sendMailParamsSchema,
-  },
   getInbox: {
     toolName: 'getInbox',
     desc: 'Get inbox messages with optional filtering.',
@@ -250,6 +245,11 @@ export const mailToolSchemas = {
     desc: 'Replace specific content in a draft body with new content',
     paramsSchema: replaceDraftContentParamsSchema,
   },
+  sendDraft: {
+    toolName: 'sendDraft',
+    desc: 'Send a draft email. If the draft was created as a reply (has inReplyTo), it will be sent as a reply.',
+    paramsSchema: sendDraftParamsSchema,
+  },
 };
 
 /**
@@ -262,7 +262,6 @@ export type MailToolName = keyof typeof mailToolSchemas;
  * Used with MailToolName to get the return type for a specific tool
  */
 export interface MailToolReturnTypes {
-  sendMail: SendResult;
   getInbox: InboxResult;
   getUnreadCount: { count: number };
   markAsRead: StorageResult;
@@ -279,6 +278,7 @@ export interface MailToolReturnTypes {
   deleteDraft: StorageResult;
   insertDraftContent: StorageResult;
   replaceDraftContent: StorageResult;
+  sendDraft: SendResult;
 }
 
 /**

@@ -145,3 +145,18 @@ export class ToolExecutionFailedError extends AgentError {
     super(`Tool execution failed for '${toolName}': ${message}`, cause);
   }
 }
+
+/**
+ * Error thrown when agent attempts to complete with unreplied emails pending
+ * Used in mail-driven mode to enforce mandatory reply policy
+ */
+export class UnrepliedMailError extends AgentError {
+  readonly code = 'UNREPLIED_MAIL';
+
+  constructor(public readonly unrepliedMailIds: string[]) {
+    super(
+      `Cannot complete: ${unrepliedMailIds.length} unreplied email(s) remaining. Reply to all emails before completing.`,
+    );
+    this.name = 'UnrepliedMailError';
+  }
+}
