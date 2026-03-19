@@ -403,15 +403,45 @@ export interface SOPDefinition {
     /** Capability overview */
     overview: string;
     /** Responsibilities */
-    responsibilities: string[];
+    responsibilities?: string[];
     /** Constraints */
     constraints?: string[];
     /** Parameter definitions */
     parameters?: ParameterDefinition[];
     /** Workflow steps */
-    steps: StepDefinition[];
+    steps?: StepDefinition[];
     /** Examples */
     examples?: Example[];
+    // Extended SOP fields for domain-specific guidance
+    /** Search strategy with thinking/action/output phases */
+    searchStrategy?: {
+        thinking?: { description?: string; details?: string };
+        action?: { description?: string; details?: string };
+        output?: { description?: string; details?: string };
+    };
+    /** PICO framework guide for evidence-based searches */
+    picoGuide?: {
+        description?: string;
+        population?: string;
+        intervention?: string;
+        comparison?: string;
+        outcome?: string;
+        studyTypes?: string[];
+    };
+    /** Common filter presets */
+    commonFilters?: {
+        studyDesign?: string[];
+        language?: string[];
+        dateRange?: string[];
+        availability?: string[];
+        species?: string[];
+    };
+    /** Error handling guidance */
+    errorHandling?: {
+        noResults?: string[];
+        tooManyResults?: string[];
+        apiErrors?: string[];
+    };
 }
 
 /**
