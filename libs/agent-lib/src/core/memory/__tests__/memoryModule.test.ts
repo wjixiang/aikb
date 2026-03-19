@@ -1,5 +1,4 @@
 import { MemoryModule } from "../MemoryModule";
-import { ThinkingModule } from "../../thinking/ThinkingModule";
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from "../../api-client";
 import { ThinkingRound } from "../Turn";
 import { Logger } from "pino";
@@ -61,13 +60,10 @@ const mockTurnStore = new TurnMemoryStore();
 
 describe('MemoryModule', () => {
     let memoryModule: MemoryModule;
-    let thinkingModule: ThinkingModule;
 
     beforeEach(() => {
-        // Create ThinkingModule first
-        thinkingModule = new ThinkingModule(mockClient, mockLogger, {}, mockTurnStore);
-        // Create MemoryModule with ThinkingModule dependency
-        memoryModule = new MemoryModule(mockLogger, {}, mockTurnStore, thinkingModule);
+        // Create MemoryModule
+        memoryModule = new MemoryModule(mockLogger, {}, mockClient);
     });
 
     it('should perform thinking phase single time', async () => {

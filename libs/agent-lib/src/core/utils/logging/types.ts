@@ -2,6 +2,8 @@
  * @fileoverview Core type definitions for the compact logging system
  */
 
+import pino from "pino";
+
 /**
  * Represents a compact log entry format optimized for storage and transmission
  */
@@ -67,51 +69,4 @@ export interface ICompactTransport {
 /**
  * Interface for logger implementations
  */
-export interface ILogger {
-  /**
-   * Logs a debug message
-   * @param message - The message to log
-   * @param meta - Optional metadata
-   */
-  debug(message: string, meta?: LogMeta): void;
-
-  /**
-   * Logs an info message
-   * @param message - The message to log
-   * @param meta - Optional metadata
-   */
-  info(message: string, meta?: LogMeta): void;
-
-  /**
-   * Logs a warning message
-   * @param message - The message to log
-   * @param meta - Optional metadata
-   */
-  warn(message: string, meta?: LogMeta): void;
-
-  /**
-   * Logs an error message
-   * @param message - The message or error to log
-   * @param meta - Optional metadata
-   */
-  error(message: string | Error, meta?: LogMeta): void;
-
-  /**
-   * Logs a fatal error message
-   * @param message - The message or error to log
-   * @param meta - Optional metadata
-   */
-  fatal(message: string | Error, meta?: LogMeta): void;
-
-  /**
-   * Creates a child logger with inherited metadata
-   * @param meta - Metadata to merge with parent's metadata
-   * @returns A new logger instance with combined metadata
-   */
-  child(meta: LogMeta): ILogger;
-
-  /**
-   * Closes the logger and its transport
-   */
-  close(): void;
-}
+export type ILogger = pino.Logger

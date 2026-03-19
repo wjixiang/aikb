@@ -92,7 +92,6 @@ export type MessageAddedCallback = (
 
 /**
  * Configuration for the memory module
- * Note: Thinking-related configuration has been moved to ThinkingModuleConfig
  */
 export interface MemoryModuleConfig {
   /** Enable context recall */
@@ -101,6 +100,18 @@ export interface MemoryModuleConfig {
   maxRecallContexts: number;
   /** Maximum recalled conversation messages to inject (default: 20) */
   maxRecalledMessages: number;
+  /** Maximum tokens in context before compression (default: 100000) */
+  maxContextTokens?: number;
+  /** Compress when at this percentage of maxContextTokens (default: 0.8) */
+  contextCompressionRatio?: number;
+  /** Target token count after compression (default: 60% of maxContextTokens) */
+  compressionTargetTokens?: number;
+  /** Use LLM for summarization (default: true) */
+  enableLLMSummarization?: boolean;
+  /** Max tokens to send for LLM summarization (default: 15000) */
+  maxTokensForSummary?: number;
+  /** Model to use for summarization */
+  summaryModel?: string;
 }
 
 /**
@@ -111,56 +122,106 @@ export type ThinkingPhaseResult = import('../thinking/types.js').ThinkingPhaseRe
 
 /**
  * Interface for MemoryModule
- * Defines the contract for turn-based memory management
+ * Defines the contract for simplified memory management
  */
 export interface IMemoryModule {
+  // ==================== Message Management ====================
+
   /**
-   * 
-   * @param toolName 
-   * @param success 
-   * @param result 
+   * Add message to storage
+   */
+  addMessage(message: ApiMessage): Promise<ApiMessage>;
+
+  /**
+   * Record tool call result (no-op in simplified mode)
    */
   recordToolCall(toolName: string, success: boolean, result: any): void;
 
-  getHistoryForPrompt(): ApiMessage[];
-
   /**
-   * Start a new turn
-   */
-  startTurn(workspaceContext: string, taskContext?: string): Turn;
-
-  /**
-   * Complete current turn
-   */
-  completeTurn(): void;
-
-  /**
-   * Perform thinking phase (updates current turn)
-   */
-  performThinkingPhase(workspaceContext: string, toolResults?: ToolCallResult[]): Promise<ThinkingPhaseResult>;
-
-  /**
-   * Add message to current turn
-   */
-  addMessage(message: ApiMessage): ApiMessage;
-
-  /**
-   * Get all historical messages (flattened from all turns)
+   * Get all historical messages
    */
   getAllMessages(): ApiMessage[];
 
   /**
-   * Get current turn
+   * Get history for prompt injection
    */
-  getCurrentTurn(): Turn | null;
+  getHistoryForPrompt(): ApiMessage[];
+
+  // ==================== Error Management ====================
 
   /**
-   * Get the turn store
+   * Push errors to be saved for later retrieval
    */
-  getTurnStore(): ITurnMemoryStore;
+  pushErrors(errors: Error[]): void;
+
+  /**
+   * Pop and return all saved errors
+   */
+  popErrors(): Error[];
+
+  /**
+   * Get saved errors without clearing them
+   */
+  getErrors(): Error[];
+
+  /**
+   * Clear all saved errors
+   */
+  clearErrors(): void;
+
+  // ==================== Configuration ====================
 
   /**
    * Get current configuration
    */
   getConfig(): MemoryModuleConfig;
+
+  /**
+   * Update configuration
+   */
+  updateConfig(config: Partial<MemoryModuleConfig>): void;
+
+  // ==================== Import/Export ====================
+
+  /**
+   * Export memory state
+   */
+  export(): any;
+
+  /**
+   * Import memory state
+   */
+  import(data: any): void;
+
+  /**
+   * Clear all memory
+   */
+  clear(): void;
+
+  // ==================== No-op Methods (deprecated) ====================
+
+  /**
+   * @deprecated No-op in simplified mode
+   */
+  startTurn(workspaceContext: string, taskContext?: string): any;
+
+  /**
+   * @deprecated No-op in simplified mode
+   */
+  completeTurn(): void;
+
+  /**
+   * @deprecated Returns null in simplified mode
+   */
+  getCurrentTurn(): any;
+
+  /**
+   * @deprecated Returns null in simplified mode
+   */
+  getTurnStore(): any;
+
+  /**
+   * @deprecated No-op in simplified mode
+   */
+  performThinkingPhase(workspaceContext: string, toolResults?: any[]): Promise<any>;
 }

@@ -42,36 +42,28 @@ export {
 // Export schema types for external use
 export {
   mailToolSchemas,
-  sendMailParamsSchema,
   getInboxParamsSchema,
   getUnreadCountParamsSchema,
   messageIdParamsSchema,
   searchMessagesParamsSchema,
   replyToMessageParamsSchema,
   registerAddressParamsSchema,
-  saveDraftParamsSchema,
   editDraftParamsSchema,
   getDraftsParamsSchema,
   deleteDraftParamsSchema,
-  insertDraftContentParamsSchema,
-  replaceDraftContentParamsSchema,
 } from './mailSchemas.js';
 
 // Export parameter types derived from Zod schemas
 export type {
-  SendMailParams,
   GetInboxParams,
   GetUnreadCountParams,
   MessageIdParams,
   SearchMessagesParams,
   ReplyToMessageParams,
   RegisterAddressParams,
-  SaveDraftParams,
   EditDraftParams,
   GetDraftsParams,
   DeleteDraftParams,
-  InsertDraftContentParams,
-  ReplaceDraftContentParams,
   MailToolParams,
   MailToolName,
   MailToolReturnTypes,

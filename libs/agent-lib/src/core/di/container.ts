@@ -6,9 +6,6 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
 import { TurnMemoryStore } from '../memory/TurnMemoryStore.js';
 import { createObservableTurnMemoryStore, TurnStoreObserverCallbacks } from '../memory/ObservableTurnMemoryStore.js';
-import { ThinkingModule } from '../thinking/ThinkingModule.js';
-import { defaultThinkingConfig } from '../thinking/types.js';
-import { ActionModule, defaultActionConfig } from '../action/ActionModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
 // Example components moved to agent-lib components module
@@ -20,15 +17,11 @@ import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../s
 import type { AgentConfig, AgentPrompt } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
-import type { ThinkingModuleConfig } from '../thinking/types.js';
-import type { ActionModuleConfig } from '../action/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
-import type { IThinkingModule } from '../thinking/types.js';
-import type { IActionModule } from '../action/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { createObservableAgent } from '../agent/ObservableAgent.js';
 import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
@@ -213,46 +206,6 @@ export class AgentContainer {
         this.container.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
         this.container.bind<IMemoryModule>(TYPES.IMemoryModule).to(MemoryModule).inRequestScope();
         this.container.bind(TYPES.ITurnMemoryStore).to(TurnMemoryStore).inRequestScope();
-        this.container
-            .bind<IThinkingModule>(TYPES.IThinkingModule)
-            .to(ThinkingModule)
-            .inRequestScope();
-        this.container
-            .bind(TYPES.ThinkingModule)
-            .to(ThinkingModule)
-            .inRequestScope();
-
-        // ThinkingModule configuration - merge with apiRequestTimeout from AgentConfig
-        this.container
-            .bind<ThinkingModuleConfig>(TYPES.ThinkingModuleConfig)
-            .toDynamicValue(() => {
-                const config = this.container.get<AgentConfig>(TYPES.AgentConfig);
-                return {
-                    ...defaultThinkingConfig,
-                    apiRequestTimeout: config.apiRequestTimeout,
-                };
-            });
-
-        // Action Module
-        this.container
-            .bind<IActionModule>(TYPES.IActionModule)
-            .to(ActionModule)
-            .inRequestScope();
-        this.container
-            .bind(TYPES.ActionModule)
-            .to(ActionModule)
-            .inRequestScope();
-
-        // ActionModule configuration - merge with apiRequestTimeout from AgentConfig
-        this.container
-            .bind<ActionModuleConfig>(TYPES.ActionModuleConfig)
-            .toDynamicValue(() => {
-                const config = this.container.get<AgentConfig>(TYPES.AgentConfig);
-                return {
-                    ...defaultActionConfig,
-                    apiRequestTimeout: config.apiRequestTimeout,
-                };
-            });
 
         // Configuration defaults
         this.container.bind<AgentConfig>(TYPES.AgentConfig).toConstantValue(defaultAgentConfig);
@@ -459,47 +412,6 @@ export class AgentContainer {
         } else {
             agentContainer.bind(TYPES.ITurnMemoryStore).to(TurnMemoryStore).inRequestScope();
         }
-
-        agentContainer
-            .bind<IThinkingModule>(TYPES.IThinkingModule)
-            .to(ThinkingModule)
-            .inRequestScope();
-        agentContainer
-            .bind(TYPES.ThinkingModule)
-            .to(ThinkingModule)
-            .inRequestScope();
-
-        // ThinkingModule configuration - merge with apiRequestTimeout from AgentConfig
-        agentContainer
-            .bind<ThinkingModuleConfig>(TYPES.ThinkingModuleConfig)
-            .toDynamicValue(() => {
-                const config = agentContainer.get<AgentConfig>(TYPES.AgentConfig);
-                return {
-                    ...defaultThinkingConfig,
-                    apiRequestTimeout: config.apiRequestTimeout,
-                };
-            });
-
-        // Action Module
-        agentContainer
-            .bind<IActionModule>(TYPES.IActionModule)
-            .to(ActionModule)
-            .inRequestScope();
-        agentContainer
-            .bind(TYPES.ActionModule)
-            .to(ActionModule)
-            .inRequestScope();
-
-        // ActionModule configuration - merge with apiRequestTimeout from AgentConfig
-        agentContainer
-            .bind<ActionModuleConfig>(TYPES.ActionModuleConfig)
-            .toDynamicValue(() => {
-                const config = agentContainer.get<AgentConfig>(TYPES.AgentConfig);
-                return {
-                    ...defaultActionConfig,
-                    apiRequestTimeout: config.apiRequestTimeout,
-                };
-            });
 
         // Tool Manager - singleton service shared across all agents
         // Bind in agent container for VirtualWorkspace to inject

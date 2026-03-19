@@ -1,6 +1,6 @@
 import { injectable, inject, optional } from 'inversify';
-import Anthropic from '@anthropic-ai/sdk';
-import { ApiMessage, MessageBuilder } from '../memory/types.js';
+
+import { ApiMessage } from '../memory/types.js';
 import type { AgentStatus } from '../common/types.js';
 import { MessageTokenUsage, ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
@@ -8,33 +8,19 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
 import {
   AgentError,
+  NoToolsUsedError,
 } from '../common/errors.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
-import type {
-  ThinkingPhaseResult,
-  IThinkingModule,
-} from '../thinking/types.js';
-import type { ThinkingRound } from '../memory/Turn.js';
-import type {
-  IActionModule,
-  ActionPhaseResult,
-  ToolResult,
-} from '../action/types.js';
+import type { ApiClient, ChatCompletionTool, ToolCall } from '../api-client/index.js';
+import type { IToolManager } from '../tools/index.js';
 import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
-import type { ILogger } from '../utils/logging/types.js';
 import type { Tool } from '../../components/core/types.js';
-import { ActionPromptBuilder } from '../prompts/action/index.js';
-
-// Tool result from execution - now defined in action/types.ts
-// interface ToolResult {
-//     toolName: string;
-//     success: boolean;
-//     result: any;
-//     timestamp: number;
-// }
+import type { MailMessage } from '../../multi-agent/types.js';
+import { ToolComponent } from '../statefulContext/index.js';
+import pino from 'pino';
 
 export interface AgentConfig {
   apiRequestTimeout: number;
@@ -88,6 +74,24 @@ export interface AgentPrompt {
 }
 
 /**
+ * Result of a tool execution
+ */
+export interface ToolExecutionResult {
+  /** Name of the tool that was executed */
+  toolName: string;
+  /** Whether the tool execution succeeded */
+  success: boolean;
+  /** The result returned by the tool, or error info on failure */
+  result: unknown;
+  /** Timestamp of when the tool was executed */
+  timestamp: number;
+  /** The component key that provided this tool (if available) */
+  componentKey?: string;
+  /** The tool use ID from the original tool call */
+  toolUseId: string;
+}
+
+/**
  * Mail-driven mode configuration
  */
 interface MailDrivenConfig {
@@ -129,13 +133,14 @@ export class Agent {
   // Memory module (dependency injected, always present)
   private memoryModule: IMemoryModule;
 
-  // Thinking module (dependency injected, always present)
-  private thinkingModule: IThinkingModule;
+  // API client for LLM calls
+  private apiClient: ApiClient;
 
-  // Action module (dependency injected, always present)
-  private actionModule: IActionModule;
+  // Tool manager for executing tools
+  private toolManager: IToolManager;
 
   private agentPrompt: AgentPrompt;
+  private logger: pino.Logger;
 
   constructor(
     @inject(TYPES.AgentConfig)
@@ -144,11 +149,12 @@ export class Agent {
     @inject(TYPES.IVirtualWorkspace) workspace: IVirtualWorkspace,
     @inject(TYPES.AgentPrompt) agentPrompt: AgentPrompt,
     @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
-    @inject(TYPES.IThinkingModule) thinkingModule: IThinkingModule,
-    @inject(TYPES.IActionModule) actionModule: IActionModule,
-    @inject(TYPES.Logger) private logger: ILogger,
+    @inject(TYPES.ApiClient) apiClient: ApiClient,
+    @inject(TYPES.IToolManager) toolManager: IToolManager,
     @inject(TYPES.TaskId) @optional() taskId?: string,
   ) {
+    // Instantiate pino logger directly
+    this.logger = pino({ level: process.env['LOG_LEVEL'] || 'debug' });
     this.workspace = workspace as unknown as VirtualWorkspace;
     this._taskId = taskId || crypto.randomUUID();
     this.agentPrompt = agentPrompt;
@@ -156,8 +162,8 @@ export class Agent {
 
     // Use injected dependencies
     this.memoryModule = memoryModule as MemoryModule;
-    this.thinkingModule = thinkingModule;
-    this.actionModule = actionModule;
+    this.apiClient = apiClient;
+    this.toolManager = toolManager;
   }
 
   // ==================== Public API ====================
@@ -307,7 +313,7 @@ export class Agent {
       if (result?.data?.messages) {
         // Record all message IDs received at the start of this task
         // These are the emails that MUST be replied to before completion
-        const messageIds = result.data.messages.map((m: any) => m.messageId);
+        const messageIds = result.data.messages.map((m: MailMessage) => m.messageId);
         this._receivedMailIds = new Set(messageIds);
         this._repliedMailIds.clear();
         this.logger.info(`[MailReplyCheck] Tracking ${messageIds.length} received emails for mandatory reply`);
@@ -338,7 +344,7 @@ export class Agent {
         // A message is considered "replied" if there's a reply with inReplyTo pointing to it
         // For simplicity, we check if the message has been read (status.read)
         // A more robust implementation would check the sent folder for replies
-        const currentMessageIds = new Set(result.data.messages.map((m: any) => m.messageId));
+        const currentMessageIds = new Set(result.data.messages.map((m: MailMessage) => m.messageId));
 
         // Return messages that:
         // 1. Were in our tracking set (received before/during this task)
@@ -347,7 +353,7 @@ export class Agent {
         const unreplied: string[] = [];
         for (const msgId of this._receivedMailIds) {
           if (currentMessageIds.has(msgId)) {
-            const msg = result.data.messages.find((m: any) => m.messageId === msgId);
+            const msg = result.data.messages.find((m: MailMessage) => m.messageId === msgId);
             if (msg && !msg.status?.read) {
               unreplied.push(msgId);
             }
@@ -400,10 +406,22 @@ export class Agent {
   private setupMailReplyTracking(): void {
     try {
       const toolManager = this.workspace.getToolManager();
-      const globalProvider = toolManager.getProvider('global-tools') as any;
+      const globalProvider = toolManager.getProvider('global-tools');
 
-      if (globalProvider && typeof globalProvider.setReplyTrackingCallbacks === 'function') {
-        globalProvider.setReplyTrackingCallbacks({
+      // Define interface for reply tracking capability
+      interface ReplyTrackingCapable {
+        setReplyTrackingCallbacks(callbacks: {
+          onReplySent?: (mailId: string) => void;
+          getUnrepliedMailIds?: () => string[];
+          getCurrentUnrepliedMailIds?: () => Promise<string[]>;
+        }): void;
+      }
+
+      // Cast through unknown to allow accessing provider-specific methods
+      const providerWithReplyTracking = globalProvider as unknown as ReplyTrackingCapable | null;
+
+      if (providerWithReplyTracking && typeof providerWithReplyTracking.setReplyTrackingCallbacks === 'function') {
+        providerWithReplyTracking.setReplyTrackingCallbacks({
           onReplySent: (mailId: string) => this.markMailAsReplied(mailId),
           getUnrepliedMailIds: () => this.getUnrepliedMailIds(),
           // Also provide async version for real-time checking
@@ -555,8 +573,9 @@ export class Agent {
 
   /**
    * Get MailComponent from workspace
+   * @returns The MailComponent if found, undefined otherwise
    */
-  private getMailComponent(): any {
+  private getMailComponent(): ToolComponent | undefined {
     return this.workspace.getComponent('mail');
   }
 
@@ -629,83 +648,50 @@ export class Agent {
 
   /**
    * Core method for making recursive API requests to the LLM
-   * Implements stack-based retry mechanism with error handling
+   * Simplified architecture: LLM → Tool Execution → LLM → ...
    */
   protected async requestLoop(): Promise<void> {
     // Reset collected errors for this new operation
     this.resetCollectedErrors();
 
-    let lastToolResults: ToolResult[] = [];
-
-
-    // Track if we need to start a new turn
+    // Track if we need to continue the loop
     let needsNewTurn = true;
 
     while (needsNewTurn) {
-      // Create new turn
-      // Notice: now workspace context will include Mail component, which has the information
-      // about task. The system do not need to pass Task or user message anymore, instead agent
-      // should analysis and extract task from mail component automatically.
-
-      const currentWorkspaceContext = await this.workspace.render();
-      this.memoryModule.startTurn(currentWorkspaceContext);
-
-      // Get available tools for thinking phase (to pass as reference)
+      // Get available tools
       const allTools = this.workspace.getAllTools();
       const tools = allTools.map((t): Tool => t.tool);
       const converter = new DefaultToolCallConverter();
       const openaiTools = converter.convertTools(tools);
 
       try {
-        // EXECUTE THINKING PHASE
-        const thinkingResult = await this.executeThinkingPhase(lastToolResults, openaiTools);
+        // Call LLM and execute tools in a loop
+        const loopResult = await this.executeAgentLoop(openaiTools);
 
-        // EXECUTE ACTION PHASE
-        const actionResult = await this.executeActionPhase(
-          thinkingResult,
-        );
-
-        // Store tool results for next thinking phase
-        lastToolResults = actionResult.toolResults;
-
-        // Trigger workspace re-render after tool execution
-        // This ensures the next iteration gets the UPDATED workspace context
-        // rather than the context that was captured BEFORE tool execution
-        this.logger.info(`Tool-calling has been executed successfully`, {
-          toolCallResult: lastToolResults,
-        });
-
-        // // Re-render workspace to capture updated component states
-        // // Note: Tool call logging is handled via notifyToolExecuted callback
-        // // in ComponentToolProvider, which is set up when the workspace is initialized
-        // const updatedWorkspaceContext = await this.workspace.render();
-
-        if (!actionResult.didAttemptCompletion) {
-          // Complete current turn and prepare for next turn
-          this.memoryModule.completeTurn();
+        if (!loopResult.didComplete) {
           needsNewTurn = true;
         } else {
-          // Task completed, complete the turn
-          this.memoryModule.completeTurn();
           needsNewTurn = false;
         }
       } catch (error) {
         // Properly serialize error to extract message, name, and stack
-        const errorObj: Record<string, unknown> =
-          error instanceof Error
-            ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            }
-            : { message: String(error), original: error };
-        // Add cause if it exists
-        if (error instanceof Error && 'cause' in error) {
-          this.memoryModule.getTurnStore().pushErrors([error]);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        // Push error for context AND add as a message for history
+        if (error instanceof Error) {
+          this.memoryModule.pushErrors([error]);
+          // Also add error as a system message so it persists in getAllMessages()
+          const errorApiMessage: ApiMessage = {
+            role: 'system',
+            content: [{ type: 'text' as const, text: `[Error: ${error.message}]` }],
+            ts: Date.now(),
+          };
+          await this.memoryModule.addMessage(errorApiMessage);
         }
-        this.logger.error('Agent loop error', {
-          ...errorObj,
-        });
+        this.logger.error({
+          errorName: error instanceof Error ? error.name : undefined,
+          errorStack: error instanceof Error ? error.stack : undefined,
+          originalError: error instanceof Error ? undefined : error,
+        }, errorMessage + '(error messages have added to memory)');
 
         if (this._status === 'aborted') {
           needsNewTurn = false;
@@ -719,161 +705,280 @@ export class Agent {
   }
 
   /**
-   * Execute the thinking phase using ThinkingModule
-   * @param currentWorkspaceContext - Current workspace context
-   * @param lastToolResults - Results from previous tool executions
-   * @param availableTools - Available action tools for planning reference
-   * @returns ThinkingPhaseResult from the thinking module
+   * Execute a single agent loop: LLM call + tool execution
+   * Continues until completion or max iterations
    */
-  private async executeThinkingPhase(
-    lastToolResults: ToolResult[],
-    availableTools?: any[],
-  ): Promise<ThinkingPhaseResult> {
-    const currentTurn = this.memoryModule.getCurrentTurn();
-    const currentWorkspaceContext = await this.workspace.render();
-    const thinkingResult = await this.thinkingModule.performThinkingPhase(
-      currentWorkspaceContext,
-      availableTools,
-      lastToolResults,
-    );
+  private async executeAgentLoop(
+    tools: ChatCompletionTool[]
+  ): Promise<{ didComplete: boolean }> {
+    const maxIterations = 50; // Safety limit
+    let iterations = 0;
 
-    const thinkingTokens = thinkingResult.tokensUsed;
+    while (iterations < maxIterations) {
+      iterations++;
 
-    // Store thinking phase in turn
-    if (!currentTurn)
-      throw new NullCurrentTurnError(
-        `Store thinking message failed: current turn is null`,
-      );
-    this.memoryModule
-      .getTurnStore()
-      .storeThinkingPhase(
-        currentTurn.id,
-        thinkingResult.rounds,
-        thinkingResult.tokensUsed,
+      // Build system prompt
+      const systemPrompt = this.buildSystemPrompt();
+
+      // Get conversation history
+      const historyContext = this.memoryModule.getHistoryForPrompt();
+      const memoryContext = historyContext.map(m =>
+        typeof m === 'string' ? m : this.formatMessage(m)
       );
 
-    // Store summary if available
-    if (thinkingResult.summary) {
-      this.memoryModule.getTurnStore().storeSummary(
-        currentTurn.id,
-        thinkingResult.summary,
-        [], // insights - extracted by ThinkingModule
+      // Get workspace context
+      const workspaceContext = await this.workspace.render();
+
+      // Call LLM
+      const response = await this.apiClient.makeRequest(
+        systemPrompt,
+        workspaceContext,
+        memoryContext,
+        { timeout: this.config.apiRequestTimeout },
+        tools
       );
+
+      // Track token usage
+      this._tokenUsage.totalTokensIn += response.tokenUsage.promptTokens;
+      this._tokenUsage.totalTokensOut += response.tokenUsage.completionTokens;
+      this._tokenUsage.contextTokens += response.tokenUsage.promptTokens;
+
+      // Add assistant message to memory
+      if (response.textResponse) {
+        const assistantMsg: ApiMessage = {
+          role: 'assistant',
+          content: [{ type: 'text' as const, text: response.textResponse }],
+          ts: Date.now(),
+        };
+        await this.memoryModule.addMessage(assistantMsg);
+      }
+
+      // Execute tool calls
+      if (response.toolCalls && response.toolCalls.length > 0) {
+        // Enforce single tool call per response
+        if (response.toolCalls.length > 1) {
+          // Push error for LLM to see in context
+          const errorMsg = `Multiple tool calls detected (${response.toolCalls.length}). Only one tool per response is allowed. Please retry with a single tool call.`;
+          this.memoryModule.pushErrors([new Error(errorMsg)]);
+          // Create error tool result and add to memory
+          const errorResult: ApiMessage = {
+            role: 'user',
+            content: [{
+              type: 'tool_result' as const,
+              tool_use_id: response.toolCalls[0].id,
+              content: `Error: ${errorMsg}`,
+            }],
+            ts: Date.now(),
+          };
+          await this.memoryModule.addMessage(errorResult);
+          this.logger.warn(errorMsg);
+          continue; // Let LLM retry
+        }
+        const toolResults = await this.executeToolCalls(response.toolCalls);
+        this.logger.debug({ count: toolResults.length, toolResults: JSON.stringify(toolResults) }, '[Agent core] toolResults count');
+        const toolResultsJson = toolResults && toolResults.length > 0
+          ? JSON.stringify(toolResults, null, 2)
+          : '[]';
+        this.logger.info({ toolResults: toolResultsJson }, '[Agent core] tool call executed');
+
+        // Check for completion
+        const hasCompletion = toolResults.some(r => r.toolName === 'attempt_completion');
+        if (hasCompletion) {
+          return { didComplete: true };
+        }
+
+        // Check for abort
+        if (this.isAborted()) {
+          return { didComplete: true };
+        }
+      } else {
+        // No tool calls, throw error
+        throw new NoToolsUsedError();
+      }
     }
 
-    // Add thinking summary to history for observability
-    if (thinkingResult.rounds.length > 0) {
-      const thinkingSummary = this.formatMemoryThinkingSummary(thinkingResult);
-      const message = MessageBuilder.system(thinkingSummary);
-      this.memoryModule.addMessage(message);
-    }
-
-    // Track thinking tokens
-    this._tokenUsage.contextTokens += thinkingTokens;
-
-    return thinkingResult;
+    this.logger.warn({ iterations }, 'Max iterations reached');
+    return { didComplete: true };
   }
 
   /**
-   * Execute the action phase using ActionModule
-   * @param currentWorkspaceContext - Current workspace context
-   * @param thinkingResult - Result from thinking phase
-   * @returns ActionPhaseResult from the action module
+   * Execute a batch of tool calls
    */
-  private async executeActionPhase(
-    thinkingResult: ThinkingPhaseResult,
-  ): Promise<ActionPhaseResult> {
-    const conversationHistory = this.memoryModule.getHistoryForPrompt();
+  private async executeToolCalls(toolCalls: ToolCall[]): Promise<ToolExecutionResult[]> {
+    const results: ToolExecutionResult[] = [];
 
-    // Convert tools to OpenAI format (inline utility)
+    for (const toolCall of toolCalls) {
+      try {
+        const args = JSON.parse(toolCall.arguments) as Record<string, unknown>;
+        this.logger.info({ toolName: toolCall.name, args: JSON.stringify(args) }, 'Executing tool');
+
+        const result = await this.toolManager.executeTool(toolCall.name, args);
+
+        // Get tool source info
+        const toolSourceInfo = this.toolManager.getToolSource(toolCall.name);
+        const componentKey = toolSourceInfo?.componentKey;
+
+        const toolResult: ToolExecutionResult = {
+          toolName: toolCall.name,
+          success: true,
+          result,
+          timestamp: Date.now(),
+          componentKey,
+          toolUseId: toolCall.id,
+        };
+        results.push(toolResult);
+
+        // Record in memory
+        this.memoryModule.recordToolCall(toolCall.name, true, result);
+
+        // Add tool result message to memory
+        const toolResultMsg: ApiMessage = {
+          role: 'user',
+          content: [{
+            type: 'tool_result' as const,
+            tool_use_id: toolCall.id,
+            content: JSON.stringify(result),
+          }],
+          ts: Date.now(),
+        };
+        await this.memoryModule.addMessage(toolResultMsg);
+
+        // Track tool usage
+        if (!this._toolUsage[toolCall.name]) {
+          this._toolUsage[toolCall.name] = { attempts: 0, failures: 0 };
+        }
+        this._toolUsage[toolCall.name].attempts++;
+
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error({ toolName: toolCall.name, error: errorMessage }, 'Tool execution failed');
+
+        const toolResult: ToolExecutionResult = {
+          toolName: toolCall.name,
+          success: false,
+          result: { error: errorMessage },
+          timestamp: Date.now(),
+          toolUseId: toolCall.id,
+        };
+        results.push(toolResult);
+
+        // Push error for LLM to see in context
+        this.memoryModule.pushErrors([new Error(`Tool "${toolCall.name}" failed: ${errorMessage}. Please analyze the error and try an alternative approach.`)]);
+
+        // Record failure in memory
+        this.memoryModule.recordToolCall(toolCall.name, false, errorMessage);
+
+        // Track tool usage
+        if (!this._toolUsage[toolCall.name]) {
+          this._toolUsage[toolCall.name] = { attempts: 0, failures: 0 };
+        }
+        this._toolUsage[toolCall.name].attempts++;
+        this._toolUsage[toolCall.name].failures++;
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Build system prompt for the agent
+   * Simplified mainstream agent framework: role + tools + guidelines
+   */
+  private buildSystemPrompt(): string {
+    const parts: string[] = [];
+
+    // 1. Role definition
+    if (this.agentPrompt.capability) {
+      parts.push(`# Role\n${this.agentPrompt.capability}`);
+    }
+
+    // 2. Core guidelines
+    if (this.agentPrompt.direction) {
+      parts.push(`# Guidelines\n${this.agentPrompt.direction}`);
+    }
+
+    // 3. Tool usage principles
+    parts.push(`# Tool Usage
+- Call only ONE tool per response
+- After receiving the result, analyze it and call another tool if needed
+- When all tasks are complete, call attempt_completion to finish
+- If a tool fails, analyze the error and try an alternative approach`);
+
+    // 3.1 Tool descriptions
     const allTools = this.workspace.getAllTools();
-    const tools = allTools.map((t): Tool => t.tool);
-    const converter = new DefaultToolCallConverter();
-    const openaiTools = converter.convertTools(tools);
-
-    // Generate thinking summary if available
-    const thinkingSummary =
-      thinkingResult.rounds.length > 0
-        ? this.formatMemoryThinkingSummary(thinkingResult)
-        : undefined;
-
-    // Build enhanced prompt using ActionPromptBuilder
-    const componentKeys = this.workspace.getComponentKeys();
-    const hasMailComponent = componentKeys.includes('mail');
-    const builder = new ActionPromptBuilder({
-      workspace: this.workspace,
-      agentPrompt: this.agentPrompt,
-      hasMailComponent,
-    }).setThinkingSummary(thinkingSummary);
-
-    const enhancedSystemPrompt = await builder.build();
-
-    // Get current workspace context
-    const currentWorkspaceContext = await this.workspace.render();
-
-    const actionResult: ActionPhaseResult =
-      await this.actionModule.performActionPhase(
-        currentWorkspaceContext,
-        enhancedSystemPrompt,
-        conversationHistory,
-        openaiTools,
-        () => this.isAborted(),
-        this.workspace.getToolManager(), // Use workspace's toolManager to ensure tools are available
-        thinkingResult.actionPlan, // Pass action plan from thinking phase
-      );
-    this.logger.info(`Action phase successfully proformed`);
-
-    // Update agent state from action result
-    this._tokenUsage.totalTokensOut += actionResult.tokensUsed;
-    this._toolUsage = { ...this._toolUsage, ...actionResult.toolUsage };
-
-    // Add messages to memory
-    this.memoryModule.addMessage(actionResult.assistantMessage);
-    if (actionResult.userMessageContent.length > 0) {
-      const message = MessageBuilder.custom(
-        'system',
-        actionResult.userMessageContent,
-      );
-      this.memoryModule.addMessage(message);
+    if (allTools.length > 0) {
+      const toolDescriptions = allTools.map(t => {
+        const tool = t.tool;
+        const desc = tool.desc || 'No description';
+        const params = JSON.stringify(tool.paramsSchema || {});
+        return `## ${tool.toolName}
+${desc}
+Parameters: ${params}`;
+      }).join('\n\n');
+      parts.push(`# Available Tools\n${toolDescriptions}`);
     }
 
-    // Record tool calls to turn
-    actionResult.toolResults.forEach((result) => {
-      this.memoryModule.recordToolCall(
-        result.toolName,
-        result.success,
-        result.result,
-      );
-    });
+    // 4. Mail component (if available)
+    const componentKeys = this.workspace.getComponentKeys();
+    if (componentKeys.includes('mail')) {
+      parts.push(`# Mail System
+You have access to a mail system for communicating with other agents.
 
-    return actionResult;
+## Replying to Emails (IMPORTANT)
+When you need to reply to an email, you MUST follow this workflow:
+1. Use replyToMessage to create a draft reply (specify the messageId and your response body)
+2. Optionally use editDraft to modify the draft if needed (specify draftId and fields to update)
+3. Use sendDraft to send the reply (specify the draftId)
+
+NEVER call sendMail directly to reply - always use the replyToMessage + sendDraft workflow.
+
+## Mandatory Reply Check
+Before completing with attempt_completion, you MUST ensure ALL received emails have been replied to.
+- Check if there are any unread messages in your inbox
+- Every received email requires a reply before you can complete
+- Use the mail component tools to check and send replies
+
+## Other Mail Operations
+- Use getInbox to check your mailbox for new tasks/instructions
+- Use searchMessages to find specific emails
+- Use markAsRead/starMessage after processing an email`);
+    }
+
+    // Note: Errors are prepended to messages in getHistoryForPrompt(), not in system prompt
+
+    return parts.join('\n\n');
   }
 
-  // ==================== Helper Methods ====================
-
   /**
-   * Format memory thinking summary for history
+   * Format a message for memory context
    */
-  private formatMemoryThinkingSummary(result: ThinkingPhaseResult): string {
-    const rounds = result.rounds
-      .map((r: ThinkingRound) => {
-        const recalled =
-          r.recalledContexts?.length > 0
-            ? `\n  Recalled: ${r.recalledContexts.map((c) => `Turn ${c.turnNumber}`).join(', ')}`
-            : '';
+  private formatMessage(message: ApiMessage): string {
+    if (typeof message === 'string') {
+      return message;
+    }
 
-        // Use summary if available, otherwise use content
-        const content = r.summary || r.content || '';
-        return `  Round ${r.roundNumber}: ${content}...${recalled}`;
-      })
-      .join('\n');
+    if (message.role === 'system') {
+      if (Array.isArray(message.content)) {
+        return `<system>\n${message.content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('\n')}\n</system>`;
+      }
+      return `<system>\n${message.content}\n</system>`;
+    }
 
-    return `[Reflective Thinking Phase]
-Total rounds: ${result.rounds.length}
-Tokens used: ${result.tokensUsed}
+    if (message.role === 'user') {
+      if (Array.isArray(message.content)) {
+        return `<user>\n${message.content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('\n')}\n</user>`;
+      }
+      return `<user>\n${message.content}\n</user>`;
+    }
 
-Thinking rounds:
-${rounds}`;
+    if (message.role === 'assistant') {
+      if (Array.isArray(message.content)) {
+        return `<assistant>\n${message.content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('\n')}\n</assistant>`;
+      }
+      return `<assistant>\n${message.content}\n</assistant>`;
+    }
+
+    return `<${message.role}>\n${JSON.stringify(message.content)}\n</${message.role}>`;
   }
 
   /**
@@ -890,17 +995,7 @@ ${rounds}`;
    * Uses VirtualWorkspace's render for context
    */
   async getSystemPrompt() {
-    // Check if mail component is available for mail-driven mode
-    const componentKeys = this.workspace.getComponentKeys();
-    const hasMailComponent = componentKeys.includes('mail');
-
-    // Use ActionPromptBuilder to construct the system prompt
-    const builder = new ActionPromptBuilder({
-      workspace: this.workspace,
-      agentPrompt: this.agentPrompt,
-      hasMailComponent,
-    });
-
-    return await builder.buildSystemPrompt();
+    // Use the simplified buildSystemPrompt method
+    return this.buildSystemPrompt();
   }
 }

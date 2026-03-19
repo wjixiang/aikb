@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { MemoryModule } from '../MemoryModule';
 import { TurnMemoryStore } from '../TurnMemoryStore';
 import type { Logger } from 'pino';
-import type { IThinkingModule, ThinkingPhaseResult } from '../../thinking/types';
 import { MessageBuilder, type ApiMessage } from '../types';
 import type { Turn } from '../Turn';
 
@@ -19,22 +18,9 @@ const mockLogger: Logger = {
     close: vi.fn(),
 } as any;
 
-// Mock ThinkingModule
-const mockThinkingModule: IThinkingModule = {
-    performThinkingPhase: vi.fn().mockResolvedValue({
-        rounds: [],
-        tokensUsed: 0,
-        shouldProceedToAction: true,
-        summary: 'Test thinking summary'
-    } as ThinkingPhaseResult),
-    performSequentialThinkingPhase: vi.fn(),
-    getConfig: vi.fn(),
-    updateConfig: vi.fn(),
-};
-
 describe('Workspace Context Retrieval', () => {
     it('demonstrates difference between getAllMessages and getAllTurns', () => {
-        const memoryModule = new MemoryModule(mockLogger, {}, new TurnMemoryStore(), mockThinkingModule);
+        const memoryModule = new MemoryModule(mockLogger, {});
 
         // Create 2 turns with different contexts
         memoryModule.startTurn('Initial workspace: empty project');
@@ -78,7 +64,7 @@ describe('Workspace Context Retrieval', () => {
     });
 
     it('shows how to get messages WITH context', () => {
-        const memoryModule = new MemoryModule(mockLogger, {}, new TurnMemoryStore(), mockThinkingModule);
+        const memoryModule = new MemoryModule(mockLogger, {});
 
         // Create a turn
         memoryModule.startTurn('Context: empty directory');

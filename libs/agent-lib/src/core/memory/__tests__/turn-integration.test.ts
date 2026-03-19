@@ -4,7 +4,6 @@ import { TurnStatus } from '../Turn';
 import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from '../../api-client';
 import { TurnMemoryStore } from '../TurnMemoryStore';
 import type { Logger } from 'pino';
-import type { IThinkingModule, ThinkingPhaseResult } from '../../thinking/types';
 import { MessageBuilder } from '../types';
 
 // Mock API Client for testing
@@ -42,28 +41,13 @@ const mockLogger: Logger = {
     close: vi.fn(),
 } as any;
 
-// Mock ThinkingModule
-const mockThinkingModule: IThinkingModule = {
-    performThinkingPhase: vi.fn().mockResolvedValue({
-        rounds: [],
-        tokensUsed: 0,
-        shouldProceedToAction: true,
-        summary: 'Test thinking summary'
-    } as ThinkingPhaseResult),
-    performSequentialThinkingPhase: vi.fn(),
-    getConfig: vi.fn(),
-    updateConfig: vi.fn(),
-};
-
 describe('Turn-based Memory Integration', () => {
     let memoryModule: MemoryModule;
     let mockClient: MockApiClient;
-    let mockTurnStore: TurnMemoryStore;
 
     beforeEach(() => {
         mockClient = new MockApiClient();
-        mockTurnStore = new TurnMemoryStore();
-        memoryModule = new MemoryModule(mockLogger, {}, mockTurnStore, mockThinkingModule);
+        memoryModule = new MemoryModule(mockLogger, {}, mockClient);
     });
 
     it('should manage complete turn lifecycle', async () => {
@@ -190,7 +174,7 @@ describe('Turn-based Memory Integration', () => {
         expect(exported.currentTurnNumber).toBe(2);
 
         // Import to new module
-        const newModule = new MemoryModule(mockLogger, {}, new TurnMemoryStore(), mockThinkingModule);
+        const newModule = new MemoryModule(mockLogger, {}, mockClient);
         newModule.import(exported);
 
         // Verify imported data

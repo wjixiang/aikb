@@ -526,7 +526,7 @@ export class BibliographySearchComponent extends ToolComponent {
       return {
         success: true,
         data: { page: this.currentPage, totalPages },
-        summary: `[Bibliography] 翻页: 第 ${this.currentPage} / ${totalPages} 页`,
+        summary: `[Bibliography] flip: 第 ${this.currentPage} / ${totalPages} 页`,
       };
     } catch (error) {
       return {
@@ -534,7 +534,7 @@ export class BibliographySearchComponent extends ToolComponent {
         data: {
           error: `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
         },
-        summary: `[Bibliography] 翻页失败`,
+        summary: `[Bibliography] flip failed`,
       };
     }
   }

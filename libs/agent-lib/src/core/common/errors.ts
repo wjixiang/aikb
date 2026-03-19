@@ -160,3 +160,14 @@ export class UnrepliedMailError extends AgentError {
     this.name = 'UnrepliedMailError';
   }
 }
+
+/**
+ * Error thrown when LLM returns no tool calls in a response
+ */
+export class NoToolUseError extends AgentError {
+  readonly code = 'NO_TOOL_USE';
+
+  constructor(cause?: Error) {
+    super('LLM did not use any tools in the response', cause);
+  }
+}

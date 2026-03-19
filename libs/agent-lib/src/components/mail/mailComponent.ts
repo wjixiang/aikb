@@ -30,12 +30,9 @@ import {
   type SearchMessagesParams,
   type ReplyToMessageParams,
   type RegisterAddressParams,
-  type SaveDraftParams,
   type EditDraftParams,
   type GetDraftsParams,
   type DeleteDraftParams,
-  type InsertDraftContentParams,
-  type ReplaceDraftContentParams,
   type SendDraftParams,
 } from './mailSchemas';
 
@@ -48,12 +45,16 @@ export type { MailComponentConfig } from './mailSchemas';
 /**
  * MailComponent - Email-style messaging component for agent communication
  *
- * Features:
- * - Send emails to other agents/experts via REST API
+ * Reply Workflow (ONLY method to send emails):
+ * 1. replyToMessage - Creates a draft reply to an existing message
+ * 2. editDraft - (Optional) Edit the draft content
+ * 3. sendDraft - Sends the draft as a reply
+ *
+ * Other Features:
  * - Auto-refresh inbox on render (side effect)
  * - Mark messages as read/unread/starred
  * - Search messages
- * - Reply to messages
+ * - Manage mailbox address registration
  *
  * This component communicates with the agent-mailbox service via REST API.
  * Inbox data is automatically fetched during render.
@@ -65,11 +66,21 @@ export type { MailComponentConfig } from './mailSchemas';
  *   defaultAddress: 'myagent@expert',
  * });
  *
- * // Send a message
- * await mail.handleToolCall('sendMail', {
- *   to: 'other@expert',
- *   subject: 'Hello',
- *   body: 'World',
+ * // Reply to a message (creates draft automatically)
+ * await mail.handleToolCall('replyToMessage', {
+ *   messageId: 'msg-123',
+ *   body: 'Thank you for your message...',
+ * });
+ *
+ * // Edit the draft if needed
+ * await mail.handleToolCall('editDraft', {
+ *   draftId: 'draft-456',
+ *   body: 'Updated reply content...',
+ * });
+ *
+ * // Send the draft as a reply
+ * await mail.handleToolCall('sendDraft', {
+ *   draftId: 'draft-456',
  * });
  *
  * // Render - inbox will be auto-fetched
@@ -320,12 +331,9 @@ export class MailComponent extends ToolComponent {
       ['searchMessages', mailToolSchemas.searchMessages],
       ['replyToMessage', mailToolSchemas.replyToMessage],
       ['registerAddress', mailToolSchemas.registerAddress],
-      ['saveDraft', mailToolSchemas.saveDraft],
       ['editDraft', mailToolSchemas.editDraft],
       ['getDrafts', mailToolSchemas.getDrafts],
       ['deleteDraft', mailToolSchemas.deleteDraft],
-      ['insertDraftContent', mailToolSchemas.insertDraftContent],
-      ['replaceDraftContent', mailToolSchemas.replaceDraftContent],
       ['sendDraft', mailToolSchemas.sendDraft],
     ];
 
@@ -384,18 +392,12 @@ export class MailComponent extends ToolComponent {
           return await this.handleRegisterAddress(
             params as RegisterAddressParams,
           );
-        case 'saveDraft':
-          return this.handleSaveDraft(params as SaveDraftParams);
         case 'editDraft':
           return this.handleEditDraft(params as EditDraftParams);
         case 'getDrafts':
           return this.handleGetDrafts(params as GetDraftsParams);
         case 'deleteDraft':
           return this.handleDeleteDraft(params as DeleteDraftParams);
-        case 'insertDraftContent':
-          return this.handleInsertDraftContent(params as InsertDraftContentParams);
-        case 'replaceDraftContent':
-          return this.handleReplaceDraftContent(params as ReplaceDraftContentParams);
         case 'sendDraft':
           return this.handleSendDraft(params as SendDraftParams);
         default:
@@ -572,6 +574,15 @@ export class MailComponent extends ToolComponent {
       };
     }
 
+    // Validate that the original message has a valid sender
+    if (!originalMessage.from || originalMessage.from.trim() === '') {
+      return {
+        success: false,
+        data: { error: `Message ${params.messageId} has no sender information` },
+        summary: '[Mail] Error: Cannot reply - original message has no sender',
+      };
+    }
+
     // Create a draft reply instead of sending directly
     const draft = {
       from: this.config.defaultAddress || '',
@@ -688,40 +699,6 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private handleSaveDraft(
-    params: SaveDraftParams,
-  ): ToolCallResult<any> {
-    const from = this.config.defaultAddress;
-    if (!from) {
-      return {
-        success: false,
-        data: { error: 'No default address configured' },
-        summary: '[Mail] Error: No default address configured',
-      };
-    }
-
-    const draft = {
-      from,
-      to: params.to,
-      subject: params.subject,
-      body: params.body,
-      priority: params.priority || 'normal',
-      taskId: params.taskId,
-      attachments: params.attachments,
-      payload: params.payload,
-    };
-
-    const result = this.saveDraft(draft);
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Draft saved: "${params.subject}"`
-        : `[Mail] Failed to save draft: ${result.error}`,
-    };
-  }
-
   private handleEditDraft(
     params: EditDraftParams,
   ): ToolCallResult<any> {
@@ -784,38 +761,10 @@ export class MailComponent extends ToolComponent {
     };
   }
 
-  private handleInsertDraftContent(
-    params: InsertDraftContentParams,
-  ): ToolCallResult<any> {
-    const result = this.insertDraftContent(params.draftId, params.content, params.position);
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Inserted content at position ${params.position} in draft "${params.draftId}"`
-        : `[Mail] Failed to insert content: ${result.error}`,
-    };
-  }
-
-  private handleReplaceDraftContent(
-    params: ReplaceDraftContentParams,
-  ): ToolCallResult<any> {
-    const result = this.replaceDraftContent(params.draftId, params.search, params.replacement, params.replaceAll);
-
-    return {
-      success: result.success,
-      data: result,
-      summary: result.success
-        ? `[Mail] Replaced "${params.search}" with "${params.replacement}" in draft "${params.draftId}"`
-        : `[Mail] Failed to replace content: ${result.error}`,
-    };
-  }
-
   // ==================== API Methods ====================
 
   /**
-   * Send an email message
+   * Send an email message (internal use only, not exposed as tool)
    */
   async sendMail(mail: OutgoingMail): Promise<SendResult> {
     const response = await this.fetchApi<SendResult>('/send', {
@@ -1872,13 +1821,7 @@ export class MailComponent extends ToolComponent {
     );
     container.addChild(
       new tp({
-        content: '  - Use sendMail to send this draft',
-        indent: 2,
-      }),
-    );
-    container.addChild(
-      new tp({
-        content: '  - Use saveDraft to create a new draft',
+        content: '  - Use sendDraft to send this reply',
         indent: 2,
       }),
     );

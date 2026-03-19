@@ -1,13 +1,9 @@
 /**
- * ThinkingModule - Manages reflective thinking phase
+ * ThinkingModule types - Manages reflective thinking phase types
  *
- * This module handles:
- * 1. Multi-round thinking controlled by LLM
- * 2. Thinking prompt building
- * 3. Summary generation
- * 4. Context recall
- * 5. Insight extraction
+ * This module exports:
+ * 1. Thinking phase types
+ * 2. Sequential thinking types
  */
 
 export * from './types.js';
-export { ThinkingModule, ThinkingPhaseToolViolationError, MissingToolCallError } from './ThinkingModule.js';

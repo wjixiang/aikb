@@ -162,7 +162,8 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                 //     'Request completed successfully'
                 // );
                 // console.debug(chalk.bgCyanBright("systemPrompt\n", systemPrompt))
-                console.debug(chalk.bgBlueBright("workspaceContext\n", workspaceContext))
+                // console.debug(chalk.bgBlueBright("workspaceContext\n", workspaceContext))
+                // console.debug(chalk.bgGreen("memoryContext\n", memoryContext))
                 this.logger.info({
                     response: response
                 }, "Get reponse successfully")
@@ -429,7 +430,7 @@ export class OpenaiCompatibleApiClient implements ApiClient {
                         }
 
                         // Validate function arguments
-                        let args = toolCall.function.arguments;
+                        const args = toolCall.function.arguments;
                         if (args) {
                             try {
                                 // Validate JSON format
