@@ -1,0 +1,26 @@
+model_list:
+  - model_name: minimax/MiniMax-M2.7-highspeed
+    litellm_params:
+      model: anthropic/MiniMax-M2.7-highspeed
+      api_key: os.environ/MINIMAX_API_KEY
+      api_base: https://api.minimaxi.com/anthropic
+      api_version: "2024-08-01-preview"
+  - model_name: glm-4.7
+    litellm_params:
+        model: zai/glm-4.7
+        api_key: os.environ/ZAI_API_KEY
+        api_base: https://open.bigmodel.cn/api/coding/paas/v4
+  - model_name: glm-5
+    litellm_params:
+        model: zao/glm-5
+        api_key: os.environ/ZAI_API_KEY
+        api_base: https://open.bigmodel.cn/api/coding/paas/v4
+  - model_name: kimi-for-coding
+    litellm_params:
+      model: anthropic/kimi-for-coding
+      api_key: "os.environ/KIMI_API_KEY"
+      api_base: https://api.kimi.com/coding
+
+litellm_settings:
+  drop_params: true
+  set_verbose: true

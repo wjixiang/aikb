@@ -29,6 +29,7 @@ import {
     ToolResult,
 } from './types.js';
 import { NoToolsUsedError } from '../common/errors.js';
+import { Turn } from '../memory/Turn.js';
 
 /**
  * Default configuration for ActionModule
@@ -298,7 +299,7 @@ Please take these errors into consideration and avoid repeating the same mistake
                     if (recallParams.turn_numbers && recallParams.turn_numbers.length > 0) {
                         // Recall by turn numbers - get turns and extract messages
                         const turns = recallParams.turn_numbers.map((n: number) => this.turnMemoryStore.getTurnByNumber(n)).filter(Boolean);
-                        recalled = turns.flatMap((turn: any) => turn.messages);
+                        recalled = turns.flatMap((turn: Turn) => turn.messages);
                     } else if (recallParams.last_n) {
                         // Get recent messages from last N turns
                         recalled = this.turnMemoryStore.getRecentMessages(recallParams.last_n);

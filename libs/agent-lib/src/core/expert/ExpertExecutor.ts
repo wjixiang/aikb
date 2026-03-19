@@ -20,6 +20,7 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { ToolComponent } from '../../components/core/toolComponent.js';
 import { createMailComponent } from '../../components/index.js';
 import type { IExpertPersistenceStore, ExpertInstanceState } from './persistence/index.js';
+import { DefaultVirtualWorkspaceConfig } from '../statefulContext/virtualWorkspace.js';
 
 /**
  * Generate composite key for expert instance
@@ -134,7 +135,6 @@ export class ExpertExecutor implements IExpertExecutor {
       try {
         await expert.stop();
         // Update status in persistence
-        const [expertClassId, instanceId] = key.split('/');
         await this.saveInstanceState(expert);
       } catch (err) {
         console.error(
@@ -175,11 +175,7 @@ export class ExpertExecutor implements IExpertExecutor {
     // Configure workspace for this Expert
     // Defaults are set first, then expertConfig takes precedence
     const workspaceConfig: VirtualWorkspaceConfig = {
-      id: `expert-${expertClassId}-${resolvedInstanceId}-workspace`,
-      name: `${config.displayName} Workspace`,
-      renderMode: 'markdown',
-      expertMode: true,
-      alwaysRenderAllComponents: true,
+      ...DefaultVirtualWorkspaceConfig,
       ...config.virtualWorkspaceConfig,  // Expert config overrides defaults
     };
 

@@ -26,7 +26,7 @@ export class BibliographySearchComponent extends ToolComponent {
     articleProfiles: ArticleProfile[];
   } | null = null;
   currentArticleDetail: ArticleDetail | null = null;
-  currentPage: number = 1;
+  currentPage = 1;
   currentRetrivalStrategy: RetrivalStrategy | null = null;
   currentSearchParams: PubmedSearchParams | null = null;
 
@@ -251,15 +251,12 @@ export class BibliographySearchComponent extends ToolComponent {
       }),
     );
 
-    container.addChild(new tp({ content: '' }));
-
     // Basic info
     container.addChild(new tp({ content: `PMID: ${article.pmid}`, indent: 1 }));
     container.addChild(new tp({ content: `DOI: ${article.doi}`, indent: 1 }));
 
     // Authors
     if (article.authors && article.authors.length > 0) {
-      container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(new th({ content: 'Authors:', level: 3 }));
       article.authors.forEach((author: Author) => {
         container.addChild(
@@ -270,7 +267,6 @@ export class BibliographySearchComponent extends ToolComponent {
 
     // Journal info
     if (article.journalInfo) {
-      container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(new th({ content: 'Journal:', level: 3 }));
       if (article.journalInfo.title) {
         container.addChild(
@@ -305,14 +301,14 @@ export class BibliographySearchComponent extends ToolComponent {
 
     // Abstract
     if (article.abstract) {
-      container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(new th({ content: 'Abstract:', level: 3 }));
-      container.addChild(new tp({ content: article.abstract, indent: 1 }));
+      // Normalize excessive newlines in abstract to prevent rendering issues
+      const normalizedAbstract = article.abstract.replace(/\n{3,}/g, '\n\n');
+      container.addChild(new tp({ content: normalizedAbstract, indent: 1 }));
     }
 
     // Keywords
     if (article.keywords && article.keywords.length > 0) {
-      container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(new th({ content: 'Keywords:', level: 3 }));
       const keywordsText = article.keywords
         .map((k: Keyword) => (k.isMeSH ? `${k.text} (MeSH)` : k.text))
@@ -322,7 +318,6 @@ export class BibliographySearchComponent extends ToolComponent {
 
     // MeSH Terms
     if (article.meshTerms && article.meshTerms.length > 0) {
-      container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(new th({ content: 'MeSH Terms:', level: 3 }));
       article.meshTerms.forEach((term: Keyword) => {
         container.addChild(new tp({ content: `  - ${term.text}`, indent: 1 }));
@@ -331,7 +326,6 @@ export class BibliographySearchComponent extends ToolComponent {
 
     // Publication Types
     if (article.publicationTypes && article.publicationTypes.length > 0) {
-      container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(new th({ content: 'Publication Types:', level: 3 }));
       article.publicationTypes.forEach((type: string) => {
         container.addChild(new tp({ content: `  - ${type}`, indent: 1 }));
@@ -340,7 +334,6 @@ export class BibliographySearchComponent extends ToolComponent {
 
     // Conflict of Interest
     if (article.conflictOfInterestStatement) {
-      container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(
         new th({ content: 'Conflict of Interest:', level: 3 }),
       );
@@ -351,7 +344,6 @@ export class BibliographySearchComponent extends ToolComponent {
 
     // Full Text Sources
     if (article.fullTextSources && article.fullTextSources.length > 0) {
-      container.addChild(new tp({ content: '', indent: 1 }));
       container.addChild(new th({ content: 'Full Text Sources:', level: 3 }));
       article.fullTextSources.forEach((source: FullTextSource) => {
         container.addChild(

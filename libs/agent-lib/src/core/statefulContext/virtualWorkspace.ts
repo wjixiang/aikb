@@ -32,7 +32,7 @@ export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
   name: 'Default Workspace',
   renderMode: 'tui',
-  toolCallLogCount: 3,
+  toolCallLogCount: 10,
   expertMode: false,
   alwaysRenderAllComponents: false,
 };
