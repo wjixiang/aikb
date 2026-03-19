@@ -26,6 +26,18 @@ import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.
 import chalk from 'chalk';
 
 /**
+ * Default VirtualWorkspace configuration
+ */
+export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
+  id: 'default-workspace',
+  name: 'Default Workspace',
+  renderMode: 'tui',
+  toolCallLogCount: 3,
+  expertMode: false,
+  alwaysRenderAllComponents: false,
+};
+
+/**
  * Tool call summary for the LOG section
  */
 export interface ToolCallSummary {
@@ -65,9 +77,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     @inject(TYPES.IToolManager) @optional() toolManager?: IToolManager,
   ) {
     this.config = {
-      id: config.id || 'default-workspace',
-      name: config.name || 'Default Workspace',
-      renderMode: config.renderMode ?? 'tui',
+      ...DefaultVirtualWorkspaceConfig,
       ...config,
     };
 

@@ -13,6 +13,9 @@
 
 // Agent and Factory
 export { Agent, defaultAgentConfig } from './agent/agent.js';
+
+// Configuration
+export * from './config.js';
 export { AgentFactory } from './agent/AgentFactory.js';
 export type { AgentConfig } from './agent/agent.js';
 export type { AgentFactoryOptions } from './agent/AgentFactory.js';
