@@ -5,13 +5,13 @@ import { createWriteStream } from 'fs';
 
 /**
  * MinerU API Client for document parsing and conversion
- * Supports single file parsing, batch file upload, and batch URL parsing
+ * Supports Precision API (token auth, ≤200MB, ≤600 pages) and Agent Lightweight API (no auth, ≤10MB, ≤20 pages)
  */
 
 // ==================== Types and Interfaces ====================
 
 export interface MinerUConfig {
-  token: string;
+  token?: string;
   baseUrl?: string;
   timeout?: number;
   maxRetries?: number;
@@ -22,9 +22,11 @@ export interface MinerUConfig {
     enable_formula: boolean;
     enable_table: boolean;
     language: 'en' | 'ch';
-    model_version: 'pipeline';
+    model_version: 'pipeline' | 'vlm' | 'MinerU-HTML';
   };
 }
+
+// ==================== Precision API Types ====================
 
 export interface SingleFileRequest {
   url: string;
@@ -37,7 +39,7 @@ export interface SingleFileRequest {
   seed?: string;
   extra_formats?: ('docx' | 'html' | 'latex')[];
   page_ranges?: string;
-  model_version?: 'pipeline' | 'vlm';
+  model_version?: 'pipeline' | 'vlm' | 'MinerU-HTML';
 }
 
 export interface BatchFileRequest {
@@ -47,7 +49,7 @@ export interface BatchFileRequest {
   callback?: string;
   seed?: string;
   extra_formats?: ('docx' | 'html' | 'latex')[];
-  model_version?: 'pipeline' | 'vlm';
+  model_version?: 'pipeline' | 'vlm' | 'MinerU-HTML';
   files: BatchFileItem[];
 }
 
@@ -65,7 +67,7 @@ export interface BatchUrlRequest {
   callback?: string;
   seed?: string;
   extra_formats?: ('docx' | 'html' | 'latex')[];
-  model_version?: 'pipeline' | 'vlm';
+  model_version?: 'pipeline' | 'vlm' | 'MinerU-HTML';
   files: BatchUrlItem[];
 }
 
@@ -76,6 +78,21 @@ export interface BatchUrlItem {
   page_ranges?: string;
 }
 
+// ==================== Agent API Types ====================
+
+export interface AgentUrlParseRequest {
+  url: string;
+  language?: string;
+  page_range?: string;
+}
+
+export interface AgentFileUploadResponse {
+  task_id: string;
+  file_url: string;
+}
+
+// ==================== Common Response Types ====================
+
 export interface ApiResponse<T = any> {
   code: number;
   msg: string;
@@ -85,7 +102,7 @@ export interface ApiResponse<T = any> {
 
 export interface SingleFileResponse {
   task_id: string;
-  [key: string]: any; // Allow dynamic property access for alternative identifiers
+  [key: string]: any;
 }
 
 export interface BatchFileResponse {
@@ -103,20 +120,27 @@ export interface ExtractProgress {
   start_time: string;
 }
 
+// Precision API task states: done, pending, running, failed, converting, waiting-file
+export type PrecisionTaskState = 'done' | 'pending' | 'running' | 'failed' | 'converting' | 'waiting-file';
+
+// Agent API task states: waiting-file, uploading, pending, running, done, failed
+export type AgentTaskState = 'waiting-file' | 'uploading' | 'pending' | 'running' | 'done' | 'failed';
+
 export interface TaskResult {
   task_id?: string;
   data_id?: string;
   file_name?: string;
-  state:
-    | 'done'
-    | 'pending'
-    | 'running'
-    | 'failed'
-    | 'converting'
-    | 'waiting-file';
+  state: PrecisionTaskState;
   full_zip_url?: string;
   err_msg?: string;
   extract_progress?: ExtractProgress;
+}
+
+export interface AgentTaskResult {
+  task_id: string;
+  state: AgentTaskState;
+  markdown?: string;
+  err_msg?: string;
 }
 
 export interface BatchTaskResult {
@@ -151,8 +175,11 @@ export class MinerUTimeoutError extends Error {
   }
 }
 
-export const MinerUDefaultConfig: MinerUConfig = {
+// ==================== Constants ====================
+
+export const MINERU_DEFAULT_CONFIG = {
   baseUrl: 'https://mineru.net/api/v4',
+  agentBaseUrl: 'https://mineru.net/api/v1/agent',
   timeout: 30000,
   maxRetries: 3,
   retryDelay: 1000,
@@ -161,46 +188,66 @@ export const MinerUDefaultConfig: MinerUConfig = {
     is_ocr: false,
     enable_formula: true,
     enable_table: true,
-    language: 'ch',
-    model_version: 'pipeline',
+    language: 'ch' as const,
+    model_version: 'pipeline' as const,
   },
-  token: process.env['MINERU_TOKEN'] as string,
-};
+} as const;
 
 // ==================== Main Client Class ====================
 
 export class MinerUClient {
-  private client: AxiosInstance;
+  private precisionClient: AxiosInstance;
+  private agentClient: AxiosInstance;
   public config: Required<MinerUConfig>;
 
   constructor(config: MinerUConfig) {
-    this.config = {
-      baseUrl: 'https://mineru.net/api/v4',
-      timeout: 30000,
-      maxRetries: 3,
-      retryDelay: 1000,
-      ...config,
-    };
+    const baseUrl = config.baseUrl || MINERU_DEFAULT_CONFIG.baseUrl!;
+    const agentBaseUrl = MINERU_DEFAULT_CONFIG.agentBaseUrl!;
 
-    if (!this.config.token) {
-      throw new Error('Token is required for MinerU API authentication');
-    }
-
-    this.client = axios.create({
-      baseURL: this.config.baseUrl,
-      timeout: this.config.timeout,
+    // Precision API client (requires token)
+    this.precisionClient = axios.create({
+      baseURL: baseUrl,
+      timeout: config.timeout || MINERU_DEFAULT_CONFIG.timeout!,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.config.token}`,
         Accept: '*/*',
       },
     });
 
-    // Add request interceptor for error handling
-    this.client.interceptors.response.use(
+    // Add token auth for Precision API
+    if (config.token) {
+      this.precisionClient.defaults.headers.common['Authorization'] = `Bearer ${config.token}`;
+    }
+
+    // Agent API client (no auth required)
+    this.agentClient = axios.create({
+      baseURL: agentBaseUrl,
+      timeout: config.timeout || MINERU_DEFAULT_CONFIG.timeout!,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Add interceptors for error handling
+    this.precisionClient.interceptors.response.use(
       (response) => response,
       (error) => this.handleApiError(error),
     );
+
+    this.agentClient.interceptors.response.use(
+      (response) => response,
+      (error) => this.handleApiError(error),
+    );
+
+    this.config = {
+      baseUrl,
+      timeout: config.timeout || MINERU_DEFAULT_CONFIG.timeout!,
+      maxRetries: config.maxRetries || MINERU_DEFAULT_CONFIG.maxRetries!,
+      retryDelay: config.retryDelay || MINERU_DEFAULT_CONFIG.retryDelay!,
+      downloadDir: config.downloadDir,
+      defaultOptions: config.defaultOptions || MINERU_DEFAULT_CONFIG.defaultOptions!,
+      token: config.token || '',
+    } as Required<MinerUConfig>;
   }
 
   private handleApiError(error: any): never {
@@ -209,7 +256,6 @@ export class MinerUClient {
       const errorMessage = data.msg || data.message || `HTTP ${status} error`;
       const errorCode = data.code || this.getErrorCodeFromStatus(status);
 
-      // Add detailed logging for debugging
       console.error('MinerU API Error Details:', {
         status,
         errorCode,
@@ -292,18 +338,21 @@ export class MinerUClient {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  // ==================== Token Validation ====================
+
   /**
    * Validate the API token by making a simple request
-   * @returns Promise<boolean> - true if token is valid
    */
   async validateToken(): Promise<boolean> {
+    if (!this.config.token) {
+      console.error('❌ No token configured');
+      return false;
+    }
+
     try {
-      // Try to get a non-existent task to check authentication
-      // This will return 404 if token is valid, 401/403 if invalid
-      await this.client.get('/extract/task/validate-token-test');
-      return true; // Should not reach here
+      await this.precisionClient.get('/extract/task/validate-token-test');
+      return true;
     } catch (error) {
-      // Handle both raw axios errors and transformed MinerUApiError
       if (error instanceof MinerUApiError) {
         if (error.code === 'NOT_FOUND' || error.code === 'HTTP_404') {
           console.log('✅ Token is valid (404 expected for test task)');
@@ -315,216 +364,60 @@ export class MinerUClient {
           console.error('❌ Token does not have sufficient permissions');
           return false;
         }
-      } else if (error && typeof error === 'object' && 'response' in error) {
-        // Handle raw axios error before interceptor transformation
-        const axiosError = error as any;
-        const status = axiosError.response.status;
-        const code = axiosError.response.data?.code;
-
-        if (status === 404 || code === 'NOT_FOUND') {
-          console.log('✅ Token is valid (404 expected for test task)');
-          return true;
-        } else if (status === 401 || code === 'UNAUTHORIZED') {
-          console.error('❌ Token is invalid or expired');
-          return false;
-        } else if (status === 403 || code === 'FORBIDDEN') {
-          console.error('❌ Token does not have sufficient permissions');
-          return false;
-        }
       }
       console.error('❌ Token validation failed:', error);
       return false;
     }
   }
 
-  /**
-   * Get API account information and quota status
-   * @returns Promise<object> - Account information
-   */
-  async getAccountInfo(): Promise<any> {
-    try {
-      // Note: This endpoint may not exist in the actual API
-      // This is a placeholder for future implementation
-      const response = await this.retryRequest(async () =>
-        this.client.get('/account/info'),
-      );
-      return response;
-    } catch (error) {
-      console.warn('Account info endpoint not available:', error);
-      return null;
-    }
-  }
-
-  // ==================== Single File Parsing ====================
+  // ==================== Precision API: Single File ====================
 
   /**
-   * Create a single file parsing task
+   * Create a single file parsing task (Precision API)
    */
   async createSingleFileTask(request: SingleFileRequest): Promise<string> {
     console.log(
-      `[MinerUClient] Creating single file task with request:`,
+      `[MinerUClient] Creating single file task:`,
       JSON.stringify(request, null, 2),
     );
 
-    // Add diagnostic logging for S3 URL
-    if (!request.url) {
-      console.error(
-        `[MinerUClient] CRITICAL: No URL provided in request. Request data:`,
-        JSON.stringify(request, null, 2),
-      );
-    } else {
-      console.log(`[MinerUClient] URL provided in request: ${request.url}`);
-    }
-
-    return this.retryRequest(async () => {
-      console.log(
-        `[MinerUClient] Making API call to: ${this.config.baseUrl}/extract/task`,
-      );
-      console.log(`[MinerUClient] Request headers:`, {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.config.token ? this.config.token.substring(0, 10) + '...' : 'MISSING'}`,
-        Accept: '*/*',
-      });
-
-      return this.client.post<ApiResponse<SingleFileResponse>>(
+    return this.retryRequest(async () =>
+      this.precisionClient.post<ApiResponse<SingleFileResponse>>(
         '/extract/task',
         request,
-      );
-    })
-      .then((data) => {
-        console.log(`[MinerUClient] Raw API response received:`, {
-          dataType: typeof data,
-          dataIsNullOrUndefined: data == null,
-          dataKeys: data ? Object.keys(data) : [],
-          data: data,
-        });
-
-        // Handle case where data is null or undefined
-        if (!data) {
-          console.error(
-            `[MinerUClient] No response data received from API. Full response:`,
-            JSON.stringify(data, null, 2),
-          );
-
-          // Generate fallback task_id if no identifiers found
-          const fallbackId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          console.warn(
-            `[MinerUClient] Generated fallback task_id: ${fallbackId}`,
-          );
-          return fallbackId;
-        }
-
-        console.log(
-          `[MinerUClient] Single file task response received:`,
-          JSON.stringify(data, null, 2),
-        );
-
-        if (!data.task_id) {
-          console.error(
-            `[MinerUClient] No task_id in response. Response data:`,
-            data,
-          );
-
-          // Try to find alternative identifiers
-          const alternativeIds = ['id', 'taskId', 'taskid', 'identifier'];
-          let foundId = null;
-
-          for (const altId of alternativeIds) {
-            if (data[altId]) {
-              foundId = data[altId];
-              console.log(
-                `[MinerUClient] Found alternative identifier: ${altId} = ${foundId}`,
-              );
-              break;
-            }
-          }
-
-          if (foundId) {
-            // Use the alternative ID as task_id
-            data.task_id = foundId;
-            console.log(
-              `[MinerUClient] Using alternative identifier as task_id: ${foundId}`,
-            );
-          } else {
-            // Generate a fallback task_id
-            const fallbackId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            data.task_id = fallbackId;
-            console.warn(
-              `[MinerUClient] Generated fallback task_id: ${fallbackId}`,
-            );
-          }
-        }
-
-        console.log(
-          `[MinerUClient] Single file task created successfully. Task ID: ${data.task_id}`,
-        );
-        return data.task_id;
-      })
-      .catch((error) => {
-        console.error(
-          `[MinerUClient] Failed to create single file task:`,
-          error,
-        );
-        throw error;
-      });
-  }
-
-  /**
-   * Get single file task result
-   */
-  async getTaskResult(taskId: string): Promise<TaskResult> {
-    console.log(`[MinerUClient] Getting task result for ID: ${taskId}`);
-    return this.retryRequest(async () =>
-      this.client.get<ApiResponse<TaskResult>>(`/extract/task/${taskId}`),
+      ),
     ).then((data) => {
-      // Enhanced diagnostic logging for task result
-      console.log(
-        `[MinerUClient] Task result received. Enhanced diagnostics:`,
-        {
-          taskId: taskId,
-          dataType: typeof data,
-          dataIsNullOrUndefined: data == null,
-          dataKeys: data ? Object.keys(data) : [],
-          task_id: data?.task_id || 'undefined',
-          task_idType: typeof data?.task_id,
-          state: data?.state || 'undefined',
-          fullDataStructure: JSON.stringify(data, null, 2),
-        },
-      );
-
-      if (!data || data.task_id === undefined) {
-        console.error(
-          `[MinerUClient] CRITICAL: Task result missing task_id. TaskId: ${taskId}`,
-        );
-        console.error(
-          `[MinerUClient] Full response data:`,
-          JSON.stringify(data, null, 2),
-        );
+      if (!data || !data.task_id) {
+        const fallbackId = `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.warn(`[MinerUClient] Generated fallback task_id: ${fallbackId}`);
+        return fallbackId;
       }
-
-      return data;
+      console.log(`[MinerUClient] Single file task created. Task ID: ${data.task_id}`);
+      return data.task_id;
     });
   }
 
   /**
-   * Cancel a running task
-   * @param taskId The ID of the task to cancel
-   * @returns Promise<boolean> True if cancellation was successful
+   * Get single file task result (Precision API)
+   */
+  async getTaskResult(taskId: string): Promise<TaskResult> {
+    console.log(`[MinerUClient] Getting task result for ID: ${taskId}`);
+    return this.retryRequest(async () =>
+      this.precisionClient.get<ApiResponse<TaskResult>>(`/extract/task/${taskId}`),
+    );
+  }
+
+  /**
+   * Cancel a running task (Precision API)
    */
   async cancelTask(taskId: string): Promise<boolean> {
     console.log(`[MinerUClient] Cancelling task: ${taskId}`);
     try {
       return this.retryRequest(async () =>
-        this.client.delete<ApiResponse<{ cancelled: boolean }>>(
+        this.precisionClient.delete<ApiResponse<{ cancelled: boolean }>>(
           `/extract/task/${taskId}`,
         ),
-      ).then((data) => {
-        console.log(
-          `[MinerUClient] Task ${taskId} cancellation result:`,
-          JSON.stringify(data, null, 2),
-        );
-        return data.cancelled;
-      });
+      ).then((data) => data.cancelled);
     } catch (error) {
       console.error(`[MinerUClient] Error cancelling task ${taskId}:`, error);
       throw error;
@@ -532,7 +425,7 @@ export class MinerUClient {
   }
 
   /**
-   * Wait for single file task completion and download result
+   * Wait for single file task completion and download result (Precision API)
    */
   async waitForTaskCompletion(
     taskId: string,
@@ -544,7 +437,7 @@ export class MinerUClient {
   ): Promise<{ result: TaskResult; downloadedFiles?: string[] }> {
     const {
       pollInterval = 5000,
-      timeout = 300000, // 5 minutes
+      timeout = 300000,
       downloadDir = './downloads',
     } = options;
 
@@ -553,18 +446,13 @@ export class MinerUClient {
     while (Date.now() - startTime < timeout) {
       const result = await this.getTaskResult(taskId);
 
-      console.log(`[MinerUClient] Task ${taskId} status check:`, {
+      console.log(`[MinerUClient] Task ${taskId} status:`, {
         state: result.state,
-        hasTaskId: !!result.task_id,
-        taskId: result.task_id,
-        hasFullZipUrl: !!result.full_zip_url,
-        hasErrorMsg: !!result.err_msg,
-        errorMsg: result.err_msg,
         elapsed: Date.now() - startTime,
       });
 
       if (result.state === 'done') {
-        console.log(`[MinerUClient] Task ${taskId} completed successfully`);
+        console.log(`[MinerUClient] Task ${taskId} completed`);
         if (result.full_zip_url) {
           const downloadedFiles = await this.downloadResultZip(
             result.full_zip_url,
@@ -575,7 +463,6 @@ export class MinerUClient {
         }
         return { result };
       } else if (result.state === 'failed') {
-        console.log(`[MinerUClient] Task ${taskId} failed:`, result.err_msg);
         throw new MinerUApiError(
           'TASK_FAILED',
           result.err_msg || 'Task processing failed',
@@ -591,105 +478,31 @@ export class MinerUClient {
   }
 
   /**
-   * Processes a single file from start to finish, including task creation, monitoring, and result download.
-   *
-   * This is a convenience method that combines the entire workflow for processing a single file:
-   * 1. Creates a new parsing task with the provided request parameters
-   * 2. Monitors the task progress until completion or failure
-   * 3. Downloads the result ZIP file if the task completes successfully
-   *
-   * @param request - The single file processing request containing:
-   *   - url: URL of the file to process (local files should be uploaded to S3 first)
-   *   - is_ocr: Whether to use OCR for scanned documents (default: false)
-   *   - enable_formula: Whether to extract mathematical formulas (default: true)
-   *   - enable_table: Whether to extract tables (default: true)
-   *   - language: Document language code (default: 'ch' for Chinese)
-   *   - data_id: Optional custom identifier for the document
-   *   - callback: Optional callback URL for completion notifications
-   *   - seed: Optional random seed for reproducible results
-   *   - extra_formats: Optional additional output formats ('docx', 'html', 'latex')
-   *   - page_ranges: Optional page range to process (e.g., '1-10', '1,3,5-7')
-   *   - model_version: Model version to use ('pipeline' or 'vlm')
-   *
-   * @param options - Optional processing configuration:
-   *   - pollInterval: Polling interval in milliseconds for checking task status (default: 5000)
-   *   - timeout: Maximum time to wait for task completion in milliseconds (default: 300000)
-   *   - downloadDir: Directory to save downloaded result files (default: './downloads')
-   *
-   * @returns Promise resolving to an object containing:
-   *   - result: TaskResult object with task status and metadata:
-   *     - task_id: Unique identifier for the processing task
-   *     - data_id: Custom identifier provided in the request
-   *     - file_name: Original file name
-   *     - state: Task state ('done', 'pending', 'running', 'failed', 'converting', 'waiting-file')
-   *     - full_zip_url: URL to download the result ZIP file (when state is 'done')
-   *     - err_msg: Error message if the task failed
-   *     - extract_progress: Progress information with extracted_pages, total_pages, and start_time
-   *   - downloadedFiles: Array containing the absolute path of the downloaded ZIP file
-   *
-   * @throws {MinerUApiError} When the API returns an error response
-   * @throws {MinerUTimeoutError} When the task doesn't complete within the specified timeout
-   * @throws {Error} When file operations fail or network issues occur
-   *
-   * @example
-   * ```typescript
-   * // Process a PDF file with default options
-   * const result = await client.processSingleFile({
-   *   url: 'https://example.com/document.pdf',
-   *   is_ocr: true,
-   *   language: 'en'
-   * });
-   *
-   * if (result.result.state === 'done') {
-   *   console.log('Processing completed successfully');
-   *   console.log('Downloaded files:', result.downloadedFiles);
-   * }
-   * ```
-   *
-   * @example
-   * ```typescript
-   * // Process with custom options
-   * const result = await client.processSingleFile({
-   *   url: 'https://example.com/document.pdf',
-   *   data_id: 'my-document-001',
-   *   page_ranges: '1-5',
-   *   extra_formats: ['docx', 'html']
-   * }, {
-   *   pollInterval: 10000,
-   *   timeout: 600000,
-   *   downloadDir: './my-downloads'
-   * });
-   * ```
+   * Process a single file from start to finish (Precision API)
    */
   async processSingleFile(
     request: SingleFileRequest,
-    options?: {
+    options: {
       pollInterval?: number;
       timeout?: number;
       downloadDir?: string;
-    },
+    } = {},
   ): Promise<{ result: TaskResult; downloadedFiles?: string[] }> {
     const taskId = await this.createSingleFileTask(request);
-
-    const { result, downloadedFiles } = await this.waitForTaskCompletion(
-      taskId,
-      options,
-    );
-
-    return { result, downloadedFiles };
+    return this.waitForTaskCompletion(taskId, options);
   }
 
-  // ==================== Batch File Upload and Parsing ====================
+  // ==================== Precision API: Batch ====================
 
   /**
-   * Request upload URLs for batch file processing
+   * Request upload URLs for batch file processing (Precision API)
    */
   async requestBatchFileUrls(request: BatchFileRequest): Promise<{
     batchId: string;
     uploadUrls: string[];
   }> {
     const response = await this.retryRequest(async () =>
-      this.client.post<ApiResponse<BatchFileResponse>>(
+      this.precisionClient.post<ApiResponse<BatchFileResponse>>(
         '/file-urls/batch',
         request,
       ),
@@ -702,43 +515,21 @@ export class MinerUClient {
   }
 
   /**
-   * Upload files to provided URLs and S3
+   * Upload files to provided URLs (Precision API)
    */
   async uploadFiles(uploadInfos: FileUploadInfo[]): Promise<void> {
-    console.log(
-      `[MinerUClient] Starting uploadFiles for ${uploadInfos.length} files`,
-    );
+    console.log(`[MinerUClient] Starting upload for ${uploadInfos.length} files`);
 
-    const uploadPromises = uploadInfos.map(async (info, index) => {
-      try {
-        console.log(
-          `[MinerUClient] Processing file ${index + 1}/${uploadInfos.length}: ${info.fileName}`,
-        );
-
-        // Note: This method requires S3 service to be available
-        // Users need to install @aikb/s3-service and provide uploadPdfFromPath function
-        console.log(
-          `[MinerUClient] Please install @aikb/s3-service for file upload functionality`,
-        );
-        throw new Error(
-          'S3 upload functionality requires @aikb/s3-service package',
-        );
-      } catch (error) {
-        console.error(
-          `[MinerUClient] Error uploading ${info.fileName}:`,
-          error,
-        );
-        throw new Error(`Failed to upload ${info.fileName}: ${error}`);
-      }
+    const uploadPromises = uploadInfos.map(async (info) => {
+      console.log(`[MinerUClient] Please install @aikb/s3-service for file upload`);
+      throw new Error('S3 upload requires @aikb/s3-service package');
     });
 
-    console.log(`[MinerUClient] Waiting for all uploads to complete...`);
     await Promise.all(uploadPromises);
-    console.log(`[MinerUClient] All files uploaded successfully`);
   }
 
   /**
-   * Process batch files from local files
+   * Process batch files (Precision API)
    */
   async processBatchFiles(
     files: Array<{
@@ -754,63 +545,40 @@ export class MinerUClient {
       callback?: string;
       seed?: string;
       extra_formats?: ('docx' | 'html' | 'latex')[];
-      model_version?: 'pipeline' | 'vlm';
+      model_version?: 'pipeline' | 'vlm' | 'MinerU-HTML';
     } = {},
   ): Promise<{ batchId: string; s3Urls: string[] }> {
-    console.log(
-      `[MinerUClient] processBatchFiles: Processing ${files.length} files`,
-    );
-
-    // Note: This method requires S3 service to be available
-    console.log(
-      `[MinerUClient] Please install @aikb/s3-service for batch file processing functionality`,
-    );
+    console.log(`[MinerUClient] processBatchFiles: ${files.length} files`);
     throw new Error('Batch file processing requires @aikb/s3-service package');
   }
 
-  // ==================== Batch URL Parsing ====================
-
   /**
-   * Create batch URL parsing task
+   * Create batch URL parsing task (Precision API)
    */
   async createBatchUrlTask(request: BatchUrlRequest): Promise<string> {
-    console.log(
-      `[MinerUClient] Creating batch URL task with request:`,
-      JSON.stringify(request, null, 2),
-    );
+    console.log(`[MinerUClient] Creating batch URL task`);
     return this.retryRequest(async () =>
-      this.client.post<ApiResponse<BatchUrlResponse>>(
+      this.precisionClient.post<ApiResponse<BatchUrlResponse>>(
         '/extract/task/batch',
         request,
       ),
-    ).then((data) => {
-      console.log(
-        `[MinerUClient] Batch URL task created successfully. Batch ID: ${data.batch_id}`,
-      );
-      return data.batch_id;
-    });
+    ).then((data) => data.batch_id);
   }
 
   /**
-   * Get batch task results
+   * Get batch task results (Precision API)
    */
   async getBatchTaskResults(batchId: string): Promise<BatchTaskResult> {
-    console.log(`[MinerUClient] Getting batch task results for ID: ${batchId}`);
+    console.log(`[MinerUClient] Getting batch results for ID: ${batchId}`);
     return this.retryRequest(async () =>
-      this.client.get<ApiResponse<BatchTaskResult>>(
+      this.precisionClient.get<ApiResponse<BatchTaskResult>>(
         `/extract-results/batch/${batchId}`,
       ),
-    ).then((data) => {
-      console.log(
-        `[MinerUClient] Batch task results received:`,
-        JSON.stringify(data, null, 2),
-      );
-      return data;
-    });
+    );
   }
 
   /**
-   * Wait for batch task completion and download results
+   * Wait for batch task completion (Precision API)
    */
   async waitForBatchTaskCompletion(
     batchId: string,
@@ -822,7 +590,7 @@ export class MinerUClient {
   ): Promise<{ results: BatchTaskResult; downloadedFiles: string[] }> {
     const {
       pollInterval = 5000,
-      timeout = 600000, // 10 minutes for batch
+      timeout = 600000,
       downloadDir = './downloads',
     } = options;
 
@@ -837,12 +605,9 @@ export class MinerUClient {
       );
 
       if (allCompleted) {
-        // Download completed files
         for (const result of results.extract_result) {
           if (result.state === 'done' && result.full_zip_url) {
-            // For batch results, use data_id as the task identifier since task_id is not provided
-            const taskIdentifier =
-              result.data_id || result.file_name || 'unknown';
+            const taskIdentifier = result.data_id || result.file_name || 'unknown';
             const files = await this.downloadResultZip(
               result.full_zip_url,
               downloadDir,
@@ -851,7 +616,6 @@ export class MinerUClient {
             downloadedFiles.push(...files);
           }
         }
-
         return { results, downloadedFiles };
       }
 
@@ -864,7 +628,7 @@ export class MinerUClient {
   }
 
   /**
-   * Process batch URLs from start to finish
+   * Process batch URLs (Precision API)
    */
   async processBatchUrls(
     request: BatchUrlRequest,
@@ -878,36 +642,97 @@ export class MinerUClient {
     return this.waitForBatchTaskCompletion(batchId, options);
   }
 
-  // ==================== Utility Methods ====================
+  // ==================== Agent API ====================
 
   /**
-   * Downloads the result ZIP file from the provided URL to the local filesystem.
-   *
-   * @param zipUrl - The URL of the ZIP file to download
-   * @param downloadDir - The directory where the ZIP file should be saved
-   * @param taskId - The task ID used to generate the filename
-   * @returns Promise resolving to an array containing the absolute path of the downloaded ZIP file
+   * Parse URL directly (Agent API - no auth required)
    */
+  async agentParseUrl(
+    request: AgentUrlParseRequest,
+    options: {
+      pollInterval?: number;
+      timeout?: number;
+    } = {},
+  ): Promise<AgentTaskResult> {
+    const { pollInterval = 5000, timeout = 300000 } = options;
+    const startTime = Date.now();
+
+    // Create task
+    const createResponse = await this.agentClient.post<
+      ApiResponse<{ task_id: string }>
+    >('/parse/url', request);
+
+    const taskId = createResponse.data.data.task_id;
+    console.log(`[MinerUClient] Agent task created: ${taskId}`);
+
+    // Poll for result
+    while (Date.now() - startTime < timeout) {
+      const result = await this.agentClient.get<ApiResponse<AgentTaskResult>>(
+        `/parse/${taskId}`,
+      );
+
+      const taskResult = result.data.data;
+      console.log(`[MinerUClient] Agent task ${taskId} status: ${taskResult.state}`);
+
+      if (taskResult.state === 'done') {
+        return taskResult;
+      } else if (taskResult.state === 'failed') {
+        throw new MinerUApiError('TASK_FAILED', taskResult.err_msg || 'Task failed');
+      }
+
+      await this.delay(pollInterval);
+    }
+
+    throw new MinerUTimeoutError(`Agent task ${taskId} did not complete within ${timeout}ms`);
+  }
+
+  /**
+   * Get file upload URL for Agent API (no auth required)
+   */
+  async agentGetUploadUrl(fileName: string): Promise<AgentFileUploadResponse> {
+    const response = await this.agentClient.post<ApiResponse<AgentFileUploadResponse>>(
+      '/parse/file',
+      { file_name: fileName },
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Upload file to signed URL (Agent API)
+   */
+  async agentUploadFile(filePath: string, uploadUrl: string): Promise<void> {
+    const fileContent = await fs.promises.readFile(filePath);
+    await axios.put(uploadUrl, fileContent, {
+      headers: { 'Content-Type': 'application/octet-stream' },
+    });
+  }
+
+  /**
+   * Get Agent task result (Agent API)
+   */
+  async agentGetTaskResult(taskId: string): Promise<AgentTaskResult> {
+    const response = await this.agentClient.get<ApiResponse<AgentTaskResult>>(
+      `/parse/${taskId}`,
+    );
+    return response.data.data;
+  }
+
+  // ==================== Utility Methods ====================
+
   private async downloadResultZip(
     zipUrl: string,
     downloadDir: string,
     taskId: string,
   ): Promise<string[]> {
-    console.log(
-      `[MinerUClient] downloadResultZip: taskId=${taskId}, zipUrl=${zipUrl}`,
-    );
+    console.log(`[MinerUClient] Downloading ZIP: ${zipUrl}`);
 
     const zipFileName = `${taskId}.zip`;
     const absoluteZipPath = path.resolve(path.join(downloadDir, zipFileName));
 
-    // Ensure download directory exists
     if (!fs.existsSync(downloadDir)) {
       fs.mkdirSync(downloadDir, { recursive: true });
     }
 
-    console.log(`[MinerUClient] Downloading ZIP file to: ${absoluteZipPath}`);
-
-    // Download the file
     const downloadResponse = await axios({
       method: 'GET',
       url: zipUrl,
@@ -919,19 +744,12 @@ export class MinerUClient {
 
     await new Promise<void>((resolve, reject) => {
       fileWriter.on('finish', () => {
-        console.log(
-          `[MinerUClient] ZIP download completed: ${absoluteZipPath}`,
-        );
+        console.log(`[MinerUClient] ZIP downloaded: ${absoluteZipPath}`);
         resolve();
       });
       fileWriter.on('error', reject);
     });
 
-    console.log(
-      `[MinerUClient] Successfully downloaded result file to: ${absoluteZipPath}`,
-    );
-
-    // Return the absolute path of the downloaded ZIP file
     return [absoluteZipPath];
   }
 
@@ -940,14 +758,7 @@ export class MinerUClient {
    */
   static isValidFileFormat(fileName: string): boolean {
     const validExtensions = [
-      '.pdf',
-      '.doc',
-      '.docx',
-      '.ppt',
-      '.pptx',
-      '.png',
-      '.jpg',
-      '.jpeg',
+      '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.png', '.jpg', '.jpeg',
     ];
     const ext = path.extname(fileName).toLowerCase();
     return validExtensions.includes(ext);
@@ -958,27 +769,9 @@ export class MinerUClient {
    */
   static getSupportedLanguages(): string[] {
     return [
-      'ch',
-      'en',
-      'japan',
-      'korean',
-      'fr',
-      'german',
-      'spanish',
-      'russian',
-      'arabic',
-      'italian',
-      'portuguese',
-      'romanian',
-      'bulgarian',
-      'ukrainian',
-      'belarusian',
-      'tamil',
-      'telugu',
-      'kannada',
-      'thai',
-      'vietnamese',
-      'devanagari',
+      'ch', 'en', 'japan', 'korean', 'fr', 'german', 'spanish', 'russian',
+      'arabic', 'italian', 'portuguese', 'romanian', 'bulgarian', 'ukrainian',
+      'belarusian', 'tamil', 'telugu', 'kannada', 'thai', 'vietnamese', 'devanagari',
     ];
   }
 }

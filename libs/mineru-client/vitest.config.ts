@@ -2,13 +2,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig(() => ({
-  root: __dirname,
   cacheDir: '../../node_modules/.vite/libs/mineru-client',
-  plugins: [],
-  resolve: {
-    // Ensure Node.js built-ins work in ESM mode
-    conditions: ['node'],
-  },
   test: {
     name: 'mineru-client',
     watch: false,
@@ -16,14 +10,8 @@ export default defineConfig(() => ({
     environment: 'node',
     root: __dirname,
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['src/**/*.e2e.test.ts', 'src/lib/MinerUClient.test.ts'],
+    exclude: ['src/**/*.e2e.test.ts'],
     reporters: ['default'],
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
     coverage: {
       reportsDirectory: '../../coverage/libs/mineru-client',
       provider: 'v8' as const,

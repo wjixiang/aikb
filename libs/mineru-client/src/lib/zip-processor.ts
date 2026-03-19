@@ -1,7 +1,13 @@
-import * as yauzl from 'yauzl';
+import yauzl from 'yauzl';
 import * as fs from 'fs';
 import * as path from 'path';
-import { createLoggerWithPrefix } from 'log-management';
+
+class SimpleLogger {
+  constructor(private prefix: string) {}
+  log(...args: any[]) { console.log(`[${this.prefix}]`, ...args); }
+  error(...args: any[]) { console.error(`[${this.prefix}]`, ...args); }
+  warn(...args: any[]) { console.warn(`[${this.prefix}]`, ...args); }
+}
 
 /**
  * Options for zip processing operations
@@ -39,7 +45,7 @@ export interface ZipProcessResult {
  * Provides unified processing for different zip extraction needs
  */
 export class ZipProcessor {
-  private logger = createLoggerWithPrefix('pdf2md-service-ZipProcessor');
+  private logger = new SimpleLogger('pdf2md-service-ZipProcessor');
 
   /**
    * Process zip buffer with configurable options
