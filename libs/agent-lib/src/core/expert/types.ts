@@ -392,24 +392,7 @@ export interface SOPDefinition {
 }
 
 /**
- * Validation result
- */
-export interface ValidationResult {
-    valid: boolean;
-    errors?: string[];
-    warnings?: string[];
-}
-
-/**
- * Component state validation
- */
-export interface ComponentStateValidation {
-    /** Validate component state */
-    validate: (state: any) => ValidationResult;
-}
-
-/**
- * Component definition with state validation
+ * Component definition
  */
 export interface ComponentDefinition {
     componentId: string;
@@ -417,8 +400,6 @@ export interface ComponentDefinition {
     description: string;
     /** Instance, factory function, or DI Token */
     instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>) | symbol;
-    /** Component state validation */
-    stateValidation?: (state: any) => ValidationResult;
     /** Component configuration */
     config?: Record<string, any>;
     /** Whether it is a shared component */

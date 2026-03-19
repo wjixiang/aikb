@@ -36,7 +36,7 @@ export { ExpertWorkspaceBase } from './expert/ExpertWorkspaceBase.js';
 export { ExpertExecutor } from './expert/ExpertExecutor.js';
 export { ExpertRegistry } from './expert/ExpertRegistry.js';
 export { createExpertConfig } from './expert/ExpertFactory.js';
-export type { ValidationResult, ExpertConfig, ExpertComponentDefinition, ExpertTask, ExpertResult, IExpertInstance, ExpertMailConfig } from './expert/types.js';
+export type { ExpertConfig, ExpertComponentDefinition, ExpertTask, ExpertResult, IExpertInstance, ExpertMailConfig } from './expert/types.js';
 
 // Memory
 export { TurnMemoryStore } from './memory/index.js';

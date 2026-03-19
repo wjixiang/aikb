@@ -1,7 +1,7 @@
 /**
  * ExpertWorkspaceBase - Expert Workspace 基类
  *
- * 提供通用的输入/输出处理功能，简化Expert开发
+ * 提供组件管理功能，简化Expert开发
  * 用于 createExpertConfig 工厂函数
  *
  * 使用方式：
@@ -10,14 +10,11 @@
  *
  * class MyExpertWorkspace extends ExpertWorkspaceBase {
  *   static override getComponents() { ... }
- *   static override validateInput() { ... }
  * }
  * ```
  */
 
 import { ToolComponent } from '../../components/core/toolComponent.js';
-import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
-import type { ValidationResult } from './types.js';
 
 /**
  * 组件定义类型
