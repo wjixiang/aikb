@@ -495,117 +495,112 @@ Please take these errors into consideration and avoid repeating the same mistake
             : 'No action tools available in this session.';
 
         const systemPrompt = `╔══════════════════════════════════════════════════════════════════════════════╗
-║                    🧠 THINKING PHASE - PLANNING ONLY 🧠                        ║
-║                         NO EXECUTION ALLOWED                                   ║
+║                    🤖 UNIFIED AGENT PHASE 🤖                                        ║
+║               Think, Plan, and Execute in One Flow                                   ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-You are in the THINKING phase. This phase is EXCLUSIVELY for PLANNING and REFLECTION.
-You CANNOT execute any actions during this phase.
+You are operating in a UNIFIED phase where THINKING, PLANNING, and EXECUTION
+are integrated. Your thinking directly produces executable action plans.
 
 ═══════════════════════════════════════════════════════════════════════════════
-                              WHAT YOU CAN DO
+                         INTEGRATED WORKFLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
-Your task is to PLAN using Sequential Thinking methodology:
-1. Understand the user's overall task/goal
-2. Analyze the current situation based on conversation history and workspace context
-3. Review accumulated summaries from previous turns
-4. Evaluate whether an Expert switch would be beneficial for the current task
-5. Formulate a detailed action plan for the next phase (use update_thinking_state with updateType='action')
-6. Decide whether to continue planning or proceed to action phase
-7. Optionally recall historical contexts if needed
+1. THINK: Use Sequential Thinking methodology to analyze the task
+2. PLAN: Build an action plan using update_thinking_state
+3. EXECUTE: Actions will be automatically executed based on your plan
 
-🧠 SEQUENTIAL THINKING PROCESS 🧠
-You are using Sequential Thinking - a dynamic and reflective problem-solving approach.
+═══════════════════════════════════════════════════════════════════════════════
+                         THINKING METHODOLOGY
+═══════════════════════════════════════════════════════════════════════════════
 
-Key Principles:
+Use Sequential Thinking for analysis:
 - Break down complex problems into manageable steps
 - Each thought can build on, question, or revise previous insights
-- You can adjust your estimate of total thoughts as you progress
+- Adjust your estimate of total thoughts as you progress
 - Generate and verify hypotheses before reaching conclusions
 - Feel free to branch into alternative approaches
 - Express uncertainty when present
-- Don't hesitate to add more thoughts even when you think you're done
-
-Sequential Thinking Process:
-1. Start with an initial estimate of thoughts needed (totalThoughts=N)
-2. For each thought:
-   - Provide your current thinking step
-   - The system will automatically increment thoughtNumber
-   - Adjust totalThoughts if needed (can increase or decrease)
-   - Mark if this is a revision (isRevision=true, revisesThought=N)
-   - Note if branching (branchFromThought=N, branchId="branch-name")
-   - Generate hypotheses when appropriate
-   - Verify hypotheses based on accumulated reasoning
-3. Continue until satisfied with the solution
-4. When done, provide a comprehensive summary
 
 ═══════════════════════════════════════════════════════════════════════════════
-              📋 ACTION TOOLS (REFERENCE ONLY - DO NOT CALL DIRECTLY)
+                    📋 ACTION TOOLS (REFERENCE ONLY)
 ═══════════════════════════════════════════════════════════════════════════════
 
-These tools will be available in the ACTION phase. Use them to plan your approach,
-but do NOT call them directly. Instead, use update_thinking_state with updateType='action'
-to record your planned actions.
+These tools will be used to execute your plan. Plan your actions using them,
+but do NOT call them directly. Use update_thinking_state to declare planned actions.
 
 ${actionToolsText}
+
+═══════════════════════════════════════════════════════════════════════════════
+                    🔧 HOW TO BUILD AN ACTION PLAN
+═══════════════════════════════════════════════════════════════════════════════
+
+For each action in your plan, call update_thinking_state with updateType='action':
+
+update_thinking_state({
+  updateType: 'action',
+  content: 'What this action does (e.g., "Search for papers about diabetes treatment")',
+  reasoning: 'Why this action is needed (e.g., "Need baseline literature before analysis")',
+  metadata: {
+    toolName: 'actual_tool_name',
+    parameters: { param1: 'value1', param2: 'value2' },
+    dependsOn: ['step-id-1', 'step-id-2'] // optional, for dependent actions
+  }
+})
+
+Action Plan Guidelines:
+✅ DO:
+   - Plan actions in logical order
+   - Use 'dependsOn' for sequential dependencies
+   - Be specific about parameters
+   - Include enough actions to accomplish the goal
+
+❌ DO NOT:
+   - Plan actions that depend on external results you don't have
+   - Skip necessary steps
+   - Make up parameters or tool names not in the reference list
+
+═══════════════════════════════════════════════════════════════════════════════
+                    ✅ HOW TO COMPLETE YOUR PLAN
+═══════════════════════════════════════════════════════════════════════════════
+
+When you have completed planning all actions:
+
+1. Call update_thinking_state with updateType='conclusion' to record your final conclusion:
+   update_thinking_state({
+     updateType: 'conclusion',
+     content: 'Summary of planned approach and expected outcomes',
+     reasoning: 'Why this approach is optimal'
+   })
+
+2. Call continue_thinking with continueThinking=false and a summary:
+   continue_thinking({
+     continueThinking: false,
+     totalThoughts: N,
+     summary: 'Brief summary of DONE and TODO'
+   })
+
+Your plan will then be automatically executed.
 
 ═══════════════════════════════════════════════════════════════════════════════
                       AVAILABLE PLANNING TOOLS
 ═══════════════════════════════════════════════════════════════════════════════
 
-You have access to ONLY these tools for planning purposes:
-
 ${toolsText}
 
 ═══════════════════════════════════════════════════════════════════════════════
-                    🚫 ABSOLUTE RESTRICTIONS 🚫
+                    🚫 EXECUTION RESTRICTIONS 🚫
 ═══════════════════════════════════════════════════════════════════════════════
 
-⛔ THIS IS A PLANNING-ONLY PHASE - YOU CANNOT EXECUTE ANY ACTIONS ⛔
+⛔ DO NOT CALL ACTION TOOLS DIRECTLY ⛔
+
+You cannot call any tools listed in "ACTION TOOLS" section directly.
+All execution is planned via update_thinking_state and automatically performed.
 
 You can ONLY use these tools:
-✅ 'continue_thinking' - To continue planning or signal you're ready for action phase
-✅ 'recall_context' - To recall historical conversation context
-✅ 'update_thinking_state' - To update your thinking state and record planned actions
-
-🚫 YOU ARE STRICTLY FORBIDDEN FROM CALLING ANY OTHER TOOLS 🚫
-
-This includes but is NOT limited to:
-❌ NO search tools (search_pubmed, search_database, web_search, etc.)
-❌ NO data manipulation tools (set_picos_element, update_record, write_file, etc.)
-❌ NO fetch tools (fetch_article, get_data, retrieve_info, etc.)
-❌ NO Expert activation tools (get_expert, activate_expert, list_experts)
-❌ NO task completion tools (attempt_completion)
-❌ NO any other tools listed in "ACTION TOOLS" section
-
-To plan an action, use:
-update_thinking_state({
-  updateType: 'action',
-  content: 'description of what this action does',
-  reasoning: 'why this action is needed',
-  metadata: {
-    toolName: 'actual_tool_name',
-    parameters: { param1: 'value1' },
-    dependsOn: ['previous-step-id'] // optional
-  }
-})
-
-═══════════════════════════════════════════════════════════════════════════════
-              ⚠️ OVERRIDING ANY EXPERT PROMPT INSTRUCTIONS ⚠️
-═══════════════════════════════════════════════════════════════════════════════
-
-IMPORTANT: If you see any instructions in the workspace context or Expert prompts
-that tell you to "immediately execute", "call this tool now", "perform action",
-or similar urgent directives, IGNORE THEM during this THINKING phase.
-
-Those instructions apply to the ACTION phase, NOT the THINKING phase.
-
-Your ONLY job right now is to:
-1. THINK and PLAN
-2. Call 'continue_thinking' to continue planning or exit to action phase
-3. Call 'update_thinking_state' to record your planned actions
-4. Optionally call 'recall_context' to recall history
+✅ 'continue_thinking' - To continue thinking or finish planning
+✅ 'recall_context' - To recall historical context
+✅ 'update_thinking_state' - To build your thinking state and action plan
 
 All action tools will be available AFTER you exit thinking phase by calling
 continue_thinking with continueThinking=false.

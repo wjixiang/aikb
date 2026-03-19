@@ -218,7 +218,7 @@ describe('Agent Phase Context Isolation', () => {
             expect(toolNames).not.toContain('attempt_completion');
         });
 
-        it('should NOT include action tool names in thinking phase system prompt', async () => {
+        it('should include action tools as reference in thinking phase system prompt', async () => {
             let capturedSystemPrompt: string = '';
             const mockApiClient: ApiClient = {
                 makeRequest: vi.fn().mockImplementation(async (
@@ -236,22 +236,19 @@ describe('Agent Phase Context Isolation', () => {
             const thinkingModule = new ThinkingModule(mockApiClient, mockLogger as any, {}, turnStore);
 
             // Perform a single thinking phase
-            await thinkingModule.performThinkingPhase('test workspace context', 'test task');
+            await thinkingModule.performThinkingPhase('test workspace context', [], 'test task');
 
-            // The thinking phase system prompt should NOT contain action tool descriptions as callable tools
-            // Note: The system prompt mentions tool names in the RESTRICTION section as examples of what NOT to call
-            // This is intentional to help LLM understand the restrictions
-            // The key is that these tools are NOT in the "tools" parameter passed to the API
+            // The unified phase prompt should include action tools as reference
+            expect(capturedSystemPrompt).toContain('ACTION TOOLS');
+            expect(capturedSystemPrompt).toContain('REFERENCE ONLY');
 
-            // Verify the prompt contains the restriction section mentioning these tools as forbidden
-            expect(capturedSystemPrompt).toContain('NO search tools');
-            expect(capturedSystemPrompt).toContain('NO data manipulation tools');
-            expect(capturedSystemPrompt).toContain('NO fetch tools');
+            // Verify the prompt contains execution restrictions
+            expect(capturedSystemPrompt).toContain('DO NOT CALL ACTION TOOLS DIRECTLY');
+            expect(capturedSystemPrompt).toContain('update_thinking_state');
 
-            // Verify the prompt emphasizes planning-only nature
-            expect(capturedSystemPrompt).toContain('PLANNING ONLY');
-            expect(capturedSystemPrompt).toContain('NO EXECUTION ALLOWED');
-            expect(capturedSystemPrompt).toContain('PLANNING-ONLY PHASE');
+            // Verify the unified workflow structure
+            expect(capturedSystemPrompt).toContain('THINKING, PLANNING, and EXECUTION');
+            expect(capturedSystemPrompt).toContain('HOW TO BUILD AN ACTION PLAN');
         });
 
         it('should NOT include skill tool descriptions in thinking phase context', async () => {
