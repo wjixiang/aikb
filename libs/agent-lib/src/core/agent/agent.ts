@@ -224,14 +224,14 @@ export class Agent {
   /**
    * Start agent with a user query
    */
-  async start(query: string): Promise<Agent> {
+  async start(): Promise<Agent> {
     this._status = 'running';
 
     // Note: Initial user message will be added in requestLoop after startTurn()
     // This ensures the message is properly associated with a Turn
 
     // Start request loop
-    await this.requestLoop(query);
+    await this.requestLoop();
     return this;
   }
 
@@ -284,7 +284,7 @@ export class Agent {
 
     // Trigger agent to check mailbox
     // The LLM will check inbox, process tasks, and send results
-    await this.requestLoop('Check your inbox for new task emails and process them.');
+    await this.requestLoop();
   }
 
   /**
@@ -631,15 +631,12 @@ export class Agent {
    * Core method for making recursive API requests to the LLM
    * Implements stack-based retry mechanism with error handling
    */
-  protected async requestLoop(query: string): Promise<void> {
+  protected async requestLoop(): Promise<void> {
     // Reset collected errors for this new operation
     this.resetCollectedErrors();
 
     let lastToolResults: ToolResult[] = [];
 
-    const userContent: Anthropic.Messages.ContentBlockParam[] = [
-      { type: 'text', text: `<task>${query}</task>` },
-    ];
 
     // Track if we need to start a new turn
     let needsNewTurn = true;

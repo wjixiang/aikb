@@ -38,6 +38,8 @@ export const defaultActionConfig: ActionModuleConfig = {
     apiRequestTimeout: 60000,
     maxToolRetryAttempts: 3,
     enableParallelExecution: true,
+    maxApiRetryAttempts: 3,
+    apiRetryDelayMs: 1000,
 };
 
 /**
@@ -168,8 +170,9 @@ export class ActionModule implements IActionModule {
     }
 
     /**
-     * Make API request with timeout
+     * Make API request with timeout and retry mechanism
      * Uses the injected ApiClient for making requests
+     * Implements error reuse by storing errors and prepending them to subsequent retry prompts
      */
     private async makeApiRequest(
         systemPrompt: string,
@@ -177,38 +180,72 @@ export class ActionModule implements IActionModule {
         conversationHistory: ApiMessage[],
         tools: ChatCompletionTool[]
     ): Promise<ApiResponse> {
-        try {
-            // Handle errors from previous attempts
-            const errors = this.turnMemoryStore.popErrors()
-            let errorPrompt = ''
-            if (errors.length > 0) {
-                errorPrompt = `=== PREVIOUS ERRORS (to learn from) ===
+        let lastError: Error | null = null;
+
+        for (let attempt = 0; attempt <= this.config.maxApiRetryAttempts; attempt++) {
+            try {
+                // Handle errors from previous attempts
+                const errors = this.turnMemoryStore.popErrors();
+                let errorPrompt = '';
+                if (errors.length > 0) {
+                    errorPrompt = `=== PREVIOUS ERRORS (to learn from) ===
 ${errors.map((e, i) => `Error ${i + 1}: ${e.message}`).join('\n')}
 
 Please take these errors into consideration and avoid repeating the same mistakes.
-`
+`;
+                }
+
+                // Convert conversation history to memory context format
+                const memoryContext = this.convertConversationHistoryToMemoryContext(conversationHistory);
+
+                // Prepend error context if there are errors
+                const fullContext = errorPrompt ? [errorPrompt, ...memoryContext] : memoryContext;
+
+                // Use the injected ApiClient to make the request
+                const response = await this.apiClient.makeRequest(
+                    systemPrompt,
+                    workspaceContext,
+                    fullContext,
+                    { timeout: this.config.apiRequestTimeout },
+                    tools
+                );
+
+                return response;
+            } catch (error) {
+                lastError = error instanceof Error ? error : new Error(String(error));
+
+                this.logger.error({
+                    error: lastError,
+                    attempt: attempt + 1,
+                    maxRetries: this.config.maxApiRetryAttempts
+                }, 'API request failed, will retry');
+
+                // Push error to turn memory store for next attempt
+                const errorMessage = lastError.message;
+                this.turnMemoryStore.pushErrors([new Error(`API request failed: ${errorMessage}`)]);
+
+                if (attempt < this.config.maxApiRetryAttempts) {
+                    // Retry after delay if configured
+                    if (this.config.apiRetryDelayMs > 0) {
+                        await this.delay(this.config.apiRetryDelayMs);
+                    }
+                    continue;
+                }
+
+                // No more retries - throw the error
+                throw lastError;
             }
-
-            // Convert conversation history to memory context format
-            const memoryContext = this.convertConversationHistoryToMemoryContext(conversationHistory);
-
-            // Prepend error context if there are errors
-            const fullContext = errorPrompt ? [errorPrompt, ...memoryContext] : memoryContext;
-
-            // Use the injected ApiClient to make the request
-            const response = await this.apiClient.makeRequest(
-                systemPrompt,
-                workspaceContext,
-                fullContext,
-                { timeout: this.config.apiRequestTimeout },
-                tools
-            );
-
-            return response;
-        } catch (error) {
-            this.logger.error({ error }, 'API request failed');
-            throw error;
         }
+
+        // Should not reach here, but throw last error for safety
+        throw lastError || new Error('Unexpected error in makeApiRequest');
+    }
+
+    /**
+     * Delay helper for retry waits
+     */
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**

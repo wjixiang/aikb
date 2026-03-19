@@ -18,6 +18,10 @@ export interface ActionModuleConfig {
     maxToolRetryAttempts: number;
     /** Enable parallel tool execution */
     enableParallelExecution: boolean;
+    /** Maximum retry attempts for failed API requests */
+    maxApiRetryAttempts: number;
+    /** Delay between API retry attempts in milliseconds */
+    apiRetryDelayMs: number;
 }
 
 /**

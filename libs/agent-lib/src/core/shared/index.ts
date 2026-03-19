@@ -1,4 +1,3 @@
-export * from './support-prompt.js';
 export * from './cost.js';
 export * from './language.js';
 export * from './context-mentions.js';
