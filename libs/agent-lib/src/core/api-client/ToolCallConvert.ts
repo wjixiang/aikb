@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { Tool } from '../../components/core/types.js';
+import { Tool, ToolExample } from '../../components/core/types.js';
 import { ChatCompletionTool, FunctionDefinition, FunctionParameters } from './ApiClient.interface.js';
 
 /**
@@ -69,6 +69,23 @@ export interface OpenAIFunctionCallingParams {
 }
 
 /**
+ * Format tool examples into a description string
+ */
+function formatExamples(examples: ToolExample[]): string {
+  if (!examples || examples.length === 0) {
+    return '';
+  }
+
+  const formatted = examples.map((ex, idx) => {
+    const paramStr = JSON.stringify(ex.params, null, 2);
+    const resultStr = ex.expectedResult ? `\nExpected: ${ex.expectedResult}` : '';
+    return `Example ${idx + 1}: ${ex.description}\nParameters: ${paramStr}${resultStr}`;
+  }).join('\n\n');
+
+  return `\n\n## Examples\n${formatted}`;
+}
+
+/**
  * Default implementation of ToolCallConverter
  * Converts statefulContext Tool interface to OpenAI ChatCompletionTool format
  */
@@ -80,11 +97,16 @@ export class DefaultToolCallConverter implements ToolCallConverter {
     // Extract the schema definition (remove $schema property)
     const { $schema, ...parameters } = jsonSchema as any;
 
+    // Append examples to description if provided
+    const description = tool.examples && tool.examples.length > 0
+      ? `${tool.desc}${formatExamples(tool.examples)}`
+      : tool.desc;
+
     return {
       type: 'function',
       function: {
         name: tool.toolName,
-        description: tool.desc,
+        description,
         parameters: parameters as FunctionParameters,
       },
     } as ChatCompletionTool;

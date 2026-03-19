@@ -793,7 +793,7 @@ export class Agent {
         }
       } else {
         // No tool calls, throw error
-        throw new NoToolsUsedError();
+        // throw new NoToolsUsedError();
       }
     }
 
@@ -887,6 +887,45 @@ export class Agent {
   private buildSystemPrompt(): string {
     const parts: string[] = [];
 
+    // 0. Workspace guidelines with explicit tool calling format
+    parts.push(`# Responsive Agent Guideline
+
+You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
+
+**Tool Call Loop:**
+1. Analyze the current context and task
+2. Call ONE tool to gather information or perform an action
+3. Receive the tool result
+4. Analyze the result and decide next step
+5. Repeat until task is complete
+6. Call attempt_completion to finish
+
+## CRITICAL: Tool Calling Format
+
+When you decide to use a tool, you MUST use the tool_calls format in your response.
+
+**Available Tools:** The list of available tools is provided separately. Always use a tool when you need to:
+- Search for information
+- Get data or content
+- Perform an action
+- Send messages
+
+**Important Rules:**
+- Call ONLY ONE tool per response
+- After receiving the tool result, analyze it and decide if more tool calls are needed
+- When all tasks are done, call attempt_completion tool
+
+## Workspace Context
+- The CONTEXT section shows current component states (data, UI, pending actions)
+- The LOG section shows recent tool execution results (most recent marked with **>**)
+- After each tool call, the workspace state is updated for the next iteration
+
+## Error Handling
+- If a tool fails, analyze the error message and try an alternative approach
+- Do NOT repeat the same failed tool call
+- Use different tools or parameters to work around failures
+`)
+
     // 1. Role definition
     if (this.agentPrompt.capability) {
       parts.push(`# Role\n${this.agentPrompt.capability}`);
@@ -910,10 +949,8 @@ export class Agent {
       const toolDescriptions = allTools.map(t => {
         const tool = t.tool;
         const desc = tool.desc || 'No description';
-        const params = JSON.stringify(tool.paramsSchema || {});
         return `## ${tool.toolName}
-${desc}
-Parameters: ${params}`;
+${desc}`;
       }).join('\n\n');
       parts.push(`# Available Tools\n${toolDescriptions}`);
     }
@@ -957,28 +994,24 @@ Before completing with attempt_completion, you MUST ensure ALL received emails h
       return message;
     }
 
-    if (message.role === 'system') {
-      if (Array.isArray(message.content)) {
-        return `<system>\n${message.content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('\n')}\n</system>`;
+    const formatContent = (content: string | unknown[]): string => {
+      if (typeof content === 'string') {
+        return content;
       }
-      return `<system>\n${message.content}\n</system>`;
-    }
-
-    if (message.role === 'user') {
-      if (Array.isArray(message.content)) {
-        return `<user>\n${message.content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('\n')}\n</user>`;
+      if (Array.isArray(content)) {
+        return content.map(c => {
+          if (typeof c === 'object' && c !== null && 'text' in c) {
+            return (c as { text: string }).text;
+          }
+          return JSON.stringify(c);
+        }).join('\n');
       }
-      return `<user>\n${message.content}\n</user>`;
-    }
+      return JSON.stringify(content);
+    };
 
-    if (message.role === 'assistant') {
-      if (Array.isArray(message.content)) {
-        return `<assistant>\n${message.content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('\n')}\n</assistant>`;
-      }
-      return `<assistant>\n${message.content}\n</assistant>`;
-    }
-
-    return `<${message.role}>\n${JSON.stringify(message.content)}\n</${message.role}>`;
+    const roleLabel = message.role.toUpperCase();
+    const content = formatContent(message.content);
+    return `[${roleLabel}]\n${content}`;
   }
 
   /**

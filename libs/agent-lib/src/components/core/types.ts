@@ -328,12 +328,26 @@ export interface ScriptExecutionResult {
 }
 
 /**
+ * Tool example for demonstrating proper usage
+ */
+export interface ToolExample {
+    /** Brief description of what this example demonstrates */
+    description: string;
+    /** Example parameters to use */
+    params: Record<string, unknown>;
+    /** Expected result or behavior */
+    expectedResult?: string;
+}
+
+/**
  * Tool definition for components
  */
 export interface Tool {
     toolName: string;
     paramsSchema: z.ZodTypeAny;
     desc: string;
+    /** Optional examples to help LLM understand how to use this tool */
+    examples?: ToolExample[];
 }
 
 /**

@@ -167,88 +167,274 @@ export type MailToolParams =
 export const mailToolSchemas = {
   getInbox: {
     toolName: 'getInbox',
-    desc: 'Get inbox messages with optional filtering.',
+    desc: 'Get inbox messages with optional filtering by read status, starred status, or address.',
     paramsSchema: getInboxParamsSchema,
+    examples: [
+      {
+        description: 'Get first 20 messages from inbox',
+        params: { limit: 20, offset: 0, unreadOnly: false },
+        expectedResult: 'Returns array of messages with id, subject, from, date, read status, etc.',
+      },
+      {
+        description: 'Get only unread messages',
+        params: { limit: 10, unreadOnly: true },
+        expectedResult: 'Returns only unread messages',
+      },
+      {
+        description: 'Get messages from specific address',
+        params: { address: 'task@agent', limit: 50 },
+        expectedResult: 'Returns messages from the specified mailbox address',
+      },
+    ],
   },
   getUnreadCount: {
     toolName: 'getUnreadCount',
-    desc: 'Get the count of unread messages for an address',
+    desc: 'Get the count of unread messages for an address. Use this to check if there are new tasks.',
     paramsSchema: getUnreadCountParamsSchema,
+    examples: [
+      {
+        description: 'Check unread count for default address',
+        params: {},
+        expectedResult: 'Returns { count: number }',
+      },
+    ],
   },
   markAsRead: {
     toolName: 'markAsRead',
-    desc: 'Mark a message as read',
+    desc: 'Mark a message as read after you have processed it.',
     paramsSchema: messageIdParamsSchema,
+    examples: [
+      {
+        description: 'Mark a message as read',
+        params: { messageId: 'msg-123abc' },
+        expectedResult: 'Message status updated to read',
+      },
+    ],
   },
   markAsUnread: {
     toolName: 'markAsUnread',
-    desc: 'Mark a message as unread',
+    desc: 'Mark a message as unread.',
     paramsSchema: messageIdParamsSchema,
+    examples: [
+      {
+        description: 'Mark a message as unread',
+        params: { messageId: 'msg-123abc' },
+      },
+    ],
   },
   starMessage: {
     toolName: 'starMessage',
-    desc: 'Star a message',
+    desc: 'Star a message to mark it as important.',
     paramsSchema: messageIdParamsSchema,
+    examples: [
+      {
+        description: 'Star an important message',
+        params: { messageId: 'msg-123abc' },
+      },
+    ],
   },
   unstarMessage: {
     toolName: 'unstarMessage',
-    desc: 'Unstar a message',
+    desc: 'Remove star from a message.',
     paramsSchema: messageIdParamsSchema,
+    examples: [
+      {
+        description: 'Remove star from message',
+        params: { messageId: 'msg-123abc' },
+      },
+    ],
   },
   deleteMessage: {
     toolName: 'deleteMessage',
-    desc: 'Delete a message (soft delete)',
+    desc: 'Soft delete a message (moves to trash).',
     paramsSchema: messageIdParamsSchema,
+    examples: [
+      {
+        description: 'Delete a message',
+        params: { messageId: 'msg-123abc' },
+        expectedResult: 'Message moved to trash',
+      },
+    ],
   },
   searchMessages: {
     toolName: 'searchMessages',
-    desc: 'Search messages across mailboxes by subject, body, sender, etc.',
+    desc: 'Search messages by text content, sender, or recipient. Returns matching messages.',
     paramsSchema: searchMessagesParamsSchema,
+    examples: [
+      {
+        description: 'Search for messages containing "PubMed"',
+        params: { query: 'PubMed' },
+        expectedResult: 'Returns messages with PubMed in subject or body',
+      },
+      {
+        description: 'Search from specific sender',
+        params: { query: 'article', from: 'research@agent' },
+        expectedResult: 'Returns messages from research@agent containing "article"',
+      },
+      {
+        description: 'Search for unread high priority messages',
+        params: { query: 'urgent', unread: true, priority: 'urgent' },
+        expectedResult: 'Returns unread urgent messages',
+      },
+    ],
   },
   replyToMessage: {
     toolName: 'replyToMessage',
-    desc: 'Reply to an existing message',
+    desc: 'Create a draft reply to an existing message. This is the FIRST step of the reply workflow.',
     paramsSchema: replyToMessageParamsSchema,
+    examples: [
+      {
+        description: 'Reply to a message',
+        params: {
+          messageId: 'msg-123abc',
+          body: 'Thank you for your message. I will process your request and get back to you shortly.',
+        },
+        expectedResult: 'Returns draftId which is used in sendDraft',
+      },
+      {
+        description: 'Reply with attachment reference',
+        params: {
+          messageId: 'msg-456def',
+          body: 'Here is the analysis you requested.',
+          attachments: ['results.pdf'],
+        },
+      },
+    ],
   },
   registerAddress: {
     toolName: 'registerAddress',
-    desc: 'Register a new mailbox address',
+    desc: 'Register a mailbox address for this agent. Must be called before receiving messages.',
     paramsSchema: registerAddressParamsSchema,
+    examples: [
+      {
+        description: 'Register a new mailbox address',
+        params: { address: 'myagent@expert' },
+        expectedResult: 'Address registered and ready to receive messages',
+      },
+    ],
   },
   saveDraft: {
     toolName: 'saveDraft',
-    desc: 'Save an email as a draft (not sent)',
+    desc: 'Save a new email draft (not sent). Use for composing new messages to send later.',
     paramsSchema: saveDraftParamsSchema,
+    examples: [
+      {
+        description: 'Save a draft to a task agent',
+        params: {
+          to: 'pubmed@expert',
+          subject: 'Literature Search Request',
+          body: 'Please search for articles about...',
+          priority: 'normal',
+        },
+        expectedResult: 'Returns draftId for later sending',
+      },
+    ],
   },
   editDraft: {
     toolName: 'editDraft',
-    desc: 'Edit an existing draft',
+    desc: 'Edit an existing draft. Use to modify subject, body, recipient, or priority.',
     paramsSchema: editDraftParamsSchema,
+    examples: [
+      {
+        description: 'Update draft body',
+        params: {
+          draftId: 'draft-789xyz',
+          body: 'Updated content for the reply...',
+        },
+        expectedResult: 'Draft content updated',
+      },
+      {
+        description: 'Change draft priority',
+        params: {
+          draftId: 'draft-789xyz',
+          priority: 'urgent',
+        },
+      },
+    ],
   },
   getDrafts: {
     toolName: 'getDrafts',
-    desc: 'Get saved drafts from mailbox',
+    desc: 'Get all saved drafts from mailbox.',
     paramsSchema: getDraftsParamsSchema,
+    examples: [
+      {
+        description: 'Get all drafts',
+        params: { limit: 20 },
+        expectedResult: 'Returns array of drafts',
+      },
+    ],
   },
   deleteDraft: {
     toolName: 'deleteDraft',
-    desc: 'Delete a draft',
+    desc: 'Delete a draft permanently.',
     paramsSchema: deleteDraftParamsSchema,
+    examples: [
+      {
+        description: 'Delete a draft',
+        params: { draftId: 'draft-789xyz' },
+        expectedResult: 'Draft deleted',
+      },
+    ],
   },
   insertDraftContent: {
     toolName: 'insertDraftContent',
-    desc: 'Insert content at a specific position in a draft body',
+    desc: 'Insert content at a specific character position in a draft body.',
     paramsSchema: insertDraftContentParamsSchema,
+    examples: [
+      {
+        description: 'Insert content at position 100',
+        params: {
+          draftId: 'draft-789xyz',
+          content: '\n\nAdditional paragraph...',
+          position: 100,
+        },
+        expectedResult: 'Content inserted at specified position',
+      },
+    ],
   },
   replaceDraftContent: {
     toolName: 'replaceDraftContent',
-    desc: 'Replace specific content in a draft body with new content',
+    desc: 'Replace specific text in a draft body with new content.',
     paramsSchema: replaceDraftContentParamsSchema,
+    examples: [
+      {
+        description: 'Replace text in draft',
+        params: {
+          draftId: 'draft-789xyz',
+          search: 'old text',
+          replacement: 'new text',
+          replaceAll: false,
+        },
+        expectedResult: 'First occurrence replaced',
+      },
+      {
+        description: 'Replace all occurrences',
+        params: {
+          draftId: 'draft-789xyz',
+          search: 'error',
+          replacement: 'success',
+          replaceAll: true,
+        },
+        expectedResult: 'All occurrences replaced',
+      },
+    ],
   },
   sendDraft: {
     toolName: 'sendDraft',
-    desc: 'Send a draft email. If the draft was created as a reply (has inReplyTo), it will be sent as a reply.',
+    desc: 'Send a draft email. If draft was created with replyToMessage, it will be sent as a reply. This is the FINAL step of the reply workflow.',
     paramsSchema: sendDraftParamsSchema,
+    examples: [
+      {
+        description: 'Send a reply draft',
+        params: { draftId: 'draft-789xyz' },
+        expectedResult: 'Message sent successfully, returns messageId',
+      },
+      {
+        description: 'Send draft as reply to specific message',
+        params: { draftId: 'draft-789xyz', inReplyTo: 'msg-123abc' },
+        expectedResult: 'Message sent as reply to msg-123abc',
+      },
+    ],
   },
 };
 
@@ -272,12 +458,12 @@ export interface MailToolReturnTypes {
   searchMessages: InboxResult;
   replyToMessage: SendResult;
   registerAddress: MailAddress;
-  saveDraft: StorageResult;
-  editDraft: StorageResult;
+  saveDraft: StorageResult<{ draftId: string }>;
+  editDraft: StorageResult<void>;
   getDrafts: InboxResult;
-  deleteDraft: StorageResult;
-  insertDraftContent: StorageResult;
-  replaceDraftContent: StorageResult;
+  deleteDraft: StorageResult<void>;
+  insertDraftContent: StorageResult<void>;
+  replaceDraftContent: StorageResult<void>;
   sendDraft: SendResult;
 }
 
