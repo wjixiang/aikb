@@ -54,6 +54,7 @@ import {
     defaultThinkingConfig,
 } from './types.js';
 import type { ITurnMemoryStore } from '../memory/TurnMemoryStore.interface.js';
+import { ThinkingPromptBuilder } from '../prompts/thinking/index.js';
 
 /**
  * ThinkingModule - Implements thinking phase logic with Sequential Thinking support

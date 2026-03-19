@@ -9,9 +9,6 @@ import { DefaultToolCallConverter } from '../api-client/index.js';
 import {
   AgentError,
 } from '../common/errors.js';
-import { generateWorkspaceGuide } from '../prompts/sections/workspaceGuide.js';
-import { generateActionPhaseGuidance } from '../prompts/sections/actionPhaseGuidance.js';
-import { generateMailTaskGuide } from '../prompts/sections/mailTaskGuide.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type {
@@ -29,6 +26,7 @@ import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { ILogger } from '../utils/logging/types.js';
 import type { Tool } from '../../components/core/types.js';
+import { ActionPromptBuilder } from '../prompts/action/index.js';
 
 // Tool result from execution - now defined in action/types.ts
 // interface ToolResult {
@@ -779,7 +777,6 @@ export class Agent {
   private async executeActionPhase(
     thinkingResult: ThinkingPhaseResult,
   ): Promise<ActionPhaseResult> {
-    const systemPrompt = await this.getSystemPrompt();
     const conversationHistory = this.memoryModule.getHistoryForPrompt();
 
     // Convert tools to OpenAI format (inline utility)
@@ -788,15 +785,22 @@ export class Agent {
     const converter = new DefaultToolCallConverter();
     const openaiTools = converter.convertTools(tools);
 
-    // Generate action phase guidance with thinking summary
+    // Generate thinking summary if available
     const thinkingSummary =
       thinkingResult.rounds.length > 0
         ? this.formatMemoryThinkingSummary(thinkingResult)
         : undefined;
-    const actionPhaseGuidance = generateActionPhaseGuidance(thinkingSummary);
 
-    // Prepend action phase guidance to system prompt
-    const enhancedSystemPrompt = `${actionPhaseGuidance}\n\n${systemPrompt}`;
+    // Build enhanced prompt using ActionPromptBuilder
+    const componentKeys = this.workspace.getComponentKeys();
+    const hasMailComponent = componentKeys.includes('mail');
+    const builder = new ActionPromptBuilder({
+      workspace: this.workspace,
+      agentPrompt: this.agentPrompt,
+      hasMailComponent,
+    }).setThinkingSummary(thinkingSummary);
+
+    const enhancedSystemPrompt = await builder.build();
 
     // Get current workspace context
     const currentWorkspaceContext = await this.workspace.render();
@@ -872,24 +876,6 @@ ${rounds}`;
     return this._status === 'aborted';
   }
 
-  renderAgentPrompt() {
-    const capability = this.agentPrompt.capability;
-    const direction = this.agentPrompt.direction;
-
-    return `
-------------
-Capabilities
-------------
-${capability}
-
---------------
-Work Direction
---------------
-${direction}
-
-`;
-  }
-
   // ==================== Agent-Specific Methods ====================
 
   /**
@@ -897,26 +883,17 @@ ${direction}
    * Uses VirtualWorkspace's render for context
    */
   async getSystemPrompt() {
-    // Render component tools section
-    const componentToolsSection =
-      await this.workspace.renderComponentToolsSection();
-    const componentToolsRendered = componentToolsSection
-      ? componentToolsSection.render()
-      : '';
-
     // Check if mail component is available for mail-driven mode
     const componentKeys = this.workspace.getComponentKeys();
     const hasMailComponent = componentKeys.includes('mail');
 
-    // Generate mail task guide if mail component is available
-    const mailTaskGuide = hasMailComponent ? generateMailTaskGuide() : '';
+    // Use ActionPromptBuilder to construct the system prompt
+    const builder = new ActionPromptBuilder({
+      workspace: this.workspace,
+      agentPrompt: this.agentPrompt,
+      hasMailComponent,
+    });
 
-    return `
-${generateWorkspaceGuide()}
-${this.renderAgentPrompt()}
-${mailTaskGuide}
-${this.workspace.renderToolBox().render()}
-${componentToolsRendered}
-        `;
+    return await builder.buildSystemPrompt();
   }
 }
