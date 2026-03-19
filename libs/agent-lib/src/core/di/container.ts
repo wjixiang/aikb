@@ -4,8 +4,6 @@ import { TYPES } from './types.js';
 import { Agent } from '../agent/agent.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
-import { TurnMemoryStore } from '../memory/TurnMemoryStore.js';
-import { createObservableTurnMemoryStore, TurnStoreObserverCallbacks } from '../memory/ObservableTurnMemoryStore.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
 // Example components moved to agent-lib components module
@@ -205,7 +203,6 @@ export class AgentContainer {
         // Memory module and its dependencies
         this.container.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
         this.container.bind<IMemoryModule>(TYPES.IMemoryModule).to(MemoryModule).inRequestScope();
-        this.container.bind(TYPES.ITurnMemoryStore).to(TurnMemoryStore).inRequestScope();
 
         // Configuration defaults
         this.container.bind<AgentConfig>(TYPES.AgentConfig).toConstantValue(defaultAgentConfig);
@@ -403,16 +400,6 @@ export class AgentContainer {
         // Memory module and its dependencies
         agentContainer.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
 
-        // TurnMemoryStore - wrap with observer if turn-level callbacks are provided
-        if (options.observers && hasTurnLevelCallbacks(options.observers)) {
-            agentContainer.bind(TYPES.ITurnMemoryStore).toDynamicValue(() => {
-                const baseStore = new TurnMemoryStore();
-                return createObservableTurnMemoryStore(baseStore, extractTurnCallbacks(options.observers!));
-            }).inRequestScope();
-        } else {
-            agentContainer.bind(TYPES.ITurnMemoryStore).to(TurnMemoryStore).inRequestScope();
-        }
-
         // Tool Manager - singleton service shared across all agents
         // Bind in agent container for VirtualWorkspace to inject
         agentContainer.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inRequestScope();
@@ -574,36 +561,6 @@ export function getGlobalContainer(): AgentContainer {
  */
 export function resetGlobalContainer(): void {
     globalContainer = null;
-}
-
-/**
- * Check if the observer callbacks include any turn-level callbacks
- */
-function hasTurnLevelCallbacks(observers: ObservableAgentCallbacks): boolean {
-    return !!(
-        observers.onTurnCreated ||
-        observers.onTurnStatusChanged ||
-        observers.onTurnMessageAdded ||
-        observers.onThinkingPhaseCompleted ||
-        observers.onToolCallRecorded ||
-        observers.onTurnSummaryStored ||
-        observers.onTurnActionTokensUpdated
-    );
-}
-
-/**
- * Extract turn-level callbacks from ObservableAgentCallbacks
- */
-function extractTurnCallbacks(observers: ObservableAgentCallbacks): TurnStoreObserverCallbacks {
-    return {
-        onTurnCreated: observers.onTurnCreated,
-        onTurnStatusChanged: observers.onTurnStatusChanged,
-        onTurnMessageAdded: observers.onTurnMessageAdded,
-        onThinkingPhaseCompleted: observers.onThinkingPhaseCompleted,
-        onToolCallRecorded: observers.onToolCallRecorded,
-        onTurnSummaryStored: observers.onTurnSummaryStored,
-        onTurnActionTokensUpdated: observers.onTurnActionTokensUpdated,
-    };
 }
 
 export type TestOverrides = {

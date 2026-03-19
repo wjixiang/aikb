@@ -356,7 +356,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     componentKey?: string,
   ): string {
     if (!result) {
-      return componentKey ? `[${componentKey}] (no result)` : '(no result)';
+      return componentKey ? `[${componentKey}][${toolName}] (no result)` : '(no result)';
     }
 
     // Try to extract key information based on tool name

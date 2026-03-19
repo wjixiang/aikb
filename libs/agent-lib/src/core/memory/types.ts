@@ -3,8 +3,6 @@
  */
 
 import type Anthropic from '@anthropic-ai/sdk';
-import { Turn, ThinkingRound, ToolCallResult } from './Turn.js';
-import { ITurnMemoryStore } from './TurnMemoryStore.interface.js';
 
 // =============================================================================
 // Message Types (migrated from task/task.type.ts)

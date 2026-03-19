@@ -42,12 +42,6 @@ export { createExpertConfig } from './expert/ExpertFactory.js';
 export type { ExpertConfig, ExpertComponentDefinition, ExpertTask, ExpertResult, IExpertInstance, ExpertMailConfig } from './expert/types.js';
 
 // Memory
-export { TurnMemoryStore } from './memory/index.js';
-export type { ITurnMemoryStore } from './memory/index.js';
-export { TurnStatus } from './memory/index.js';
-export type { Turn, TurnThinkingRound, TurnMemoryExport } from './memory/index.js';
-export { createObservableTurnMemoryStore, ObservableTurnMemoryStoreFactory } from './memory/index.js';
-export type { TurnStoreObserverCallbacks } from './memory/index.js';
 export { ContextMemoryStore } from './memory/index.js';
 export type { ContextSnapshot, MemorySummary } from './memory/index.js';
 export { MemoryModule, defaultMemoryConfig } from './memory/index.js';

@@ -69,22 +69,3 @@ export type {
   MailToolReturnTypes,
   ToolReturnType,
 } from './mailSchemas.js';
-
-// Re-export mail-related types from agent-lib for convenience
-export type {
-  MailAddress,
-  MailMessage,
-  MailMessageStatus,
-  OutgoingMail,
-  MailPriority,
-  IMailListener,
-  MailSubscription,
-  SubscriptionId,
-  InboxQuery,
-  InboxResult,
-  SearchQuery,
-  PaginationOptions,
-  SendResult,
-  StorageResult,
-  IMailStorage,
-} from 'agent-lib';
