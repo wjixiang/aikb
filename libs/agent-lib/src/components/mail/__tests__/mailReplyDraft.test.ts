@@ -89,9 +89,11 @@ describe('MailComponent - Reply Draft Mechanism', () => {
         });
 
         it('should return error if original message not found', async () => {
+            // Mock GET /message/:messageId to return 404
             mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([]),
+                ok: false,
+                status: 404,
+                json: () => Promise.resolve({ error: 'Message not found' }),
             });
 
             const result = await mailComponent.handleToolCall('replyToMessage', {

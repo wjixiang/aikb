@@ -1,4 +1,4 @@
-import { injectable, inject, optional, Container } from 'inversify';
+import { injectable, inject, optional } from 'inversify';
 import {
   ToolComponent,
   type VirtualWorkspaceConfig,
@@ -23,7 +23,6 @@ import {
   type ComponentRegistration,
 } from '../../components/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
-import chalk from 'chalk';
 
 /**
  * Default VirtualWorkspace configuration
@@ -444,7 +443,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
           styles: { showBorder: false },
         }),
       );
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return container;
     }
 
@@ -470,7 +468,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return container;
   }
 
@@ -623,7 +620,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     const toolSection = renderToolSection(tools);
     container.addChild(toolSection);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return container;
   }
 
@@ -647,7 +643,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       container.addChild(globalToolsSection);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return container;
   }
 
@@ -656,7 +651,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
    * Render the tool call log section (Markdown style for both TUI and Markdown modes)
    */
   renderToolCallLogSection(): TUIElement {
-    const maxCount = this.config.toolCallLogCount ?? 3;
+    const maxCount = this.config.toolCallLogCount ?? 10;
 
     // Use simple markdown-style container without borders
     const container = new tdiv({
@@ -690,7 +685,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       );
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return container;
   }
 
@@ -830,7 +824,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       container.addChild(this.renderToolCallLogSection());
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return container;
   }
 
@@ -881,9 +874,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     // Execute through the tool management system
     try {
       const result = await this.toolManager.executeTool(toolName, params);
-      return { data: { success: true, result } };
+      return { success: true, data: { success: true, result } };
     } catch (error) {
       return {
+        success: false,
         data: {
           error: error instanceof Error ? error.message : String(error),
           success: false,

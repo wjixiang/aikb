@@ -86,9 +86,12 @@ export class ComponentToolProvider extends BaseToolProvider implements IToolProv
             const resultData = toolCallResult?.data ?? toolCallResult;
             const customSummary = toolCallResult?.summary;
 
+            // Use success from ToolCallResult (now required)
+            const isSuccess = toolCallResult?.success !== false;
+
             // Notify callback if registered (for real-time tool result updates)
             if (this.onToolExecuted) {
-                this.onToolExecuted(name, params, resultData, true, this.componentKey, customSummary);
+                this.onToolExecuted(name, params, resultData, isSuccess, this.componentKey, customSummary);
             }
 
             return resultData;

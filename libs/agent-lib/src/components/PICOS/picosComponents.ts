@@ -265,7 +265,7 @@ export class PicosComponent extends ToolComponent {
             case 'export_picos':
                 return this.handleExportPicos(params);
             default:
-                return { data: { error: `Unknown tool: ${toolName}` }, summary: `[PICOS] 未知工具: ${toolName}` };
+                return { success: false, data: { error: `Unknown tool: ${toolName}` }, summary: `[PICOS] 未知工具: ${toolName}` };
         }
     }
 
@@ -273,7 +273,7 @@ export class PicosComponent extends ToolComponent {
         const { element, data } = params;
 
         if (!['patient', 'intervention', 'comparison', 'outcome', 'studyDesign'].includes(element)) {
-            return { data: { error: `Invalid PICOS element: ${element}` }, summary: `[PICOS] 无效元素: ${element}` };
+            return { success: false, data: { error: `Invalid PICOS element: ${element}` }, summary: `[PICOS] 无效元素: ${element}` };
         }
 
         // Ensure data is a plain object, not a string or array
@@ -301,7 +301,7 @@ export class PicosComponent extends ToolComponent {
         this.validationResult = null;
         this.exportResult = null;
 
-        return { data: { element }, summary: `[PICOS] 设置 ${element}` };
+        return { success: true, data: { element }, summary: `[PICOS] 设置 ${element}` };
     }
 
     private handleGenerateClinicalQuestion(params: any): ToolCallResult<any> {
@@ -309,7 +309,7 @@ export class PicosComponent extends ToolComponent {
 
         if (!this.currentPicos.patient && !this.currentPicos.intervention &&
             !this.currentPicos.comparison && !this.currentPicos.outcome) {
-            return { data: { error: 'At least one PICOS element must be set to generate a question' }, summary: `[PICOS] 错误: 至少需要设置一个PICOS元素` };
+            return { success: false, data: { error: 'At least one PICOS element must be set to generate a question' }, summary: `[PICOS] 错误: 至少需要设置一个PICOS元素` };
         }
 
         const parts: string[] = [];
@@ -347,7 +347,7 @@ export class PicosComponent extends ToolComponent {
             this.exportResult = this.generateStructuredOutput();
         }
 
-        return { data: { question: this.generatedQuestion, format }, summary: `[PICOS] 生成临床问题` };
+        return { success: true, data: { question: this.generatedQuestion, format }, summary: `[PICOS] 生成临床问题` };
     }
 
     private handleValidatePicos(): ToolCallResult<any> {
@@ -378,7 +378,7 @@ export class PicosComponent extends ToolComponent {
             missingElements
         };
 
-        return { data: this.validationResult, summary: `[PICOS] 验证: ${isValid ? '完整' : '不完整'}` };
+        return { success: isValid, data: this.validationResult, summary: `[PICOS] 验证: ${isValid ? '完整' : '不完整'}` };
     }
 
     private handleClearPicos(): ToolCallResult<any> {
@@ -387,7 +387,7 @@ export class PicosComponent extends ToolComponent {
         this.validationResult = null;
         this.exportResult = null;
 
-        return { data: { cleared: true }, summary: `[PICOS] 已清除` };
+        return { success: true, data: { cleared: true }, summary: `[PICOS] 已清除` };
     }
 
     private handleExportPicos(params: any): ToolCallResult<any> {
@@ -404,10 +404,10 @@ export class PicosComponent extends ToolComponent {
                 this.exportResult = this.generateSearchString();
                 break;
             default:
-                return { data: { error: `Invalid export format: ${format}` }, summary: `[PICOS] 无效导出格式: ${format}` };
+                return { success: false, data: { error: `Invalid export format: ${format}` }, summary: `[PICOS] 无效导出格式: ${format}` };
         }
 
-        return { data: { format }, summary: `[PICOS] 导出: ${format} 格式` };
+        return { success: true, data: { format }, summary: `[PICOS] 导出: ${format} 格式` };
     }
 
     private generateMarkdownOutput(): string {

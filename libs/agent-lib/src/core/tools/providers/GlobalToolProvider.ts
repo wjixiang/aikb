@@ -156,9 +156,13 @@ export class GlobalToolProvider extends BaseToolProvider implements IToolProvide
             // Note: replyToMessage and sendMail tracking is handled by ComponentToolProvider
             // The Agent tracks replies via memoryModule analysis after each requestLoop
 
+            // Determine actual success based on tool result content
+            // Tools can return { success: false, error: "..." } without throwing
+            const isSuccess = result?.success !== false;
+
             // Notify callback if registered (for real-time tool result updates)
             if (this.onToolExecuted) {
-                this.onToolExecuted(name, params, result, true, 'global');
+                this.onToolExecuted(name, params, result, isSuccess, 'global');
             }
 
             return result;

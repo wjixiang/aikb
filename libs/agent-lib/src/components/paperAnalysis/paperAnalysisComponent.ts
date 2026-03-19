@@ -56,17 +56,17 @@ export class PaperAnalysisComponent extends ToolComponent {
         if (toolName === 'calculate_complexity') {
             const result = await this.calculateComplexity(params.paper_content, params.dimensions);
             this.analysisResults.push(result);
-            return { data: result, summary: `[PaperAnalysis] 计算复杂度完成` };
+            return { success: true, data: result, summary: `[PaperAnalysis] 计算复杂度完成` };
         } else if (toolName === 'extract_key_citations') {
             const result = await this.extractKeyCitations(params.paper_content, params.max_citations);
             this.analysisResults.push(result);
-            return { data: result, summary: `[PaperAnalysis] 提取关键引用完成` };
+            return { success: true, data: result, summary: `[PaperAnalysis] 提取关键引用完成` };
         } else if (toolName === 'compare_papers') {
             const result = await this.comparePapers(params.paper_a, params.paper_b, params.comparison_aspects);
             this.analysisResults.push(result);
-            return { data: result, summary: `[PaperAnalysis] 论文比较完成` };
+            return { success: true, data: result, summary: `[PaperAnalysis] 论文比较完成` };
         }
-        return { data: { error: `Unknown tool: ${toolName}` }, summary: `[PaperAnalysis] 未知工具: ${toolName}` };
+        return { success: false, data: { error: `Unknown tool: ${toolName}` }, summary: `[PaperAnalysis] 未知工具: ${toolName}` };
     };
 
     private async calculateComplexity(content: string, dimensions?: string[]): Promise<any> {

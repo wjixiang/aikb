@@ -23,7 +23,7 @@ export class TestComponent extends ToolComponent {
     };
 
     handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        return { data: { success: true } };
+        return { success: true, data: { success: true } };
     };
 }
 
@@ -48,7 +48,7 @@ export class TestComponent2 extends ToolComponent {
     };
 
     handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        return { data: { success: true } };
+        return { success: true, data: { success: true } };
     };
 }
 
@@ -73,7 +73,7 @@ export class AnotherComponent extends ToolComponent {
     };
 
     handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        return { data: { success: true } };
+        return { success: true, data: { success: true } };
     };
 }
 
@@ -111,11 +111,12 @@ export class TestToolComponentA extends ToolComponent {
             this.searchQuery = params.query;
             this.searchResults = [`result1 for ${params.query}`, `result2 for ${params.query}`];
             return {
+                success: true,
                 data: { query: params.query, results: this.searchResults },
                 summary: `[TestA] 搜索: ${params.query}, 找到 ${this.searchResults.length} 个结果`
             };
         }
-        return { data: { error: 'Unknown tool' } };
+        return { success: false, data: { error: 'Unknown tool' } };
     };
 
     getSearchQuery(): string {
@@ -156,11 +157,12 @@ export class TestToolComponentB extends ToolComponent {
             const amount = params.amount || 1;
             this.counter += amount;
             return {
+                success: true,
                 data: { counter: this.counter, increment: amount },
                 summary: `[TestB] 计数器: +${amount}, 当前值: ${this.counter}`
             };
         }
-        return { data: { error: 'Unknown tool' } };
+        return { success: false, data: { error: 'Unknown tool' } };
     };
 
     getCounter(): number {
@@ -196,11 +198,12 @@ export class TestToolComponentC extends ToolComponent {
         if (toolName === 'toggle') {
             this.flag = !this.flag;
             return {
+                success: true,
                 data: { flag: this.flag },
                 summary: `[TestC] 开关: ${this.flag ? 'ON' : 'OFF'}`
             };
         }
-        return { data: { error: 'Unknown tool' } };
+        return { success: false, data: { error: 'Unknown tool' } };
     };
 
     getFlag(): boolean {

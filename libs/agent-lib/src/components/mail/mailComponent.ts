@@ -400,6 +400,7 @@ export class MailComponent extends ToolComponent {
           return this.handleSendDraft(params as SendDraftParams);
         default:
           return {
+            success: false,
             data: { error: `Unknown tool: ${toolName}` },
             summary: `[Mail] Unknown tool: ${toolName}`,
           };
@@ -408,6 +409,7 @@ export class MailComponent extends ToolComponent {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       return {
+        success: false,
         data: { error: errorMessage },
         summary: `[Mail] Error: ${errorMessage}`,
       };
@@ -420,6 +422,7 @@ export class MailComponent extends ToolComponent {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
+        success: false,
         data: {
           error: 'No address specified and no default address configured',
         },
@@ -439,6 +442,7 @@ export class MailComponent extends ToolComponent {
     const result = await this.getInbox(address, query);
 
     return {
+      success: true,
       data: result,
       summary: `[Mail] ${address}: ${result.messages.length}/${result.total} messages (${result.unread} unread)`,
     };
@@ -450,6 +454,7 @@ export class MailComponent extends ToolComponent {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
+        success: false,
         data: {
           error: 'No address specified and no default address configured',
         },
@@ -460,6 +465,7 @@ export class MailComponent extends ToolComponent {
     const count = await this.getUnreadCount(address);
 
     return {
+      success: true,
       data: { count, address },
       summary: `[Mail] ${address} has ${count} unread messages`,
     };
@@ -470,6 +476,7 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> {
     const result = await this.markAsRead(params.messageId);
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Marked ${params.messageId} as read`
@@ -482,6 +489,7 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> {
     const result = await this.markAsUnread(params.messageId);
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Marked ${params.messageId} as unread`
@@ -494,6 +502,7 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> {
     const result = await this.starMessage(params.messageId);
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Starred ${params.messageId}`
@@ -506,6 +515,7 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> {
     const result = await this.unstarMessage(params.messageId);
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Unstarred ${params.messageId}`
@@ -518,6 +528,7 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> {
     const result = await this.deleteMessage(params.messageId);
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Deleted ${params.messageId}`
@@ -541,6 +552,7 @@ export class MailComponent extends ToolComponent {
     const results = await this.searchMessages(query);
 
     return {
+      success: true,
       data: results,
       summary: `[Mail] Found ${results.length} messages matching "${params.query}"`,
     };
@@ -550,13 +562,11 @@ export class MailComponent extends ToolComponent {
     params: ReplyToMessageParams,
   ): Promise<ToolCallResult<any>> {
     // First get the original message to find the sender
-    const messages = await this.searchMessages({ subject: params.messageId });
-    const originalMessage = messages.find(
-      (m) => m.messageId === params.messageId,
-    );
+    const originalMessage = await this.getMessage(params.messageId);
 
     if (!originalMessage) {
       return {
+        success: false,
         data: { error: `Message ${params.messageId} not found` },
         summary: '[Mail] Error: Original message not found',
       };
@@ -580,12 +590,14 @@ export class MailComponent extends ToolComponent {
 
     if (!result.success) {
       return {
+        success: false,
         data: result,
         summary: `[Mail] Failed to create reply draft: ${result.error}`,
       };
     }
 
     return {
+      success: true,
       data: {
         success: true,
         draftId: result.draftId,
@@ -603,6 +615,7 @@ export class MailComponent extends ToolComponent {
     const draft = this.draftsStore.get(params.draftId);
     if (!draft) {
       return {
+        success: false,
         data: { error: `Draft ${params.draftId} not found` },
         summary: '[Mail] Error: Draft not found',
       };
@@ -652,6 +665,7 @@ export class MailComponent extends ToolComponent {
     }
 
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? inReplyTo
@@ -666,6 +680,7 @@ export class MailComponent extends ToolComponent {
   ): Promise<ToolCallResult<any>> {
     const result = await this.registerAddress(params.address);
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Registered ${params.address}`
@@ -679,6 +694,7 @@ export class MailComponent extends ToolComponent {
     const from = this.config.defaultAddress;
     if (!from) {
       return {
+        success: false,
         data: { error: 'No default address configured' },
         summary: '[Mail] Error: No default address configured',
       };
@@ -698,6 +714,7 @@ export class MailComponent extends ToolComponent {
     const result = this.saveDraft(draft);
 
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Draft saved: "${params.subject}"`
@@ -719,6 +736,7 @@ export class MailComponent extends ToolComponent {
     });
 
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Draft edited: "${params.draftId}"`
@@ -732,6 +750,7 @@ export class MailComponent extends ToolComponent {
     const address = params.address || this.config.defaultAddress;
     if (!address) {
       return {
+        success: false,
         data: {
           error: 'No address specified and no default address configured',
         },
@@ -745,6 +764,7 @@ export class MailComponent extends ToolComponent {
     });
 
     return {
+      success: true,
       data: result,
       summary: `[Mail] ${address}: ${result.drafts.length} drafts`,
     };
@@ -756,6 +776,7 @@ export class MailComponent extends ToolComponent {
     const result = this.deleteDraft(params.draftId);
 
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Draft deleted: "${params.draftId}"`
@@ -769,6 +790,7 @@ export class MailComponent extends ToolComponent {
     const result = this.insertDraftContent(params.draftId, params.content, params.position);
 
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Inserted content at position ${params.position} in draft "${params.draftId}"`
@@ -782,6 +804,7 @@ export class MailComponent extends ToolComponent {
     const result = this.replaceDraftContent(params.draftId, params.search, params.replacement, params.replaceAll);
 
     return {
+      success: result.success,
       data: result,
       summary: result.success
         ? `[Mail] Replaced "${params.search}" with "${params.replacement}" in draft "${params.draftId}"`
@@ -839,8 +862,11 @@ export class MailComponent extends ToolComponent {
    * Get a single message by ID
    */
   async getMessage(messageId: string): Promise<MailMessage | null> {
-    const messages = await this.searchMessages({ subject: messageId });
-    return messages.find((m) => m.messageId === messageId) || null;
+    try {
+      return await this.fetchApi<MailMessage>(`/message/${encodeURIComponent(messageId)}`);
+    } catch (error) {
+      return null;
+    }
   }
 
   /**

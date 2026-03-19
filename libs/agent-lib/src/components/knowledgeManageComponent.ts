@@ -368,10 +368,10 @@ export class KnowledgeManageComponent extends ToolComponent {
         switch (toolName) {
             case 'fetchDocuments':
                 await this.fetchDocuments();
-                return { data: { count: this.allDocuments.length }, summary: `[Knowledge] 获取文档: ${this.allDocuments.length} 个` };
+                return { success: true, data: { count: this.allDocuments.length }, summary: `[Knowledge] 获取文档: ${this.allDocuments.length} 个` };
             case 'selectDocument':
                 await this.selectDocument(params.documentId);
-                return { data: { documentId: params.documentId }, summary: `[Knowledge] 选择文档: ${params.documentId}` };
+                return { success: true, data: { documentId: params.documentId }, summary: `[Knowledge] 选择文档: ${params.documentId}` };
             case 'createDocument':
                 await this.createDocument(
                     params.type,
@@ -380,7 +380,7 @@ export class KnowledgeManageComponent extends ToolComponent {
                     params.entities || [],
                     params.tags || []
                 );
-                return { data: { topic: params.topic, type: params.type }, summary: `[Knowledge] 创建文档: ${params.topic}` };
+                return { success: true, data: { topic: params.topic, type: params.type }, summary: `[Knowledge] 创建文档: ${params.topic}` };
             case 'updateDocument':
                 await this.updateDocument(
                     params.documentId,
@@ -390,10 +390,10 @@ export class KnowledgeManageComponent extends ToolComponent {
                     params.entities,
                     params.tags
                 );
-                return { data: { documentId: params.documentId }, summary: `[Knowledge] 更新文档: ${params.documentId}` };
+                return { success: true, data: { documentId: params.documentId }, summary: `[Knowledge] 更新文档: ${params.documentId}` };
             case 'deleteDocument':
                 await this.deleteDocument(params.documentId);
-                return { data: { documentId: params.documentId }, summary: `[Knowledge] 删除文档: ${params.documentId}` };
+                return { success: true, data: { documentId: params.documentId }, summary: `[Knowledge] 删除文档: ${params.documentId}` };
             case 'filterDocuments':
                 await this.filterDocuments(
                     params.type,
@@ -403,10 +403,10 @@ export class KnowledgeManageComponent extends ToolComponent {
                     params.sortBy,
                     params.sortOrder
                 );
-                return { data: { filters: params }, summary: `[Knowledge] 筛选文档` };
+                return { success: true, data: { filters: params }, summary: `[Knowledge] 筛选文档` };
             case 'sortDocuments':
                 await this.sortDocuments(params.sortBy, params.sortOrder);
-                return { data: { sortBy: params.sortBy }, summary: `[Knowledge] 排序文档: ${params.sortBy}` };
+                return { success: true, data: { sortBy: params.sortBy }, summary: `[Knowledge] 排序文档: ${params.sortBy}` };
             case 'searchDocuments':
                 await this.searchDocuments(
                     params.query,
@@ -414,15 +414,15 @@ export class KnowledgeManageComponent extends ToolComponent {
                     params.topK,
                     params.threshold
                 );
-                return { data: { query: params.query, results: this.searchResults.length }, summary: `[Knowledge] 搜索: ${params.query}, 找到 ${this.searchResults.length} 个结果` };
+                return { success: true, data: { query: params.query, results: this.searchResults.length }, summary: `[Knowledge] 搜索: ${params.query}, 找到 ${this.searchResults.length} 个结果` };
             case 'fetchEntities':
                 await this.fetchEntities();
-                return { data: { count: this.allEntities.length }, summary: `[Knowledge] 获取实体: ${this.allEntities.length} 个` };
+                return { success: true, data: { count: this.allEntities.length }, summary: `[Knowledge] 获取实体: ${this.allEntities.length} 个` };
             case 'filterEntities':
                 await this.filterEntities(params.nameContains, params.definitionContains);
-                return { data: { filters: params }, summary: `[Knowledge] 筛选实体` };
+                return { success: true, data: { filters: params }, summary: `[Knowledge] 筛选实体` };
             default:
-                return { data: { error: `Unknown tool: ${toolName}` }, summary: `[Knowledge] 未知工具: ${toolName}` };
+                return { success: false, data: { error: `Unknown tool: ${toolName}` }, summary: `[Knowledge] 未知工具: ${toolName}` };
         }
     };
 

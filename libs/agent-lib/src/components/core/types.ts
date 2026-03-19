@@ -342,6 +342,10 @@ export interface Tool {
  */
 export interface ToolCallResult<T> {
     /**
+     * Whether the tool call succeeded
+     */
+    success: boolean;
+    /**
      * The actual result data to return to the caller
      */
     data: T;

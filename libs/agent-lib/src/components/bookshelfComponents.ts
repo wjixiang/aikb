@@ -414,13 +414,13 @@ export class BookViewerComponent extends ToolComponent {
 
             if (!query || query.length === 0) {
                 this.searchResults = [];
-                return { data: { results: [] }, summary: '[BookViewer] Search query is empty' };
+                return { success: true, data: { results: [] }, summary: '[BookViewer] Search query is empty' };
             }
 
             if (!this.chunkEmbedGroupId) {
                 if (!this.bookId) {
                     console.warn('[BookViewer] No book selected for search');
-                    return { data: { error: 'No book selected for search' }, summary: '[BookViewer] No book selected for search' };
+                    return { success: false, data: { error: 'No book selected for search' }, summary: '[BookViewer] No book selected for search' };
                 }
                 const defaultChunkEmbedGroupId = await getDefaultChunkEmbedGroup(this.bookId);
                 this.chunkEmbedGroupId = defaultChunkEmbedGroupId;
@@ -430,12 +430,13 @@ export class BookViewerComponent extends ToolComponent {
                 console.log(`[BookViewer] Performing semantic search for "${query}"...`);
                 this.searchResults = await performSemanticSearch(query, this.chunkEmbedGroupId);
                 return {
+                    success: true,
                     data: { query, results: this.searchResults.length },
                     summary: `[Bookshelf] 搜索: ${query}, 找到 ${this.searchResults.length} 个结果`
                 };
             }
         }
-        return { data: { toolName }, summary: `[Bookshelf] 执行: ${toolName}` };
+        return { success: true, data: { toolName }, summary: `[Bookshelf] 执行: ${toolName}` };
     };
 
     /**
@@ -503,10 +504,11 @@ export class WorkspaceInfoComponent extends ToolComponent {
         if (toolName === 'updateTimestamp') {
             this.lastUpdated = new Date().toISOString();
             return {
+                success: true,
                 data: { timestamp: this.lastUpdated },
                 summary: `[WorkspaceInfo] 更新时间戳: ${this.lastUpdated}`
             };
         }
-        return { data: { error: `Unknown tool: ${toolName}` } };
+        return { success: false, data: { error: `Unknown tool: ${toolName}` } };
     };
 }

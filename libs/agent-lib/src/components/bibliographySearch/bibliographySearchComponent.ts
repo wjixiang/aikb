@@ -370,6 +370,7 @@ export class BibliographySearchComponent extends ToolComponent {
         return this.handleClearResults();
       default:
         return {
+          success: false,
           data: { error: `Unknown tool: ${toolName}` },
           summary: `[Bibliography] 未知工具: ${toolName}`,
         };
@@ -385,6 +386,7 @@ export class BibliographySearchComponent extends ToolComponent {
       this.currentRetrivalStrategy = null;
     } else {
       return {
+        success: false,
         data: { error: 'term must be provided' },
         summary: '[Bibliography] 错误: 未提供搜索词',
       };
@@ -412,6 +414,7 @@ export class BibliographySearchComponent extends ToolComponent {
       this.currentPage = searchParams.page || 1;
       this.currentArticleDetail = null;
       return {
+        success: true,
         data: {
           term: searchTerm,
           totalResults: results.totalResults,
@@ -421,6 +424,7 @@ export class BibliographySearchComponent extends ToolComponent {
       };
     } catch (error) {
       return {
+        success: false,
         data: {
           error: `Search failed: ${error instanceof Error ? error.message : String(error)}`,
         },
@@ -434,6 +438,7 @@ export class BibliographySearchComponent extends ToolComponent {
 
     if (!pmid) {
       return {
+        success: false,
         data: { error: 'PMID is required' },
         summary: '[Bibliography] 错误: 未提供 PMID',
       };
@@ -443,11 +448,13 @@ export class BibliographySearchComponent extends ToolComponent {
       const detail = await this.pubmedService.getArticleDetail(pmid);
       this.currentArticleDetail = detail;
       return {
+        success: true,
         data: { pmid, title: detail.title },
         summary: `[Bibliography] 查看文献: ${detail.title?.substring(0, 50) || pmid}`,
       };
     } catch (error) {
       return {
+        success: false,
         data: {
           error: `Failed to load article details: ${error instanceof Error ? error.message : String(error)}`,
         },
@@ -459,6 +466,7 @@ export class BibliographySearchComponent extends ToolComponent {
   private async handleNavigatePage(params: any): Promise<ToolCallResult<any>> {
     if (!this.currentResults) {
       return {
+        success: false,
         data: { error: 'No search results to navigate' },
         summary: '[Bibliography] 错误: 无搜索结果',
       };
@@ -466,6 +474,7 @@ export class BibliographySearchComponent extends ToolComponent {
 
     if (!this.currentSearchParams) {
       return {
+        success: false,
         data: { error: 'No search parameters available for navigation' },
         summary: '[Bibliography] 错误: 无搜索参数',
       };
@@ -477,6 +486,7 @@ export class BibliographySearchComponent extends ToolComponent {
     if (direction === 'next') {
       if (this.currentPage >= totalPages) {
         return {
+          success: false,
           data: { error: 'Already on the last page' },
           summary: '[Bibliography] 已是最后一页',
         };
@@ -485,6 +495,7 @@ export class BibliographySearchComponent extends ToolComponent {
     } else if (direction === 'prev') {
       if (this.currentPage <= 1) {
         return {
+          success: false,
           data: { error: 'Already on the first page' },
           summary: '[Bibliography] 已是第一页',
         };
@@ -492,6 +503,7 @@ export class BibliographySearchComponent extends ToolComponent {
       this.currentPage--;
     } else {
       return {
+        success: false,
         data: { error: 'Invalid direction. Use "next" or "prev"' },
         summary: '[Bibliography] 错误: 无效方向',
       };
@@ -512,11 +524,13 @@ export class BibliographySearchComponent extends ToolComponent {
       };
       this.currentArticleDetail = null;
       return {
+        success: true,
         data: { page: this.currentPage, totalPages },
         summary: `[Bibliography] 翻页: 第 ${this.currentPage} / ${totalPages} 页`,
       };
     } catch (error) {
       return {
+        success: false,
         data: {
           error: `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
         },
@@ -531,6 +545,6 @@ export class BibliographySearchComponent extends ToolComponent {
     this.currentPage = 1;
     this.currentRetrivalStrategy = null;
     this.currentSearchParams = null;
-    return { data: { cleared: true }, summary: '[Bibliography] 已清除结果' };
+    return { success: true, data: { cleared: true }, summary: '[Bibliography] 已清除结果' };
   }
 }
