@@ -289,6 +289,59 @@ export { BookViewerComponent, WorkspaceInfoComponent } from './bookshelfComponen
  */
 export { KnowledgeManageComponent } from './knowledgeManageComponent.js';
 
+// ==================== FileSystem Component ====================
+
+/**
+ * FileSystem Module
+ *
+ * Cloud file storage component for agent file management.
+ * Provides file CRUD, markdown editing, and format conversion via file-renderer service.
+ */
+export {
+  FileSystemComponent,
+  createFileSystemComponent,
+  type FileSystemComponentConfig,
+  type FileSystemComponentState,
+  type FileSystemHooks,
+} from './fileSystem/fileSystem.component.js';
+
+export {
+  fileSystemToolSchemas,
+  listFilesParamsSchema,
+  readFileParamsSchema,
+  createFileParamsSchema,
+  updateFileParamsSchema,
+  deleteFileParamsSchema,
+  moveFileParamsSchema,
+  copyFileParamsSchema,
+  fileExistsParamsSchema,
+  getFileMetadataParamsSchema,
+  readMarkdownByPageParamsSchema,
+  editMarkdownReplaceParamsSchema,
+  editMarkdownInsertParamsSchema,
+  editMarkdownDeleteParamsSchema,
+  convertToMarkdownParamsSchema,
+  convertToTextParamsSchema,
+} from './fileSystem/fileSystemSchemas.js';
+
+export type {
+  FileSystemToolName,
+  FileSystemToolReturnTypes,
+  FileListItem,
+  FileListResponse,
+  FileReadResponse,
+  FileCreateResponse,
+  FileUpdateResponse,
+  FileDeleteResponse,
+  FileMoveResponse,
+  FileCopyResponse,
+  FileExistsResponse,
+  FileMetadataResponse,
+  MarkdownPageResponse,
+  MarkdownEditResponse,
+  ConversionResponse,
+} from './fileSystem/index.js';
+
 // Test Components - Re-export for convenience in tests
 // Located in: core/statefulContext/__tests__/testComponents.ts
 export { TestComponent, TestComponent2, AnotherComponent } from '../core/statefulContext/__tests__/testComponents.js';

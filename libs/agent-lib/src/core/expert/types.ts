@@ -112,6 +112,12 @@ export interface ExpertConfig {
      * 如果设置，Expert 将具备邮件通信能力
      */
     mailConfig?: ExpertMailConfig;
+
+    /**
+     * 文件系统驱动配置
+     * 如果设置，Expert 将具备文件存储能力
+     */
+    fileSystemConfig?: ExpertFileSystemConfig;
 }
 
 /**
@@ -240,6 +246,23 @@ export interface ExpertMailConfig {
     baseUrl?: string;
     /** API 密钥 */
     apiKey?: string;
+}
+
+/**
+ * Expert 文件系统驱动配置
+ * 用于配置 Expert 的文件存储能力
+ */
+export interface ExpertFileSystemConfig {
+    /** 是否启用文件系统驱动 */
+    enabled?: boolean;
+    /** 文件渲染服务地址 */
+    baseUrl?: string;
+    /** API 密钥 */
+    apiKey?: string;
+    /** 默认文件前缀 */
+    defaultPrefix?: string;
+    /** 请求超时 (ms)，默认 30000 */
+    timeout?: number;
 }
 
 

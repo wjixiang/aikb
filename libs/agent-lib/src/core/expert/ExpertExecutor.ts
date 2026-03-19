@@ -18,7 +18,7 @@ import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import { AgentContainer } from '../di/container.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { ToolComponent } from '../../components/core/toolComponent.js';
-import { createMailComponent } from '../../components/index.js';
+import { createMailComponent, createFileSystemComponent } from '../../components/index.js';
 import type { IExpertPersistenceStore, ExpertInstanceState } from './persistence/index.js';
 import { DefaultVirtualWorkspaceConfig } from '../statefulContext/virtualWorkspace.js';
 
@@ -192,8 +192,8 @@ export class ExpertExecutor implements IExpertExecutor {
     // Register Expert's components to VirtualWorkspace (async, must await)
     await this.registerExpertComponents(agent, config.components);
 
-    // Register built-in components (MailComponent, etc.)
-    await this.registerBuiltinComponent(agent, config, resolvedInstanceId);
+    // Register built-in components (MailComponent, FileSystemComponent, etc.)
+    await this.registerBuiltinComponents(agent, config, resolvedInstanceId);
 
     // Create ExpertInstance wrapping the Agent
     const expertInstance = new ExpertInstance(config, agent, resolvedInstanceId, this.persistenceStore);
@@ -274,15 +274,38 @@ export class ExpertExecutor implements IExpertExecutor {
   }
 
   /**
-   * Register built-in components (like MailComponent)
-   * This enables the Expert to communicate via email
+   * Register all built-in components (MailComponent, FileSystemComponent, etc.)
+   * Enables the Expert with built-in capabilities
    *
    * @param agent - The Agent instance
    * @param config - The Expert configuration
    * @param instanceId - The runtime instance ID for this Expert
    */
-  private async registerBuiltinComponent(
+  private async registerBuiltinComponents(
     agent: Agent,
+    config: ExpertConfig,
+    instanceId: string,
+  ): Promise<void> {
+    // Get workspace from agent
+    const workspace = agent.workspace as VirtualWorkspace;
+    if (!workspace) {
+      console.warn('[ExpertExecutor] Could not get workspace from agent');
+      return;
+    }
+
+    // Register MailComponent
+    await this.registerMailComponent(workspace, config, instanceId);
+
+    // Register FileSystemComponent
+    await this.registerFileSystemComponent(workspace, config, instanceId);
+  }
+
+  /**
+   * Register MailComponent as a global component
+   * Enables email-based communication
+   */
+  private async registerMailComponent(
+    workspace: VirtualWorkspace,
     config: ExpertConfig,
     instanceId: string,
   ): Promise<void> {
@@ -291,32 +314,14 @@ export class ExpertExecutor implements IExpertExecutor {
       return;
     }
 
-    // Get workspace from agent
-    const workspace = agent.workspace as VirtualWorkspace;
-    if (!workspace) {
-      console.warn('[ExpertExecutor] Could not get workspace from agent');
-      return;
-    }
-
     // Check if mail component already registered as global component
     if (workspace.hasGlobalComponent('mail')) {
-      console.log(
-        '[ExpertExecutor] MailComponent already registered as global component, skipping',
-      );
+      console.log('[ExpertExecutor] MailComponent already registered, skipping');
       return;
     }
 
-    // Determine mail config: Expert's config takes precedence over global config
-    const expertMailConfig = config.mailConfig;
-
-    const baseUrl =
-      expertMailConfig?.baseUrl ||
-      'http://localhost:3000';
-
-    const apiKey = expertMailConfig?.apiKey
-
-    // Create MailComponent with address format: {expertClassId}-{instanceId}@expert
-    // e.g., pubmed-retrieve-abc123@expert
+    const baseUrl = config.mailConfig?.baseUrl || 'http://localhost:3000';
+    const apiKey = config.mailConfig?.apiKey;
     const mailAddress = `${config.expertId}-${instanceId}@expert`;
 
     const mailComponent = createMailComponent({
@@ -326,7 +331,7 @@ export class ExpertExecutor implements IExpertExecutor {
       timeout: 30000,
     });
 
-    // Auto-register the mailbox address - fail if registration fails
+    // Auto-register the mailbox address
     const registerResult = await mailComponent.registerAddress(mailAddress);
     if (!registerResult.success) {
       throw new Error(
@@ -334,11 +339,45 @@ export class ExpertExecutor implements IExpertExecutor {
       );
     }
 
-    // Register as global component via workspace API (highest priority -1)
     workspace.registerGlobalComponent('mail', mailComponent, -1);
-    console.log(
-      `[ExpertExecutor] Registered MailComponent as global component for expert: ${mailAddress}`,
-    );
+    console.log(`[ExpertExecutor] Registered MailComponent: ${mailAddress}`);
+  }
+
+  /**
+   * Register FileSystemComponent as a global component
+   * Enables file storage capabilities via file-renderer service
+   */
+  private async registerFileSystemComponent(
+    workspace: VirtualWorkspace,
+    config: ExpertConfig,
+    _instanceId: string,
+  ): Promise<void> {
+    // Check if fileSystem is disabled in config
+    if (config.fileSystemConfig?.enabled === false) {
+      return;
+    }
+
+    // Check if fileSystem component already registered
+    if (workspace.hasGlobalComponent('fileSystem')) {
+      console.log('[ExpertExecutor] FileSystemComponent already registered, skipping');
+      return;
+    }
+
+    // Determine config: FILE_RENDERER_URL env var > config > defaults
+    const baseUrl =
+      process.env['FILE_RENDERER_URL'] ||
+      config.fileSystemConfig?.baseUrl ||
+      'http://localhost:8000';
+
+    const fileSystemComponent = createFileSystemComponent({
+      baseUrl,
+      defaultPrefix: config.fileSystemConfig?.defaultPrefix || 'agent-files/',
+      apiKey: config.fileSystemConfig?.apiKey,
+      timeout: config.fileSystemConfig?.timeout || 30000,
+    });
+
+    workspace.registerGlobalComponent('fileSystem', fileSystemComponent, 10);
+    console.log(`[ExpertExecutor] Registered FileSystemComponent for expert: ${config.expertId}`);
   }
 
   /**
