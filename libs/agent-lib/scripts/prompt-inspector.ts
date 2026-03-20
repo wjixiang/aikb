@@ -95,21 +95,15 @@ async function loadExpert(expertName: string): Promise<any> {
  * Build system prompt sections
  */
 function buildSystemPrompt(config: any): string {
-    // Build capability and direction
-    const capability = config.prompt?.capability || config.responsibilities || '';
-    const direction = config.prompt?.direction || '';
+    // Use sop directly
+    const sop = config.sop || '';
 
     // Render agent prompt section
     const agentPromptSection = `
-------------
-Capabilities
-------------
-${capability}
-
---------------
-Work Direction
---------------
-${direction}
+---
+SOP
+---
+${sop}
 
 `;
 

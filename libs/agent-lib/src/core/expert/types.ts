@@ -5,7 +5,10 @@
  * Integrates original Skill functionality: prompt, components, lifecycle hooks
  */
 
-import type { VirtualWorkspaceConfig } from '../../components/index.js';
+import type {
+  VirtualWorkspaceConfig,
+  ExportConfig,
+} from '../../components/index.js';
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { AgentConfig } from '../agent/agent.js';
@@ -19,100 +22,145 @@ import type { AgentStatus } from '../common/types.js';
  * 3. Async factory: async () => Promise<ToolComponent>
  */
 export interface ExpertComponentDefinition {
-    /** Unique identifier */
-    componentId: string;
-    /** Display name */
-    displayName: string;
-    /** Description */
-    description: string;
-    /** Instance or factory function */
-    instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>);
-    /** Whether it is a shared component (preserves state across Experts) */
-    shared?: boolean;
-    /** Priority for component registration (lower = earlier) */
-    priority?: number;
+  /** Unique identifier */
+  componentId: string;
+  /** Display name */
+  displayName: string;
+  /** Description */
+  description: string;
+  /** Instance or factory function */
+  instance:
+    | ToolComponent
+    | (() => ToolComponent)
+    | (() => Promise<ToolComponent>);
+  /** Whether it is a shared component (preserves state across Experts) */
+  shared?: boolean;
+  /** Priority for component registration (lower = earlier) */
+  priority?: number;
+}
+
+/**
+ * Input handlers for Expert
+ */
+export interface InputHandlers {
+  /** Validate user input */
+  validate?: (input: Record<string, any>) => {
+    valid: boolean;
+    errors?: string[];
+    warnings?: string[];
+  };
+  /** Transform input to expected format */
+  transform?: (input: Record<string, any>) => Record<string, any>;
+  /** Load external data (e.g., from S3) */
+  loadExternalData?: (
+    input: Record<string, any>,
+  ) => Promise<Record<string, any>>;
 }
 
 /**
  * Expert Configuration - integrates all original Skill functionality
  */
 export interface ExpertConfig {
-    /** Expert unique identifier (original Skill name) - acts as "class ID" */
-    expertId: string;
-    /** Instance ID - supports multiple instances of the same Expert class */
-    instanceId?: string;
-    /** Expert display name (original Skill displayName) */
-    displayName: string;
-    /** Expert description (original Skill description) */
-    description: string;
-    /** When to use this Expert (original Skill whenToUse) */
-    whenToUse?: string;
-    /** Trigger keywords (original Skill triggers) */
-    triggers?: string[];
+  /** Expert unique identifier (original Skill name) - acts as "class ID" */
+  expertId: string;
+  /** Instance ID - supports multiple instances of the same Expert class */
+  instanceId?: string;
+  /** Expert display name (original Skill displayName) */
+  displayName: string;
+  /** Expert description (original Skill description) */
+  description: string;
+  /** When to use this Expert (original Skill whenToUse) */
+  whenToUse?: string;
+  /** Trigger keywords (original Skill triggers) */
+  triggers?: string[];
 
-    /** Responsibility description - when Controller should delegate to this Expert */
-    responsibilities?: string;
+  /** Responsibility description - when Controller should delegate to this Expert */
+  responsibilities?: string;
 
-    /** Capability description */
-    capabilities: string[];
+  /** Capability description */
+  capabilities: string[];
 
-    /** Component definitions (original Skill components) */
-    components: ExpertComponentDefinition[];
+  /** Component definitions (original Skill components) */
+  components: ExpertComponentDefinition[];
 
-    /** SOP - Standard Operating Procedure in Markdown format */
-    sop: string;
+  /** SOP - Standard Operating Procedure in Markdown format */
+  sop: string;
 
-    /** Additional system prompt */
-    systemPrompt?: string;
+  /** Additional system prompt */
+  systemPrompt?: string;
 
-    /** Whether to auto-activate */
-    autoActivate?: boolean;
+  /** Structured prompt (capability/direction from YAML) - @deprecated */
+  prompt?: {
+    capability: string;
+    direction: string;
+  };
 
-    /** Lifecycle hooks (original Skill onActivate/onDeactivate) */
-    onActivate?: () => Promise<void>;
-    onDeactivate?: () => Promise<void>;
-    onComponentActivate?: (component: ToolComponent) => Promise<void>;
-    onComponentDeactivate?: (component: ToolComponent) => Promise<void>;
+  /** Whether to auto-activate */
+  autoActivate?: boolean;
 
-    /**
-     * API configuration for the Expert's underlying Agent
-     * Controls API provider, model, and related settings
-     * 
-     * @example
-     * // Use OpenAI with specific model
-     * apiConfiguration: {
-     *   apiProvider: 'openai',
-     *   apiModelId: 'gpt-4o'
-     * }
-     * 
-     * @example
-     * // Use Anthropic Claude
-     * apiConfiguration: {
-     *   apiProvider: 'anthropic',
-     *   apiModelId: 'claude-sonnet-4-20250514'
-     * }
-     */
-    apiConfiguration?: Partial<ProviderSettings>;
+  /** Lifecycle hooks (original Skill onActivate/onDeactivate) */
+  onActivate?: () => Promise<void>;
+  onDeactivate?: () => Promise<void>;
+  onComponentActivate?: (component: ToolComponent) => Promise<void>;
+  onComponentDeactivate?: (component: ToolComponent) => Promise<void>;
 
-    /**
-     * Agent configuration overrides
-     * Controls agent behavior like timeout, retry, memory settings
-     */
-    agentConfig?: Partial<AgentConfig>;
+  /**
+   * API configuration for the Expert's underlying Agent
+   * Controls API provider, model, and related settings
+   *
+   * @example
+   * // Use OpenAI with specific model
+   * apiConfiguration: {
+   *   apiProvider: 'openai',
+   *   apiModelId: 'gpt-4o'
+   * }
+   *
+   * @example
+   * // Use Anthropic Claude
+   * apiConfiguration: {
+   *   apiProvider: 'anthropic',
+   *   apiModelId: 'claude-sonnet-4-20250514'
+   * }
+   */
+  apiConfiguration?: Partial<ProviderSettings>;
 
-    virtualWorkspaceConfig?: Partial<VirtualWorkspaceConfig>;
+  /**
+   * Agent configuration overrides
+   * Controls agent behavior like timeout, retry, memory settings
+   */
+  agentConfig?: Partial<AgentConfig>;
 
-    /**
-     * 邮件驱动配置
-     * 如果设置，Expert 将具备邮件通信能力
-     */
-    mailConfig?: ExpertMailConfig;
+  virtualWorkspaceConfig?: Partial<VirtualWorkspaceConfig>;
 
-    /**
-     * 文件系统驱动配置
-     * 如果设置，Expert 将具备文件存储能力
-     */
-    fileSystemConfig?: ExpertFileSystemConfig;
+  /**
+   * 输入处理配置
+   * 定义输入验证、转换和外部数据加载
+   */
+  input?: InputHandlers;
+
+  /**
+   * 导出配置
+   * 如果设置，Expert 将自动导出结果到指定存储
+   */
+  exportConfig?: ExportConfig;
+
+  /**
+   * 邮件驱动配置
+   * 如果设置，Expert 将具备邮件通信能力
+   */
+  mailConfig?: ExpertMailConfig;
+
+  /**
+   * 文件系统驱动配置
+   * 如果设置，Expert 将具备文件存储能力
+   */
+  fileSystemConfig?: ExpertFileSystemConfig;
+
+  /**
+   * 任务驱动配置
+   * 如果设置，Expert 将使用运行时任务队列代替邮件
+   */
+  taskConfig?: ExpertTaskConfig;
 }
 
 /**
@@ -122,91 +170,104 @@ export interface ExpertConfig {
  * Expert Summary - for display and selection
  */
 export interface ExpertSummary {
-    expertId: string;
-    displayName: string;
-    description: string;
-    whenToUse?: string;
-    triggers?: string[];
-    capabilities: string[];
+  expertId: string;
+  displayName: string;
+  description: string;
+  whenToUse?: string;
+  triggers?: string[];
+  capabilities: string[];
 }
 
 /**
  * Expert status
  * @deprecated Use AgentStatus from core/common/types.js instead
  */
-export type ExpertStatus = 'idle' | 'ready' | 'running' | 'completed' | 'failed' | 'suspended';
+export type ExpertStatus =
+  | 'idle'
+  | 'ready'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'suspended';
 
 /**
  * Expert execution result
  */
 export interface ExpertResult {
-    expertId: string;
-    success: boolean;
-    output: any;
-    summary: string;
-    artifacts?: ExpertArtifact[];
-    errors?: string[];
-    duration: number;
+  expertId: string;
+  success: boolean;
+  output: any;
+  summary: string;
+  artifacts?: ExpertArtifact[];
+  errors?: string[];
+  duration: number;
 }
 
 /**
  * Expert artifact (can be passed to other Experts)
  */
 export interface ExpertArtifact {
-    /** Artifact type */
-    type: 'data' | 'document' | 'model-output' | 'state';
-    /** Artifact name */
-    name: string;
-    /** Artifact content */
-    content: any;
-    /** Metadata */
-    metadata?: Record<string, any>;
-    /** Whether it can be shared with other Experts */
-    shareable: boolean;
+  /** Artifact type */
+  type: 'data' | 'document' | 'model-output' | 'state';
+  /** Artifact name */
+  name: string;
+  /** Artifact content */
+  content: any;
+  /** Metadata */
+  metadata?: Record<string, any>;
+  /** Whether it can be shared with other Experts */
+  shareable: boolean;
 }
 
 /**
  * Expert task
  */
 export interface ExpertTask {
-    /** Task ID */
-    taskId: string;
-    /** Task description */
-    description: string;
-    /** Task input */
-    input?: any;
-    /** Dependencies on other Expert tasks */
-    dependencies?: string[];
-    /** Expected output types */
-    expectedOutputs?: string[];
+  /** Task ID */
+  taskId: string;
+  /** Task description */
+  description: string;
+  /** Task input */
+  input?: any;
+  /** Dependencies on other Expert tasks */
+  dependencies?: string[];
+  /** Expected output types */
+  expectedOutputs?: string[];
 }
 
 /**
  * Expert lifecycle event
  */
 export interface ExpertLifecycleEvent {
-    type: 'created' | 'activated' | 'suspended' | 'resumed' | 'completed' | 'failed' | 'error';
-    expertId: string;
-    timestamp: number;
-    data?: any;
+  type:
+    | 'created'
+    | 'activated'
+    | 'suspended'
+    | 'resumed'
+    | 'completed'
+    | 'failed'
+    | 'error';
+  expertId: string;
+  timestamp: number;
+  data?: any;
 }
 
 /**
  * Expert Registry - for managing all Experts
  */
 export interface IExpertRegistry {
-    /** Register Expert */
-    register(expert: ExpertConfig): void;
-    /** Get Expert */
-    get(expertId: string): ExpertConfig | undefined;
-    /** Get all Experts */
-    getAll(): ExpertConfig[];
-    /** Find Experts by capability */
-    findByCapability(capability: string): ExpertConfig[];
-    /** Find Experts by trigger */
-    findByTrigger(trigger: string): ExpertConfig[];
-    /** List all available Experts */
-    listExperts(): ExpertSummary[];
+  /** Register Expert */
+  register(expert: ExpertConfig): void;
+  /** Get Expert */
+  get(expertId: string): ExpertConfig | undefined;
+  /** Get all Experts */
+  getAll(): ExpertConfig[];
+  /** Find Experts by capability */
+  findByCapability(capability: string): ExpertConfig[];
+  /** Find Experts by trigger */
+  findByTrigger(trigger: string): ExpertConfig[];
+  /** List all available Experts */
+  listExperts(): ExpertSummary[];
 }
 
 // =============================================================================
@@ -233,14 +294,14 @@ export interface IExpertRegistry {
  * 用于配置 Expert 的邮件通信能力
  */
 export interface ExpertMailConfig {
-    /** 是否启用邮件驱动模式 */
-    enabled?: boolean;
-    /** 轮询间隔 (ms)，默认 30000 */
-    pollInterval?: number;
-    /** agent-mailbox 服务地址 */
-    baseUrl?: string;
-    /** API 密钥 */
-    apiKey?: string;
+  /** 是否启用邮件驱动模式 */
+  enabled?: boolean;
+  /** 轮询间隔 (ms)，默认 30000 */
+  pollInterval?: number;
+  /** agent-mailbox 服务地址 */
+  baseUrl?: string;
+  /** API 密钥 */
+  apiKey?: string;
 }
 
 /**
@@ -248,52 +309,70 @@ export interface ExpertMailConfig {
  * 用于配置 Expert 的文件存储能力
  */
 export interface ExpertFileSystemConfig {
-    /** 是否启用文件系统驱动 */
-    enabled?: boolean;
-    /** 文件渲染服务地址 */
-    baseUrl?: string;
-    /** API 密钥 */
-    apiKey?: string;
-    /** 默认文件前缀 */
-    defaultPrefix?: string;
-    /** 请求超时 (ms)，默认 30000 */
-    timeout?: number;
+  /** 是否启用文件系统驱动 */
+  enabled?: boolean;
+  /** 文件渲染服务地址 */
+  baseUrl?: string;
+  /** API 密钥 */
+  apiKey?: string;
+  /** 默认文件前缀 */
+  defaultPrefix?: string;
+  /** 请求超时 (ms)，默认 30000 */
+  timeout?: number;
 }
 
+/**
+ * Expert 任务驱动配置
+ * 用于配置 Expert 的运行时任务队列
+ */
+export interface ExpertTaskConfig {
+  /** 是否启用任务驱动模式 */
+  enabled?: boolean;
+}
 
 /**
  * Expert Executor - responsible for creating and managing Expert instances
  */
 export interface IExpertExecutor {
-    /** Register Expert */
-    registerExpert(config: ExpertConfig): void;
-    /**
-     * Create Expert instance
-     * @param expertClassId - The Expert class ID (config.expertId)
-     * @param instanceId - Optional instance ID. If not provided, a unique ID is auto-generated
-     */
-    createExpert(expertClassId: string, instanceId?: string): Promise<IExpertInstance>;
-    /**
-     * Get Expert instance by composite key
-     * @param expertClassId - The Expert class ID
-     * @param instanceId - The instance ID (optional, matches any if not provided)
-     */
-    getExpert(expertClassId: string, instanceId?: string): IExpertInstance | undefined;
-    /**
-     * Release Expert instance by composite key
-     * @param expertClassId - The Expert class ID
-     * @param instanceId - The instance ID (optional, releases all if not provided)
-     */
-    releaseExpert(expertClassId: string, instanceId?: string): void;
-    /**
-     * Start Expert in message-driven mode (no explicit task data)
-     * @param expertClassId - The Expert class ID
-     * @param instanceId - Optional instance ID
-     * @param autoStart - If true, automatically start run loop after activation
-     */
-    startExpert(expertClassId: string, instanceId?: string, autoStart?: boolean): Promise<IExpertInstance>;
-    /** Stop all running experts */
-    stopAll(): Promise<void>;
+  /** Register Expert */
+  registerExpert(config: ExpertConfig): void;
+  /**
+   * Create Expert instance
+   * @param expertClassId - The Expert class ID (config.expertId)
+   * @param instanceId - Optional instance ID. If not provided, a unique ID is auto-generated
+   */
+  createExpert(
+    expertClassId: string,
+    instanceId?: string,
+  ): Promise<IExpertInstance>;
+  /**
+   * Get Expert instance by composite key
+   * @param expertClassId - The Expert class ID
+   * @param instanceId - The instance ID (optional, matches any if not provided)
+   */
+  getExpert(
+    expertClassId: string,
+    instanceId?: string,
+  ): IExpertInstance | undefined;
+  /**
+   * Release Expert instance by composite key
+   * @param expertClassId - The Expert class ID
+   * @param instanceId - The instance ID (optional, releases all if not provided)
+   */
+  releaseExpert(expertClassId: string, instanceId?: string): void;
+  /**
+   * Start Expert in message-driven mode (no explicit task data)
+   * @param expertClassId - The Expert class ID
+   * @param instanceId - Optional instance ID
+   * @param autoStart - If true, automatically start run loop after activation
+   */
+  startExpert(
+    expertClassId: string,
+    instanceId?: string,
+    autoStart?: boolean,
+  ): Promise<IExpertInstance>;
+  /** Stop all running experts */
+  stopAll(): Promise<void>;
 }
 
 /**
@@ -301,60 +380,64 @@ export interface IExpertExecutor {
  * Manages Agent lifecycle and message-driven task processing
  */
 export interface IExpertInstance {
-    /** Expert class ID */
-    expertId: string;
-    /** Instance ID - unique runtime identifier for this instance */
-    instanceId: string;
-    /** Current status (delegated to Agent) */
-    status: AgentStatus;
-    /** Start Expert in message-driven mode */
-    start(): Promise<void>;
-    /** Stop Expert */
-    stop(): Promise<void>;
-    /** Check if running */
-    isRunning(): boolean;
-    /** Get current state summary */
-    getStateSummary(): Promise<string>;
-    /** Cleanup resources */
-    dispose(): Promise<void>;
+  /** Expert class ID */
+  expertId: string;
+  /** Instance ID - unique runtime identifier for this instance */
+  instanceId: string;
+  /** Current status (delegated to Agent) */
+  status: AgentStatus;
+  /** Start Expert in message-driven mode */
+  start(): Promise<void>;
+  /** Stop Expert */
+  stop(): Promise<void>;
+  /** Check if running */
+  isRunning(): boolean;
+  /** Get current state summary */
+  getStateSummary(): Promise<string>;
+  /** Cleanup resources */
+  dispose(): Promise<void>;
 }
 
 /**
  * Expert scheduling strategy
  */
-export type ExpertSchedulingStrategy = 'sequential' | 'parallel' | 'dependency-ordered' | 'conditional';
+export type ExpertSchedulingStrategy =
+  | 'sequential'
+  | 'parallel'
+  | 'dependency-ordered'
+  | 'conditional';
 
 /**
  * Expert orchestration request
  */
 export interface ExpertOrchestrationRequest {
-    /** Main task description */
-    task: string;
-    /** Task decomposition strategy */
-    strategy: ExpertSchedulingStrategy;
-    /** Expert task list */
-    expertTasks: {
-        expertId: string;
-        task: ExpertTask;
-        conditional?: boolean;
-    }[];
-    /** Global context */
-    globalContext?: Record<string, any>;
-    /** Timeout */
-    timeout?: number;
+  /** Main task description */
+  task: string;
+  /** Task decomposition strategy */
+  strategy: ExpertSchedulingStrategy;
+  /** Expert task list */
+  expertTasks: {
+    expertId: string;
+    task: ExpertTask;
+    conditional?: boolean;
+  }[];
+  /** Global context */
+  globalContext?: Record<string, any>;
+  /** Timeout */
+  timeout?: number;
 }
 
 /**
  * Expert orchestration result
  */
 export interface ExpertOrchestrationResult {
-    success: boolean;
-    overallSummary: string;
-    expertResults: Map<string, ExpertResult>;
-    finalOutput: any;
-    artifacts: ExpertArtifact[];
-    totalDuration: number;
-    errors?: string[];
+  success: boolean;
+  overallSummary: string;
+  expertResults: Map<string, ExpertResult>;
+  finalOutput: any;
+  artifacts: ExpertArtifact[];
+  totalDuration: number;
+  errors?: string[];
 }
 
 // =============================================================================
@@ -365,30 +448,30 @@ export interface ExpertOrchestrationResult {
  * Parameter definition for SOP
  */
 export interface ParameterDefinition {
-    name: string;
-    type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 's3Key[]';
-    required: boolean;
-    description: string;
-    default?: any;
-    validation?: (value: any) => boolean;
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 's3Key[]';
+  required: boolean;
+  description: string;
+  default?: any;
+  validation?: (value: any) => boolean;
 }
 
 /**
  * Step definition in SOP workflow
  */
 export interface StepDefinition {
-    phase: string;
-    description: string;
-    details?: string;
+  phase: string;
+  description: string;
+  details?: string;
 }
 
 /**
  * Example for SOP documentation
  */
 export interface Example {
-    input: string;
-    output: string;
-    description?: string;
+  input: string;
+  output: string;
+  description?: string;
 }
 
 /**
@@ -401,53 +484,57 @@ export type SOP = string;
  * Component definition
  */
 export interface ComponentDefinition {
-    componentId: string;
-    displayName: string;
-    description: string;
-    /** Instance, factory function, or DI Token */
-    instance: ToolComponent | (() => ToolComponent) | (() => Promise<ToolComponent>) | symbol;
-    /** Component configuration */
-    config?: Record<string, any>;
-    /** Whether it is a shared component */
-    shared?: boolean;
+  componentId: string;
+  displayName: string;
+  description: string;
+  /** Instance, factory function, or DI Token */
+  instance:
+    | ToolComponent
+    | (() => ToolComponent)
+    | (() => Promise<ToolComponent>)
+    | symbol;
+  /** Component configuration */
+  config?: Record<string, any>;
+  /** Whether it is a shared component */
+  shared?: boolean;
 }
 
 /**
  * Lifecycle hooks for Expert
  */
 export interface LifecycleHooks {
-    /** Called when Expert is created */
-    onCreate?: () => Promise<void>;
-    /** Called when Expert is activated */
-    onActivate?: () => Promise<void>;
-    /** Called when Expert is deactivated */
-    onDeactivate?: () => Promise<void>;
-    /** Called when Expert is disposed */
-    onDispose?: () => Promise<void>;
-    /** Called when a component is activated */
-    onComponentActivate?: (component: ToolComponent) => Promise<void>;
-    /** Called when a component is deactivated */
-    onComponentDeactivate?: (component: ToolComponent) => Promise<void>;
+  /** Called when Expert is created */
+  onCreate?: () => Promise<void>;
+  /** Called when Expert is activated */
+  onActivate?: () => Promise<void>;
+  /** Called when Expert is deactivated */
+  onDeactivate?: () => Promise<void>;
+  /** Called when Expert is disposed */
+  onDispose?: () => Promise<void>;
+  /** Called when a component is activated */
+  onComponentActivate?: (component: ToolComponent) => Promise<void>;
+  /** Called when a component is deactivated */
+  onComponentDeactivate?: (component: ToolComponent) => Promise<void>;
 }
 
 /**
  * Expert metadata
  */
 export interface ExpertMetadata {
-    /** Unique identifier */
-    id: string;
-    /** Display name */
-    displayName: string;
-    /** Description */
-    description?: string;
-    /** Category */
-    category?: string;
-    /** Tags for discovery */
-    tags?: string[];
-    /** Trigger keywords */
-    triggers?: string[];
-    /** When to use this Expert */
-    whenToUse?: string;
+  /** Unique identifier */
+  id: string;
+  /** Display name */
+  displayName: string;
+  /** Description */
+  description?: string;
+  /** Category */
+  category?: string;
+  /** Tags for discovery */
+  tags?: string[];
+  /** Trigger keywords */
+  triggers?: string[];
+  /** When to use this Expert */
+  whenToUse?: string;
 }
 
 /**
@@ -456,12 +543,12 @@ export interface ExpertMetadata {
  * (Named ExpertSchema to avoid conflict with the existing ExpertDefinition class)
  */
 export interface ExpertSchema {
-    /** Metadata */
-    metadata: ExpertMetadata;
-    /** SOP - Standard Operating Procedure in Markdown format */
-    sop: string;
-    /** Component definitions */
-    components: ComponentDefinition[];
-    /** Lifecycle hooks */
-    lifecycle?: LifecycleHooks;
+  /** Metadata */
+  metadata: ExpertMetadata;
+  /** SOP - Standard Operating Procedure in Markdown format */
+  sop: string;
+  /** Component definitions */
+  components: ComponentDefinition[];
+  /** Lifecycle hooks */
+  lifecycle?: LifecycleHooks;
 }

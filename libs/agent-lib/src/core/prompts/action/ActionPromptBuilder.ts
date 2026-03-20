@@ -7,7 +7,7 @@
 import type { IVirtualWorkspace } from '../../../components/core/types.js';
 import type { AgentPrompt } from '../../agent/agent.js';
 import { generateWorkspaceGuide } from '../sections/workspaceGuide.js';
-import { generateMailTaskGuide } from '../sections/mailTaskGuide.js';
+import { generateRuntimeTaskGuide } from '../sections/runtimeTaskGuide.js';
 import { generateActionPhaseGuidance } from '../sections/actionPhaseGuidance.js';
 import {
   getBaseInstruction,
@@ -48,13 +48,15 @@ export class ActionPromptBuilder {
 
     // Render workspace components (async call)
     const componentToolsSection = await workspace.renderComponentToolsSection();
-    const componentToolsRendered = componentToolsSection ? componentToolsSection.render() : '';
-    const mailTaskGuide = hasMailComponent ? generateMailTaskGuide() : '';
+    const componentToolsRendered = componentToolsSection
+      ? componentToolsSection.render()
+      : '';
+    const taskGuide = hasMailComponent ? generateRuntimeTaskGuide() : '';
 
     return `
 ${generateWorkspaceGuide()}
 ${this.renderAgentPrompt()}
-${mailTaskGuide}
+${taskGuide}
 ${workspace.renderToolBox().render()}
 ${componentToolsRendered}
     `.trim();
@@ -65,7 +67,9 @@ ${componentToolsRendered}
    * This is used when there's a thinking summary to follow
    */
   async buildEnhancedPrompt(): Promise<string> {
-    const actionPhaseGuidance = generateActionPhaseGuidance(this.thinkingSummary);
+    const actionPhaseGuidance = generateActionPhaseGuidance(
+      this.thinkingSummary,
+    );
     const systemPrompt = await this.buildSystemPrompt();
 
     return `${actionPhaseGuidance}\n\n${systemPrompt}`;

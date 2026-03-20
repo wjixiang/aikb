@@ -6,13 +6,14 @@ import { MessageTokenUsage, ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { DefaultToolCallConverter } from '../api-client/index.js';
-import {
-  AgentError,
-  NoToolsUsedError,
-} from '../common/errors.js';
+import { AgentError, NoToolsUsedError } from '../common/errors.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
-import type { ApiClient, ChatCompletionTool, ToolCall } from '../api-client/index.js';
+import type {
+  ApiClient,
+  ChatCompletionTool,
+  ToolCall,
+} from '../api-client/index.js';
 import type { IToolManager } from '../tools/index.js';
 import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
@@ -74,6 +75,14 @@ export interface AbortInfo {
 export type SOP = string;
 
 /**
+ * Expert identity interface - for Agents that represent Experts
+ */
+export interface AgentExpertIdentity {
+  expertId: string;
+  instanceId: string;
+}
+
+/**
  * Result of a tool execution
  */
 export interface ToolExecutionResult {
@@ -130,6 +139,9 @@ export class Agent {
   private _consecutiveErrors = 0;
   private _currentPollInterval: number;
 
+  // Expert identity (optional - for Agents that represent Experts)
+  private _expertIdentity?: AgentExpertIdentity;
+
   // Memory module (dependency injected, always present)
   private memoryModule: IMemoryModule;
 
@@ -180,6 +192,27 @@ export class Agent {
    */
   public get getTaskId(): string {
     return this._taskId;
+  }
+
+  /**
+   * Set expert identity (for Agents representing Experts)
+   */
+  setExpertIdentity(identity: AgentExpertIdentity): void {
+    this._expertIdentity = identity;
+  }
+
+  /**
+   * Get expert ID (for Agents representing Experts)
+   */
+  get expertId(): string | undefined {
+    return this._expertIdentity?.expertId;
+  }
+
+  /**
+   * Get instance ID (for Agents representing Experts)
+   */
+  get instanceId(): string | undefined {
+    return this._expertIdentity?.instanceId;
   }
 
   /**
@@ -291,12 +324,32 @@ export class Agent {
   }
 
   /**
+   * Wake up agent to process a runtime task
+   * Called by ExpertInstance when a new task is received via RuntimeTaskComponent
+   * Triggers the agent to check task queue and process pending tasks
+   */
+  async wakeUpForTask(task: any): Promise<void> {
+    this.logger.info(`Waking up agent for task processing: ${task.taskId}`);
+
+    // Reset status to running if it was completed
+    if (this._status === 'completed' || this._status === 'idle') {
+      this._status = 'running';
+    }
+
+    // Trigger agent to process the task
+    // The LLM will check task queue, process tasks, and report results
+    await this.requestLoop();
+  }
+
+  /**
    * Start agent in mail-driven mode
    * Agent polls its mailbox for new tasks and processes them autonomously
    * @param pollInterval - Polling interval in milliseconds (default: 30000)
    */
   async startMailDrivenMode(pollInterval = 30000): Promise<void> {
-    this.logger.info(`[MailDriven] startMailDrivenMode called, current status=${this._status}`);
+    this.logger.info(
+      `[MailDriven] startMailDrivenMode called, current status=${this._status}`,
+    );
 
     if (this._isMailDrivenRunning) {
       this.logger.warn('Agent is already in mail-driven mode');
@@ -306,8 +359,13 @@ export class Agent {
     // Check if mail component is available
     const mailComponent = this.getMailComponent();
     if (!mailComponent) {
-      this.logger.warn('[MailDriven] Mail component not found in workspace, mail-driven mode requires mail component');
-      this.logger.warn('[MailDriven] Available components: ' + (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'));
+      this.logger.warn(
+        '[MailDriven] Mail component not found in workspace, mail-driven mode requires mail component',
+      );
+      this.logger.warn(
+        '[MailDriven] Available components: ' +
+          (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
+      );
       return;
     }
 
@@ -321,14 +379,19 @@ export class Agent {
     // Don't set status to 'running' here - stay idle until actually processing a task
     // _status remains whatever it was before (typically 'idle')
 
-    this.logger.info(`[MailDriven] Agent started mail-driven mode (pollInterval: ${pollInterval}ms), status=${this._status}`);
+    this.logger.info(
+      `[MailDriven] Agent started mail-driven mode (pollInterval: ${pollInterval}ms), status=${this._status}`,
+    );
 
     try {
       while (this._isMailDrivenRunning) {
         const agentStatus = this.status;
-        const isAgentIdle = agentStatus === 'idle' || agentStatus === 'completed';
+        const isAgentIdle =
+          agentStatus === 'idle' || agentStatus === 'completed';
 
-        this.logger.debug(`[MailDriven] poll check: status=${agentStatus}, isIdle=${isAgentIdle}`);
+        this.logger.debug(
+          `[MailDriven] poll check: status=${agentStatus}, isIdle=${isAgentIdle}`,
+        );
 
         if (isAgentIdle && this._isMailDrivenRunning) {
           const hasNewTasks = await this.checkForNewTasks();
@@ -339,7 +402,9 @@ export class Agent {
             this.logger.info('[MailDriven] Agent finished processing task');
           }
         } else {
-          this.logger.debug(`[MailDriven] Agent busy (status=${agentStatus}), skipping poll`);
+          this.logger.debug(
+            `[MailDriven] Agent busy (status=${agentStatus}), skipping poll`,
+          );
         }
 
         await this.sleep(this._currentPollInterval);
@@ -378,7 +443,9 @@ export class Agent {
       this._consecutiveErrors = 0;
       this._currentPollInterval = this._mailDrivenConfig.pollInterval;
 
-      this.logger.debug(`[MailDriven] Unread count: current=${currentUnreadCount}, last=${this._lastUnreadCount}`);
+      this.logger.debug(
+        `[MailDriven] Unread count: current=${currentUnreadCount}, last=${this._lastUnreadCount}`,
+      );
 
       if (currentUnreadCount > this._lastUnreadCount) {
         const newMessageCount = currentUnreadCount - this._lastUnreadCount;
@@ -390,7 +457,9 @@ export class Agent {
       }
 
       this._lastUnreadCount = currentUnreadCount;
-      this.logger.debug(`[MailDriven] No new messages (unread: ${currentUnreadCount})`);
+      this.logger.debug(
+        `[MailDriven] No new messages (unread: ${currentUnreadCount})`,
+      );
       return false;
     } catch (error) {
       this._handlePollingError(error as Error);
@@ -404,12 +473,11 @@ export class Agent {
   private _handlePollingError(error: Error): void {
     this._consecutiveErrors++;
 
-    if (this._consecutiveErrors >= this._mailDrivenConfig.maxConsecutiveErrors) {
+    if (
+      this._consecutiveErrors >= this._mailDrivenConfig.maxConsecutiveErrors
+    ) {
       const maxInterval = 300000;
-      const newInterval = Math.min(
-        this._currentPollInterval * 2,
-        maxInterval,
-      );
+      const newInterval = Math.min(this._currentPollInterval * 2, maxInterval);
 
       if (newInterval !== this._currentPollInterval) {
         this.logger.warn(
@@ -434,7 +502,7 @@ export class Agent {
    * Sleep utility
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -506,19 +574,23 @@ export class Agent {
    * Increment consecutive error count and abort if threshold reached
    * @param errorInfo Optional error context for abort info
    */
-  private handleConsecutiveError(errorInfo?: { toolName?: string; errorMessage?: string }): void {
+  private handleConsecutiveError(errorInfo?: {
+    toolName?: string;
+    errorMessage?: string;
+  }): void {
     this._consecutiveErrorCount++;
     if (this._consecutiveErrorCount >= this.MAX_CONSECUTIVE_ERRORS) {
       const details: Record<string, unknown> = {
         consecutiveErrors: this._consecutiveErrorCount,
       };
       if (errorInfo?.toolName) details['lastFailedTool'] = errorInfo.toolName;
-      if (errorInfo?.errorMessage) details['lastError'] = errorInfo.errorMessage;
+      if (errorInfo?.errorMessage)
+        details['lastError'] = errorInfo.errorMessage;
 
       this.abort(
         `Too many consecutive errors (${this._consecutiveErrorCount}): ${errorInfo?.errorMessage || 'Unknown error'}`,
         'error',
-        details
+        details,
       );
     }
   }
@@ -558,21 +630,22 @@ export class Agent {
         this.resetConsecutiveErrorCount();
       } catch (error) {
         // Properly serialize error to extract message, name, and stack
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
 
         // Check if this is a NoToolsUsedError
         const isNoToolsError = error instanceof NoToolsUsedError;
 
         if (isNoToolsError) {
-          this.logger.warn(
-            `[Agent] No tool calls made: ${errorMessage}`
-          );
+          this.logger.warn(`[Agent] No tool calls made: ${errorMessage}`);
 
           // Add error to memory for the LLM to see
           this.memoryModule.pushErrors([error]);
           const errorApiMessage: ApiMessage = {
             role: 'system',
-            content: [{ type: 'text' as const, text: `[Error: ${error.message}]` }],
+            content: [
+              { type: 'text' as const, text: `[Error: ${error.message}]` },
+            ],
             ts: Date.now(),
           };
           await this.memoryModule.addMessage(errorApiMessage);
@@ -591,7 +664,9 @@ export class Agent {
             this.memoryModule.pushErrors([error]);
             const errorApiMessage: ApiMessage = {
               role: 'system',
-              content: [{ type: 'text' as const, text: `[Error: ${error.message}]` }],
+              content: [
+                { type: 'text' as const, text: `[Error: ${error.message}]` },
+              ],
               ts: Date.now(),
             };
             await this.memoryModule.addMessage(errorApiMessage);
@@ -599,11 +674,14 @@ export class Agent {
             // Track consecutive error for abort
             this.handleConsecutiveError({ errorMessage });
           }
-          this.logger.error({
-            errorName: error instanceof Error ? error.name : undefined,
-            errorStack: error instanceof Error ? error.stack : undefined,
-            originalError: error instanceof Error ? undefined : error,
-          }, errorMessage + '(error messages have added to memory)');
+          this.logger.error(
+            {
+              errorName: error instanceof Error ? error.name : undefined,
+              errorStack: error instanceof Error ? error.stack : undefined,
+              originalError: error instanceof Error ? undefined : error,
+            },
+            errorMessage + '(error messages have added to memory)',
+          );
 
           // Check if we've aborted due to too many consecutive errors
           if (this._status === 'aborted') {
@@ -624,7 +702,7 @@ export class Agent {
    * Continues until completion or max iterations
    */
   private async executeAgentLoop(
-    tools: ChatCompletionTool[]
+    tools: ChatCompletionTool[],
   ): Promise<{ didComplete: boolean }> {
     const maxIterations = 50; // Safety limit
     let iterations = 0;
@@ -637,13 +715,16 @@ export class Agent {
 
       // Get current workspace context before the LLM call
       const currentWorkspaceContext = await this.workspace.render();
-      await this.memoryModule.recordWorkspaceContext(currentWorkspaceContext, iterations);
+      await this.memoryModule.recordWorkspaceContext(
+        currentWorkspaceContext,
+        iterations,
+      );
 
       // Get conversation history with workspace contexts interleaved
       // This ensures workspace context appears after each assistant response in history
       const historyContext = this.memoryModule.getHistoryForPrompt(true);
-      const memoryContext = historyContext.map(m =>
-        typeof m === 'string' ? m : this.formatMessage(m)
+      const memoryContext = historyContext.map((m) =>
+        typeof m === 'string' ? m : this.formatMessage(m),
       );
 
       // Call LLM
@@ -652,7 +733,7 @@ export class Agent {
         currentWorkspaceContext, // Empty workspaceContext since it's now part of combinedMemoryContext
         memoryContext,
         { timeout: this.config.apiRequestTimeout },
-        tools
+        tools,
       );
 
       // Track token usage
@@ -671,7 +752,10 @@ export class Agent {
       }
 
       // Record current workspace context for future iterations (for next turn's historical record)
-      await this.memoryModule.recordWorkspaceContext(currentWorkspaceContext, iterations);
+      await this.memoryModule.recordWorkspaceContext(
+        currentWorkspaceContext,
+        iterations,
+      );
 
       // Execute tool calls
       if (response.toolCalls && response.toolCalls.length > 0) {
@@ -683,11 +767,13 @@ export class Agent {
           // Create error tool result and add to memory
           const errorResult: ApiMessage = {
             role: 'user',
-            content: [{
-              type: 'tool_result' as const,
-              tool_use_id: response.toolCalls[0].id,
-              content: `Error: ${errorMsg}`,
-            }],
+            content: [
+              {
+                type: 'tool_result' as const,
+                tool_use_id: response.toolCalls[0].id,
+                content: `Error: ${errorMsg}`,
+              },
+            ],
             ts: Date.now(),
           };
           await this.memoryModule.addMessage(errorResult);
@@ -695,14 +781,26 @@ export class Agent {
           continue; // Let LLM retry
         }
         const toolResults = await this.executeToolCalls(response.toolCalls);
-        this.logger.debug({ count: toolResults.length, toolResults: JSON.stringify(toolResults) }, '[Agent core] toolResults count');
-        const toolResultsJson = toolResults && toolResults.length > 0
-          ? JSON.stringify(toolResults, null, 2)
-          : '[]';
-        this.logger.info({ toolResults: toolResultsJson }, '[Agent core] tool call executed');
+        this.logger.debug(
+          {
+            count: toolResults.length,
+            toolResults: JSON.stringify(toolResults),
+          },
+          '[Agent core] toolResults count',
+        );
+        const toolResultsJson =
+          toolResults && toolResults.length > 0
+            ? JSON.stringify(toolResults, null, 2)
+            : '[]';
+        this.logger.info(
+          { toolResults: toolResultsJson },
+          '[Agent core] tool call executed',
+        );
 
         // Check for completion
-        const hasCompletion = toolResults.some(r => r.toolName === 'attempt_completion');
+        const hasCompletion = toolResults.some(
+          (r) => r.toolName === 'attempt_completion',
+        );
         if (hasCompletion) {
           return { didComplete: true };
         }
@@ -724,13 +822,18 @@ export class Agent {
   /**
    * Execute a batch of tool calls
    */
-  private async executeToolCalls(toolCalls: ToolCall[]): Promise<ToolExecutionResult[]> {
+  private async executeToolCalls(
+    toolCalls: ToolCall[],
+  ): Promise<ToolExecutionResult[]> {
     const results: ToolExecutionResult[] = [];
 
     for (const toolCall of toolCalls) {
       try {
         const args = JSON.parse(toolCall.arguments) as Record<string, unknown>;
-        this.logger.info({ toolName: toolCall.name, args: JSON.stringify(args) }, 'Executing tool');
+        this.logger.info(
+          { toolName: toolCall.name, args: JSON.stringify(args) },
+          'Executing tool',
+        );
 
         const result = await this.toolManager.executeTool(toolCall.name, args);
 
@@ -754,11 +857,13 @@ export class Agent {
         // Add tool result message to memory
         const toolResultMsg: ApiMessage = {
           role: 'user',
-          content: [{
-            type: 'tool_result' as const,
-            tool_use_id: toolCall.id,
-            content: JSON.stringify(result),
-          }],
+          content: [
+            {
+              type: 'tool_result' as const,
+              tool_use_id: toolCall.id,
+              content: JSON.stringify(result),
+            },
+          ],
           ts: Date.now(),
         };
         await this.memoryModule.addMessage(toolResultMsg);
@@ -771,10 +876,13 @@ export class Agent {
 
         // Reset consecutive error count on success
         this.resetConsecutiveErrorCount();
-
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        this.logger.error({ toolName: toolCall.name, error: errorMessage }, 'Tool execution failed');
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          { toolName: toolCall.name, error: errorMessage },
+          'Tool execution failed',
+        );
 
         const toolResult: ToolExecutionResult = {
           toolName: toolCall.name,
@@ -786,7 +894,11 @@ export class Agent {
         results.push(toolResult);
 
         // Push error for LLM to see in context
-        this.memoryModule.pushErrors([new Error(`Tool "${toolCall.name}" failed: ${errorMessage}. Please analyze the error and try an alternative approach.`)]);
+        this.memoryModule.pushErrors([
+          new Error(
+            `Tool "${toolCall.name}" failed: ${errorMessage}. Please analyze the error and try an alternative approach.`,
+          ),
+        ]);
 
         // Record failure in memory
         this.memoryModule.recordToolCall(toolCall.name, false, errorMessage);
@@ -840,7 +952,7 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
 - If a tool fails, analyze the error message and try an alternative approach
 - Do NOT repeat the same failed tool call
 - Use different tools or parameters to work around failures
-`)
+`);
 
     // 1. SOP (Standard Operating Procedure)
     if (this.agentSop) {
@@ -871,31 +983,38 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
 
       const componentSections: string[] = [];
       for (const [componentKey, tools] of toolsByComponent) {
-        const toolDescriptions = tools.map(t => {
-          const tool = t.tool;
-          const desc = tool.desc || 'No description';
+        const toolDescriptions = tools
+          .map((t) => {
+            const tool = t.tool;
+            const desc = tool.desc || 'No description';
 
-          // Format examples if available
-          let examplesStr = '';
-          if (tool.examples && tool.examples.length > 0) {
-            const exampleLines = tool.examples.map(ex => {
-              const paramsStr = Object.entries(ex.params)
-                .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
-                .join(', ');
-              return `**${ex.description}**\n\`\`\`json\n{${paramsStr}}\n\`\`\``;
-            }).join('\n');
-            examplesStr = `\n\n**Examples:**\n${exampleLines}`;
-          }
+            // Format examples if available
+            let examplesStr = '';
+            if (tool.examples && tool.examples.length > 0) {
+              const exampleLines = tool.examples
+                .map((ex) => {
+                  const paramsStr = Object.entries(ex.params)
+                    .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+                    .join(', ');
+                  return `**${ex.description}**\n\`\`\`json\n{${paramsStr}}\n\`\`\``;
+                })
+                .join('\n');
+              examplesStr = `\n\n**Examples:**\n${exampleLines}`;
+            }
 
-          return `### ${tool.toolName}
+            return `### ${tool.toolName}
 ${desc}${examplesStr}`;
-        }).join('\n\n');
+          })
+          .join('\n\n');
 
-        const componentLabel = componentKey === 'global' ? 'Global Tools' : `${componentKey} Tools`;
+        const componentLabel =
+          componentKey === 'global' ? 'Global Tools' : `${componentKey} Tools`;
         componentSections.push(`## ${componentLabel}\n\n${toolDescriptions}`);
       }
 
-      parts.push(`# Available Tools\n\n${componentSections.join('\n\n---\n\n')}`);
+      parts.push(
+        `# Available Tools\n\n${componentSections.join('\n\n---\n\n')}`,
+      );
     }
 
     // 4. Mail component (if available)
@@ -929,12 +1048,14 @@ Note: The mail component is for receiving task instructions only. Do not send re
         return content;
       }
       if (Array.isArray(content)) {
-        return content.map(c => {
-          if (typeof c === 'object' && c !== null && 'text' in c) {
-            return (c as { text: string }).text;
-          }
-          return JSON.stringify(c);
-        }).join('\n');
+        return content
+          .map((c) => {
+            if (typeof c === 'object' && c !== null && 'text' in c) {
+              return (c as { text: string }).text;
+            }
+            return JSON.stringify(c);
+          })
+          .join('\n');
       }
       return JSON.stringify(content);
     };

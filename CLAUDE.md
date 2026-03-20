@@ -16,11 +16,13 @@ AIKB (AI Knowledge Base) is a knowledge management system integrated with agents
 ## Common Commands
 
 ### Install Dependencies
+
 ```bash
 pnpm install
 ```
 
 ### Build Libraries
+
 ```bash
 # Build all libs with NX
 npx nx run-many -t build -p bib-lib agent-lib
@@ -32,6 +34,7 @@ cd libs/agent-lib && pnpm build
 ```
 
 ### Test
+
 ```bash
 # Run unit tests via NX
 npx nx test agent-lib
@@ -71,6 +74,7 @@ cd libs/bib-lib && pnpm embed
 ```
 
 ### Expert CLI (ebm-agent)
+
 ```bash
 cd apps/ebm-agent
 pnpm expert:new <name>     # Create new Expert
@@ -128,7 +132,9 @@ pnpm expert:test           # Run Expert tests
 ## Key Libraries
 
 ### @ai-embed/core (`libs/ai-embed`)
+
 Simplified embedding and chunking library. Exports:
+
 - `Embedding` class - wraps embedding provider responses
 - `EmbeddingProvider` enum - supported providers (OpenAI, Alibaba, Ollama)
 - Chunking functions for text splitting
@@ -136,7 +142,9 @@ Simplified embedding and chunking library. Exports:
 Used by bib-lib for article embeddings.
 
 ### bib-lib (`libs/bib-lib`)
+
 PubMed bibliography management with:
+
 - **Prisma 7** with PostgreSQL adapter and pgvector for vector search
 - **Sync**: Fetch and parse PubMed XML data
 - **Embed**: Generate article embeddings using @ai-embed/core
@@ -146,7 +154,9 @@ PubMed bibliography management with:
 Key models: `Article`, `Journal`, `Author`, `ArticleEmbedding`, `MeshHeading`, `Chemical`, `Grant`, `ArticleId`
 
 ### agent-lib (`libs/agent-lib`)
+
 Agent framework with:
+
 - **BAML integration** for structured output
 - **Tool system** for agent actions
 - **Memory** components
@@ -155,21 +165,27 @@ Agent framework with:
 - **Dependency Injection** using InversifyJS
 
 Key Expert classes:
+
 - `ExpertExecutor` - Creates and executes Expert instances
 - `ExpertInstance` - Running Expert with Agent
 - `ExpertOrchestrator` - Multi-expert orchestration
 - `ExpertRegistry` - Expert configuration management
 
 ### Built-in Components (`agent-lib`)
+
 Reusable agent components for EBM workflows (now part of agent-lib):
-- `MailComponent` - Email-style messaging for agent communication
+
+- `RuntimeTaskComponent` - In-memory task queue for agent communication (replaces MailComponent)
+- `MailComponent` - Email-style messaging for agent communication (legacy, use RuntimeTaskComponent)
 - `BibliographySearchComponent` - PubMed literature search
 - `PaperAnalysisComponent` - Scientific paper analysis
 - `PicosComponent` - PICO framework extraction
 - `PrismaCheckListComponent` / `PrismaFlowComponent` - PRISMA checklist and flow diagram
 
 ### ebm-agent (`apps/ebm-agent`)
+
 Evidence-based medicine agent application using the Expert system:
+
 - Expert-based agent orchestration
 - Built-in Experts: `hi-agent`, `pubmed-retrieve`
 - Configurable via `config.json` and `sop.yaml`
@@ -183,12 +199,14 @@ Evidence-based medicine agent application using the Expert system:
 ## Testing Patterns
 
 Tests use Vitest with different configurations:
+
 - `vitest.unit.config.ts` - Unit tests (mocked dependencies)
 - `vitest.integrated.config.ts` - Integration tests (real DB)
 - `vite.config.mts` - Standard config
 - `vite.config.integrated.mts` - Integration config
 
 Test files:
+
 - `*.spec.ts` - Unit tests
 - `*.integrated.test.ts` - Integration tests
 - `*.e2e.test.ts` - End-to-end tests
@@ -196,10 +214,12 @@ Test files:
 ## Environment Variables
 
 Key environment files:
+
 - `libs/bib-lib/.env` - Database connection, embedding providers
 - `libs/bib-lib/.env.example`
 
 Typical variables:
+
 - `DATABASE_URL` - PostgreSQL connection
 - `OPENAI_API_KEY` - For embeddings
 - Provider-specific API keys

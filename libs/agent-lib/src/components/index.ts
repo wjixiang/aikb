@@ -62,11 +62,46 @@ export {
   markAsReadParamsSchema,
 } from './mail/mailSchemas.js';
 
+export type { MailToolName, MailToolReturnTypes } from './mail/mailSchemas.js';
+
+// ==================== Runtime Task Component ====================
+
+/**
+ * Runtime Task Module
+ *
+ * In-memory task queue for agent communication.
+ * Replaces the external mail service dependency with a simple event-driven system.
+ */
+export {
+  RuntimeTaskComponent,
+  createRuntimeTaskComponent,
+  type RuntimeTaskComponentConfig,
+} from './runtime-task/index.js';
+
+export {
+  runtimeTaskToolSchemas,
+  getPendingTasksParamsSchema,
+  getTaskByIdParamsSchema,
+  reportTaskResultParamsSchema,
+  sendTaskToExpertParamsSchema,
+  markTaskProcessingParamsSchema,
+} from './runtime-task/schemas.js';
+
 export type {
-  MailToolName,
-  MailToolReturnTypes,
+  RuntimeTaskToolName,
+  RuntimeTaskToolReturnTypes,
   ToolReturnType,
-} from './mail/mailSchemas.js';
+} from './runtime-task/schemas.js';
+
+export type {
+  RuntimeTask,
+  RuntimeTaskResult,
+  TaskPriority,
+  RuntimeTaskStatus,
+  TaskQueueStats,
+  TaskListener,
+  TaskQueryFilter,
+} from './runtime-task/types.js';
 
 // ==================== Bibliography Search Component ====================
 
@@ -252,7 +287,10 @@ export { PaperAnalysisComponent } from './paperAnalysis/paperAnalysisComponent.j
  *
  * Document viewing components.
  */
-export { BookViewerComponent, WorkspaceInfoComponent } from './bookshelfComponents.js';
+export {
+  BookViewerComponent,
+  WorkspaceInfoComponent,
+} from './bookshelfComponents.js';
 
 // ==================== Knowledge Management Component ====================
 
@@ -318,5 +356,13 @@ export type {
 
 // Test Components - Re-export for convenience in tests
 // Located in: core/statefulContext/__tests__/testComponents.ts
-export { TestComponent, TestComponent2, AnotherComponent } from '../core/statefulContext/__tests__/testComponents.js';
-export { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../core/statefulContext/__tests__/testComponents.js';
+export {
+  TestComponent,
+  TestComponent2,
+  AnotherComponent,
+} from '../core/statefulContext/__tests__/testComponents.js';
+export {
+  TestToolComponentA,
+  TestToolComponentB,
+  TestToolComponentC,
+} from '../core/statefulContext/__tests__/testComponents.js';

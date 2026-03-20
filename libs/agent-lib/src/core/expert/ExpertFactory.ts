@@ -1,7 +1,8 @@
 /**
  * Expert Factory - 简化Expert创建的工具函数
  *
- * 自动加载config.json和sop.md，减少样板代码
+ * 自动加载config.json和sop.yaml（或sop.md），减少样板代码
+ * 支持结构化SOP（YAML）和传统Markdown SOP
  *
  * 使用方式：
  * ```typescript
@@ -26,15 +27,40 @@
  * ```
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import type {
     ExpertConfig,
     ExpertComponentDefinition,
 } from './types.js';
-import type { VirtualWorkspaceConfig } from '../../components/index.js';
+import type { VirtualWorkspaceConfig, ExportConfig } from '../../components/index.js';
 import { ExpertWorkspaceBase } from './ExpertWorkspaceBase.js';
+
+/**
+ * SOP YAML 结构
+ */
+interface SOPYaml {
+    overview?: string;
+    responsibilities?: string[];
+    constraints?: string[];
+    parameters?: Array<{
+        name: string;
+        type: string;
+        required?: boolean;
+        description?: string;
+    }>;
+    steps?: Array<{
+        phase: string;
+        description: string;
+        details?: string;
+    }>;
+    examples?: Array<{
+        input?: string;
+        output?: string;
+        description?: string;
+    }>;
+}
 
 /**
  * Expert配置JSON接口
@@ -59,6 +85,14 @@ interface ExpertConfigJson {
         renderMode?: 'tui' | 'markdown';
         toolCallLogCount?: number;
     };
+    /**
+     * 导出配置
+     */
+    export?: {
+        autoExport?: boolean;
+        bucket?: string;
+        defaultPath?: string;
+    };
 }
 
 /**
@@ -70,11 +104,86 @@ function loadConfig(configPath: string): ExpertConfigJson {
 }
 
 /**
- * 加载SOP Markdown文件
- * SOP is stored as plain markdown text
+ * 加载并解析SOP YAML文件
+ * SOP YAML格式支持结构化的steps、parameters、examples
  */
-function loadSOP(sopPath: string): string {
+function loadSOPYaml(sopPath: string): SOPYaml | null {
+    if (!existsSync(sopPath)) {
+        return null;
+    }
+    try {
+        // Dynamic import for yaml parsing
+        const YAML = require('yaml');
+        const content = readFileSync(sopPath, 'utf-8');
+        return YAML.parse(content) as SOPYaml;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * 加载SOP Markdown文件（传统格式）
+ */
+function loadSOPMarkdown(sopPath: string): string | null {
+    if (!existsSync(sopPath)) {
+        return null;
+    }
     return readFileSync(sopPath, 'utf-8');
+}
+
+/**
+ * 构建Capability Prompt（能力描述）
+ */
+function buildCapability(sop: SOPYaml): string {
+    const parts: string[] = [];
+
+    if (sop.overview) {
+        parts.push(`## Overview\n${sop.overview}`);
+    }
+
+    if (sop.responsibilities?.length) {
+        parts.push(`## Responsibilities\n${sop.responsibilities.map(r => `- ${r}`).join('\n')}`);
+    }
+
+    if (sop.constraints?.length) {
+        parts.push(`## Constraints\n${sop.constraints.map(c => `- ${c}`).join('\n')}`);
+    }
+
+    return parts.join('\n\n');
+}
+
+/**
+ * 构建Direction Prompt（方向指导）
+ */
+function buildDirection(sop: SOPYaml): string {
+    const parts: string[] = [];
+
+    if (sop.steps?.length) {
+        parts.push('## Steps\n');
+        for (const step of sop.steps) {
+            parts.push(`### ${step.phase}\n${step.description}`);
+            if (step.details) {
+                parts.push(`\n${step.details}`);
+            }
+        }
+    }
+
+    if (sop.examples?.length) {
+        parts.push('\n## Examples\n');
+        for (const example of sop.examples) {
+            if (example.input) {
+                parts.push(`**Input:**\n\`\`\`\n${example.input}\n\`\`\``);
+            }
+            if (example.output) {
+                parts.push(`**Output:**\n\`\`\`\n${example.output}\n\`\`\``);
+            }
+            if (example.description) {
+                parts.push(example.description);
+            }
+        }
+    }
+
+    return parts.join('\n');
 }
 
 /**
@@ -117,6 +226,7 @@ function buildComponents(
  * 创建Expert配置
  *
  * 这是主要的工厂函数，自动加载配置文件并生成ExpertConfig
+ * 优先使用 sop.yaml（结构化），如果不存在则降级到 sop.md（Markdown）
  *
  * @param metaUrl - import.meta.url（用于定位配置文件路径）
  * @param workspace - VirtualWorkspace子类或ExpertWorkspaceBase命名空间
@@ -139,9 +249,23 @@ export function createExpertConfig(
     const __filename = fileURLToPath(metaUrl);
     const __dirname = dirname(__filename);
 
-    // 加载配置文件和SOP
+    // 加载配置文件
     const config = loadConfig(join(__dirname, 'config.json'));
-    const sop = loadSOP(join(__dirname, 'sop.md'));
+
+    // 尝试加载SOP YAML（结构化格式），如果不存在则降级到Markdown
+    const sopYamlPath = join(__dirname, 'sop.yaml');
+    const sopMdPath = join(__dirname, 'sop.md');
+
+    const sopYaml = loadSOPYaml(sopYamlPath);
+    const sopMarkdown = loadSOPMarkdown(sopMdPath);
+
+    // 确定使用哪个SOP格式
+    const useYaml = sopYaml !== null;
+    const sopContent = useYaml ? null : sopMarkdown;
+
+    if (!useYaml && !sopMarkdown) {
+        throw new Error(`Neither sop.yaml nor sop.md found in ${__dirname}`);
+    }
 
     return {
         // 基本信息
@@ -151,11 +275,19 @@ export function createExpertConfig(
         whenToUse: config.whenToUse,
         triggers: config.triggers,
 
-        // SOP - 直接使用markdown内容
-        sop,
+        // SOP处理：YAML格式使用capability/direction，Markdown直接使用
+        sop: useYaml ? '' : sopContent!,
 
-        // 职责（可选）
-        responsibilities: '',
+        // 结构化SOP的capability和direction（仅YAML格式）
+        prompt: useYaml ? {
+            capability: buildCapability(sopYaml!),
+            direction: buildDirection(sopYaml!),
+        } : undefined,
+
+        // 职责（从YAML的responsibilities获取）
+        responsibilities: useYaml && sopYaml?.responsibilities
+            ? sopYaml.responsibilities.join('; ')
+            : '',
 
         // 能力标签
         capabilities: config.tags || [],
@@ -164,7 +296,23 @@ export function createExpertConfig(
         components: buildComponents(workspace),
 
         // VirtualWorkspace 配置（从 config.json 的 virtualWorkspace 字段读取）
-        // 注意：ExpertExecutor 中还会覆盖 id 和 name，但 renderMode、toolCallLogCount 等会使用这里的值
         virtualWorkspaceConfig: config.virtualWorkspace as VirtualWorkspaceConfig | undefined,
+
+        // 输入处理（从 Workspace 获取）
+        input: {
+            validate: workspace.validateInput,
+            transform: (input: Record<string, any>) => {
+                const result = workspace.transformInput(input);
+                return result.data;
+            },
+            loadExternalData: workspace.loadExternalData,
+        },
+
+        // 导出配置
+        exportConfig: config.export ? {
+            autoExport: config.export.autoExport ?? false,
+            bucket: config.export.bucket ?? 'agentfs',
+            defaultPath: config.export.defaultPath ?? '{expertId}/{timestamp}.json',
+        } : undefined,
     };
 }
