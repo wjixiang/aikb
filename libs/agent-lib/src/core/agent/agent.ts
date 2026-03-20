@@ -606,28 +606,19 @@ export class Agent {
       // Build system prompt
       const systemPrompt = this.buildSystemPrompt();
 
-      // Get conversation history
-      const historyContext = this.memoryModule.getHistoryForPrompt();
+      // Get current workspace context before the LLM call
+      const currentWorkspaceContext = await this.workspace.render();
+
+      // Get conversation history with workspace contexts interleaved
+      // This ensures workspace context appears after each assistant response in history
+      const historyContext = this.memoryModule.getHistoryForPrompt(true);
       const memoryContext = historyContext.map(m =>
         typeof m === 'string' ? m : this.formatMessage(m)
       );
 
-      // Get historical workspace contexts from previous iterations
-      const workspaceContextsForPrompt = this.memoryModule.getWorkspaceContextsForPrompt();
-      const workspaceContextStrings = workspaceContextsForPrompt.map(m =>
-        this.formatMessage(m)
-      );
-
-      // Get current workspace context (rendered as string)
-      const currentWorkspaceContext = await this.workspace.render();
+      // Append current workspace context at the end
       const currentWorkspaceMessage = `[Workspace Context (Current)]\n${currentWorkspaceContext}`;
-
-      // Sequential rendering: combine all contexts in order (memory context + historical workspace contexts + current workspace)
-      const combinedMemoryContext = [
-        ...memoryContext,
-        ...workspaceContextStrings,
-        currentWorkspaceMessage,
-      ];
+      const combinedMemoryContext = [...memoryContext, currentWorkspaceMessage];
 
       // Call LLM
       const response = await this.apiClient.makeRequest(

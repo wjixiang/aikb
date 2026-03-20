@@ -170,8 +170,9 @@ export interface IMemoryModule {
 
   /**
    * Get history for prompt injection
+   * @param interleaveWorkspaces - If true, interleaves workspace contexts with messages
    */
-  getHistoryForPrompt(): ApiMessage[];
+  getHistoryForPrompt(interleaveWorkspaces?: boolean): ApiMessage[];
 
   // ==================== Workspace Context Management ====================
 

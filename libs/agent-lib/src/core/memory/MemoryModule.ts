@@ -256,8 +256,10 @@ export class MemoryModule implements IMemoryModule {
     /**
      * Get history for prompt injection
      * Returns all messages with errors prepended as system messages
+     * @param interleaveWorkspaces - If true, interleaves workspace contexts with messages
+     *                               Assumes pattern: user, assistant, workspace, user, assistant, workspace...
      */
-    getHistoryForPrompt(): ApiMessage[] {
+    getHistoryForPrompt(interleaveWorkspaces = false): ApiMessage[] {
         const result: ApiMessage[] = [];
 
         // Prepend errors as system messages
@@ -272,6 +274,62 @@ export class MemoryModule implements IMemoryModule {
 
         // Add all messages
         result.push(...this.messages);
+
+        // Optionally interleave workspace contexts with messages
+        if (interleaveWorkspaces) {
+            return this._interleaveWorkspaceContexts(result);
+        }
+
+        return result;
+    }
+
+    /**
+     * Interleave workspace contexts with messages
+     * Assumes pattern after errors: user, assistant, user, assistant, ...
+     * Inserts workspace context after each assistant message
+     */
+    private _interleaveWorkspaceContexts(messages: ApiMessage[]): ApiMessage[] {
+        if (this.workspaceContexts.length === 0) {
+            return messages;
+        }
+
+        const result: ApiMessage[] = [];
+        let workspaceIndex = 0;
+
+        for (let i = 0; i < messages.length; i++) {
+            result.push(messages[i]);
+
+            // After each assistant message (that is not an error or tool_result), insert workspace context
+            const msg = messages[i];
+            if (msg.role === 'assistant') {
+                if (workspaceIndex < this.workspaceContexts.length) {
+                    const ctx = this.workspaceContexts[workspaceIndex];
+                    result.push({
+                        role: 'system' as const,
+                        content: [{
+                            type: 'text' as const,
+                            text: `[Workspace Context (Iteration ${ctx.iteration})]\n${ctx.content}`,
+                        }],
+                        ts: ctx.ts,
+                    });
+                    workspaceIndex++;
+                }
+            }
+        }
+
+        // Add any remaining workspace contexts at the end
+        while (workspaceIndex < this.workspaceContexts.length) {
+            const ctx = this.workspaceContexts[workspaceIndex];
+            result.push({
+                role: 'system' as const,
+                content: [{
+                    type: 'text' as const,
+                    text: `[Workspace Context (Iteration ${ctx.iteration})]\n${ctx.content}`,
+                }],
+                ts: ctx.ts,
+            });
+            workspaceIndex++;
+        }
 
         return result;
     }
