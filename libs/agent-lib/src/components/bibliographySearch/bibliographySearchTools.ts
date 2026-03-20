@@ -7,6 +7,7 @@ import {
   saveArticleParamsSchema,
   removeFromFavoritesParamsSchema,
   getFavoritesParamsSchema,
+  updateArticleNoteParamsSchema,
 } from './bibliographySearchSchemas.js';
 
 /**
@@ -154,6 +155,27 @@ export const getFavoritesTool: Tool = {
 };
 
 /**
+ * Tool for updating notes on a saved article
+ */
+export const updateArticleNoteTool: Tool = {
+  toolName: 'update_article_note',
+  desc: 'Update or add a note to a saved article in favorites. The article must already be in favorites.',
+  paramsSchema: updateArticleNoteParamsSchema,
+  examples: [
+    {
+      description: 'Add a note to a saved article',
+      params: { pmid: '12345678', note: 'Important for my literature review' },
+      expectedResult: 'Note updated for the article',
+    },
+    {
+      description: 'Remove a note from an article',
+      params: { pmid: '12345678', note: '' },
+      expectedResult: 'Note removed from the article',
+    },
+  ],
+};
+
+/**
  * Map of all bibliography search tools
  * Can be used to initialize the toolSet in BibliographySearchComponent
  */
@@ -167,6 +189,7 @@ export function createBibliographySearchToolSet(): Map<string, Tool> {
   tools.set('save_article', saveArticleTool);
   tools.set('remove_from_favorites', removeFromFavoritesTool);
   tools.set('get_favorites', getFavoritesTool);
+  tools.set('update_article_note', updateArticleNoteTool);
 
   return tools;
 }
@@ -182,4 +205,5 @@ export const bibliographySearchTools = {
   saveArticle: saveArticleTool,
   removeFromFavorites: removeFromFavoritesTool,
   getFavorites: getFavoritesTool,
+  updateArticleNote: updateArticleNoteTool,
 };

@@ -15,9 +15,16 @@ import {
 } from 'bibliography-search';
 import { createBibliographySearchToolSet } from './bibliographySearchTools.js';
 
+interface SavedArticle extends ArticleProfile {
+  note?: string;
+}
+
 export class BibliographySearchComponent extends ToolComponent {
   toolSet: Map<string, Tool>;
-  handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult<any>>;
+  handleToolCall: (
+    toolName: string,
+    params: any,
+  ) => Promise<ToolCallResult<any>>;
 
   private pubmedService: PubmedService;
   currentResults: {
@@ -29,7 +36,7 @@ export class BibliographySearchComponent extends ToolComponent {
   currentPage = 1;
   currentRetrivalStrategy: RetrivalStrategy | null = null;
   currentSearchParams: PubmedSearchParams | null = null;
-  savedArticles: Map<string, ArticleProfile> = new Map();
+  savedArticles: Map<string, SavedArticle> = new Map();
 
   constructor() {
     super();
@@ -294,6 +301,16 @@ export class BibliographySearchComponent extends ToolComponent {
         );
       }
 
+      if (article.note) {
+        articleBox.addChild(
+          new tp({
+            content: `  Note: ${article.note}`,
+            indent: 1,
+            textStyle: { italic: true },
+          }),
+        );
+      }
+
       container.addChild(articleBox);
     });
 
@@ -438,6 +455,8 @@ export class BibliographySearchComponent extends ToolComponent {
         return this.handleRemoveFromFavorites(params);
       case 'get_favorites':
         return this.handleGetFavorites(params);
+      case 'update_article_note':
+        return this.handleUpdateArticleNote(params);
       default:
         return {
           success: false,
@@ -615,11 +634,15 @@ export class BibliographySearchComponent extends ToolComponent {
     this.currentPage = 1;
     this.currentRetrivalStrategy = null;
     this.currentSearchParams = null;
-    return { success: true, data: { cleared: true }, summary: '[Bibliography] 已清除结果' };
+    return {
+      success: true,
+      data: { cleared: true },
+      summary: '[Bibliography] 已清除结果',
+    };
   }
 
   private handleSaveArticle(params: any): ToolCallResult<any> {
-    const { pmid } = params;
+    const { pmid, note } = params;
 
     if (!pmid) {
       return {
@@ -630,20 +653,31 @@ export class BibliographySearchComponent extends ToolComponent {
     }
 
     // Try to find the article in current results or current article detail
-    let articleToSave: ArticleProfile | null = null;
+    let articleToSave: SavedArticle | null = null;
+
+    // Check if already saved (to preserve existing note)
+    const existingArticle = this.savedArticles.get(pmid);
 
     // Check current results
     if (this.currentResults) {
-      articleToSave = this.currentResults.articleProfiles.find(a => a.pmid === pmid) ?? null;
+      articleToSave =
+        this.currentResults.articleProfiles.find((a) => a.pmid === pmid) ??
+        null;
     }
 
     // Check if viewing the article detail
-    if (!articleToSave && this.currentArticleDetail && this.currentArticleDetail.pmid === pmid) {
+    if (
+      !articleToSave &&
+      this.currentArticleDetail &&
+      this.currentArticleDetail.pmid === pmid
+    ) {
       articleToSave = {
         doi: null,
         pmid: this.currentArticleDetail.pmid,
         title: this.currentArticleDetail.title,
-        authors: this.currentArticleDetail.authors?.map(a => a.name).join(', ') || '',
+        authors:
+          this.currentArticleDetail.authors?.map((a) => a.name).join(', ') ||
+          '',
         journalCitation: this.currentArticleDetail.journalInfo?.title || '',
         snippet: this.currentArticleDetail.abstract,
       };
@@ -652,15 +686,29 @@ export class BibliographySearchComponent extends ToolComponent {
     if (!articleToSave) {
       return {
         success: false,
-        data: { error: 'Article not found. Please search or view the article first.' },
+        data: {
+          error: 'Article not found. Please search or view the article first.',
+        },
         summary: '[Bibliography] 错误: 文献未找到，请先搜索或查看该文献',
       };
+    }
+
+    // Preserve existing note if not providing a new one
+    if (existingArticle && !note) {
+      articleToSave.note = existingArticle.note;
+    } else {
+      articleToSave.note = note;
     }
 
     this.savedArticles.set(pmid, articleToSave);
     return {
       success: true,
-      data: { pmid, title: articleToSave.title, totalFavorites: this.savedArticles.size },
+      data: {
+        pmid,
+        title: articleToSave.title,
+        note: articleToSave.note,
+        totalFavorites: this.savedArticles.size,
+      },
       summary: `[Bibliography] 已收藏: ${articleToSave.title?.substring(0, 30) || pmid}...`,
     };
   }
@@ -688,18 +736,25 @@ export class BibliographySearchComponent extends ToolComponent {
     this.savedArticles.delete(pmid);
     return {
       success: true,
-      data: { pmid, removedTitle: removed?.title, remainingFavorites: this.savedArticles.size },
+      data: {
+        pmid,
+        removedTitle: removed?.title,
+        remainingFavorites: this.savedArticles.size,
+      },
       summary: `[Bibliography] 已取消收藏: ${removed?.title?.substring(0, 30) || pmid}...`,
     };
   }
 
   private handleGetFavorites(_params: any): ToolCallResult<any> {
-    const favorites = Array.from(this.savedArticles.entries()).map(([pmid, article]) => ({
-      pmid,
-      title: article.title,
-      authors: article.authors,
-      journalCitation: article.journalCitation,
-    }));
+    const favorites = Array.from(this.savedArticles.entries()).map(
+      ([pmid, article]) => ({
+        pmid,
+        title: article.title,
+        authors: article.authors,
+        journalCitation: article.journalCitation,
+        note: article.note,
+      }),
+    );
 
     return {
       success: true,
@@ -708,6 +763,36 @@ export class BibliographySearchComponent extends ToolComponent {
         total: this.savedArticles.size,
       },
       summary: `[Bibliography] 收藏夹: ${this.savedArticles.size} 篇文献`,
+    };
+  }
+
+  private handleUpdateArticleNote(params: any): ToolCallResult<any> {
+    const { pmid, note } = params;
+
+    if (!pmid) {
+      return {
+        success: false,
+        data: { error: 'PMID is required' },
+        summary: '[Bibliography] 错误: 未提供 PMID',
+      };
+    }
+
+    const article = this.savedArticles.get(pmid);
+    if (!article) {
+      return {
+        success: false,
+        data: { error: 'Article not in favorites' },
+        summary: '[Bibliography] 错误: 该文献不在收藏夹中',
+      };
+    }
+
+    article.note = note || undefined;
+    this.savedArticles.set(pmid, article);
+
+    return {
+      success: true,
+      data: { pmid, note: article.note },
+      summary: `[Bibliography] 已更新备注: ${article.title?.substring(0, 30) || pmid}`,
     };
   }
 

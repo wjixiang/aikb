@@ -77,6 +77,10 @@ export const clearResultsParamsSchema = z.object({});
  */
 export const saveArticleParamsSchema = z.object({
   pmid: z.string().describe('PubMed ID (PMID) of article to save to favorites'),
+  note: z
+    .string()
+    .optional()
+    .describe('Optional note to add to the saved article'),
 });
 
 /**
@@ -92,3 +96,14 @@ export const removeFromFavoritesParamsSchema = z.object({
  * Schema for get_favorites tool parameters
  */
 export const getFavoritesParamsSchema = z.object({});
+
+/**
+ * Schema for update_article_note tool parameters
+ */
+export const updateArticleNoteParamsSchema = z.object({
+  pmid: z.string().describe('PubMed ID (PMID) of article to update note'),
+  note: z
+    .string()
+    .optional()
+    .describe('Note content (empty string to remove note)'),
+});
