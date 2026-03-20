@@ -148,6 +148,7 @@ export class Agent {
   private _currentPollInterval: number;
 
   // Expert identity (optional - for Agents that represent Experts)
+  // @deprecated - Will be removed in future versions. Use taskId for identification instead.
   private _expertIdentity?: AgentExpertIdentity;
 
   // Memory module (dependency injected, always present)
@@ -160,6 +161,7 @@ export class Agent {
   private toolManager: IToolManager;
 
   // Task module (sub-module for runtime task handling)
+  // @deprecated - Will be removed in future versions. Use persistence service instead.
   private taskModule?: RuntimeTaskComponent;
 
   // Persistence service (optional)

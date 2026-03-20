@@ -44,6 +44,39 @@ model AgentSession {
   updatedAt       DateTime @updatedAt
   completedAt     DateTime?
 
+  // Relations
+  memory          AgentMemory?
+  componentStates ComponentState[]
+
   @@index([status])
   @@index([createdAt])
+}
+
+// Phase 2: Memory Persistence
+model AgentMemory {
+  id              String   @id @default(uuid())
+  sessionId       String   @unique
+  session         AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  messages        Json     // ApiMessage[]
+  workspaceContexts Json?  // WorkspaceContextEntry[]
+  config          Json?    // MemoryModuleConfig
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Phase 3: Component State Persistence
+model ComponentState {
+  id              String   @id @default(uuid())
+  sessionId       String
+  session         AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  componentId     String
+  stateData       Json     // 组件特定状态
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([sessionId, componentId])
 }
