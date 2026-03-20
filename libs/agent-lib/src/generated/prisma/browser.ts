@@ -18,7 +18,7 @@ export { Prisma }
 export * as $Enums from './enums'
 export * from './enums';
 /**
- * Model ExpertInstance
+ * Model AgentSession
  * 
  */
-export type ExpertInstance = Prisma.ExpertInstanceModel
+export type AgentSession = Prisma.AgentSessionModel

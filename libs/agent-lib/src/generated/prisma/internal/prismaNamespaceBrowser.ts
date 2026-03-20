@@ -51,7 +51,7 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  ExpertInstance: 'ExpertInstance'
+  AgentSession: 'AgentSession'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -70,18 +70,25 @@ export const TransactionIsolationLevel = {
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const ExpertInstanceScalarFieldEnum = {
+export const AgentSessionScalarFieldEnum = {
   id: 'id',
-  expertClassId: 'expertClassId',
-  instanceId: 'instanceId',
+  taskId: 'taskId',
   status: 'status',
-  agentStatus: 'agentStatus',
-  resultData: 'resultData',
+  abortReason: 'abortReason',
+  abortSource: 'abortSource',
+  config: 'config',
+  totalTokensIn: 'totalTokensIn',
+  totalTokensOut: 'totalTokensOut',
+  totalCost: 'totalCost',
+  toolUsage: 'toolUsage',
+  consecutiveMistakeCount: 'consecutiveMistakeCount',
+  collectedErrors: 'collectedErrors',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  completedAt: 'completedAt'
 } as const
 
-export type ExpertInstanceScalarFieldEnum = (typeof ExpertInstanceScalarFieldEnum)[keyof typeof ExpertInstanceScalarFieldEnum]
+export type AgentSessionScalarFieldEnum = (typeof AgentSessionScalarFieldEnum)[keyof typeof AgentSessionScalarFieldEnum]
 
 
 export const SortOrder = {

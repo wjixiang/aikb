@@ -29,8 +29,8 @@ export * from "./enums"
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more ExpertInstances
- * const expertInstances = await prisma.expertInstance.findMany()
+ * // Fetch zero or more AgentSessions
+ * const agentSessions = await prisma.agentSession.findMany()
  * ```
  * 
  * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
@@ -40,7 +40,7 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
- * Model ExpertInstance
+ * Model AgentSession
  * 
  */
-export type ExpertInstance = Prisma.ExpertInstanceModel
+export type AgentSession = Prisma.AgentSessionModel

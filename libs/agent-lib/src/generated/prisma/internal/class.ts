@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.0.0",
   "engineVersion": "0c19ccc313cf9911a90d99d2ac2eb0280c76c513",
   "activeProvider": "postgresql",
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Get a free hosted Postgres database in seconds: `npx create-db`\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel ExpertInstance {\n  id            String @id @default(uuid())\n  expertClassId String\n  instanceId    String\n  status        String @default(\"idle\")\n  agentStatus   String @default(\"idle\")\n  resultData    Json? // JSON storing exported component data from exportResult()\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@unique([expertClassId, instanceId])\n  @@index([status])\n  @@index([expertClassId])\n}\n",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Get a free hosted Postgres database in seconds: `npx create-db`\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\n// ExpertInstance 已废弃，使用 AgentSession 替代\n// model ExpertInstance { ... }\n\nmodel AgentSession {\n  id     String @id @default(uuid())\n  taskId String @unique // Agent 创建时分配的 UUID\n\n  // 状态信息\n  status      String  @default(\"idle\") // idle/running/completed/aborted\n  abortReason String?\n  abortSource String? // user/system/error/timeout/manual\n\n  // 配置 (JSON)\n  config Json? // AgentConfig 序列化\n\n  // 统计信息\n  totalTokensIn  Int   @default(0)\n  totalTokensOut Int   @default(0)\n  totalCost      Float @default(0)\n\n  // 工具使用统计\n  toolUsage Json? // Record<string, { attempts: number; failures: number }>\n\n  // 错误追踪\n  consecutiveMistakeCount Int   @default(0)\n  collectedErrors         Json? // string[]\n\n  // 时间戳\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n  completedAt DateTime?\n\n  @@index([status])\n  @@index([createdAt])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -28,7 +28,7 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"ExpertInstance\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expertClassId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"instanceId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"agentStatus\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"resultData\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"AgentSession\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"taskId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"abortReason\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"abortSource\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"config\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"totalTokensIn\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"totalTokensOut\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"totalCost\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"toolUsage\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"consecutiveMistakeCount\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"collectedErrors\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"completedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')
@@ -58,8 +58,8 @@ export interface PrismaClientConstructor {
    * @example
    * ```
    * const prisma = new PrismaClient()
-   * // Fetch zero or more ExpertInstances
-   * const expertInstances = await prisma.expertInstance.findMany()
+   * // Fetch zero or more AgentSessions
+   * const agentSessions = await prisma.agentSession.findMany()
    * ```
    * 
    * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
@@ -80,8 +80,8 @@ export interface PrismaClientConstructor {
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more ExpertInstances
- * const expertInstances = await prisma.expertInstance.findMany()
+ * // Fetch zero or more AgentSessions
+ * const agentSessions = await prisma.agentSession.findMany()
  * ```
  * 
  * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
@@ -175,14 +175,14 @@ export interface PrismaClient<
   }>>
 
       /**
-   * `prisma.expertInstance`: Exposes CRUD operations for the **ExpertInstance** model.
+   * `prisma.agentSession`: Exposes CRUD operations for the **AgentSession** model.
     * Example usage:
     * ```ts
-    * // Fetch zero or more ExpertInstances
-    * const expertInstances = await prisma.expertInstance.findMany()
+    * // Fetch zero or more AgentSessions
+    * const agentSessions = await prisma.agentSession.findMany()
     * ```
     */
-  get expertInstance(): Prisma.ExpertInstanceDelegate<ExtArgs, { omit: OmitOpts }>;
+  get agentSession(): Prisma.AgentSessionDelegate<ExtArgs, { omit: OmitOpts }>;
 }
 
 export function getPrismaClientClass(): PrismaClientConstructor {

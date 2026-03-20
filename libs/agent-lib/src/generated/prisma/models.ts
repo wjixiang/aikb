@@ -8,5 +8,5 @@
  *
  * 🟢 You can import this file directly.
  */
-export type * from './models/ExpertInstance'
+export type * from './models/AgentSession'
 export type * from './commonInputTypes'

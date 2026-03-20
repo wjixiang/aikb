@@ -12,18 +12,38 @@ datasource db {
   provider = "postgresql"
 }
 
-model ExpertInstance {
-  id            String   @id @default(uuid())
-  expertClassId String
-  instanceId    String
-  status        String   @default("idle")
-  agentStatus   String   @default("idle")
-  resultData    Json?    // JSON storing exported component data from exportResult()
+// ExpertInstance 已废弃，使用 AgentSession 替代
+// model ExpertInstance { ... }
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model AgentSession {
+  id              String   @id @default(uuid())
+  taskId          String   @unique // Agent 创建时分配的 UUID
 
-  @@unique([expertClassId, instanceId])
+  // 状态信息
+  status          String   @default("idle") // idle/running/completed/aborted
+  abortReason     String?
+  abortSource     String? // user/system/error/timeout/manual
+
+  // 配置 (JSON)
+  config          Json? // AgentConfig 序列化
+
+  // 统计信息
+  totalTokensIn   Int      @default(0)
+  totalTokensOut  Int      @default(0)
+  totalCost       Float    @default(0)
+
+  // 工具使用统计
+  toolUsage       Json? // Record<string, { attempts: number; failures: number }>
+
+  // 错误追踪
+  consecutiveMistakeCount Int @default(0)
+  collectedErrors Json? // string[]
+
+  // 时间戳
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+
   @@index([status])
-  @@index([expertClassId])
+  @@index([createdAt])
 }
