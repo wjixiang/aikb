@@ -6,10 +6,13 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
+import { PostgresPersistenceService } from '../persistence/PostgresPersistenceService.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { IToolManager } from '../tools/index.js';
+import type { IPersistenceService } from '../persistence/types.js';
+import { PrismaClient } from '../../generated/prisma/client.js';
 import pino from 'pino';
 import {
   type UnifiedAgentConfig,
@@ -103,6 +106,37 @@ export class AgentContainer {
         return ApiClientFactory.create(this.config.api);
       })
       .inSingletonScope();
+
+    // Persistence Service (if enabled)
+    if (this.config.persistence?.enabled !== false) {
+      const databaseUrl =
+        this.config.persistence?.databaseUrl || process.env['DATABASE_URL'];
+
+      if (databaseUrl) {
+        // Prisma Client
+        this.container
+          .bind<PrismaClient>('PrismaClient')
+          .toDynamicValue(() => {
+            return new PrismaClient({
+              datasources: { db: { url: databaseUrl } },
+            });
+          })
+          .inSingletonScope();
+
+        // Persistence Config
+        this.container.bind(TYPES.PersistenceConfig).toConstantValue({
+          enabled: true,
+          databaseUrl,
+          autoCommit: this.config.persistence?.autoCommit ?? true,
+        });
+
+        // Persistence Service
+        this.container
+          .bind<IPersistenceService>(TYPES.IPersistenceService)
+          .to(PostgresPersistenceService)
+          .inSingletonScope();
+      }
+    }
 
     // Container reference
     this.container

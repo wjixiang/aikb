@@ -250,6 +250,26 @@ export const TYPES = {
    * @scope Singleton - Shared configuration
    */
   MessageBusConfig: Symbol('MessageBusConfig'),
+
+  // ==================== Persistence Services ====================
+
+  /**
+   * IPersistenceService - Agent persistence service
+   * @scope Request - Shared within an agent creation request
+   */
+  IPersistenceService: Symbol('IPersistenceService'),
+
+  /**
+   * PrismaClient - Prisma ORM client
+   * @scope Singleton - Shared across all agents
+   */
+  PrismaClient: Symbol('PrismaClient'),
+
+  /**
+   * PersistenceConfig - Persistence service configuration
+   * @scope Singleton - Shared across all agents
+   */
+  PersistenceConfig: Symbol('PersistenceConfig'),
 } as const;
 
 export type TestOverrides = {

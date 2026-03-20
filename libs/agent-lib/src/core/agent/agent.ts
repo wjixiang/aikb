@@ -25,6 +25,7 @@ import {
   RuntimeTaskComponent,
   createRuntimeTaskComponent,
 } from '../../components/index.js';
+import type { IPersistenceService } from '../persistence/types.js';
 import pino from 'pino';
 
 export interface AgentConfig {
@@ -161,6 +162,9 @@ export class Agent {
   // Task module (sub-module for runtime task handling)
   private taskModule?: RuntimeTaskComponent;
 
+  // Persistence service (optional)
+  private persistenceService?: IPersistenceService;
+
   private agentSop: SOP;
   private logger: pino.Logger;
 
@@ -174,6 +178,7 @@ export class Agent {
     @inject(TYPES.ApiClient) apiClient: ApiClient,
     @inject(TYPES.IToolManager) toolManager: IToolManager,
     @inject(TYPES.TaskId) @optional() taskId?: string,
+    @inject(TYPES.IPersistenceService) @optional() persistenceService?: IPersistenceService,
   ) {
     // Instantiate pino logger directly
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'debug' });
@@ -186,6 +191,59 @@ export class Agent {
     this.memoryModule = memoryModule as MemoryModule;
     this.apiClient = apiClient;
     this.toolManager = toolManager;
+    this.persistenceService = persistenceService;
+
+    // Create session on initialization if persistence is enabled
+    if (this.persistenceService) {
+      void this.createSession();
+    }
+  }
+
+  /**
+   * Create persistence session
+   */
+  private async createSession(): Promise<void> {
+    if (!this.persistenceService) return;
+
+    try {
+      await this.persistenceService.createSession({
+        taskId: this._taskId,
+        status: this._status,
+        totalTokensIn: this._tokenUsage.totalTokensIn,
+        totalTokensOut: this._tokenUsage.totalTokensOut,
+        totalCost: this._tokenUsage.totalCost,
+        consecutiveMistakeCount: this._consecutiveMistakeCount,
+        collectedErrors: this._collectedErrors,
+      });
+    } catch (error) {
+      this.logger.error('[Agent] Failed to create session', { error });
+    }
+  }
+
+  /**
+   * Persist current agent state
+   */
+  private async persistState(): Promise<void> {
+    if (!this.persistenceService) return;
+
+    try {
+      await this.persistenceService.updateSession(this._taskId, {
+        status: this._status,
+        abortReason: this._abortInfo?.reason,
+        abortSource: this._abortInfo?.source,
+        totalTokensIn: this._tokenUsage.totalTokensIn,
+        totalTokensOut: this._tokenUsage.totalTokensOut,
+        totalCost: this._tokenUsage.totalCost,
+        toolUsage: this._toolUsage,
+        consecutiveMistakeCount: this._consecutiveMistakeCount,
+        collectedErrors: this._collectedErrors,
+      });
+    } catch (error) {
+      this.logger.error('[Agent] Failed to persist state', {
+        error,
+        taskId: this._taskId,
+      });
+    }
   }
 
   /**
@@ -324,6 +382,7 @@ export class Agent {
    */
   async start(): Promise<Agent> {
     this._status = 'running';
+    void this.persistState(); // 持久化状态变更
 
     // Note: Initial user message will be added in requestLoop after startTurn()
     // This ensures the message is properly associated with a Turn
@@ -338,6 +397,7 @@ export class Agent {
    */
   complete(): void {
     this._status = 'completed';
+    void this.persistState(); // 持久化状态变更
   }
 
   /**
@@ -358,6 +418,7 @@ export class Agent {
       source,
       details,
     };
+    void this.persistState(); // 持久化状态变更
   }
 
   /**
@@ -763,7 +824,7 @@ export class Agent {
   private async executeAgentLoop(
     tools: ChatCompletionTool[],
   ): Promise<{ didComplete: boolean }> {
-    const maxIterations = 50; // Safety limit
+    const maxIterations = this.config.maxIterations;
     let iterations = 0;
 
     while (iterations < maxIterations) {
