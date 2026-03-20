@@ -6,4 +6,4 @@
 
 export * from './types.js';
 export { ToolComponent } from './toolComponent.js';
-export type { ExportResult, ExportOptions } from './toolComponent.js';
+export type { ExportResult, ExportOptions, ComponentStateBase } from './toolComponent.js';

@@ -7,6 +7,14 @@ import { MdDiv } from '../ui/markdown/MdDiv.js';
 import { MdElement } from '../ui/markdown/MdElement.js';
 
 /**
+ * Component state base interface for persistence
+ */
+export interface ComponentStateBase {
+  version: number;
+  updatedAt: number;
+}
+
+/**
  * Result of an export operation
  */
 export interface ExportResult<T = unknown> {
@@ -53,6 +61,50 @@ export abstract class ToolComponent {
 
     /** Description of what this component does (default: empty string) */
     readonly description: string = '';
+
+    // ==================== Centralized State Management (Phase 3) ====================
+
+    /** Centralized state storage */
+    protected _state: ComponentStateBase = {
+        version: 1,
+        updatedAt: Date.now(),
+    };
+
+    /** State change callback for persistence */
+    onStateChange?: (newState: ComponentStateBase) => void;
+
+    /**
+     * Get state (readonly)
+     */
+    get state(): ComponentStateBase {
+        return { ...this._state };
+    }
+
+    /**
+     * Update state with partial data
+     */
+    protected updateState(partial: Partial<ComponentStateBase>): void {
+        this._state = {
+            ...this._state,
+            ...partial,
+            updatedAt: Date.now(),
+        };
+        this.onStateChange?.(this._state);
+    }
+
+    /**
+     * Restore state from persistence (override in subclass)
+     */
+    restoreState(state: ComponentStateBase): void {
+        this._state = { ...state };
+    }
+
+    /**
+     * Export state for persistence (override in subclass)
+     */
+    abstract exportState(): ComponentStateBase;
+
+    // ==================== Abstract Methods ====================
 
     /** Abstract method to render component content */
     abstract renderImply: () => Promise<TUIElement[]>;
