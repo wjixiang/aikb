@@ -177,9 +177,9 @@ export interface IMemoryModule {
   // ==================== Workspace Context Management ====================
 
   /**
-   * Record a workspace context snapshot
+   * Record a workspace context snapshot (async for LLM diff/summarization)
    */
-  recordWorkspaceContext(context: string, iteration: number): void;
+  recordWorkspaceContext(context: string, iteration: number): Promise<void>;
 
   /**
    * Get all workspace context entries

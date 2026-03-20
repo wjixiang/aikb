@@ -115,6 +115,10 @@ export class Agent {
   private _collectedErrors: string[] = [];
   private _abortInfo: AbortInfo | null = null;
 
+  // Consecutive error tracking for abort (disabled by setting to Infinity)
+  private _consecutiveErrorCount = 0;
+  private readonly MAX_CONSECUTIVE_ERRORS = Infinity;
+
   // Mail-driven mode state
   private _isMailDrivenRunning = false;
   private _mailDrivenConfig: MailDrivenConfig = {
@@ -491,6 +495,34 @@ export class Agent {
     this._collectedErrors = [];
   }
 
+  /**
+   * Reset consecutive error count on successful tool execution
+   */
+  private resetConsecutiveErrorCount(): void {
+    this._consecutiveErrorCount = 0;
+  }
+
+  /**
+   * Increment consecutive error count and abort if threshold reached
+   * @param errorInfo Optional error context for abort info
+   */
+  private handleConsecutiveError(errorInfo?: { toolName?: string; errorMessage?: string }): void {
+    this._consecutiveErrorCount++;
+    if (this._consecutiveErrorCount >= this.MAX_CONSECUTIVE_ERRORS) {
+      const details: Record<string, unknown> = {
+        consecutiveErrors: this._consecutiveErrorCount,
+      };
+      if (errorInfo?.toolName) details['lastFailedTool'] = errorInfo.toolName;
+      if (errorInfo?.errorMessage) details['lastError'] = errorInfo.errorMessage;
+
+      this.abort(
+        `Too many consecutive errors (${this._consecutiveErrorCount}): ${errorInfo?.errorMessage || 'Unknown error'}`,
+        'error',
+        details
+      );
+    }
+  }
+
   // ==================== Core Request Loop ====================
 
   /**
@@ -500,13 +532,11 @@ export class Agent {
   protected async requestLoop(): Promise<void> {
     // Reset collected errors for this new operation
     this.resetCollectedErrors();
+    // Reset consecutive error count for new operation
+    this.resetConsecutiveErrorCount();
 
     // Track if we need to continue the loop
     let needsNewTurn = true;
-
-    // Track consecutive text-only responses (no tool calls) to detect infinite loops
-    let consecutiveNoToolCalls = 0;
-    const MAX_CONSECUTIVE_NO_TOOL_CALLS = 3;
 
     while (needsNewTurn) {
       // Get available tools
@@ -524,8 +554,8 @@ export class Agent {
         } else {
           needsNewTurn = false;
         }
-        // Reset counter on successful loop iteration
-        consecutiveNoToolCalls = 0;
+        // Reset consecutive error count on successful loop iteration
+        this.resetConsecutiveErrorCount();
       } catch (error) {
         // Properly serialize error to extract message, name, and stack
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -534,9 +564,8 @@ export class Agent {
         const isNoToolsError = error instanceof NoToolsUsedError;
 
         if (isNoToolsError) {
-          consecutiveNoToolCalls++;
           this.logger.warn(
-            `[Agent] No tool calls made (${consecutiveNoToolCalls}/${MAX_CONSECUTIVE_NO_TOOL_CALLS}): ${errorMessage}`
+            `[Agent] No tool calls made: ${errorMessage}`
           );
 
           // Add error to memory for the LLM to see
@@ -548,21 +577,16 @@ export class Agent {
           };
           await this.memoryModule.addMessage(errorApiMessage);
 
-          // If too many consecutive text-only responses, abort the loop
-          if (consecutiveNoToolCalls >= MAX_CONSECUTIVE_NO_TOOL_CALLS) {
-            this.logger.error(
-              `[Agent] Too many consecutive text-only responses (${consecutiveNoToolCalls}). Aborting to prevent infinite loop.`
-            );
-            this.abort(
-              `Infinite loop detected: ${consecutiveNoToolCalls} consecutive responses without tool calls`,
-              'error',
-              { consecutiveNoToolCalls, lastError: errorMessage }
-            );
+          // Track consecutive error for abort (NoToolsUsedError counts as an error)
+          this.handleConsecutiveError({ errorMessage });
+
+          // Check if we've aborted due to too many consecutive errors
+          if (this._status === 'aborted') {
             needsNewTurn = false;
             break;
           }
         } else {
-          // Handle other errors normally
+          // Handle other errors (tool execution errors, API errors, etc.)
           if (error instanceof Error) {
             this.memoryModule.pushErrors([error]);
             const errorApiMessage: ApiMessage = {
@@ -571,6 +595,9 @@ export class Agent {
               ts: Date.now(),
             };
             await this.memoryModule.addMessage(errorApiMessage);
+
+            // Track consecutive error for abort
+            this.handleConsecutiveError({ errorMessage });
           }
           this.logger.error({
             errorName: error instanceof Error ? error.name : undefined,
@@ -578,11 +605,13 @@ export class Agent {
             originalError: error instanceof Error ? undefined : error,
           }, errorMessage + '(error messages have added to memory)');
 
+          // Check if we've aborted due to too many consecutive errors
           if (this._status === 'aborted') {
             needsNewTurn = false;
-          } else {
-            needsNewTurn = true;
+            break;
           }
+          // Otherwise continue the loop
+          needsNewTurn = true;
         }
       }
     }
@@ -608,6 +637,7 @@ export class Agent {
 
       // Get current workspace context before the LLM call
       const currentWorkspaceContext = await this.workspace.render();
+      await this.memoryModule.recordWorkspaceContext(currentWorkspaceContext, iterations);
 
       // Get conversation history with workspace contexts interleaved
       // This ensures workspace context appears after each assistant response in history
@@ -616,15 +646,11 @@ export class Agent {
         typeof m === 'string' ? m : this.formatMessage(m)
       );
 
-      // Append current workspace context at the end
-      const currentWorkspaceMessage = `[Workspace Context (Current)]\n${currentWorkspaceContext}`;
-      const combinedMemoryContext = [...memoryContext, currentWorkspaceMessage];
-
       // Call LLM
       const response = await this.apiClient.makeRequest(
         systemPrompt,
-        '', // Empty workspaceContext since it's now part of combinedMemoryContext
-        combinedMemoryContext,
+        currentWorkspaceContext, // Empty workspaceContext since it's now part of combinedMemoryContext
+        memoryContext,
         { timeout: this.config.apiRequestTimeout },
         tools
       );
@@ -645,7 +671,7 @@ export class Agent {
       }
 
       // Record current workspace context for future iterations (for next turn's historical record)
-      this.memoryModule.recordWorkspaceContext(currentWorkspaceContext, iterations);
+      await this.memoryModule.recordWorkspaceContext(currentWorkspaceContext, iterations);
 
       // Execute tool calls
       if (response.toolCalls && response.toolCalls.length > 0) {
@@ -743,6 +769,9 @@ export class Agent {
         }
         this._toolUsage[toolCall.name].attempts++;
 
+        // Reset consecutive error count on success
+        this.resetConsecutiveErrorCount();
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         this.logger.error({ toolName: toolCall.name, error: errorMessage }, 'Tool execution failed');
@@ -768,6 +797,9 @@ export class Agent {
         }
         this._toolUsage[toolCall.name].attempts++;
         this._toolUsage[toolCall.name].failures++;
+
+        // Track consecutive errors for abort
+        this.handleConsecutiveError({ toolName: toolCall.name, errorMessage });
       }
     }
 

@@ -62,6 +62,38 @@ const SUMMARIZATION_PROMPT = `You are a concise summarizer. Given a conversation
 Format your response as a concise narrative summary.`;
 
 /**
+ * System prompt for LLM workspace context diff analysis
+ */
+const WORKSPACE_CONTEXT_DIFF_PROMPT = `You are an expert at analyzing workspace context changes. Given the previous and current workspace context, your task is to:
+
+1. **Identify Changes**: Compare the previous and current context to identify what sections changed
+2. **Summarize Key Changes**: For each changed section, provide a brief summary of what changed
+3. **Highlight Important Updates**: Call out any significant decisions, completed tasks, or new information
+
+**Workspace Context Structure** (typically has these sections):
+- Header/Summary information
+- Component states (mail, bibliographySearch, etc.)
+- Recent Tool Calls
+- Current task status
+
+**Output Format**:
+Return a structured summary in this format:
+\`\`\`
+## Changed Sections
+
+### [Section Name]
+- **What changed**: [brief description of the change]
+- **Key details**: [specific values or information that changed]
+
+### [Section Name]
+- **What changed**: [brief description]
+- **Key details**: [specific values]
+\`\`\`
+
+If no significant changes exist, return "No significant changes detected."
+If this is the first context (no previous), return "Initial workspace context" followed by a brief summary of the workspace state.`;
+
+/**
  * Simplified MemoryModule - no turn concepts, with token-based compression
  */
 @injectable()
@@ -399,7 +431,6 @@ export class MemoryModule implements IMemoryModule {
         }
 
         const difResult = diffChars(prevClean, currClean)
-        console.log(difResult)
 
         const changedSections = difResult.filter(e => ((e.added || e.removed) === true))
             .map(e => `[${e.added ? 'ADDED' : 'REMOVED'}] ${e.value}`)
@@ -413,9 +444,9 @@ export class MemoryModule implements IMemoryModule {
     /**
      * Record a workspace context snapshot
      * Only stores when context actually changes, skips duplicate entries
-     * Strips Recent Tool Calls section to avoid false positives
+     * Uses LLM to analyze diff and generate summary
      */
-    recordWorkspaceContext(context: string, iteration: number): void {
+    async recordWorkspaceContext(context: string, iteration: number): Promise<void> {
         // Strip Recent Tool Calls section before storing/comparing
         const stripToolCalls = (text: string): string => {
             const toolCallsMarker = '**Recent Tool Calls**';
@@ -434,17 +465,131 @@ export class MemoryModule implements IMemoryModule {
             return;
         }
 
-        // Changes detected, store cleaned context
+        // Generate LLM summary of the changes
+        let llmSummary: string;
+        if (this._previousFullContext && this.config.enableLLMSummarization && this.apiClient) {
+            try {
+                llmSummary = await this._analyzeContextDiffWithLLM(
+                    this._previousFullContext,
+                    cleanedContext,
+                    iteration
+                );
+            } catch (error) {
+                this.logger.warn(
+                    `[MemoryModule] LLM diff analysis failed, using simple diff: ${error}`
+                );
+                llmSummary = this._simpleContextDiff(this._previousFullContext, cleanedContext);
+            }
+        } else {
+            // Fallback to simple diff or initial context message
+            llmSummary = this._previousFullContext
+                ? this._simpleContextDiff(this._previousFullContext, cleanedContext)
+                : `Initial workspace context (iteration ${iteration})`;
+        }
+
+        // Store the LLM-generated summary
         this.workspaceContexts.push({
-            content: cleanedContext,
+            content: llmSummary,
             ts: Date.now(),
             iteration,
-            isDiff: false,
+            isDiff: true,
         });
         this._previousFullContext = cleanedContext;
         this.logger.debug(
-            `[MemoryModule] Recorded workspace context for iteration ${iteration} (changed: ${diffResult.changedSections.join(', ')})`
+            `[MemoryModule] Recorded workspace context for iteration ${iteration} with LLM analysis`
         );
+    }
+
+    /**
+     * Analyze context diff using LLM
+     */
+    private async _analyzeContextDiffWithLLM(
+        prevContext: string,
+        currContext: string,
+        iteration: number
+    ): Promise<string> {
+        if (!this.apiClient) {
+            throw new Error('ApiClient not available');
+        }
+
+        // Build messages for LLM
+        const systemMsg: ApiMessage = {
+            role: 'system',
+            content: [{ type: 'text' as const, text: WORKSPACE_CONTEXT_DIFF_PROMPT }],
+            ts: Date.now(),
+        };
+
+        const userMsg: ApiMessage = {
+            role: 'user',
+            content: [{
+                type: 'text' as const,
+                text: `## Previous Workspace Context (Iteration ${iteration - 1})
+\`\`\`
+${prevContext}
+\`\`\`
+
+## Current Workspace Context (Iteration ${iteration})
+\`\`\`
+${currContext}
+\`\`\`
+
+Please analyze the changes between these two workspace contexts.`
+            }],
+            ts: Date.now(),
+        };
+
+        // Call LLM
+        const response = await this.apiClient.makeRequest(
+            WORKSPACE_CONTEXT_DIFF_PROMPT,
+            '',  // workspace context - empty for diff analysis
+            [this.formatMessageAsString(systemMsg), this.formatMessageAsString(userMsg)],
+            { timeout: 60000 },
+            []   // no tools
+        );
+
+        // Extract summary from response
+        const summary = response.textResponse?.trim() ||
+            `Context changed at iteration ${iteration}`;
+        return summary;
+    }
+
+    /**
+     * Simple context diff fallback (without LLM)
+     */
+    private _simpleContextDiff(prevContext: string, currContext: string): string {
+        const prevLines = prevContext.split('\n');
+        const currLines = currContext.split('\n');
+
+        const changedSections: string[] = [];
+
+        // Simple line-by-line comparison to find section changes
+        let prevSection = 'header';
+        let currSection = 'header';
+
+        for (let i = 0; i < Math.max(prevLines.length, currLines.length); i++) {
+            const prevLine = prevLines[i] || '';
+            const currLine = currLines[i] || '';
+
+            // Detect section headers
+            const prevSectionMatch = prevLine.match(/^##\s+(.+)$/);
+            const currSectionMatch = currLine.match(/^##\s+(.+)$/);
+
+            if (prevSectionMatch) prevSection = prevSectionMatch[1].trim();
+            if (currSectionMatch) currSection = currSectionMatch[1].trim();
+
+            if (prevLine !== currLine && (prevLine || currLine)) {
+                // Lines differ
+                if (!changedSections.includes(currSection) && currSection !== prevSection) {
+                    changedSections.push(currSection);
+                }
+            }
+        }
+
+        if (changedSections.length === 0) {
+            return 'Minor context updates';
+        }
+
+        return `Changed sections: ${changedSections.join(', ')}`;
     }
 
     /**
@@ -560,7 +705,7 @@ export class MemoryModule implements IMemoryModule {
 
             const removedCount = messagesToSummarize.length;
             if (removedCount > 0) {
-                // Generate summary using LLM or fallback to simple summary
+                // Check if LLM summarization is needed or should be skipped
                 const summaryText = await this.generateSummary(messagesToSummarize);
 
                 const summaryMessage: ApiMessage = {
@@ -573,7 +718,7 @@ export class MemoryModule implements IMemoryModule {
                 this.messages.unshift(summaryMessage);
                 this._cachedTokenCount = null;
 
-                this.logger.info(`[MemoryModule] Compressed ${removedCount} messages with LLM summary, now ${this.messages.length} messages`);
+                this.logger.info(`[MemoryModule] Compressed ${removedCount} messages, now ${this.messages.length} messages`);
             }
         } finally {
             this._isCompressing = false;
@@ -581,9 +726,54 @@ export class MemoryModule implements IMemoryModule {
     }
 
     /**
+     * Check if content is essentially the same (repetitive/low information)
+     * Returns true if LLM summarization should be skipped
+     */
+    private _isContentRepetitive(messages: ApiMessage[]): boolean {
+        if (messages.length < 3) {
+            return true; // Too few messages, use simple summary
+        }
+
+        // Extract all text content
+        const texts = messages.map(m => this.extractText(m.content).toLowerCase());
+
+        // Check if all messages are tool results only (no meaningful conversation)
+        const hasUserMessages = messages.some(m => m.role === 'user');
+        const hasAssistantMessages = messages.some(m => m.role === 'assistant');
+
+        if (!hasUserMessages && !hasAssistantMessages) {
+            // All tool results - no meaningful conversation to summarize
+            return true;
+        }
+
+        // Check for repetitive content (same text repeated)
+        const uniqueTexts = new Set(texts);
+        if (uniqueTexts.size <= 2 && texts.length > 4) {
+            // Very few unique texts among many messages - repetitive
+            return true;
+        }
+
+        // Check for very short repetitive messages (like polling loops)
+        const avgLength = texts.reduce((sum, t) => sum + t.length, 0) / texts.length;
+        if (avgLength < 50 && uniqueTexts.size <= texts.length / 3) {
+            // Short messages with high repetition - likely polling/status checks
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Generate summary using LLM or fallback to simple summary
+     * Skips LLM if content is repetitive/identical
      */
     private async generateSummary(messages: ApiMessage[]): Promise<string> {
+        // Skip LLM if content is repetitive - use simple summary instead
+        if (this._isContentRepetitive(messages)) {
+            this.logger.debug('[MemoryModule] Content is repetitive, skipping LLM summarization');
+            return this.simpleSummary(messages);
+        }
+
         if (!this.config.enableLLMSummarization || !this.apiClient) {
             return this.simpleSummary(messages);
         }
