@@ -1,498 +1,248 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Container } from 'inversify';
-import { AgentContainer, getGlobalContainer, resetGlobalContainer } from '../container.js';
+import { AgentContainer } from '../container.js';
 import { TYPES } from '../types.js';
 import { Agent } from '../../agent/agent.js';
 import { VirtualWorkspace } from '../../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
 import { IVirtualWorkspace } from '../../statefulContext/index.js';
 import { IMemoryModule } from '../../memory/types.js';
-
+import { AgentFactory } from '../../agent/AgentFactory.js';
 
 describe('AgentContainer', () => {
-    let container: AgentContainer;
-
-    beforeEach(() => {
-        resetGlobalContainer();
-        container = new AgentContainer();
+  describe('Basic Container Setup', () => {
+    it('should create a container instance', () => {
+      const container = new AgentContainer();
+      expect(container).toBeInstanceOf(AgentContainer);
     });
 
-    describe('Basic Container Setup', () => {
-        it('should create a container instance', () => {
-            expect(container).toBeInstanceOf(AgentContainer);
-        });
-
-        it('should provide access to the underlying container', () => {
-            const internalContainer = container.getContainer();
-            expect(internalContainer).toBeInstanceOf(Container);
-        });
-
-        it('should create a child container', () => {
-            const childContainer = container.createChildContainer();
-            expect(childContainer).toBeInstanceOf(Container);
-            expect(childContainer).not.toBe(container.getContainer());
-        });
+    it('should provide access to the underlying container', () => {
+      const container = new AgentContainer();
+      const internalContainer = container.getContainer();
+      expect(internalContainer).toBeInstanceOf(Container);
     });
 
-    describe('Service Bindings', () => {
-        it('should bind Agent as transient', () => {
-            const agent1 = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            const agent2 = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            expect(agent1).not.toBe(agent2);
-            expect(agent1).toBeInstanceOf(Agent);
-            expect(agent2).toBeInstanceOf(Agent);
-        });
-
-        it('should bind VirtualWorkspace in request scope', () => {
-            const agent1 = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            const agent2 = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            // Each agent should have its own workspace
-            expect(agent1.workspace).not.toBe(agent2.workspace);
-        });
-
-        it('should bind MemoryModule to interface', () => {
-            const internalContainer = container.getContainer();
-            const memoryModule = internalContainer.get<IMemoryModule>(TYPES.IMemoryModule);
-            expect(memoryModule).toBeInstanceOf(MemoryModule);
-        });
-
-        it('should bind VirtualWorkspace to interface', () => {
-            const internalContainer = container.getContainer();
-            const workspace = internalContainer.get<IVirtualWorkspace>(TYPES.IVirtualWorkspace);
-            expect(workspace).toBeInstanceOf(VirtualWorkspace);
-        });
+    it('should create agent via getAgent()', () => {
+      const container = new AgentContainer({ api: { apiKey: 'test-key' } });
+      const agent = container.getAgent();
+      expect(agent).toBeInstanceOf(Agent);
     });
 
-    describe('createAgent', () => {
-        it('should create an agent with default configuration', () => {
-            const agent = container.createAgent({
-                agentPrompt: {
-                    capability: 'Test capability',
-                    direction: 'Test direction'
-                }
-            });
-            expect(agent).toBeInstanceOf(Agent);
-            expect(agent.config.apiRequestTimeout).toBe(60000); // Default value
-        });
+    it('should return same agent instance on multiple getAgent() calls', () => {
+      const container = new AgentContainer({ api: { apiKey: 'test-key' } });
+      const agent1 = container.getAgent();
+      const agent2 = container.getAgent();
+      expect(agent1).toBe(agent2);
+    });
+  });
 
-        it('should create an agent with custom configuration', () => {
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' },
-                config: {
-                    apiRequestTimeout: 60000,
-                    maxRetryAttempts: 5
-                }
-            });
-            expect(agent.config.apiRequestTimeout).toBe(60000);
-            expect(agent.config.maxRetryAttempts).toBe(5);
-        });
+  describe('Service Bindings', () => {
+    it('should bind services as singletons within container', () => {
+      const container = new AgentContainer({ api: { apiKey: 'test-key' } });
+      const agent = container.getAgent();
+      const workspace = agent.workspace;
+      const memoryModule = agent.getMemoryModule();
 
-        it('should create an agent with taskId', () => {
-            const taskId = 'test-task-123';
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' },
-                taskId
-            });
-            expect(agent.getTaskId).toBe(taskId);
-        });
-
-        it('should inject IVirtualWorkspace into Agent', () => {
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            expect(agent.workspace).toBeDefined();
-            expect(agent.workspace).toBeInstanceOf(VirtualWorkspace);
-        });
-
-        it('should inject IMemoryModule into Agent', () => {
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            const memoryModule = agent.getMemoryModule();
-            expect(memoryModule).toBeDefined();
-            expect(memoryModule).toBeInstanceOf(MemoryModule);
-        });
-
-        it('should use provided workspace when specified', () => {
-            const customWorkspace = new VirtualWorkspace({});
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' },
-                workspace: customWorkspace
-            });
-            expect(agent.workspace).toBe(customWorkspace);
-        });
-
-        it('should handle observers option', () => {
-            const onStatusChanged = vi.fn();
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' },
-                observers: {
-                    onStatusChanged
-                }
-            });
-            expect(agent).toBeDefined();
-            // Note: With observers, agent is wrapped in ObservableAgent
-        });
-
-        it('should create agent with custom virtual workspace config', () => {
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' },
-                virtualWorkspaceConfig: {
-                    id: 'custom-workspace-id',
-                    name: 'Custom Workspace'
-                }
-            });
-            expect(agent.workspace).toBeDefined();
-            // VirtualWorkspace has a private config, so we can't directly test id
-            // But we can verify the workspace was created
-            expect(agent.workspace).toBeInstanceOf(VirtualWorkspace);
-        });
+      expect(workspace).toBeInstanceOf(VirtualWorkspace);
+      expect(memoryModule).toBeInstanceOf(MemoryModule);
     });
 
-    describe('Configuration Merging', () => {
-        it('should merge default and custom agent config', () => {
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' },
-                config: {
-                    apiRequestTimeout: 60000
-                    // maxRetryAttempts should keep default
-                }
-            });
-            expect(agent.config.apiRequestTimeout).toBe(60000);
-            expect(agent.config.maxRetryAttempts).toBe(3); // Default
-        });
+    it('should have isolated services per container', () => {
+      const container1 = new AgentContainer({ api: { apiKey: 'key-1' } });
+      const container2 = new AgentContainer({ api: { apiKey: 'key-2' } });
 
-        it('should merge default and custom API configuration', () => {
-            // This would require mocking ApiClient to verify
-            // For now, just verify agent creation succeeds
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' },
-                apiConfiguration: {
-                    apiModelId: 'custom-model'
-                }
-            });
-            expect(agent).toBeInstanceOf(Agent);
-        });
+      const agent1 = container1.getAgent();
+      const agent2 = container2.getAgent();
 
-        it('should use default agent prompt when not provided', () => {
-            const agent = container.createAgent({});
-            expect(agent).toBeInstanceOf(Agent);
-            // Agent should have default prompt values
-        });
+      expect(agent1.workspace).not.toBe(agent2.workspace);
+      expect(agent1.getMemoryModule()).not.toBe(agent2.getMemoryModule());
+    });
+  });
+
+  describe('Configuration', () => {
+    it('should use default configuration when no options provided', () => {
+      const container = new AgentContainer();
+      const config = container.getConfig();
+      expect(config.agent.sop).toBe('Default SOP');
+      expect(config.api.apiProvider).toBe('zai');
     });
 
-    describe('Error Handling', () => {
-        it('should throw error if AgentPrompt is not provided', () => {
-            // The container should still create an agent with default prompt
-            // This test verifies the behavior
-            const agent = container.createAgent({});
-            expect(agent).toBeInstanceOf(Agent);
-        });
-
-        it('should handle missing API key gracefully', () => {
-            // Save original env var
-            const originalEnv = process.env['GLM_API_KEY'];
-            delete process.env['GLM_API_KEY'];
-
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' },
-                apiConfiguration: {
-                    apiKey: 'test-key' // Provide explicit key
-                }
-            });
-
-            expect(agent).toBeInstanceOf(Agent);
-
-            // Restore original env var
-            if (originalEnv !== undefined) {
-                process.env['GLM_API_KEY'] = originalEnv;
-            }
-        });
-
-        it('should create agent with empty API key (fallback to env)', () => {
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            expect(agent).toBeInstanceOf(Agent);
-        });
+    it('should accept custom agent configuration', () => {
+      const container = new AgentContainer({
+        agent: {
+          sop: 'Custom SOP',
+          config: { apiRequestTimeout: 90000 },
+        },
+      });
+      const config = container.getConfig();
+      expect(config.agent.sop).toBe('Custom SOP');
+      expect(config.agent.config.apiRequestTimeout).toBe(90000);
     });
 
-    describe('Dependency Injection Chain', () => {
-        it('should properly inject ReflectiveThinkingProcessor', () => {
-            const agent = container.createAgent({
-                agentPrompt: { capability: 'Test', direction: 'Test' }
-            });
-            const memoryModule = agent.getMemoryModule();
-            expect(memoryModule).toBeInstanceOf(MemoryModule);
-            // ReflectiveThinkingProcessor is injected into MemoryModule
-        });
-
-        it('should create isolated dependencies for each agent', () => {
-            const agent1 = container.createAgent({
-                agentPrompt: { capability: 'Test1', direction: 'Test1' }
-            });
-            const agent2 = container.createAgent({
-                agentPrompt: { capability: 'Test2', direction: 'Test2' }
-            });
-
-            // Each agent should have its own workspace
-            expect(agent1.workspace).not.toBe(agent2.workspace);
-
-            // Each agent should have its own memory module
-            const mem1 = agent1.getMemoryModule();
-            const mem2 = agent2.getMemoryModule();
-            expect(mem1).not.toBe(mem2);
-
-        });
+    it('should accept custom API configuration', () => {
+      const container = new AgentContainer({
+        api: {
+          apiModelId: 'custom-model',
+          apiKey: 'test-key',
+        },
+      });
+      const config = container.getConfig();
+      expect(config.api.apiModelId).toBe('custom-model');
+      expect(config.api.apiKey).toBe('test-key');
     });
+
+    it('should merge partial agent config with defaults', () => {
+      const container = new AgentContainer({
+        agent: {
+          config: { apiRequestTimeout: 90000 },
+        },
+      });
+      const config = container.getConfig();
+      expect(config.agent.config.apiRequestTimeout).toBe(90000);
+      expect(config.agent.config.maxRetryAttempts).toBe(3); // Default preserved
+    });
+
+    it('should accept workspace configuration', () => {
+      const container = new AgentContainer({
+        workspace: {
+          id: 'custom-workspace',
+          name: 'My Workspace',
+        },
+      });
+      const config = container.getConfig();
+      expect(config.workspace.id).toBe('custom-workspace');
+      expect(config.workspace.name).toBe('My Workspace');
+    });
+
+    it('should accept taskId', () => {
+      const container = new AgentContainer({
+        agent: {
+          taskId: 'test-task-123',
+        },
+        api: {
+          apiKey: 'test-key',
+        },
+      });
+      const agent = container.getAgent();
+      expect(agent.getTaskId).toBe('test-task-123');
+    });
+  });
+
+  describe('Agent Access', () => {
+    it('should create agent with correct configuration', () => {
+      const container = new AgentContainer({
+        agent: {
+          sop: 'Test SOP',
+          taskId: 'test-123',
+        },
+        api: { apiKey: 'test-key' },
+      });
+      const agent = container.getAgent();
+      expect(agent).toBeInstanceOf(Agent);
+      expect(agent.getTaskId).toBe('test-123');
+    });
+
+    it('should have workspace available on agent', () => {
+      const container = new AgentContainer({
+        api: { apiKey: 'test-key' },
+      });
+      const agent = container.getAgent();
+      expect(agent.workspace).toBeDefined();
+      expect(agent.workspace).toBeInstanceOf(VirtualWorkspace);
+    });
+
+    it('should have memory module available on agent', () => {
+      const container = new AgentContainer({
+        api: { apiKey: 'test-key' },
+      });
+      const agent = container.getAgent();
+      expect(agent.getMemoryModule()).toBeDefined();
+    });
+  });
 });
 
-describe('Global Container', () => {
-    beforeEach(() => {
-        resetGlobalContainer();
+describe('AgentFactory', () => {
+  describe('create', () => {
+    it('should create a container with Agent', () => {
+      const container = AgentFactory.create({
+        agent: { sop: 'Test SOP' },
+        api: { apiKey: 'test-key' },
+      });
+      expect(container).toBeInstanceOf(AgentContainer);
+      expect(container.getAgent()).toBeInstanceOf(Agent);
     });
 
-    it('should return the same instance on multiple calls', () => {
-        const container1 = getGlobalContainer();
-        const container2 = getGlobalContainer();
-        expect(container1).toBe(container2);
+    it('should pass configuration to container', () => {
+      const container = AgentFactory.create({
+        agent: {
+          sop: 'Factory SOP',
+          taskId: 'factory-task',
+        },
+        api: { apiKey: 'test-key' },
+      });
+      const agent = container.getAgent();
+      expect(agent.getTaskId).toBe('factory-task');
+    });
+  });
+
+  describe('createAgent', () => {
+    it('should create and return agent directly', () => {
+      const agent = AgentFactory.createAgent({
+        agent: { sop: 'Direct SOP' },
+        api: { apiKey: 'test-key' },
+      });
+      expect(agent).toBeInstanceOf(Agent);
     });
 
-    it('should create a new instance after reset', () => {
-        const container1 = getGlobalContainer();
-        resetGlobalContainer();
-        const container2 = getGlobalContainer();
-        expect(container1).not.toBe(container2);
+    it('should accept full configuration', () => {
+      const agent = AgentFactory.createAgent({
+        agent: {
+          sop: 'Full Config SOP',
+          taskId: 'full-config-task',
+          config: { apiRequestTimeout: 120000 },
+        },
+        api: { apiModelId: 'custom-model', apiKey: 'test-key' },
+      });
+      expect(agent).toBeInstanceOf(Agent);
+      expect(agent.getTaskId).toBe('full-config-task');
     });
-
-    it('should work across multiple agent creations', () => {
-        const container = getGlobalContainer();
-        const agent1 = container.createAgent({
-            agentPrompt: { capability: 'Test1', direction: 'Test1' }
-        });
-        const agent2 = container.createAgent({
-            agentPrompt: { capability: 'Test2', direction: 'Test2' }
-        });
-        expect(agent1).not.toBe(agent2);
-        expect(agent1.workspace).not.toBe(agent2.workspace);
-    });
-
-    it('should maintain singleton pattern across resets', () => {
-        const container1 = getGlobalContainer();
-        const container2 = getGlobalContainer();
-        expect(container1).toBe(container2);
-
-        resetGlobalContainer();
-
-        const container3 = getGlobalContainer();
-        const container4 = getGlobalContainer();
-        expect(container3).toBe(container4);
-        expect(container1).not.toBe(container3);
-    });
+  });
 });
 
-describe('AgentFactory with DI Container', () => {
-    beforeEach(() => {
-        resetGlobalContainer();
+describe('Multiple Containers', () => {
+  it('should create isolated agents in separate containers', () => {
+    const container1 = new AgentContainer({
+      agent: { taskId: 'agent-1' },
+      api: { apiKey: 'key-1' },
+    });
+    const container2 = new AgentContainer({
+      agent: { taskId: 'agent-2' },
+      api: { apiKey: 'key-2' },
     });
 
-    it('should use container in AgentFactory.create', async () => {
-        const { AgentFactory } = await import('../../agent/AgentFactory.js');
-        const workspace = new VirtualWorkspace({});
+    const agent1 = container1.getAgent();
+    const agent2 = container2.getAgent();
 
-        const agent = AgentFactory.create(
-            workspace,
-            { capability: 'Test', direction: 'Test' }
-        );
+    expect(agent1).not.toBe(agent2);
+    expect(agent1.getTaskId).toBe('agent-1');
+    expect(agent2.getTaskId).toBe('agent-2');
+    expect(agent1.workspace).not.toBe(agent2.workspace);
+  });
 
-        expect(agent).toBeInstanceOf(Agent);
-        expect(agent.workspace).toBe(workspace);
+  it('should have independent configurations', () => {
+    const container1 = new AgentContainer({
+      agent: { sop: 'SOP 1' },
+      api: { apiModelId: 'model-1', apiKey: 'key-1' },
+    });
+    const container2 = new AgentContainer({
+      agent: { sop: 'SOP 2' },
+      api: { apiModelId: 'model-2', apiKey: 'key-2' },
     });
 
-    it('should support custom container in AgentFactory', async () => {
-        const { AgentFactory } = await import('../../agent/AgentFactory.js');
-        const customContainer = new AgentContainer();
-
-        AgentFactory.setContainer(customContainer);
-
-        const workspace = new VirtualWorkspace({});
-        const agent = AgentFactory.create(
-            workspace,
-            { capability: 'Test', direction: 'Test' }
-        );
-
-        expect(agent).toBeInstanceOf(Agent);
-
-        AgentFactory.resetContainer();
-    });
-
-    it('should use createWithContainer method', async () => {
-        const { AgentFactory } = await import('../../agent/AgentFactory.js');
-
-        const agent = AgentFactory.createWithContainer(
-            { capability: 'Test', direction: 'Test' }
-        );
-
-        expect(agent).toBeInstanceOf(Agent);
-        expect(agent.workspace).toBeDefined();
-    });
-
-    it('should pass custom config through AgentFactory', async () => {
-        const { AgentFactory } = await import('../../agent/AgentFactory.js');
-        const workspace = new VirtualWorkspace({});
-
-        const agent = AgentFactory.create(
-            workspace,
-            { capability: 'Test', direction: 'Test' },
-            {
-                config: {
-                    apiRequestTimeout: 70000,
-                    maxRetryAttempts: 2
-                }
-            }
-        );
-
-        expect(agent.config.apiRequestTimeout).toBe(70000);
-        expect(agent.config.maxRetryAttempts).toBe(2);
-    });
-
-    it('should pass taskId through AgentFactory', async () => {
-        const { AgentFactory } = await import('../../agent/AgentFactory.js');
-        const workspace = new VirtualWorkspace({});
-        const taskId = 'factory-task-123';
-
-        const agent = AgentFactory.create(
-            workspace,
-            { capability: 'Test', direction: 'Test' },
-            { taskId }
-        );
-
-        expect(agent.getTaskId).toBe(taskId);
-    });
-
-    it('should reset container between tests', async () => {
-        const { AgentFactory } = await import('../../agent/AgentFactory.js');
-
-        // Create first agent
-        const workspace1 = new VirtualWorkspace({});
-        const agent1 = AgentFactory.create(
-            workspace1,
-            { capability: 'Test1', direction: 'Test1' }
-        );
-
-        // Reset
-        AgentFactory.resetContainer();
-        const customContainer = new AgentContainer();
-        AgentFactory.setContainer(customContainer);
-
-        // Create second agent with custom container
-        const workspace2 = new VirtualWorkspace({});
-        const agent2 = AgentFactory.create(
-            workspace2,
-            { capability: 'Test2', direction: 'Test2' }
-        );
-
-        expect(agent1).not.toBe(agent2);
-        expect(agent1.workspace).not.toBe(agent2.workspace);
-
-        AgentFactory.resetContainer();
-    });
-});
-
-describe('Container Scopes', () => {
-    let container: AgentContainer;
-
-    beforeEach(() => {
-        resetGlobalContainer();
-        container = new AgentContainer();
-    });
-
-    it('should create transient scoped agents', () => {
-        const agent1 = container.createAgent({
-            agentPrompt: { capability: 'Test', direction: 'Test' }
-        });
-        const agent2 = container.createAgent({
-            agentPrompt: { capability: 'Test', direction: 'Test' }
-        });
-
-        expect(agent1).not.toBe(agent2);
-    });
-
-    it('should create request scoped workspaces per agent', () => {
-        const agent1 = container.createAgent({
-            agentPrompt: { capability: 'Test', direction: 'Test' }
-        });
-        const agent2 = container.createAgent({
-            agentPrompt: { capability: 'Test', direction: 'Test' }
-        });
-
-        expect(agent1.workspace).not.toBe(agent2.workspace);
-    });
-
-    it('should create request scoped memory modules per agent', () => {
-        const agent1 = container.createAgent({
-            agentPrompt: { capability: 'Test', direction: 'Test' }
-        });
-        const agent2 = container.createAgent({
-            agentPrompt: { capability: 'Test', direction: 'Test' }
-        });
-
-        const mem1 = agent1.getMemoryModule();
-        const mem2 = agent2.getMemoryModule();
-
-        expect(mem1).not.toBe(mem2);
-    });
-});
-
-describe('Container Configuration', () => {
-    beforeEach(() => {
-        resetGlobalContainer();
-    });
-
-    it('should have default AgentConfig bound', () => {
-        const container = new AgentContainer();
-        const internalContainer = container.getContainer();
-        const config = internalContainer.get<any>(TYPES.AgentConfig);
-
-        expect(config).toBeDefined();
-        expect(config.apiRequestTimeout).toBe(60000);
-        expect(config.maxRetryAttempts).toBe(3);
-    });
-
-    it('should have default ProviderSettings bound', () => {
-        const container = new AgentContainer();
-        const internalContainer = container.getContainer();
-        const settings = internalContainer.get<any>(TYPES.ProviderSettings);
-
-        expect(settings).toBeDefined();
-        expect(settings.apiProvider).toBe('zai');
-        expect(settings.apiModelId).toBe('glm-4.5-flash');
-    });
-
-    it('should have default VirtualWorkspaceConfig bound', () => {
-        const container = new AgentContainer();
-        const internalContainer = container.getContainer();
-        const config = internalContainer.get<any>(TYPES.VirtualWorkspaceConfig);
-
-        expect(config).toBeDefined();
-        expect(config.id).toBe('default-workspace');
-        expect(config.name).toBe('Default Workspace');
-    });
-
-    it('should have default MemoryModuleConfig bound', () => {
-        const container = new AgentContainer();
-        const internalContainer = container.getContainer();
-        const config = internalContainer.get<any>(TYPES.MemoryModuleConfig);
-
-        expect(config).toBeDefined();
-    });
+    expect(container1.getConfig().agent.sop).toBe('SOP 1');
+    expect(container2.getConfig().agent.sop).toBe('SOP 2');
+    expect(container1.getConfig().api.apiModelId).toBe('model-1');
+    expect(container2.getConfig().api.apiModelId).toBe('model-2');
+  });
 });

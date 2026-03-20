@@ -10,7 +10,6 @@ import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { IToolManager } from '../tools/index.js';
-import { MessageBus } from '../../multi-agent/MessageBus.js';
 import pino from 'pino';
 import {
   type UnifiedAgentConfig,
@@ -103,12 +102,6 @@ export class AgentContainer {
       .toDynamicValue(() => {
         return ApiClientFactory.create(this.config.api);
       })
-      .inSingletonScope();
-
-    // Message Bus
-    this.container
-      .bind<MessageBus>(TYPES.IMessageBus)
-      .to(MessageBus)
       .inSingletonScope();
 
     // Container reference

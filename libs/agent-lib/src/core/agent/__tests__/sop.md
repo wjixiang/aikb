@@ -4,6 +4,8 @@
 2. 检查检索结果数量，若数量过多、过少、与检索目标相关性差，则需要调整检索策略，重新进行第一步
 3. 检索结果合适后，使用翻页工具主页浏览，使用查看细节工具逐个检查文献，并使用收藏工具收集文献。在你完成任务时，你所收藏的文献会作为你的工作结果上传。
 
+注意Workspace上下文在每轮请求都会刷新，不会保存之前的记录，请你注意返回结果时在文本中详细记录当前行为
+
 ### 第一步：确立核心检索词 (Core Keywords)
 在组合各类检索之前，我们需要界定“椎间盘突出”的核心词集：
 
@@ -20,6 +22,9 @@
 
 - **检索策略：**`[DISC_CORE] AND ("Epidemiology"[MeSH] OR incidence OR prevalence OR "risk factors" OR "global burden" OR genetics OR occupation* OR biomechanics OR "body mass index" OR obesity)`
 - **重点筛选：** 寻找Global Burden of Disease (GBD) 最新数据，以及大样本队列研究（如双胞胎研究揭示遗传因素）。
+- 操作步骤：
+    1. 执行检索：检索使用工具应用检索策略搜索pubmed，Bibliography组件会随之刷新现实检索结果。你需要综合检索结果数量、文献相关度决定是否进行检索策略调整。推荐检索结果在10~30条目。
+    2. 文献录入：使用工具逐一查看文献详情，判断文献符合录入标准后，通过收藏工具录入文献。你所收藏的文献会作为你的工作结果，在任务完成时导出。
 
 #### 2. 病理机制与疼痛通路 (Mechanisms/Pathophysiology)
 
@@ -27,6 +32,10 @@
 
 - **检索策略：**`[DISC_CORE] AND ("Pathophysiology"[MeSH] OR mechanism* OR "annulus fibrosus" OR "nucleus pulposus" OR "inflammatory cascade" OR cytokines OR "macrophages" OR "radicular pain" OR "neuropathic pain" OR "peripheral sensitization" OR "central sensitization")`
 - **重点筛选：** 椎间盘退变的分子生物学（细胞外基质降解、细胞凋亡）、神经根受压与化学性炎症的相互作用、神经元敏化机制。
+- 操作步骤：
+    1. 执行检索：检索使用工具应用检索策略搜索pubmed，Bibliography组件会随之刷新现实检索结果。你需要综合检索结果数量、文献相关度决定是否进行检索策略调整。推荐检索结果在10~30条目。
+    2. 文献录入：使用工具逐一查看文献详情，判断文献符合录入标准后，通过收藏工具录入文献。你所收藏的文献会作为你的工作结果，在任务完成时导出。
+
 
 #### 3. 诊断、筛查与预防 (Diagnosis, Screening and Prevention)
 
@@ -34,6 +43,9 @@
 
 - **检索策略：**`[DISC_CORE] AND ("Diagnosis"[MeSH] OR "Magnetic Resonance Imaging"[MeSH] OR "physical examination" OR "straight leg raise" OR "clinical presentation" OR "differential diagnosis" OR screening OR prevention OR "prognostic factors")`
 - **重点筛选：** MRI在椎间盘突出诊断中的应用与局限性（例如无症状人群中的高发病率）、不同分型（膨出、突出、脱垂、游离）的标准。
+- 操作步骤：
+    1. 执行检索：检索使用工具应用检索策略搜索pubmed，Bibliography组件会随之刷新现实检索结果。你需要综合检索结果数量、文献相关度决定是否进行检索策略调整。推荐检索结果在10~30条目。
+    2. 文献录入：使用工具逐一查看文献详情，判断文献符合录入标准后，通过收藏工具录入文献。你所收藏的文献会作为你的工作结果，在任务完成时导出。
 
 #### 4. 疾病管理与治疗 (Management)
 
@@ -41,6 +53,9 @@
 
 - **检索策略：**`[DISC_CORE] AND ("Therapeutics"[MeSH] OR "Disease Management"[MeSH] OR "conservative treatment" OR "physical therapy" OR exercise OR NSAIDs OR "epidural steroid injection*" OR "microdiscectomy" OR "spinal fusion" OR "clinical guidelines")`
 - **重点筛选：** 各大骨科/神经外科协会的最新临床指南、保守治疗与手术治疗的长期/短期疗效比较（RCT荟萃分析）。
+- 操作步骤：
+    1. 执行检索：检索使用工具应用检索策略搜索pubmed，Bibliography组件会随之刷新现实检索结果。你需要综合检索结果数量、文献相关度决定是否进行检索策略调整。推荐检索结果在10~30条目。
+    2. 文献录入：使用工具逐一查看文献详情，判断文献符合录入标准后，通过收藏工具录入文献。你所收藏的文献会作为你的工作结果，在任务完成时导出。
 
 #### 5. 生活质量与社会负担 (Quality of Life & Burden)
 
@@ -48,6 +63,9 @@
 
 - **检索策略：**`[DISC_CORE] AND ("Quality of Life"[MeSH] OR QoL OR "Cost of Illness"[MeSH] OR DALY OR YLD OR "health economics" OR "absenteeism" OR disability OR "disease trajectory")`
 - **重点筛选：** 慢性下腰痛导致的缺勤成本、心理共病（抑郁、焦虑）对生活质量的影响。
+- 操作步骤：
+    1. 执行检索：检索使用工具应用检索策略搜索pubmed，Bibliography组件会随之刷新现实检索结果。你需要综合检索结果数量、文献相关度决定是否进行检索策略调整。推荐检索结果在10~30条目。
+    2. 文献录入：使用工具逐一查看文献详情，判断文献符合录入标准后，通过收藏工具录入文献。你所收藏的文献会作为你的工作结果，在任务完成时导出。
 
 #### 6. 展望与新兴疗法 (Outlook & Emerging Treatments)
 
@@ -55,6 +73,9 @@
 
 - **检索策略：**`[DISC_CORE] AND ("Tissue Engineering"[MeSH] OR "Stem Cells"[MeSH] OR "Biomarkers"[MeSH] OR biologics OR "regenerative medicine" OR "hydrogels" OR "CRISPR" OR "emerging therapies" OR "future directions")`
 - **重点筛选：** 髓核再生技术、抗炎生物制剂、微创脊柱外科(MISS)的新技术演进。
+- 操作步骤：
+    1. 执行检索：检索使用工具应用检索策略搜索pubmed，Bibliography组件会随之刷新现实检索结果。你需要综合检索结果数量、文献相关度决定是否进行检索策略调整。推荐检索结果在10~30条目。
+    2. 文献录入：使用工具逐一查看文献详情，判断文献符合录入标准后，通过收藏工具录入文献。你所收藏的文献会作为你的工作结果，在任务完成时导出。
 
 ---
 

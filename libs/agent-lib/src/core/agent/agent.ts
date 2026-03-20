@@ -30,6 +30,7 @@ import pino from 'pino';
 export interface AgentConfig {
   apiRequestTimeout: number;
   maxRetryAttempts: number;
+  maxIterations: number;
   consecutiveMistakeLimit: number;
   // Memory module configuration (now required, with defaults)
   memory?: Partial<MemoryModuleConfig>;
@@ -37,6 +38,7 @@ export interface AgentConfig {
 
 export const defaultAgentConfig: AgentConfig = {
   apiRequestTimeout: 60000,
+  maxIterations: 999,
   maxRetryAttempts: 3,
   consecutiveMistakeLimit: DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 };
@@ -421,7 +423,7 @@ export class Agent {
       );
       this.logger.warn(
         '[MailDriven] Available components: ' +
-          (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
+        (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
       );
       return;
     }

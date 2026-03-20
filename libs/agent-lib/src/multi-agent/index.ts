@@ -18,52 +18,24 @@
 // The following types conflict with core/statefulContext exports and are excluded:
 // - InboxResult, MailMessage, SendResult, StorageResult
 export {
-    type TaskSource,
-    type TaskTarget,
-    type SourceType,
-    type TargetType,
-    type MessageType,
-    type MessageStatus,
-    type MessagePriority,
-    type ResultStatus,
-    type TaskMessage,
-    type MessageError,
-    type TaskResult,
-    type QueueConfig,
-    type QueueStatus,
-    type QueueStats,
-    type MessageHandler,
-    type ResultHandler,
-    type Subscription,
-    type SubscriptionOptions,
-    type ExpertAdapterConfig,
-    type InputTransformation,
-    type OutputTransformation,
-    type IExpertAdapter,
-    type MCAdapterConfig,
-    type IMCAdapter,
-    type MessageBusConfig,
-    type MessageBusStats,
-    type IMessageBus,
-    type MailAddress,
-    type MailPriority,
-    type MailMessageStatus,
-    type OutgoingMail,
-    type IMailListener,
-    type SubscriptionId,
-    type MailSubscription,
-    type PaginationOptions,
-    type InboxQuery,
-    type SearchQuery,
-    type IMailStorage,
-    type MailComponentConfig,
+  type TaskSource,
+  type TaskTarget,
+  type SourceType,
+  type TargetType,
+  type MessageType,
+  type MessageStatus,
+  type MessagePriority,
+  type ResultStatus,
+  type TaskMessage,
+  type MessageError,
+  type TaskResult,
+  type QueueConfig,
+  type QueueStatus,
+  type QueueStats,
+  type MessageHandler,
+  type ResultHandler,
+  type Subscription,
+  type SubscriptionOptions,
+  type InputTransformation,
+  type OutputTransformation,
 } from './types.js';
-
-// Re-export ExpertTask and ExpertResult from core for compatibility
-export type { ExpertTask, ExpertResult } from './types.js';
-
-// Message Bus
-export { MessageBus } from './MessageBus.js';
-
-// Adapters
-export { ExpertAdapter } from './ExpertAdapter.js';

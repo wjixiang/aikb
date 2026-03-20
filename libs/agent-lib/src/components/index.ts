@@ -42,28 +42,6 @@ export type { ComponentRegistration } from './ComponentRegistry.js';
  */
 export * from './core/index.js';
 
-// ==================== Mail Component ====================
-
-/**
- * Mail Module
- *
- * Simplified email component for agent communication.
- * Provides read-only access to mailbox for task instructions.
- */
-export {
-  MailComponent,
-  createMailComponent,
-  type MailComponentConfig,
-} from './mail/mailComponent.js';
-
-export {
-  mailToolSchemas,
-  getInboxParamsSchema,
-  markAsReadParamsSchema,
-} from './mail/mailSchemas.js';
-
-export type { MailToolName, MailToolReturnTypes } from './mail/mailSchemas.js';
-
 // ==================== Runtime Task Component ====================
 
 /**
