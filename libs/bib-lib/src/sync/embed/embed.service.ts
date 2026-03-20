@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { Embedding, EmbeddingProvider, defaultEmbeddingConfig } from '@ai-embed/core';
+import {
+  Embedding,
+  EmbeddingProvider,
+  defaultEmbeddingConfig,
+} from '@ai-embed/core';
 
 export interface EmbedArticleOptions {
   provider?: EmbeddingProvider;
@@ -73,7 +77,10 @@ export class EmbedService {
     for (const article of articles) {
       try {
         // Build text to embed
-        const textToEmbed = await this.buildTextToEmbed(article.id, options.textField);
+        const textToEmbed = await this.buildTextToEmbed(
+          article.id,
+          options.textField,
+        );
         if (!textToEmbed) {
           progress.processedArticles++;
           onProgress?.(progress);
@@ -83,39 +90,40 @@ export class EmbedService {
         // Generate embedding
         const result = await this.embedding.embed(textToEmbed, config);
         if (!result.success || !result.embedding) {
-          this.logger.warn(`Failed to generate embedding for article ${article.pmid}: ${result.error}`);
-          this.logger.warn(`Failed to generate embedding for article ${article.pmid}`);
+          this.logger.warn(
+            `Failed to generate embedding for article ${article.pmid}: ${result.error}`,
+          );
+          this.logger.warn(
+            `Failed to generate embedding for article ${article.pmid}`,
+          );
           progress.errors++;
           progress.processedArticles++;
           onProgress?.(progress);
           continue;
         }
 
-        // Save embedding
-        await this.prisma.articleEmbedding.upsert({
-          where: {
-            articleId_provider_model: {
-              articleId: article.id,
-              provider: config.provider,
-              model: config.model,
-            },
-          },
-          create: {
-            articleId: article.id,
-            provider: config.provider,
-            model: config.model,
-            dimension: config.dimension,
-            text: textToEmbed,
-            vector: result.embedding,
-            isActive: true,
-          },
-          update: {
-            text: textToEmbed,
-            vector: result.embedding,
-            isActive: true,
-            updatedAt: new Date(),
-          },
-        });
+        // Save embedding - use raw SQL for vector field
+        const embeddingVector = result.embedding;
+        const embeddingStr = `[${embeddingVector.map((v: number) => v.toFixed(10)).join(',')}]`;
+
+        await this.prisma.$executeRawUnsafe(
+          `INSERT INTO "ArticleEmbedding" ("id", "articleId", "provider", "model", "dimension", "text", "vector", "isActive", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7::vector, $8, NOW(), NOW())
+           ON CONFLICT ("articleId", "provider", "model") 
+           DO UPDATE SET 
+             "text" = EXCLUDED."text",
+             "vector" = EXCLUDED."vector",
+             "isActive" = EXCLUDED."isActive",
+             "updatedAt" = NOW()`,
+          crypto.randomUUID(),
+          article.id,
+          config.provider,
+          config.model,
+          config.dimension,
+          textToEmbed,
+          embeddingStr,
+          true,
+        );
 
         progress.embeddedArticles++;
       } catch (error) {
@@ -213,30 +221,27 @@ export class EmbedService {
             continue;
           }
 
-          await this.prisma.articleEmbedding.upsert({
-            where: {
-              articleId_provider_model: {
-                articleId: item.id,
-                provider: config.provider,
-                model: config.model,
-              },
-            },
-            create: {
-              articleId: item.id,
-              provider: config.provider,
-              model: config.model,
-              dimension: config.dimension,
-              text: item.text,
-              vector: result.embedding,
-              isActive: true,
-            },
-            update: {
-              text: item.text,
-              vector: result.embedding,
-              isActive: true,
-              updatedAt: new Date(),
-            },
-          });
+          const embeddingVector = result.embedding;
+          const embeddingStr = `[${embeddingVector.map((v: number) => v.toFixed(10)).join(',')}]`;
+
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO "ArticleEmbedding" ("id", "articleId", "provider", "model", "dimension", "text", "vector", "isActive", "createdAt", "updatedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7::vector, $8, NOW(), NOW())
+             ON CONFLICT ("articleId", "provider", "model") 
+             DO UPDATE SET 
+               "text" = EXCLUDED."text",
+               "vector" = EXCLUDED."vector",
+               "isActive" = EXCLUDED."isActive",
+               "updatedAt" = NOW()`,
+            crypto.randomUUID(),
+            item.id,
+            config.provider,
+            config.model,
+            config.dimension,
+            item.text,
+            embeddingStr,
+            true,
+          );
 
           progress.embeddedArticles++;
         }
@@ -335,7 +340,10 @@ export class EmbedService {
 
     for (const emb of embeddings) {
       try {
-        const text = await this.buildTextToEmbed(emb.articleId, options.textField);
+        const text = await this.buildTextToEmbed(
+          emb.articleId,
+          options.textField,
+        );
         if (!text) {
           progress.errors++;
           continue;
@@ -347,20 +355,19 @@ export class EmbedService {
           continue;
         }
 
-        await this.prisma.articleEmbedding.update({
-          where: {
-            articleId_provider_model: {
-              articleId: emb.articleId,
-              provider: config.provider,
-              model: config.model,
-            },
-          },
-          data: {
-            text,
-            vector: result.embedding,
-            updatedAt: new Date(),
-          },
-        });
+        const embeddingVector = result.embedding;
+        const embeddingStr = `[${embeddingVector.map((v: number) => v.toFixed(10)).join(',')}]`;
+
+        await this.prisma.$executeRawUnsafe(
+          `UPDATE "ArticleEmbedding" 
+           SET "text" = $1, "vector" = $2::vector, "updatedAt" = NOW()
+           WHERE "articleId" = $3 AND "provider" = $4 AND "model" = $5`,
+          text,
+          embeddingStr,
+          emb.articleId,
+          config.provider,
+          config.model,
+        );
 
         progress.embeddedArticles++;
       } catch (error) {

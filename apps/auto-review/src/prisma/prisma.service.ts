@@ -68,6 +68,20 @@ export class PrismaService {
   }
 
   /**
+   * Execute raw SQL query
+   */
+  $queryRaw(query: TemplateStringsArray, ...values: any[]): any {
+    return this.prisma.$queryRaw(query, ...values);
+  }
+
+  /**
+   * Execute raw SQL query (unsafe)
+   */
+  $executeRawUnsafe(query: string, ...values: any[]): Promise<number> {
+    return this.prisma.$executeRawUnsafe(query, ...values);
+  }
+
+  /**
    * Disconnect and cleanup
    */
   async destroy() {

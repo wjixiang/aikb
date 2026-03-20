@@ -300,6 +300,136 @@ export const departmentTemplates: DepartmentTemplate[] = [
                 diagnosticPoints: ["腰痛伴下肢放射痛", "体格检查阳性", "影像学证据"],
                 differentialDiagnoses: ["腰肌劳损", "腰椎管狭窄", "腰椎结核", "肿瘤"],
                 treatmentPlan: ["卧床休息", "牵引治疗", "药物治疗", "手术治疗"]
+            },
+            {
+                name: "膝关节骨关节炎",
+                mainSymptoms: ["膝关节疼痛", "僵硬", "活动受限", "肿胀"],
+                accompanyingSymptoms: ["关节畸形", "跛行", "上下楼困难", "晨僵"],
+                typicalSigns: ["膝关节压痛", "骨擦音", "关节活动受限", "肿胀"],
+                abnormalExams: ["X线:关节间隙变窄", "MRI:软骨损伤", "血常规正常", "CRP正常"],
+                diagnosticPoints: ["膝关节疼痛", "X线证据", "排除其他疾病"],
+                differentialDiagnoses: ["类风湿性关节炎", "痛风性关节炎", "膝关节结核", "半月板损伤"],
+                treatmentPlan: ["非甾体抗炎药", "关节腔注射", "物理治疗", "必要时关节置换"]
+            },
+            {
+                name: "颈椎病",
+                mainSymptoms: ["颈肩疼痛", "上肢麻木", "头晕", "头痛"],
+                accompanyingSymptoms: ["手指无力", "行走不稳", "视物模糊", "心悸"],
+                typicalSigns: ["颈椎压痛", "颈部活动受限", "上肢感觉减退", "腱反射异常"],
+                abnormalExams: ["颈椎X线:骨质增生", "颈椎MRI:间盘突出", "CT:椎管狭窄", "椎动脉彩超"],
+                diagnosticPoints: ["颈肩痛伴上肢麻木", "影像学证据", "排除其他疾病"],
+                differentialDiagnoses: ["肩周炎", "腕管综合征", "脊髓肿瘤", "脑中风"],
+                treatmentPlan: ["颈部制动", "牵引治疗", "药物治疗", "颈椎操锻炼"]
+            },
+            {
+                name: "肩周炎",
+                mainSymptoms: ["肩关节疼痛", "活动受限", "僵硬", "夜间痛"],
+                accompanyingSymptoms: ["穿衣困难", "梳头困难", "上举受限", "后伸受限"],
+                typicalSigns: ["肩关节广泛压痛", "主动被动活动均受限", "肩胛骨代偿", "肌肉萎缩"],
+                abnormalExams: ["X线:肩关节正常或轻度骨质疏松", "MRI:肩袖损伤", "排除骨折脱位"],
+                diagnosticPoints: ["肩关节疼痛伴活动受限", "典型体征", "排除其他疾病"],
+                differentialDiagnoses: ["肩袖损伤", "颈椎病", "冠心病", "肩关节结核"],
+                treatmentPlan: ["功能锻炼", "物理治疗", "痛点封闭", "臂丛神经阻滞"]
+            },
+            {
+                name: "骨质疏松症",
+                mainSymptoms: ["腰背疼痛", "身高缩短", "驼背", "易骨折"],
+                accompanyingSymptoms: ["全身乏力", "骨痛", "抽筋", "牙齿松动"],
+                typicalSigns: ["脊柱压痛", "身高下降", "驼背畸形", "轻微外伤骨折"],
+                abnormalExams: ["骨密度检测:T值≤-2.5", "X线:骨质稀疏", "血钙磷正常", "骨代谢标志物异常"],
+                diagnosticPoints: ["脆性骨折", "骨密度检测", "排除继发性骨质疏松"],
+                differentialDiagnoses: ["骨软化症", "多发性骨髓瘤", "转移性骨肿瘤", "甲状旁腺功能亢进"],
+                treatmentPlan: ["钙剂维生素D", "抗骨吸收药物", "促骨形成药物", "预防跌倒"]
+            },
+            {
+                name: "股骨头坏死",
+                mainSymptoms: ["髋关节疼痛", "跛行", "活动受限", "腹股沟痛"],
+                accompanyingSymptoms: ["臀部疼痛", "大腿内侧痛", "膝关节牵涉痛", "行走困难"],
+                typicalSigns: ["髋关节压痛", "活动受限", "Trendelenburg征阳性", "患肢缩短"],
+                abnormalExams: ["X线:股骨头变形", "MRI:股骨头坏死", "CT:软骨下骨骨折", "骨扫描:冷区"],
+                diagnosticPoints: ["髋关节疼痛", "影像学坏死证据", "排除其他疾病"],
+                differentialDiagnoses: ["髋关节骨关节炎", "髋关节结核", "股骨颈骨折", "髋关节滑膜炎"],
+                treatmentPlan: ["减少负重", "药物治疗", "髓芯减压", "人工髋关节置换"]
+            },
+            {
+                name: "腱鞘炎",
+                mainSymptoms: ["手指疼痛", "活动受限", "弹响", "肿胀"],
+                accompanyingSymptoms: ["晨僵", "握物无力", "手指卡顿", "腕部不适"],
+                typicalSigns: ["腱鞘区压痛", "手指弹响", "握拳试验阳性", "局部肿胀"],
+                abnormalExams: ["X线正常", "超声:腱鞘增厚", "MRI:腱鞘炎症", "排除感染"],
+                diagnosticPoints: ["手指疼痛弹响", "典型体征", "排除其他疾病"],
+                differentialDiagnoses: ["狭窄性腱鞘炎", "扳机指", "类风湿性腱鞘炎", "感染性腱鞘炎"],
+                treatmentPlan: ["局部制动", "物理治疗", "腱鞘内封闭", "小针刀治疗"]
+            },
+            {
+                name: "半月板损伤",
+                mainSymptoms: ["膝关节疼痛", "肿胀", "交锁", "打软腿"],
+                accompanyingSymptoms: ["关节卡顿", "下蹲困难", "弹响", "行走不稳"],
+                typicalSigns: ["膝关节压痛", "McMurray征阳性", "关节积液", "股四头肌萎缩"],
+                abnormalExams: ["MRI:半月板信号异常", "X线正常", "关节镜确诊", " Lachman试验阴性"],
+                diagnosticPoints: ["膝关节疼痛交锁", "体格检查阳性", "MRI证据"],
+                differentialDiagnoses: ["前交叉韧带损伤", "侧副韧带损伤", "骨关节炎", "髌骨软化症"],
+                treatmentPlan: ["保守治疗", "关节腔注射", "关节镜手术", "康复锻炼"]
+            },
+            {
+                name: "前交叉韧带损伤",
+                mainSymptoms: ["膝关节肿痛", "不稳", "活动受限", "打软腿"],
+                accompanyingSymptoms: ["关节积血", "行走困难", "关节卡顿", "慢性不稳"],
+                typicalSigns: ["Lachman试验阳性", "前抽屉试验阳性", "关节积液", "股四头肌萎缩"],
+                abnormalExams: ["MRI:ACL信号中断", "X线:Segond骨折", "KT-1000松弛度增加", "关节镜确诊"],
+                diagnosticPoints: ["外伤史", "膝关节不稳", "Lachman试验阳性", "MRI证据"],
+                differentialDiagnoses: ["后交叉韧带损伤", "半月板损伤", "侧副韧带损伤", "骨挫伤"],
+                treatmentPlan: ["RICE原则", "支具固定", "关节镜重建术", "康复训练"]
+            },
+            {
+                name: "骨髓炎",
+                mainSymptoms: ["局部红肿", "疼痛", "发热", "流脓"],
+                accompanyingSymptoms: ["寒战高热", "乏力", "食欲减退", "夜间剧痛"],
+                typicalSigns: ["局部红肿热痛", "压痛", "窦道形成", "脓性分泌物"],
+                abnormalExams: ["血常规:白细胞升高", "血培养阳性", "X线:骨破坏", "MRI:骨髓炎症"],
+                diagnosticPoints: ["局部红肿疼痛", "发热", "影像学骨破坏", "细菌培养"],
+                differentialDiagnoses: ["骨结核", "骨肿瘤", "蜂窝织炎", "风湿热"],
+                treatmentPlan: ["抗生素治疗", "病灶清除术", "灌洗引流", "支持治疗"]
+            },
+            {
+                name: "骨软骨瘤",
+                mainSymptoms: ["无痛性肿块", "局部突起", "压迫症状", "逐渐增大"],
+                accompanyingSymptoms: ["关节活动受限", "神经血管受压", "服装不适", "可伴疼痛"],
+                typicalSigns: ["骨性肿块", "固定无移动", "皮肤无粘连", "压痛"],
+                abnormalExams: ["X线:骨性突起", "CT:肿瘤与宿主骨相连", "MRI:软骨帽", "排除恶变"],
+                diagnosticPoints: ["无痛性骨性肿块", "X线特征性表现", "排除恶性肿瘤"],
+                differentialDiagnoses: ["骨肉瘤", "软骨肉瘤", "骨旁骨肉瘤", "皮质旁骨肉瘤"],
+                treatmentPlan: ["观察随访", "手术切除", "病灶刮除植骨", "定期复查"]
+            },
+            {
+                name: "腰椎管狭窄症",
+                mainSymptoms: ["腰腿痛", "间歇性跛行", "麻木", "马鞍区麻痹"],
+                accompanyingSymptoms: ["行走加重", "骑车减轻", "二便障碍", "下肢无力"],
+                typicalSigns: ["腰椎压痛", "感觉减退", "肌力下降", "腱反射减弱"],
+                abnormalExams: ["腰椎MRI:椎管狭窄", "CT:黄韧带肥厚", "X线:骨质增生", "间歇性跛行试验"],
+                diagnosticPoints: ["间歇性跛行", "影像学狭窄证据", "排除其他疾病"],
+                differentialDiagnoses: ["腰椎间盘突出", "腰椎滑脱", "血管性跛行", "马尾肿瘤"],
+                treatmentPlan: ["保守治疗", "硬膜外封闭", "椎管减压术", "功能锻炼"]
+            },
+            {
+                name: "踝关节扭伤",
+                mainSymptoms: ["踝关节疼痛", "肿胀", "活动受限", "皮下瘀斑"],
+                accompanyingSymptoms: ["行走困难", "韧带处压痛", "不稳定感", "急性期剧痛"],
+                typicalSigns: ["踝关节压痛", "肿胀", "外侧韧带处压痛", "抽屉试验阳性"],
+                abnormalExams: ["X线:排除骨折", "MRI:韧带损伤", "超声:韧带连续性中断", "应力位X线"],
+                diagnosticPoints: ["外伤史", "踝关节肿痛", "排除骨折", "韧带检查"],
+                differentialDiagnoses: ["踝关节骨折", "腓骨肌腱脱位", "距骨软骨损伤", "踝关节不稳"],
+                treatmentPlan: ["RICE原则", "弹力绷带固定", "非甾体抗炎药", "功能康复"]
+            },
+            {
+                name: "桡骨远端骨折",
+                mainSymptoms: ["腕部疼痛", "肿胀", "畸形", "活动受限"],
+                accompanyingSymptoms: ["手指麻木", "功能障碍", "皮下瘀斑", "餐叉样畸形"],
+                typicalSigns: ["腕部压痛", "局部肿胀", "活动受限", "神经血管损伤体征"],
+                abnormalExams: ["X线:桡骨远端骨折", "CT:骨折类型", "MRI:软组织损伤", "排除腕管综合征"],
+                diagnosticPoints: ["外伤史", "腕部肿痛", "X线证据", "排除神经血管损伤"],
+                differentialDiagnoses: ["Colles骨折", "Smith骨折", "Barton骨折", "腕骨骨折"],
+                treatmentPlan: ["手法复位", "石膏固定", "手术治疗", "功能锻炼"]
             }
         ]
     },

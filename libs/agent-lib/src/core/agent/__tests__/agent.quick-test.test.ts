@@ -29,13 +29,6 @@ describe('Agent - Quick Integration Test', () => {
         resetGlobalContainer();
         AgentFactory.resetContainer();
         container = getGlobalContainer();
-
-        // Bind test components to global container (optional, for tests that need them)
-        if (!container.getContainer().isBound(TYPES.TestToolComponentA)) {
-            container.getContainer().bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
-            container.getContainer().bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
-            container.getContainer().bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
-        }
     });
 
     afterEach(() => {

@@ -20,6 +20,11 @@ import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { Tool } from '../../components/core/types.js';
 import { ToolComponent } from '../statefulContext/index.js';
+import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
+import {
+  RuntimeTaskComponent,
+  createRuntimeTaskComponent,
+} from '../../components/index.js';
 import pino from 'pino';
 
 export interface AgentConfig {
@@ -151,6 +156,9 @@ export class Agent {
   // Tool manager for executing tools
   private toolManager: IToolManager;
 
+  // Task module (sub-module for runtime task handling)
+  private taskModule?: RuntimeTaskComponent;
+
   private agentSop: SOP;
   private logger: pino.Logger;
 
@@ -178,6 +186,43 @@ export class Agent {
     this.toolManager = toolManager;
   }
 
+  /**
+   * Initialize TaskModule after expert identity is set
+   * Called internally when setExpertIdentity is invoked
+   */
+  private initializeTaskModule(): void {
+    if (this.taskModule) {
+      return; // Already initialized
+    }
+
+    const expertId = this._expertIdentity?.expertId || 'default';
+    this.taskModule = createRuntimeTaskComponent({
+      expertId,
+      maxQueueSize: 100,
+    });
+
+    // Register TaskModule tools to ToolManager via ComponentToolProvider
+    const taskProvider = new ComponentToolProvider(
+      'runtime-task',
+      this.taskModule,
+      this.workspace.notifyToolExecuted.bind(this.workspace),
+    );
+    this.toolManager.registerProvider(taskProvider);
+
+    // Register external renderer to Workspace for task content rendering
+    this.workspace.registerExternalRenderer('runtime-task', async () => {
+      return this.taskModule!.renderImply();
+    });
+
+    // Register listener for new tasks to wake up the agent
+    this.taskModule.onNewTask(async (task: any) => {
+      this.logger.info(
+        `[Agent] Received new task ${task.taskId}, waking up agent`,
+      );
+      await this.wakeUpForTask(task);
+    });
+  }
+
   // ==================== Public API ====================
 
   /**
@@ -199,6 +244,7 @@ export class Agent {
    */
   setExpertIdentity(identity: AgentExpertIdentity): void {
     this._expertIdentity = identity;
+    this.initializeTaskModule();
   }
 
   /**
@@ -255,6 +301,17 @@ export class Agent {
    */
   public getMemoryModule(): IMemoryModule {
     return this.memoryModule;
+  }
+
+  /**
+   * Get task module (sub-module for runtime task handling)
+   * Initializes on first access if expert identity is set
+   */
+  public getTaskModule(): RuntimeTaskComponent {
+    if (!this.taskModule) {
+      this.initializeTaskModule();
+    }
+    return this.taskModule!;
   }
 
   // ==================== Lifecycle Methods ====================

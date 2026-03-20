@@ -3,574 +3,142 @@ import { Container } from 'inversify';
 import { TYPES } from './types.js';
 import { Agent } from '../agent/agent.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
-import { MemoryModule, defaultMemoryConfig } from '../memory/MemoryModule.js';
+import { MemoryModule } from '../memory/MemoryModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
-// Example components moved to agent-lib components module
-// Users who need these components should import and register them themselves:
-// import { PicosComponent, BibliographySearchComponent, ... } from 'agent-lib';
-// container.bind(TYPES.Component).to(PicosComponent);
-// etc.
-import { TestToolComponentA, TestToolComponentB, TestToolComponentC } from '../statefulContext/__tests__/testComponents.js';
-import type { AgentConfig, SOP } from '../agent/agent.js';
-import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
-import type { MemoryModuleConfig } from '../memory/types.js';
-import type { ProviderSettings } from '../types/provider-settings.js';
-import { defaultAgentConfig } from '../agent/agent.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { IToolManager } from '../tools/index.js';
-import { createObservableAgent } from '../agent/ObservableAgent.js';
-import type { ObservableAgentCallbacks } from '../agent/ObservableAgent.js';
 import { MessageBus } from '../../multi-agent/MessageBus.js';
 import pino from 'pino';
+import {
+  type UnifiedAgentConfig,
+  type AgentCreationOptions,
+  defaultUnifiedConfig,
+  mergeWithDefaults,
+} from './UnifiedAgentConfig.js';
+import type { TestOverrides } from './types.js';
 
-// Define Logger type locally to avoid pino ESM import issues
 type Logger = ReturnType<typeof pino>;
-type Level = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
-import { object } from 'zod';
 
 /**
- * Options for creating an Agent instance through the DI container
+ * AgentContainer - 1:1 relationship with Agent
+ *
+ * Each AgentContainer manages a single Agent instance and its dependencies.
+ * This ensures complete isolation between agents.
  *
  * @example
  * ```typescript
- * const agent = container.createAgent({
- *     agentPrompt: {
- *         capability: 'You are a helpful assistant',
- *         direction: 'Follow user instructions carefully'
- *     },
- *     config: { apiRequestTimeout: 60000 },
- *     apiConfiguration: { apiModelId: 'gpt-4' },
- *     taskId: 'task-123'
+ * const container = new AgentContainer({
+ *   agent: { sop: 'My SOP' },
+ *   api: { apiKey: '...' }
  * });
- * ```
- */
-export interface AgentCreationOptions {
-    /**
-     * Agent configuration overrides
-     * Merged with defaultAgentConfig from agent/agent.ts
-     */
-    config?: Partial<AgentConfig>;
-
-    /**
-     * API configuration overrides
-     * Merged with default ProviderSettings (zai, GLM_API_KEY, glm-4.5)
-     */
-    apiConfiguration?: Partial<ProviderSettings>;
-
-    /**
-     * Agent SOP (Standard Operating Procedure)
-     */
-    agentSop?: SOP;
-
-    /**
-     * Optional task ID for tracking
-     * Useful for debugging and monitoring specific agent instances
-     */
-    taskId?: string;
-
-    /**
-     * Virtual workspace configuration overrides
-     * Merged with default VirtualWorkspaceConfig
-     */
-    virtualWorkspaceConfig?: Partial<VirtualWorkspaceConfig>;
-
-    /**
-     * Optional observer callbacks for monitoring
-     * When provided, the agent will be automatically wrapped in an ObservableAgent proxy
-     */
-    observers?: ObservableAgentCallbacks;
-
-    /**
-     * Optional existing workspace instance
-     * For backward compatibility with existing code that creates
-     * VirtualWorkspace instances manually
-     */
-    workspace?: IVirtualWorkspace;
-
-    /**
-     * Optional mock overrides for dependency injection
-     * Used for testing to replace real implementations with mocks
-     * Applied to the child container created for this agent
-     */
-    mocks?: TestOverrides;
-}
-
-/**
- * AgentContainer - InversifyJS IoC Container for agent-lib
- *
- * This container manages all service dependencies for the Agent system.
- * It provides:
- * - Service bindings with appropriate scopes (Transient, Request, Singleton)
- * - Default configuration values for all services
- * - Dynamic value creation for ApiClient based on ProviderSettings
- * - Agent creation with custom options
- * - Support for mocking dependencies in tests
- *
- * @example
- * ```typescript
- * import 'reflect-metadata';
- * import { AgentContainer } from './di/container.js';
- *
- * const container = new AgentContainer();
- * const agent = container.createAgent({
- *     agentPrompt: { capability: 'Test', direction: 'Test' }
- * });
- * ```
- *
- * @example With mocking in tests
- * ```typescript
- * import { AgentContainer } from './di/container.js';
- * import { TYPES } from './di/types.js';
- *
- * const container = new AgentContainer();
- * const internalContainer = container.getContainer();
- *
- * // Mock ApiClient
- * const mockApiClient = { makeRequest: vi.fn() };
- * internalContainer.rebind(TYPES.ApiClient).toConstantValue(mockApiClient);
- *
- * const agent = container.createAgent({ ... });
+ * const agent = container.getAgent();
  * ```
  */
 export class AgentContainer {
-    private container: Container;
+  private container: Container;
+  private config: UnifiedAgentConfig;
+  private agentInstance: Agent | null = null;
 
-    constructor() {
-        this.container = new Container({
-            defaultScope: 'Transient',
-        });
-        this.setupBindings();
+  constructor(options: AgentCreationOptions = {}) {
+    this.config = mergeWithDefaults(options);
+    this.container = new Container({
+      defaultScope: 'Singleton',
+    });
+    this.setupBindings();
+  }
+
+  private setupBindings(): void {
+    // Logger
+    this.container.bind<Logger>(TYPES.Logger).toDynamicValue(() =>
+      pino({
+        level: process.env['LOG_LEVEL'] || 'debug',
+        formatters: {
+          level: (label) => ({ level: label }),
+        },
+        timestamp: pino.stdTimeFunctions.isoTime,
+      }),
+    );
+
+    // Agent configuration
+    this.container
+      .bind(TYPES.AgentConfig)
+      .toConstantValue(this.config.agent.config);
+    this.container
+      .bind(TYPES.ProviderSettings)
+      .toConstantValue(this.config.api);
+    this.container
+      .bind(TYPES.AgentPrompt)
+      .toConstantValue(this.config.agent.sop);
+    this.container
+      .bind(TYPES.VirtualWorkspaceConfig)
+      .toConstantValue(this.config.workspace);
+    this.container
+      .bind(TYPES.MemoryModuleConfig)
+      .toConstantValue(this.config.memory);
+
+    if (this.config.agent.taskId) {
+      this.container
+        .bind<string>(TYPES.TaskId)
+        .toConstantValue(this.config.agent.taskId);
     }
 
-    private setupBindings(): void {
-        // Core services - bind to interfaces where appropriate
-        this.container
-            .bind<Logger>(TYPES.Logger)
-            .toDynamicValue(() => pino({
-                level: 'info',
-                formatters: {
-                    level: (label) => {
-                        return { level: label };
-                    },
-                },
-                timestamp: pino.stdTimeFunctions.isoTime,
-            }));
+    // Services (all singleton within this container)
+    this.container.bind(TYPES.Agent).to(Agent).inSingletonScope();
+    this.container
+      .bind(TYPES.IVirtualWorkspace)
+      .to(VirtualWorkspace)
+      .inSingletonScope();
+    this.container
+      .bind(TYPES.IMemoryModule)
+      .to(MemoryModule)
+      .inSingletonScope();
+    this.container.bind(TYPES.IToolManager).to(ToolManager).inSingletonScope();
 
-        // Container - Bind the container itself for DI token resolution
-        this.container.bind<Container>(TYPES.Container).toConstantValue(this.container);
+    // API Client
+    this.container
+      .bind<ApiClient>(TYPES.ApiClient)
+      .toDynamicValue(() => {
+        return ApiClientFactory.create(this.config.api);
+      })
+      .inSingletonScope();
 
-        // Tool Manager - Singleton scope for sharing across all agents
-        // Strategy management is now integrated into ToolManager
-        this.container.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inSingletonScope();
+    // Message Bus
+    this.container
+      .bind<MessageBus>(TYPES.IMessageBus)
+      .to(MessageBus)
+      .inSingletonScope();
 
-        // Message Bus - Email-style Singleton scope for multi-agent communication
-        this.container.bind<MessageBus>(TYPES.IMessageBus)
-            .to(MessageBus)
-            .inSingletonScope();
+    // Container reference
+    this.container
+      .bind<Container>(TYPES.Container)
+      .toConstantValue(this.container);
+  }
 
-        // Tool Components are now in agent-lib components module
-        // Users who need these components should import from agent-lib
-        // Example:
-        // import { PicosComponent } from 'agent-lib';
-        // this.container.bind<PicosComponent>(TYPES.PicosComponent).to(PicosComponent).inSingletonScope();
-
-        // Test Tool Components - Singleton scope for testing
-        this.container.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
-        this.container.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
-        this.container.bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
-
-        this.container.bind(TYPES.Agent).to(Agent).inTransientScope();
-        this.container.bind<IVirtualWorkspace>(TYPES.IVirtualWorkspace).to(VirtualWorkspace).inRequestScope();
-
-        // API Client - dynamic creation based on ProviderSettings
-        this.container
-            .bind<ProviderSettings>(TYPES.ProviderSettings)
-            .toConstantValue({
-                apiProvider: 'zai',
-                apiKey: process.env['GLM_API_KEY'] || '',
-                apiModelId: 'glm-4.5-flash',
-            });
-
-        this.container.bind<ApiClient>(TYPES.ApiClient).toDynamicValue(() => {
-            const config = this.container.get<ProviderSettings>(TYPES.ProviderSettings);
-            return ApiClientFactory.create(config);
-        }).inRequestScope();
-
-        // Memory module and its dependencies
-        this.container.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
-        this.container.bind<IMemoryModule>(TYPES.IMemoryModule).to(MemoryModule).inRequestScope();
-
-        // Configuration defaults
-        this.container.bind<AgentConfig>(TYPES.AgentConfig).toConstantValue(defaultAgentConfig);
-        this.container
-            .bind<MemoryModuleConfig>(TYPES.MemoryModuleConfig)
-            .toConstantValue(defaultMemoryConfig);
-
-        // Default VirtualWorkspaceConfig
-        this.container
-            .bind<VirtualWorkspaceConfig>(TYPES.VirtualWorkspaceConfig)
-            .toConstantValue({
-                id: 'default-workspace',
-                name: 'Default Workspace',
-            });
+  getAgent(): Agent {
+    if (!this.agentInstance) {
+      this.agentInstance = this.container.get<Agent>(TYPES.Agent);
     }
+    return this.agentInstance;
+  }
 
-    /**
-     * Create an Agent with the provided options
-     *
-     * Creates a new container for each agent to ensure isolated scope.
-     * This means each agent gets its own instances of Request-scoped services.
-     *
-     * If observer callbacks are provided via options.observers, the agent
-     * will be automatically wrapped in an ObservableAgent proxy for monitoring.
-     *
-     * @param options - Configuration options for the agent
-     * @returns A new Agent instance (optionally wrapped with ObservableAgent)
-     *
-     * @example
-     * ```typescript
-     * const agent = container.createAgent({
-     *     agentPrompt: {
-     *         capability: 'You are a coding assistant',
-     *         direction: 'Help users write clean code'
-     *     },
-     *     config: {
-     *         apiRequestTimeout: 60000,
-     *         maxRetryAttempts: 5
-     *     },
-     *     apiConfiguration: {
-     *         apiProvider: 'openai',
-     *         apiModelId: 'gpt-4'
-     *     }
-     * });
-     * ```
-     *
-     * @example With observers
-     * ```typescript
-     * const agent = container.createAgent({
-     *     agentPrompt: { capability: 'Test', direction: 'Test' },
-     *     observers: {
-     *         onStatusChanged: (taskId, status) => console.log(`Status: ${status}`),
-     *         onMessageAdded: (taskId, message) => console.log('New message:', message)
-     *     }
-     * });
-     * ```
-     */
-    public createAgent(options: AgentCreationOptions = {}): Agent {
-        const agentContainer = new Container({
-            defaultScope: 'Transient',
-        });
+  getConfig(): UnifiedAgentConfig {
+    return this.config;
+  }
 
-        // Setup all bindings for the agent container
-        this.setupAgentBindings(agentContainer, options);
-
-        // Apply mock overrides to child container if provided
-        // This must happen AFTER setupAgentBindings so mocks can override the default bindings
-        if (options.mocks) {
-            this.applyOverride(agentContainer, options.mocks);
-        }
-
-        // Get the base agent instance
-        const agent = agentContainer.get<Agent>(TYPES.Agent);
-
-        // If observers are provided, wrap the agent in an ObservableAgent proxy
-        // This is now handled by the DI container instead of post-wrapping
-        if (options.observers && Object.keys(options.observers).length > 0) {
-            return createObservableAgent(agent, options.observers);
-        }
-
-        return agent;
-    }
-
-    /**
-     * Setup bindings for an agent container with custom options
-     *
-     * This method configures all service bindings for a specific agent instance.
-     * It merges user-provided options with defaults and binds all necessary
-     * services to the container.
-     *
-     * @param agentContainer - The container to configure
-     * @param options - User-provided configuration options
-     */
-    private setupAgentBindings(
-        agentContainer: Container,
-        options: AgentCreationOptions,
-    ): void {
-        // Determine configuration values
-        const agentConfig: AgentConfig = options.config
-            ? { ...defaultAgentConfig, ...options.config }
-            : defaultAgentConfig;
-
-        const providerSettings: ProviderSettings = options.apiConfiguration
-            ? {
-                apiProvider: 'zai',
-                apiKey: process.env['GLM_API_KEY'] || '',
-                apiModelId: 'glm-4.5',
-                zaiApiLine: 'china_coding',
-                ...options.apiConfiguration,
-            }
-            : {
-                apiProvider: 'zai',
-                apiKey: process.env['GLM_API_KEY'] || '',
-                zaiApiLine: 'china_coding',
-                apiModelId: 'glm-4.5',
-            };
-
-        const agentSop: SOP = options.agentSop || 'Default SOP';
-
-        const workspaceConfig: VirtualWorkspaceConfig = options.virtualWorkspaceConfig
-            ? {
-                id: 'default-workspace',
-                name: 'Default Workspace',
-                ...options.virtualWorkspaceConfig,
-            }
-            : {
-                id: 'default-workspace',
-                name: 'Default Workspace',
-            };
-
-        // Bind configuration values
-        agentContainer.bind<Logger>(TYPES.Logger).toDynamicValue(() =>
-            pino({
-                level: 'debug',
-                formatters: {
-                    level: (label) => ({ level: label }),
-                },
-                timestamp: pino.stdTimeFunctions.isoTime,
-            })
-        )
-        agentContainer.bind<AgentConfig>(TYPES.AgentConfig).toConstantValue(agentConfig);
-        agentContainer
-            .bind<ProviderSettings>(TYPES.ProviderSettings)
-            .toConstantValue(providerSettings);
-        agentContainer.bind<SOP>(TYPES.AgentPrompt).toConstantValue(agentSop);
-        agentContainer
-            .bind<VirtualWorkspaceConfig>(TYPES.VirtualWorkspaceConfig)
-            .toConstantValue(workspaceConfig);
-
-        // MemoryModuleConfig
-        agentContainer
-            .bind<MemoryModuleConfig>(TYPES.MemoryModuleConfig)
-            .toConstantValue(defaultMemoryConfig);
-
-        if (options.taskId) {
-            agentContainer.bind<string>(TYPES.TaskId).toConstantValue(options.taskId);
-        }
-
-        // Bind observer callbacks if provided
-        if (options.observers) {
-            agentContainer.bind<ObservableAgentCallbacks>(TYPES.ObservableAgentCallbacks)
-                .toConstantValue(options.observers);
-        }
-
-        // Bind services
-        agentContainer.bind(TYPES.Agent).to(Agent).inTransientScope();
-
-        // Handle workspace - if provided, bind it as constant; otherwise create new one
-        if (options.workspace) {
-            // Bind the provided workspace instance
-            agentContainer
-                .bind<IVirtualWorkspace>(TYPES.IVirtualWorkspace)
-                .toConstantValue(options.workspace);
-        } else {
-            // Create a new VirtualWorkspace instance
-            agentContainer
-                .bind<IVirtualWorkspace>(TYPES.IVirtualWorkspace)
-                .to(VirtualWorkspace)
-                .inRequestScope();
-        }
-        agentContainer
-            .bind<IMemoryModule>(TYPES.IMemoryModule)
-            .to(MemoryModule)
-            .inRequestScope();
-
-        // API Client - dynamic creation based on ProviderSettings
-        agentContainer.bind<ApiClient>(TYPES.ApiClient).toDynamicValue(() => {
-            const config = agentContainer.get<ProviderSettings>(TYPES.ProviderSettings);
-            return ApiClientFactory.create(config);
-        }).inRequestScope();
-
-        // Memory module and its dependencies
-        agentContainer.bind(TYPES.MemoryModule).to(MemoryModule).inRequestScope();
-
-        // Tool Manager - singleton service shared across all agents
-        // Bind in agent container for VirtualWorkspace to inject
-        agentContainer.bind<IToolManager>(TYPES.IToolManager).to(ToolManager).inRequestScope();
-
-        // Bind the agentContainer itself for DI token resolution
-        agentContainer.bind<Container>(TYPES.Container).toConstantValue(agentContainer);
-
-        // Tool Components are now in agent-lib components module
-        // Users who need these components should import from agent-lib
-
-        // Test Tool Components - Singleton scope for testing
-        agentContainer.bind<TestToolComponentA>(TYPES.TestToolComponentA).to(TestToolComponentA).inSingletonScope();
-        agentContainer.bind<TestToolComponentB>(TYPES.TestToolComponentB).to(TestToolComponentB).inSingletonScope();
-        agentContainer.bind<TestToolComponentC>(TYPES.TestToolComponentC).to(TestToolComponentC).inSingletonScope();
-    }
-
-    /**
-     * Get the root container for advanced usage
-     *
-     * Use this method when you need to:
-     * - Rebind services for testing
-     * - Access container internals
-     * - Create child containers with custom bindings
-     *
-     * @returns The underlying InversifyJS Container instance
-     *
-     * @example
-     * ```typescript
-     * const container = new AgentContainer();
-     * const internalContainer = container.getContainer();
-     *
-     * // Rebind a service for testing
-     * internalContainer.rebind<ApiClient>(TYPES.ApiClient)
-     *     .toConstantValue(mockApiClient);
-     * ```
-     */
-    public getContainer(): Container {
-        return this.container;
-    }
-
-    /**
-     * Create a child container with custom bindings
-     *
-     * Child containers inherit bindings from their parent but can
-     * override specific bindings. This is useful for creating
-     * isolated test environments or custom agent configurations.
-     *
-     * @returns A new child Container instance
-     *
-     * @example
-     * ```typescript
-     * const parentContainer = new AgentContainer();
-     * const childContainer = parentContainer.createChildContainer();
-     *
-     * // Override a binding in the child
-     * childContainer.bind<ApiClient>(TYPES.ApiClient)
-     *     .toConstantValue(customApiClient);
-     * ```
-     */
-    public createChildContainer(): Container {
-        const childContainer = new Container({
-            defaultScope: 'Transient',
-        });
-        return childContainer;
-    }
-
-    public override(mocks: TestOverrides) {
-        const entries = Object.entries(mocks) as [keyof TestOverrides, any][];
-        for (const [key, mockInstance] of entries) {
-            const identifier = TYPES[key];
-            if (this.container.isBound(identifier)) {
-                this.container.unbind(identifier)
-            }
-
-            this.container.bind(identifier).to(mockInstance)
-        }
-    }
-
-    /**
-     * Apply mock overrides to a specific container (including child containers)
-     * This enables mocking dependencies for individual agent instances
-     *
-     * @param targetContainer - The container to apply overrides to
-     * @param mocks - The mock implementations to bind
-     *
-     * @example
-     * ```typescript
-     * const agentContainer = new Container();
-     * container.applyOverride(agentContainer, { ApiClient: mockApiClient });
-     * ```
-     */
-    public applyOverride(targetContainer: Container, mocks: TestOverrides) {
-        const entries = Object.entries(mocks) as [keyof TestOverrides, any][];
-        for (const [key, mockInstance] of entries) {
-            const identifier = TYPES[key];
-            if (targetContainer.isBound(identifier)) {
-                targetContainer.unbind(identifier)
-            }
-
-            targetContainer.bind(identifier).toConstantValue(mockInstance);
-            console.log(`[AgentContainer.applyOverride] Bound ${String(key)} to mock in child container`);
-        }
-    }
+  getContainer(): Container {
+    return this.container;
+  }
 }
 
-// Singleton instance
-let globalContainer: AgentContainer | null = null;
-
-/**
- * Get the global container instance
- *
- * Returns a singleton AgentContainer instance. Creates a new instance
- * on first call and reuses it for subsequent calls.
- *
- * @returns The global AgentContainer instance
- *
- * @example
- * ```typescript
- * import { getGlobalContainer } from './di/container.js';
- *
- * const container = getGlobalContainer();
- * const agent = container.createAgent({ ... });
- * ```
- *
- * @note Remember to call `resetGlobalContainer()` between tests
- * to ensure test isolation.
- */
-export function getGlobalContainer(): AgentContainer {
-    if (!globalContainer) {
-        globalContainer = new AgentContainer();
-    }
-    return globalContainer;
-}
-
-/**
- * Reset the global container instance
- *
- * Clears the global container instance, causing the next call to
- * `getGlobalContainer()` to create a fresh instance.
- *
- * This is particularly useful in testing scenarios to ensure
- * test isolation and prevent state leakage between tests.
- *
- * @example
- * ```typescript
- * import { describe, beforeEach } from 'vitest';
- * import { resetGlobalContainer } from './di/container.js';
- *
- * describe('Agent Tests', () => {
- *     beforeEach(() => {
- *         resetGlobalContainer();
- *     });
- *
- *     it('should create isolated agent', () => {
- *         // Each test gets a fresh container
- *     });
- * });
- * ```
- */
-export function resetGlobalContainer(): void {
-    globalContainer = null;
-}
-
-export type TestOverrides = {
-    [K in keyof typeof TYPES]?: any;
-};
-
-export function overwrite_di(overrides: TestOverrides, container: Container) {
-    const entries = Object.entries(overrides) as [keyof TestOverrides, any][];
-    for (const [key, mockInstance] of entries) {
-        const identifier = TYPES[key];
-        if (container.isBound(identifier)) {
-            container.unbind(identifier)
-        }
-
-        container.bind(identifier).to(mockInstance)
-    }
-}
+// Re-export types from UnifiedAgentConfig
+export type {
+  AgentCreationOptions,
+  UnifiedAgentConfig,
+} from './UnifiedAgentConfig.js';
+export {
+  defaultUnifiedConfig,
+  mergeWithDefaults,
+} from './UnifiedAgentConfig.js';

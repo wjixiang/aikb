@@ -1,0 +1,79 @@
+import type { AgentConfig, SOP } from '../agent/agent.js';
+import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
+import type { MemoryModuleConfig } from '../memory/types.js';
+import type { ProviderSettings } from '../types/provider-settings.js';
+import { defaultAgentConfig } from '../agent/agent.js';
+import { defaultMemoryConfig } from '../memory/MemoryModule.js';
+
+export interface UnifiedAgentConfig {
+  agent: {
+    sop: SOP;
+    config: AgentConfig;
+    taskId?: string;
+  };
+  api: ProviderSettings;
+  workspace: VirtualWorkspaceConfig;
+  memory: MemoryModuleConfig;
+}
+
+export interface AgentCreationOptions {
+  agent?: {
+    sop?: SOP;
+    config?: Partial<AgentConfig>;
+    taskId?: string;
+  };
+  api?: Partial<ProviderSettings>;
+  workspace?: Partial<VirtualWorkspaceConfig>;
+  memory?: Partial<MemoryModuleConfig>;
+  observers?: any;
+}
+
+export const defaultUnifiedConfig: UnifiedAgentConfig = {
+  agent: {
+    sop: 'Default SOP',
+    config: defaultAgentConfig,
+  },
+  api: {
+    apiProvider: 'zai',
+    apiKey: process.env['GLM_API_KEY'] || '',
+    apiModelId: 'glm-4.5',
+    zaiApiLine: 'china_coding',
+  },
+  workspace: {
+    id: 'default-workspace',
+    name: 'Default Workspace',
+    renderMode: 'tui',
+    toolCallLogCount: 10,
+    expertMode: false,
+    alwaysRenderAllComponents: false,
+  },
+  memory: defaultMemoryConfig,
+};
+
+export function mergeWithDefaults(
+  partial: AgentCreationOptions,
+): UnifiedAgentConfig {
+  const result: UnifiedAgentConfig = {
+    agent: {
+      sop: partial.agent?.sop ?? defaultUnifiedConfig.agent.sop,
+      config: {
+        ...defaultUnifiedConfig.agent.config,
+        ...partial.agent?.config,
+      },
+      taskId: partial.agent?.taskId ?? defaultUnifiedConfig.agent.taskId,
+    },
+    api: {
+      ...defaultUnifiedConfig.api,
+      ...partial.api,
+    },
+    workspace: {
+      ...defaultUnifiedConfig.workspace,
+      ...partial.workspace,
+    },
+    memory: {
+      ...defaultUnifiedConfig.memory,
+      ...partial.memory,
+    },
+  };
+  return result;
+}

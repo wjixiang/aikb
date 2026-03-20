@@ -33,20 +33,20 @@ export * from './common/types.js';
 // DI (Dependency Injection)
 export * from './di/index.js';
 
-// Expert System
-export * from './expert/index.js';
-export { ExpertWorkspaceBase } from './expert/ExpertWorkspaceBase.js';
-export { ExpertExecutor } from './expert/ExpertExecutor.js';
-export { ExpertRegistry } from './expert/ExpertRegistry.js';
-export { createExpertConfig } from './expert/ExpertFactory.js';
-export type { ExpertConfig, ExpertComponentDefinition, ExpertTask, ExpertResult, IExpertInstance, ExpertMailConfig } from './expert/types.js';
+// Expert System (removed)
 
 // Memory
 export { ContextMemoryStore } from './memory/index.js';
 export type { ContextSnapshot, MemorySummary } from './memory/index.js';
 export { MemoryModule, defaultMemoryConfig } from './memory/index.js';
 export type { IMemoryModule, MemoryModuleConfig } from './memory/index.js';
-export type { ApiMessage, MessageBuilder, ThinkingBlock, ExtendedContentBlock, MessageAddedCallback } from './memory/index.js';
+export type {
+  ApiMessage,
+  MessageBuilder,
+  ThinkingBlock,
+  ExtendedContentBlock,
+  MessageAddedCallback,
+} from './memory/index.js';
 
 // Prompts
 export * from './prompts/index.js';

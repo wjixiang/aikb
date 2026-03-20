@@ -9,6 +9,8 @@ import {
   SearchStrategyAdjustment,
   SearchResultEvaluation,
 } from '../app/baml/baml.service.js';
+import { SearchResultService } from '../search/search-result.service.js';
+import { ArticleEmbeddingService } from '../search/article-embedding.service.js';
 
 /**
  * ClinicalManifestationsSearchEngine - Specialized search for clinical manifestations literature
@@ -21,15 +23,21 @@ import {
  * - Complications
  */
 export class ClinicalManifestationsSearchEngine extends BaseSearchEngine {
-  constructor(bamlService: BamlService) {
-    super(bamlService, 'clinical');
+  constructor(
+    bamlService: BamlService,
+    searchResultService?: SearchResultService,
+    embeddingService?: ArticleEmbeddingService,
+  ) {
+    super(bamlService, 'clinical', searchResultService, embeddingService);
   }
 
   protected getSectionName(): string {
     return 'Clinical Manifestations Research';
   }
 
-  protected async generateInitialStrategy(disease: string): Promise<SearchStrategy> {
+  protected async generateInitialStrategy(
+    disease: string,
+  ): Promise<SearchStrategy> {
     const strategy = await this.bamlService.generateClinicalStrategy(disease);
     this.logger.log(`Generated initial strategy: ${strategy.term}`);
     this.logger.debug(`Reasoning: ${strategy.reasoning}`);

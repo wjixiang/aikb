@@ -1,5 +1,8 @@
 import type { ProgressResponse } from './app.dto.js';
-import type { ReviewSection, SearchResult } from '../article-search/base.engine.js';
+import type {
+  ReviewSection,
+  SearchResult,
+} from '../article-search/base.engine.js';
 import type { BaseSearchEngine } from '../article-search/base.engine.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Logger } from '../utils/logger.js';
@@ -40,7 +43,11 @@ export class AppService {
   /**
    * Create and run a review task for a specific section
    */
-  async createTask(task: { taskInput: string; section?: ReviewSection }) {
+  async createTask(task: {
+    taskInput: string;
+    section?: ReviewSection;
+    embed?: boolean;
+  }) {
     const section = task.section || 'epidemiology';
     const engine = this.getEngine(section);
 
@@ -51,10 +58,18 @@ export class AppService {
       },
     });
 
-    // Fire and forget - research runs in background
-    engine.run(result.id, this.onProgress.bind(this, result.id)).catch((err) => {
-      this.logger.error(`Research failed for task ${result.id}:`, err);
-    });
+    const embed = task.embed !== false;
+
+    engine
+      .runWithSave(
+        result.id,
+        task.taskInput,
+        this.onProgress.bind(this, result.id),
+        embed,
+      )
+      .catch((err) => {
+        this.logger.error(`Research failed for task ${result.id}:`, err);
+      });
 
     return result;
   }
@@ -62,7 +77,7 @@ export class AppService {
   /**
    * Create and run a review task for all sections
    */
-  async createAllSectionsTask(task: { taskInput: string }) {
+  async createAllSectionsTask(task: { taskInput: string; embed?: boolean }) {
     const result = await this.prisma.reviewTask.create({
       data: {
         taskInput: task.taskInput,
@@ -70,14 +85,38 @@ export class AppService {
       },
     });
 
-    // Fire and forget - all sections run in background
+    const embed = task.embed !== false;
+
     Promise.all([
-      this.epidemiologyEngine.run(`${result.id}-epidemiology`, this.onProgress.bind(this, `${result.id}-epidemiology`)),
-      this.pathophysiologyEngine.run(`${result.id}-pathophysiology`, this.onProgress.bind(this, `${result.id}-pathophysiology`)),
-      this.clinicalEngine.run(`${result.id}-clinical`, this.onProgress.bind(this, `${result.id}-clinical`)),
-      this.treatmentEngine.run(`${result.id}-treatment`, this.onProgress.bind(this, `${result.id}-treatment`)),
+      this.epidemiologyEngine.runWithSave(
+        `${result.id}`,
+        task.taskInput,
+        this.onProgress.bind(this, `${result.id}-epidemiology`),
+        embed,
+      ),
+      this.pathophysiologyEngine.runWithSave(
+        `${result.id}`,
+        task.taskInput,
+        this.onProgress.bind(this, `${result.id}-pathophysiology`),
+        embed,
+      ),
+      this.clinicalEngine.runWithSave(
+        `${result.id}`,
+        task.taskInput,
+        this.onProgress.bind(this, `${result.id}-clinical`),
+        embed,
+      ),
+      this.treatmentEngine.runWithSave(
+        `${result.id}`,
+        task.taskInput,
+        this.onProgress.bind(this, `${result.id}-treatment`),
+        embed,
+      ),
     ]).catch((err) => {
-      this.logger.error(`All sections research failed for task ${result.id}:`, err);
+      this.logger.error(
+        `All sections research failed for task ${result.id}:`,
+        err,
+      );
     });
 
     return result;

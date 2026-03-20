@@ -24,9 +24,6 @@ import {
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 
-/**
- * Default VirtualWorkspace configuration
- */
 export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
   name: 'Default Workspace',
@@ -36,37 +33,22 @@ export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   alwaysRenderAllComponents: false,
 };
 
-/**
- * Tool call summary for the LOG section
- */
 export interface ToolCallSummary {
   toolName: string;
   success: boolean;
   summary: string;
   timestamp: number;
-  /** Component key that provided this tool */
   componentKey?: string;
 }
 
-/**
- * Virtual Workspace - manages multiple ToolComponents for fine-grained LLM context
- * Uses tool calls for interaction instead of script execution
- *
- * This class delegates all tool management to IToolManager.
- * Components are managed directly via ComponentRegistry (no skill system).
- */
 @injectable()
 export class VirtualWorkspace implements IVirtualWorkspace {
   private config: VirtualWorkspaceConfig;
   private componentRegistry: ComponentRegistry;
-  // Global components - shared across the workspace (e.g., MailComponent)
-  private globalComponents: Map<string, ToolComponent> = new Map();
-
-  // Tool management system (injected)
   private toolManager: IToolManager;
-
-  // Tool call log for the LOG section
   private toolCallLog: ToolCallSummary[] = [];
+  private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
+    new Map();
 
   constructor(
     @inject(TYPES.VirtualWorkspaceConfig)
@@ -79,10 +61,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       ...config,
     };
 
-    // Initialize component registry
     this.componentRegistry = new ComponentRegistry();
 
-    // Register components from config if provided
     if (config.components) {
       for (const comp of config.components) {
         this.componentRegistry.register(
@@ -92,33 +72,24 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       }
     }
 
-    // ToolManager is injected when available, otherwise create a new instance
-    // This allows both DI container usage and direct instantiation
     this.toolManager = toolManager ?? new ToolManager();
-
-    // Register all components from registry as tool providers
     this.registerComponentTools();
 
-    // Register global tools (attempt_completion, etc.)
     const globalToolProvider = new GlobalToolProvider();
     this.toolManager.registerProvider(globalToolProvider);
 
-    // Initialize global components from config (sync factories only)
     if (config.globalComponents) {
       this.initializeGlobalComponents(config.globalComponents);
     }
   }
 
-  /**
-   * Initialize global components from configuration
-   * Only synchronous factories are supported in constructor
-   */
-  private initializeGlobalComponents(definitions: import('../../components/index.js').GlobalComponentDefinition[]): void {
+  private initializeGlobalComponents(
+    definitions: import('../../components/index.js').GlobalComponentDefinition[],
+  ): void {
     for (const def of definitions) {
       if (def.factory) {
         const instance = def.factory();
         if (instance instanceof Promise) {
-          // For async factories, log warning - should be initialized separately
           console.warn(
             `[VirtualWorkspace] Async global component factory for "${def.componentId}" should be initialized via registerGlobalComponent()`,
           );
@@ -129,34 +100,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
   }
 
-  /**
-   * Register all components from registry as tool providers
-   */
-  private registerComponentTools(): void {
-    const registrations = this.componentRegistry.getAllRegistrations();
-    for (const registration of registrations) {
-      const provider = new ComponentToolProvider(
-        registration.id,
-        registration.component,
-        this.notifyToolExecuted.bind(this),
-      );
-      this.toolManager.registerProvider(provider);
-    }
-  }
-
-  // ==================== Component Management ====================
-
-  /**
-   * Register a component with an ID
-   */
-  registerComponent(
-    id: string,
-    component: ToolComponent,
-    priority?: number,
-  ): void {
-    this.componentRegistry.register(id, component, priority);
-
-    // Also register as a tool provider with tool executed callback
+  private _registerToolProvider(id: string, component: ToolComponent): void {
     const provider = new ComponentToolProvider(
       id,
       component,
@@ -165,9 +109,22 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     this.toolManager.registerProvider(provider);
   }
 
-  /**
-   * Register multiple components
-   */
+  private registerComponentTools(): void {
+    const registrations = this.componentRegistry.getAllRegistrations();
+    for (const registration of registrations) {
+      this._registerToolProvider(registration.id, registration.component);
+    }
+  }
+
+  registerComponent(
+    id: string,
+    component: ToolComponent,
+    priority?: number,
+  ): void {
+    this.componentRegistry.register(id, component, priority);
+    this._registerToolProvider(id, component);
+  }
+
   registerComponents(
     components: Array<{
       id: string;
@@ -176,107 +133,55 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }>,
   ): void {
     this.componentRegistry.registerWithPriority(components);
-
-    // Register all as tool providers with tool executed callback
     for (const { id, component } of components) {
-      const provider = new ComponentToolProvider(
-        id,
-        component,
-        this.notifyToolExecuted.bind(this),
-      );
-      this.toolManager.registerProvider(provider);
+      this._registerToolProvider(id, component);
     }
   }
 
-  /**
-   * Get the IToolManager instance (for Agent integration)
-   */
   getToolManager(): IToolManager {
     return this.toolManager;
   }
 
-  /**
-   * Get the component registry
-   */
   getComponentRegistry(): ComponentRegistry {
     return this.componentRegistry;
   }
 
-  /**
-   * Get a registered component by ID
-   */
   getComponent(id: string): ToolComponent | undefined {
     return this.componentRegistry.get(id);
   }
 
-  /**
-   * Get all registered component IDs
-   */
   getComponentKeys(): string[] {
     return this.componentRegistry.getIds();
   }
 
-  // ==================== Global Component Management ====================
-
-  /**
-   * Register a global component instance that can be shared across the workspace
-   * Global components are typically created once and reused (e.g., MailComponent)
-   */
-  registerGlobalComponent(id: string, component: ToolComponent, priority?: number): void {
-    // Also register in component registry with tool provider
+  registerGlobalComponent(
+    id: string,
+    component: ToolComponent,
+    priority?: number,
+  ): void {
     this.componentRegistry.register(id, component, priority);
-
-    // Also register as a tool provider with tool executed callback
-    const provider = new ComponentToolProvider(
-      id,
-      component,
-      this.notifyToolExecuted.bind(this),
-    );
-    this.toolManager.registerProvider(provider);
-
-    // Store in global components map for workspace-level access
-    this.globalComponents.set(id, component);
-
+    this._registerToolProvider(id, component);
     console.log(`[VirtualWorkspace] Registered global component: ${id}`);
   }
 
-  /**
-   * Get a registered global component by ID
-   */
   getGlobalComponent(id: string): ToolComponent | undefined {
-    return this.globalComponents.get(id);
+    return this.componentRegistry.get(id);
   }
 
-  /**
-   * Check if a global component is registered
-   */
   hasGlobalComponent(id: string): boolean {
-    return this.globalComponents.has(id);
+    return this.componentRegistry.has(id);
   }
 
-  /**
-   * Get all registered global component IDs
-   */
   getGlobalComponentIds(): string[] {
-    return Array.from(this.globalComponents.keys());
+    return this.componentRegistry.getIds();
   }
 
-  /**
-   * Callback for when tool availability changes
-   */
   private onToolAvailabilityChange?: (() => void) | undefined;
 
-  /**
-   * Set callback for when tool availability changes
-   */
   setOnToolAvailabilityChange(callback: () => void): void {
     this.onToolAvailabilityChange = callback;
   }
 
-  /**
-   * Callback for real-time tool execution notifications
-   * This is called by ComponentToolProvider immediately after tool execution
-   */
   private onToolExecuted?: (
     toolName: string,
     params: any,
@@ -286,10 +191,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     customSummary?: string,
   ) => void;
 
-  /**
-   * Set callback for real-time tool execution notifications
-   * This allows VirtualWorkspace to receive tool results immediately after execution
-   */
   setOnToolExecuted(
     callback: (
       toolName: string,
@@ -303,10 +204,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     this.onToolExecuted = callback;
   }
 
-  /**
-   * Notify workspace of a tool execution result in real-time
-   * This updates the tool call log immediately after tool execution
-   */
   notifyToolExecuted(
     toolName: string,
     params: any,
@@ -315,18 +212,15 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     componentKey: string,
     customSummary?: string,
   ): void {
-    // Get current max count
     const maxCount = this.config.toolCallLogCount ?? 3;
 
     if (maxCount <= 0) {
       return;
     }
 
-    // Use custom summary if provided, otherwise generate default summary
     const summary =
       customSummary ?? this.summarizeToolResult(toolName, result, componentKey);
 
-    // Add to the log (keep only last maxCount entries)
     this.toolCallLog.push({
       toolName,
       success,
@@ -335,76 +229,60 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       componentKey,
     });
 
-    // Trim to max count
     if (this.toolCallLog.length > maxCount) {
       this.toolCallLog = this.toolCallLog.slice(-maxCount);
     }
   }
 
-  /**
-   * Generate a brief summary of tool result for the LOG section
-   * @param toolName The name of the tool
-   * @param result The result from the tool execution
-   * @param componentKey The component key that provided this tool (optional)
-   */
   private summarizeToolResult(
     toolName: string,
     result: any,
     componentKey?: string,
   ): string {
     if (!result) {
-      return componentKey ? `[${componentKey}][${toolName}] (no result)` : '(no result)';
+      return componentKey
+        ? `[${componentKey}][${toolName}] (no result)`
+        : '(no result)';
     }
 
-    // Try to extract key information based on tool name
     try {
       let summary: string;
 
       if (typeof result === 'string') {
-        // If result is a string, truncate it
         summary =
           result.length > 200 ? result.substring(0, 200) + '...' : result;
       } else if (typeof result === 'object') {
-        // Priority 1: Use custom summary if provided by component
         if ('summary' in result && typeof result.summary === 'string') {
           summary = result.summary;
         } else if ('error' in result && typeof result.error === 'string') {
-          // Priority 2: Use error field if present
           summary = `Error: ${result.error}`;
         } else if ('data' in result && typeof result.data === 'object') {
-          // Priority 3: Check if data has an error field
           const data = result.data as any;
           if ('error' in data && typeof data.error === 'string') {
             summary = `Error: ${data.error}`;
           } else {
-            summary = JSON.stringify(result.data).length > 200
-              ? JSON.stringify(result.data).substring(0, 200) + '...'
-              : JSON.stringify(result.data);
+            const dataStr = JSON.stringify(result.data);
+            summary =
+              dataStr.length > 200
+                ? dataStr.substring(0, 200) + '...'
+                : dataStr;
           }
         } else if ('result' in result && typeof result.result === 'string') {
-          // Priority 4: Use result field
           summary =
             result.result.length > 200
               ? result.result.substring(0, 200) + '...'
               : result.result;
         } else if ('message' in result) {
-          summary =
-            result.message.length > 200
-              ? result.message.substring(0, 200) + '...'
-              : result.message;
+          const msg = String(result.message);
+          summary = msg.length > 200 ? msg.substring(0, 200) + '...' : msg;
         } else {
-          // Otherwise, just list the keys
           summary = `[${Object.keys(result).join(', ')}]`;
         }
       } else {
         summary = String(result);
       }
 
-      // Prepend component key if available
-      if (componentKey) {
-        return `[${componentKey}] ${summary}`;
-      }
-      return summary;
+      return componentKey ? `[${componentKey}] ${summary}` : summary;
     } catch {
       return componentKey
         ? `[${componentKey}] (result processing failed)`
@@ -412,30 +290,27 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
   }
 
-  /**
-   * Get current tool call log
-   */
   getToolCallLog(): ToolCallSummary[] {
     return [...this.toolCallLog];
   }
 
-  /**
-   * Render component section for LLM context (TUI mode)
-   * Renders all registered components
-   */
+  private _getComponentInfoText(id: string): string {
+    const component = this.componentRegistry.get(id);
+    if (!component) return '';
+    const displayName = component.displayName || id;
+    const description = component.description || '';
+    return `**Component ID:** \`${id}\`\n**Display Name:** ${displayName}\n**Description:** ${description}`;
+  }
+
   renderComponentsSection(): TUIElement {
     const container = new tdiv({
-      styles: {
-        showBorder: true,
-      },
+      styles: { showBorder: true },
     });
 
     container.addChild(
       new tdiv({
         content: 'COMPONENTS',
-        styles: {
-          align: 'center',
-        },
+        styles: { align: 'center' },
       }),
     );
 
@@ -451,16 +326,12 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       return container;
     }
 
-    // List all components
     for (const id of componentIds) {
-      const component = this.componentRegistry.get(id);
-      if (component) {
-        const displayName = component.displayName || id;
-        const description = component.description || '';
-
+      const text = this._getComponentInfoText(id);
+      if (text) {
         container.addChild(
           new tdiv({
-            content: `**Component ID:** \`${id}\`\n**Display Name:** ${displayName}\n**Description:** ${description}\n`,
+            content: `${text}\n`,
             styles: { showBorder: false },
           }),
         );
@@ -476,100 +347,47 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return container;
   }
 
-  /**
-   * Render component section for LLM context (Markdown mode)
-   */
   renderComponentsSectionMarkdown(): MdElement {
-    const container = new MdDiv(
-      {
-        styles: { showBorder: true },
-      },
-      [],
-      0,
-    );
+    const container = new MdDiv({ styles: { showBorder: true } }, [], 0);
 
-    container.addChild(
-      new MdHeading(
-        {
-          content: 'COMPONENTS',
-        },
-        [],
-        0,
-      ),
-    );
+    container.addChild(new MdHeading({ content: 'COMPONENTS' }, [], 0));
 
     const componentIds = this.componentRegistry.getIds();
 
     if (componentIds.length === 0) {
       container.addChild(
-        new MdParagraph(
-          {
-            content: 'No components registered',
-          },
-          [],
-          1,
-        ),
+        new MdParagraph({ content: 'No components registered' }, [], 1),
       );
       return container;
     }
 
-    // List all components
     for (const id of componentIds) {
-      const component = this.componentRegistry.get(id);
-      if (component) {
-        const displayName = component.displayName || id;
-        const description = component.description || '';
-
-        container.addChild(
-          new MdParagraph(
-            {
-              content: `**Component ID:** \`${id}\`\n**Display Name:** ${displayName}\n**Description:** ${description}`,
-            },
-            [],
-            1,
-          ),
-        );
+      const text = this._getComponentInfoText(id);
+      if (text) {
+        container.addChild(new MdParagraph({ content: text }, [], 1));
       }
     }
 
     return container;
   }
 
-  /**
-   * Render the tool call log section (Markdown style)
-   */
   renderToolCallLogSectionMarkdown(): MdElement {
     const maxCount = this.config.toolCallLogCount ?? 3;
-    const container = new MdDiv(
-      {
-        styles: { showBorder: false },
-      },
-      [],
-      0,
-    );
+    const container = new MdDiv({ styles: { showBorder: false } }, [], 0);
 
-    // Header
     const sliderIndicator =
       this.toolCallLog.length > maxCount
         ? ` (showing last ${maxCount} of ${this.toolCallLog.length})`
         : '';
     container.addChild(
-      new MdHeading(
-        {
-          content: `Recent Tool Calls${sliderIndicator}`,
-        },
-        [],
-        1,
-      ),
+      new MdHeading({ content: `Recent Tool Calls${sliderIndicator}` }, [], 1),
     );
 
-    // Render each tool call as markdown list items
     const logEntries = this.toolCallLog.slice(-maxCount);
     logEntries.forEach((entry, index) => {
       const isLatest = index === logEntries.length - 1;
       const prefix = isLatest ? '**>**' : '-';
       const status = entry.success ? '`OK`' : '`FAIL`';
-      // console.debug(chalk.yellow(JSON.stringify(entry)))
 
       container.addChild(
         new MdParagraph(
@@ -585,10 +403,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return container;
   }
 
-  /**
-   * Render component-specific tools section
-   * Shows all tools from registered components
-   */
   async renderComponentToolsSection(): Promise<TUIElement | null> {
     const componentIds = this.componentRegistry.getIds();
     const tools: Tool[] = [];
@@ -637,7 +451,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       },
     });
 
-    // Add global tools section using toolManager instead of deprecated toolSet
     const allTools = this.toolManager.getAllTools();
     const globalTools = allTools
       .filter((reg) => reg.source === ToolSource.GLOBAL)
@@ -651,19 +464,13 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return container;
   }
 
-  /**
-   * Render the tool call log section (TUI mode)
-   * Render the tool call log section (Markdown style for both TUI and Markdown modes)
-   */
   renderToolCallLogSection(): TUIElement {
     const maxCount = this.config.toolCallLogCount ?? 10;
 
-    // Use simple markdown-style container without borders
     const container = new tdiv({
       styles: { showBorder: false },
     });
 
-    // Header
     const sliderIndicator =
       this.toolCallLog.length > maxCount
         ? ` (showing last ${maxCount} of ${this.toolCallLog.length})`
@@ -675,7 +482,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       }),
     );
 
-    // Render each tool call as markdown list items
     const logEntries = this.toolCallLog.slice(-maxCount);
     logEntries.forEach((entry, index) => {
       const isLatest = index === logEntries.length - 1;
@@ -693,10 +499,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return container;
   }
 
-  /**
-   * Render the entire workspace as context for LLM
-   * Dispatches to the appropriate renderer based on render mode
-   */
   private async _render(): Promise<TUIElement | MdElement> {
     if (this.config.renderMode === 'markdown') {
       return this._renderMarkdown();
@@ -704,86 +506,67 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return this._renderTUI();
   }
 
-  /**
-   * Render in Markdown mode
-   */
   private async _renderMarkdown(): Promise<MdElement> {
     const container = new MdDiv(
-      {
-        content: `# VIRTUAL WORKSPACE: ${this.config.name}`,
-      },
+      { content: `# VIRTUAL WORKSPACE: ${this.config.name}` },
       [],
       0,
     );
 
-    // Add description if present
     if (this.config.description) {
       container.addChild(
         new MdParagraph(
-          {
-            content: `**Description:** ${this.config.description}`,
-          },
+          { content: `**Description:** ${this.config.description}` },
           undefined,
           1,
         ),
       );
     }
 
-    // Add components section
     container.addChild(this.renderComponentsSectionMarkdown());
 
-    // Render all registered components
     const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
     for (const registration of sortedRegistrations) {
       const componentContainer = new MdDiv(
-        {
-          content: `## ${registration.id}`,
-          styles: { showBorder: true },
-        },
+        { content: `## ${registration.id}`, styles: { showBorder: true } },
         [],
         1,
       );
 
       const componentRender = await registration.component.renderImply();
-      // renderImply returns TUIElement[], wrap them appropriately for markdown
       for (const element of componentRender) {
-        // Convert TUIElement to markdown representation
         const rendered = element.render(this.config.renderMode);
         componentContainer.addChild(
-          new MdParagraph(
-            {
-              content: rendered,
-            },
-            undefined,
-            2,
-          ),
+          new MdParagraph({ content: rendered }, undefined, 2),
         );
       }
       container.addChild(componentContainer);
     }
 
-    // Add LOG section for recent tool calls
     if (this.toolCallLog.length > 0) {
       container.addChild(this.renderToolCallLogSectionMarkdown());
+    }
+
+    for (const [id, renderer] of this.externalRenderers) {
+      const elements = await renderer();
+      for (const element of elements) {
+        const rendered = element.render(this.config.renderMode);
+        container.addChild(
+          new MdParagraph({ content: rendered }, undefined, 1),
+        );
+      }
     }
 
     return container;
   }
 
-  /**
-   * Render in TUI mode
-   */
   private async _renderTUI(): Promise<TUIElement> {
-    // Create container tdiv
     const container = new tdiv({
       content: '',
-      styles: {
-        showBorder: false,
-      },
+      styles: { showBorder: false },
     });
 
-    // Render workspace header using tdiv
     const workspaceHeader = new tdiv({
       content: `VIRTUAL WORKSPACE: ${this.config.name}`,
       styles: {
@@ -804,10 +587,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       );
     }
 
-    // Add components section
     container.addChild(this.renderComponentsSection());
 
-    // Render all registered components
     const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
     for (const registration of sortedRegistrations) {
@@ -817,40 +598,33 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       });
 
       const componentRender = await registration.component.renderImply();
-      // renderImply returns an array, so add each element
       componentRender.forEach((element) =>
         componentContainer.addChild(element),
       );
       container.addChild(componentContainer);
     }
 
-    // Add LOG section for recent tool calls
     if (this.toolCallLog.length > 0) {
       container.addChild(this.renderToolCallLogSection());
+    }
+
+    for (const [, renderer] of this.externalRenderers) {
+      const elements = await renderer();
+      elements.forEach((element) => container.addChild(element));
     }
 
     return container;
   }
 
-  /**
-   * Render the workspace as context for LLM
-   * Components are rendered in priority order (lower priority first)
-   */
   async render(): Promise<string> {
     const context = await this._render();
     return context.render();
   }
 
-  /**
-   * Get workspace configuration
-   */
   getConfig(): VirtualWorkspaceConfig {
     return { ...this.config };
   }
 
-  /**
-   * Get workspace statistics
-   */
   getStats(): {
     componentCount: number;
     componentKeys: string[];
@@ -866,17 +640,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     };
   }
 
-  /**
-   * Handle tool call
-   * @param toolName - The name of the tool to call
-   * @param params - The parameters to pass to the tool
-   * @returns Promise resolving to the tool result
-   */
   async handleToolCall(
     toolName: string,
     params: Record<string, unknown>,
   ): Promise<ToolCallResult<any>> {
-    // Execute through the tool management system
     try {
       const result = await this.toolManager.executeTool(toolName, params);
       return { success: true, data: { success: true, result } };
@@ -891,10 +658,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
   }
 
-  /**
-   * Get all available tools from all components
-   * @returns Array of tool definitions with component information
-   */
   getAllTools(): Array<{
     componentKey: string | undefined;
     toolName: string;
@@ -915,9 +678,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }));
   }
 
-  /**
-   * Get all global tools
-   */
   getGlobalTools(): Map<string, Tool> {
     const globalToolsMap = new Map<string, Tool>();
     const allTools = this.toolManager.getAllTools();
@@ -929,23 +689,14 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return globalToolsMap;
   }
 
-  /**
-   * Check if a tool is currently available
-   */
   isToolAvailable(toolName: string): boolean {
     return this.toolManager.isToolEnabled(toolName);
   }
 
-  /**
-   * Get all currently available tools
-   */
   getAvailableTools(): Tool[] {
     return this.toolManager.getAvailableTools();
   }
 
-  /**
-   * Get tool source information
-   */
   getToolSource(
     toolName: string,
   ): { source: ToolSource; owner: string } | null {
@@ -959,16 +710,14 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return null;
   }
 
-  /**
-   * Export data from all registered components
-   * Executes exportData on each component and returns a record of results
-   * @param options - Optional export options to pass to all components
-   * @returns Record mapping component ID to its export result
-   */
-  async exportResult(options?: import('../../components/index.js').ExportOptions): Promise<Record<string, import('../../components/index.js').ExportResult>> {
-    const results: Record<string, import('../../components/index.js').ExportResult> = {};
+  async exportResult(
+    options?: import('../../components/index.js').ExportOptions,
+  ): Promise<Record<string, import('../../components/index.js').ExportResult>> {
+    const results: Record<
+      string,
+      import('../../components/index.js').ExportResult
+    > = {};
 
-    // Export from component registry components
     const registrations = this.componentRegistry.getAllRegistrations();
     for (const registration of registrations) {
       try {
@@ -976,31 +725,28 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         results[registration.id] = result;
       } catch (error) {
         results[registration.id] = {
-          data: { error: error instanceof Error ? error.message : String(error) },
+          data: {
+            error: error instanceof Error ? error.message : String(error),
+          },
           format: options?.format ?? 'json',
           metadata: { componentId: registration.id, error: true },
         };
       }
     }
 
-    // Export from global components
-    for (const [id, component] of this.globalComponents) {
-      // Skip if already exported from registry
-      if (results[id]) continue;
-
-      try {
-        const result = await component.exportData(options);
-        results[id] = result;
-      } catch (error) {
-        results[id] = {
-          data: { error: error instanceof Error ? error.message : String(error) },
-          format: options?.format ?? 'json',
-          metadata: { componentId: id, error: true },
-        };
-      }
-    }
-
     return results;
   }
+
+  registerExternalRenderer(
+    id: string,
+    renderer: () => Promise<TUIElement[]>,
+  ): void {
+    this.externalRenderers.set(id, renderer);
+  }
+
+  unregisterExternalRenderer(id: string): void {
+    this.externalRenderers.delete(id);
+  }
 }
+
 export type { ComponentRegistration };

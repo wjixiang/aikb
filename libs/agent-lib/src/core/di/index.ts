@@ -8,8 +8,12 @@
 
 export { TYPES } from './types.js';
 export {
-    AgentContainer,
-    getGlobalContainer,
-    resetGlobalContainer,
-    type AgentCreationOptions,
+  AgentContainer,
+  type AgentCreationOptions,
+  type UnifiedAgentConfig,
 } from './container.js';
+export {
+  defaultUnifiedConfig,
+  mergeWithDefaults,
+} from './UnifiedAgentConfig.js';
+export type { TestOverrides } from './types.js';

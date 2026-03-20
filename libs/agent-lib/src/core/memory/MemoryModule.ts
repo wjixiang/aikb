@@ -40,12 +40,12 @@ export const defaultMemoryConfig: MemoryModuleConfig = {
     enableRecall: false,
     maxRecallContexts: 3,
     maxRecalledMessages: 20,
-    // Token-based compression settings
-    maxContextTokens: 100000,           // Max tokens in context (80% of 200k)
+    // Token-based compression settings (DISABLED - no compression)
+    maxContextTokens: 100000,           // Max tokens in context
     contextCompressionRatio: 0.8,        // Compress when at 80% of maxContextTokens
     compressionTargetTokens: 60000,     // Target after compression
-    // LLM summarization settings
-    enableLLMSummarization: true,       // Use LLM for summarization
+    // LLM summarization settings (DISABLED - workspace context recording only)
+    enableLLMSummarization: false,       // DISABLED: Use simple summary only
     maxTokensForSummary: 15000,         // Max tokens to send for summarization
     summaryModel: 'claude-3-5-sonnet', // Model to use for summarization
 };
@@ -288,8 +288,8 @@ export class MemoryModule implements IMemoryModule {
     /**
      * Get history for prompt injection
      * Returns all messages with errors prepended as system messages
-     * @param interleaveWorkspaces - If true, interleaves workspace contexts with messages
-     *                               Assumes pattern: user, assistant, workspace, user, assistant, workspace...
+     * Note: Workspace contexts are recorded but NOT rendered into prompt (record only mode)
+     * @param interleaveWorkspaces - DEPRECATED, ignored. Workspace contexts are never rendered.
      */
     getHistoryForPrompt(interleaveWorkspaces = false): ApiMessage[] {
         const result: ApiMessage[] = [];
@@ -304,13 +304,8 @@ export class MemoryModule implements IMemoryModule {
             });
         }
 
-        // Add all messages
+        // Add all messages (workspace contexts are NOT interleaved - they are recorded only)
         result.push(...this.messages);
-
-        // Optionally interleave workspace contexts with messages
-        if (interleaveWorkspaces) {
-            return this._interleaveWorkspaceContexts(result);
-        }
 
         return result;
     }
@@ -465,38 +460,21 @@ export class MemoryModule implements IMemoryModule {
             return;
         }
 
-        // Generate LLM summary of the changes
-        let llmSummary: string;
-        if (this._previousFullContext && this.config.enableLLMSummarization && this.apiClient) {
-            try {
-                llmSummary = await this._analyzeContextDiffWithLLM(
-                    this._previousFullContext,
-                    cleanedContext,
-                    iteration
-                );
-            } catch (error) {
-                this.logger.warn(
-                    `[MemoryModule] LLM diff analysis failed, using simple diff: ${error}`
-                );
-                llmSummary = this._simpleContextDiff(this._previousFullContext, cleanedContext);
-            }
-        } else {
-            // Fallback to simple diff or initial context message
-            llmSummary = this._previousFullContext
-                ? this._simpleContextDiff(this._previousFullContext, cleanedContext)
-                : `Initial workspace context (iteration ${iteration})`;
-        }
+        // Generate simple diff summary (LLM summarization is disabled)
+        const summary = this._previousFullContext
+            ? this._simpleContextDiff(this._previousFullContext, cleanedContext)
+            : `Initial workspace context (iteration ${iteration})`;
 
-        // Store the LLM-generated summary
+        // Store the simple diff summary
         this.workspaceContexts.push({
-            content: llmSummary,
+            content: summary,
             ts: Date.now(),
             iteration,
             isDiff: true,
         });
         this._previousFullContext = cleanedContext;
         this.logger.debug(
-            `[MemoryModule] Recorded workspace context for iteration ${iteration} with LLM analysis`
+            `[MemoryModule] Recorded workspace context for iteration ${iteration}`
         );
     }
 

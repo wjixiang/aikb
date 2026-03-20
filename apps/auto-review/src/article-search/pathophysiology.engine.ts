@@ -9,6 +9,8 @@ import {
   SearchStrategyAdjustment,
   SearchResultEvaluation,
 } from '../app/baml/baml.service.js';
+import { SearchResultService } from '../search/search-result.service.js';
+import { ArticleEmbeddingService } from '../search/article-embedding.service.js';
 
 /**
  * PathophysiologySearchEngine - Specialized search for pathophysiology literature
@@ -20,16 +22,28 @@ import {
  * - Organ system dysfunction
  */
 export class PathophysiologySearchEngine extends BaseSearchEngine {
-  constructor(bamlService: BamlService) {
-    super(bamlService, 'pathophysiology');
+  constructor(
+    bamlService: BamlService,
+    searchResultService?: SearchResultService,
+    embeddingService?: ArticleEmbeddingService,
+  ) {
+    super(
+      bamlService,
+      'pathophysiology',
+      searchResultService,
+      embeddingService,
+    );
   }
 
   protected getSectionName(): string {
     return 'Pathophysiology Research';
   }
 
-  protected async generateInitialStrategy(disease: string): Promise<SearchStrategy> {
-    const strategy = await this.bamlService.generatePathophysiologyStrategy(disease);
+  protected async generateInitialStrategy(
+    disease: string,
+  ): Promise<SearchStrategy> {
+    const strategy =
+      await this.bamlService.generatePathophysiologyStrategy(disease);
     this.logger.log(`Generated initial strategy: ${strategy.term}`);
     this.logger.debug(`Reasoning: ${strategy.reasoning}`);
     return strategy;

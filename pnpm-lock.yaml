@@ -1216,6 +1216,9 @@ importers:
 
   apps/auto-review:
     dependencies:
+      '@ai-embed/core':
+        specifier: workspace:*
+        version: link:../../libs/ai-embed
       '@fastify/cors':
         specifier: ^10.0.1
         version: 10.1.0
@@ -1693,7 +1696,7 @@ importers:
         version: 8.15.6
       '@vitest/coverage-v8':
         specifier: ^4.0.0
-        version: 4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       esbuild:
         specifier: ^0.27.3
         version: 0.27.3
@@ -1714,7 +1717,7 @@ importers:
         version: 6.4.1(@types/node@25.2.0)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
       vitest:
         specifier: ^4.0.0
-        version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   libs/ai-embed:
     dependencies:
@@ -33136,7 +33139,7 @@ snapshots:
       - vite
     optional: true
 
-  '@vitest/coverage-v8@4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))':
+  '@vitest/coverage-v8@4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/utils': 4.0.15
@@ -33149,7 +33152,7 @@ snapshots:
       obug: 2.1.1
       std-env: 3.10.0
       tinyrainbow: 3.0.3
-      vitest: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -47469,10 +47472,10 @@ snapshots:
       - tsx
       - yaml
 
-  vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.3))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1):
+  vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.15
-      '@vitest/mocker': 4.0.15(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.3))(vite@7.1.7(@types/node@22.18.6)(jiti@2.4.2)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+      '@vitest/mocker': 4.0.15(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(vite@7.1.7(@types/node@25.2.0)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@vitest/pretty-format': 4.0.15
       '@vitest/runner': 4.0.15
       '@vitest/snapshot': 4.0.15
@@ -47509,10 +47512,10 @@ snapshots:
       - tsx
       - yaml
 
-  vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1):
+  vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.16(vitest@4.0.15))(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.30.2)(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.3))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.15
-      '@vitest/mocker': 4.0.15(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.2))(vite@7.1.7(@types/node@25.2.0)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+      '@vitest/mocker': 4.0.15(msw@2.11.6(@types/node@25.2.0)(typescript@5.9.3))(vite@7.1.7(@types/node@22.18.6)(jiti@2.4.2)(less@4.4.2)(lightningcss@1.30.2)(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@vitest/pretty-format': 4.0.15
       '@vitest/runner': 4.0.15
       '@vitest/snapshot': 4.0.15

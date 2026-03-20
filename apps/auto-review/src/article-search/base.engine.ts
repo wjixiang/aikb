@@ -7,11 +7,12 @@ import {
   SearchResultEvaluation,
   SearchStrategy,
 } from '../app/baml/baml.service.js';
+import {
+  SearchResultService,
+  type ArticleSearchData,
+} from '../search/search-result.service.js';
+import { ArticleEmbeddingService } from '../search/article-embedding.service.js';
 import { Logger } from '../utils/logger.js';
-
-// ============================================================================
-// Types & Interfaces
-// ============================================================================
 
 export interface SearchResult {
   term: string;
@@ -21,10 +22,14 @@ export interface SearchResult {
   sort: string;
   dateRange: string;
   iteration: number;
+  searchId?: string;
 }
 
-// Re-export types from baml.service
-export type { SearchStrategy, SearchStrategyAdjustment, SearchResultEvaluation };
+export type {
+  SearchStrategy,
+  SearchStrategyAdjustment,
+  SearchResultEvaluation,
+};
 
 export interface IterationState {
   iteration: number;
@@ -36,27 +41,17 @@ export interface IterationState {
 
 export type ProgressCallback = (state: IterationState) => void | Promise<void>;
 
-// Review section types
-export type ReviewSection = 'epidemiology' | 'pathophysiology' | 'clinical' | 'treatment';
-
-// ============================================================================
-// Constants
-// ============================================================================
+export type ReviewSection =
+  | 'epidemiology'
+  | 'pathophysiology'
+  | 'clinical'
+  | 'treatment';
 
 const TARGET_COUNT_MIN = 80;
 const TARGET_COUNT_MAX = 150;
 const MAX_ITERATIONS = 5;
 const TOP_ARTICLES_COUNT = 10;
 
-// ============================================================================
-// BaseSearchEngine
-// ============================================================================
-
-/**
- * Base class for literature search engines.
- * Implements iterative search strategy with AI-powered adjustment.
- * Designed to be extended for different review sections.
- */
 export abstract class BaseSearchEngine {
   protected readonly logger: Logger;
   protected readonly pubmedService = new PubmedService();
@@ -64,19 +59,18 @@ export abstract class BaseSearchEngine {
   constructor(
     protected readonly bamlService: BamlService,
     protected readonly section: ReviewSection,
+    protected readonly searchResultService?: SearchResultService,
+    protected readonly embeddingService?: ArticleEmbeddingService,
   ) {
     this.logger = new Logger(`${this.constructor.name}`);
   }
 
-  /**
-   * Get the section name for logging
-   */
   protected abstract getSectionName(): string;
 
-  /**
-   * Run search by disease name
-   */
-  async run(disease: string, onProgress?: ProgressCallback): Promise<SearchResult> {
+  async run(
+    disease: string,
+    onProgress?: ProgressCallback,
+  ): Promise<SearchResult> {
     this.logger.log(`Starting ${this.getSectionName()} search for: ${disease}`);
 
     const initialStrategy = await this.generateInitialStrategy(disease);
@@ -85,63 +79,149 @@ export abstract class BaseSearchEngine {
 
     for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
       this.logger.log(`[Iteration ${iteration}] Term: ${currentStrategy.term}`);
-      this.logger.debug(`[Iteration ${iteration}] Filters: ${currentStrategy.filters}, Sort: ${currentStrategy.sort}`);
+      this.logger.debug(
+        `[Iteration ${iteration}] Filters: ${currentStrategy.filters}, Sort: ${currentStrategy.sort}`,
+      );
 
       const result = await this.executeSearch(currentStrategy);
       lastResult = result;
 
       if (onProgress) {
-        await onProgress({ iteration, strategy: currentStrategy, result, adjustment: null });
+        await onProgress({
+          iteration,
+          strategy: currentStrategy,
+          result,
+          adjustment: null,
+        });
       }
 
-      this.logger.log(`[Iteration ${iteration}] Found ${result.totalResults} results`);
+      this.logger.log(
+        `[Iteration ${iteration}] Found ${result.totalResults} results`,
+      );
 
-      const evaluation = await this.evaluateResults(disease, currentStrategy, result);
+      const evaluation = await this.evaluateResults(
+        disease,
+        currentStrategy,
+        result,
+      );
 
       if (onProgress) {
-        await onProgress({ iteration, strategy: currentStrategy, result, adjustment: null, evaluation });
+        await onProgress({
+          iteration,
+          strategy: currentStrategy,
+          result,
+          adjustment: null,
+          evaluation,
+        });
       }
 
-      this.logger.log(`[Iteration ${iteration}] Evaluation: ${evaluation.target_reached ? 'Target reached' : 'Continue'}, Relevance: ${evaluation.relevance_score}/10`);
+      this.logger.log(
+        `[Iteration ${iteration}] Evaluation: ${evaluation.target_reached ? 'Target reached' : 'Continue'}, Relevance: ${evaluation.relevance_score}/10`,
+      );
 
       if (evaluation.target_reached) {
-        this.logger.log(`[Iteration ${iteration}] Target reached: ${evaluation.reasoning}`);
+        this.logger.log(
+          `[Iteration ${iteration}] Target reached: ${evaluation.reasoning}`,
+        );
         return { ...result, iteration };
       }
 
       if (iteration < MAX_ITERATIONS) {
-        const adjustment = await this.adjustStrategy(disease, currentStrategy, result.totalResults ?? 0, result.articleProfiles);
+        const adjustment = await this.adjustStrategy(
+          disease,
+          currentStrategy,
+          result.totalResults ?? 0,
+          result.articleProfiles,
+        );
 
         if (adjustment) {
           currentStrategy = this.applyAdjustment(currentStrategy, adjustment);
-          this.logger.log(`[Iteration ${iteration}] Adjusted term: ${currentStrategy.term}`);
+          this.logger.log(
+            `[Iteration ${iteration}] Adjusted term: ${currentStrategy.term}`,
+          );
 
           if (onProgress) {
-            await onProgress({ iteration, strategy: currentStrategy, result, adjustment, evaluation });
+            await onProgress({
+              iteration,
+              strategy: currentStrategy,
+              result,
+              adjustment,
+              evaluation,
+            });
           }
         } else {
-          this.logger.warn(`[Iteration ${iteration}] Failed to adjust strategy, stopping`);
+          this.logger.warn(
+            `[Iteration ${iteration}] Failed to adjust strategy, stopping`,
+          );
           break;
         }
       }
     }
 
     if (lastResult) {
-      this.logger.log(`Final result: ${lastResult.totalResults} results after ${MAX_ITERATIONS} iterations`);
+      this.logger.log(
+        `Final result: ${lastResult.totalResults} results after ${MAX_ITERATIONS} iterations`,
+      );
       return { ...lastResult, iteration: MAX_ITERATIONS };
     }
 
     return this.emptyResult(disease);
   }
 
-  /**
-   * Generate initial search strategy - must be implemented by subclass
-   */
-  protected abstract generateInitialStrategy(disease: string): Promise<SearchStrategy>;
+  async runWithSave(
+    taskId: string,
+    disease: string,
+    onProgress?: ProgressCallback,
+    embedResults: boolean = true,
+  ): Promise<SearchResult> {
+    if (!this.searchResultService) {
+      throw new Error('SearchResultService not configured');
+    }
 
-  /**
-   * Adjust strategy - must be implemented by subclass
-   */
+    this.logger.log(
+      `Starting ${this.getSectionName()} search with save for task: ${taskId}`,
+    );
+
+    const result = await this.run(disease, onProgress);
+
+    const searchData: ArticleSearchData = {
+      taskId,
+      searchTerm: result.term,
+      totalResults: result.totalResults,
+      filters: result.filters,
+      sort: result.sort,
+      dateRange: result.dateRange,
+      iteration: result.iteration,
+      final: true,
+      articleProfiles: result.articleProfiles,
+    };
+
+    const savedSearch =
+      await this.searchResultService.saveSearchResult(searchData);
+    this.logger.log(`Saved search results with ID: ${savedSearch.id}`);
+
+    if (
+      embedResults &&
+      this.embeddingService &&
+      result.articleProfiles.length > 0
+    ) {
+      this.logger.log(
+        `Starting embedding for ${result.articleProfiles.length} articles...`,
+      );
+      await this.embeddingService.embedSearchResults(taskId, {}, (progress) => {
+        this.logger.log(
+          `Embedding progress: ${progress.embeddedArticles}/${progress.totalArticles}`,
+        );
+      });
+    }
+
+    return { ...result, searchId: savedSearch.id };
+  }
+
+  protected abstract generateInitialStrategy(
+    disease: string,
+  ): Promise<SearchStrategy>;
+
   protected abstract adjustStrategy(
     disease: string,
     currentStrategy: SearchStrategy,
@@ -149,19 +229,15 @@ export abstract class BaseSearchEngine {
     articles: ArticleProfile[],
   ): Promise<SearchStrategyAdjustment | null>;
 
-  /**
-   * Evaluate results - must be implemented by subclass
-   */
   protected abstract evaluateResults(
     disease: string,
     currentStrategy: SearchStrategy,
     result: SearchResult,
   ): Promise<SearchResultEvaluation>;
 
-  /**
-   * Execute PubMed search with given strategy
-   */
-  protected async executeSearch(strategy: SearchStrategy): Promise<SearchResult> {
+  protected async executeSearch(
+    strategy: SearchStrategy,
+  ): Promise<SearchResult> {
     const params: PubmedSearchParams = {
       term: strategy.term,
       sort: strategy.sort as 'match' | 'date' | 'pubdate' | 'fauth' | 'jour',
@@ -183,11 +259,8 @@ export abstract class BaseSearchEngine {
     };
   }
 
-  /**
-   * Build top articles list for BAML analysis
-   */
   protected buildTopArticles(articles: ArticleProfile[]): ArticleResult[] {
-    return articles.slice(0, TOP_ARTICLES_COUNT).map(a => ({
+    return articles.slice(0, TOP_ARTICLES_COUNT).map((a) => ({
       pmid: a.pmid,
       title: a.title,
       snippet: a.snippet,
@@ -195,10 +268,10 @@ export abstract class BaseSearchEngine {
     }));
   }
 
-  /**
-   * Apply adjustment to current strategy
-   */
-  protected applyAdjustment(strategy: SearchStrategy, adjustment: SearchStrategyAdjustment): SearchStrategy {
+  protected applyAdjustment(
+    strategy: SearchStrategy,
+    adjustment: SearchStrategyAdjustment,
+  ): SearchStrategy {
     return {
       term: adjustment.adjusted_term,
       filters: this.applyFilterChanges(strategy.filters, adjustment),
@@ -207,20 +280,22 @@ export abstract class BaseSearchEngine {
     };
   }
 
-  /**
-   * Apply filter changes from adjustment
-   */
-  protected applyFilterChanges(currentFilters: string[], adjustment: SearchStrategyAdjustment): string[] {
+  protected applyFilterChanges(
+    currentFilters: string[],
+    adjustment: SearchStrategyAdjustment,
+  ): string[] {
     return [
-      ...currentFilters.filter(f => !adjustment.filters_to_remove.includes(f)),
+      ...currentFilters.filter(
+        (f) => !adjustment.filters_to_remove.includes(f),
+      ),
       ...adjustment.filters_to_add,
     ];
   }
 
-  /**
-   * Fallback heuristic adjustment when BAML fails
-   */
-  protected getFallbackAdjustment(currentStrategy: SearchStrategy, resultCount: number): SearchStrategyAdjustment {
+  protected getFallbackAdjustment(
+    currentStrategy: SearchStrategy,
+    resultCount: number,
+  ): SearchStrategyAdjustment {
     if (resultCount === 0) {
       return {
         adjusted_term: currentStrategy.term.split(' AND ')[0].split(' OR ')[0],
@@ -235,8 +310,12 @@ export abstract class BaseSearchEngine {
       return {
         adjusted_term: currentStrategy.term,
         filters_to_add: [],
-        filters_to_remove: currentStrategy.filters.filter(f =>
-          ['systematic review', 'meta-analysis', 'randomized controlled trial'].includes(f)
+        filters_to_remove: currentStrategy.filters.filter((f) =>
+          [
+            'systematic review',
+            'meta-analysis',
+            'randomized controlled trial',
+          ].includes(f),
         ),
         sort: 'pubdate',
         reasoning: 'Fallback: too few results, removing restrictive filters',
@@ -252,27 +331,24 @@ export abstract class BaseSearchEngine {
     };
   }
 
-  /**
-   * Extract date range from search results
-   */
   protected extractDateRange(articles: ArticleProfile[]): string {
     if (articles.length === 0) return 'unknown';
 
     const years = articles
-      .map(a => {
+      .map((a) => {
         const match = a.journalCitation.match(/\d{4}/);
         return match ? parseInt(match[0], 10) : null;
       })
-      .filter((y): y is number => y !== null && y > 1900 && y <= new Date().getFullYear());
+      .filter(
+        (y): y is number =>
+          y !== null && y > 1900 && y <= new Date().getFullYear(),
+      );
 
     if (years.length === 0) return 'unknown';
 
     return `${Math.min(...years)}-${Math.max(...years)}`;
   }
 
-  /**
-   * Create empty result object
-   */
   protected emptyResult(disease: string): SearchResult {
     return {
       term: disease,

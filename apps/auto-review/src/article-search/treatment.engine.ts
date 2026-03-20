@@ -9,6 +9,8 @@ import {
   SearchStrategyAdjustment,
   SearchResultEvaluation,
 } from '../app/baml/baml.service.js';
+import { SearchResultService } from '../search/search-result.service.js';
+import { ArticleEmbeddingService } from '../search/article-embedding.service.js';
 
 /**
  * TreatmentSearchEngine - Specialized search for treatment literature
@@ -21,15 +23,21 @@ import {
  * - Treatment outcomes and efficacy
  */
 export class TreatmentSearchEngine extends BaseSearchEngine {
-  constructor(bamlService: BamlService) {
-    super(bamlService, 'treatment');
+  constructor(
+    bamlService: BamlService,
+    searchResultService?: SearchResultService,
+    embeddingService?: ArticleEmbeddingService,
+  ) {
+    super(bamlService, 'treatment', searchResultService, embeddingService);
   }
 
   protected getSectionName(): string {
     return 'Treatment Research';
   }
 
-  protected async generateInitialStrategy(disease: string): Promise<SearchStrategy> {
+  protected async generateInitialStrategy(
+    disease: string,
+  ): Promise<SearchStrategy> {
     const strategy = await this.bamlService.generateTreatmentStrategy(disease);
     this.logger.log(`Generated initial strategy: ${strategy.term}`);
     this.logger.debug(`Reasoning: ${strategy.reasoning}`);
