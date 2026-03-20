@@ -27,6 +27,8 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
+    ArticleResult: ClassViewer<'ArticleResult', "pmid" | "title" | "snippet" | "journal_citation">;
+    
     ClinicalImplications: ClassViewer<'ClinicalImplications', "key_findings" | "clinical_relevance" | "applicability" | "recommendations" | "safety_concerns">;
     
     Demographics: ClassViewer<'Demographics', "age_range" | "gender" | "disease_status">;
@@ -51,6 +53,12 @@ export default class TypeBuilder {
     
     RiskOfBias: ClassViewer<'RiskOfBias', "selection_bias" | "performance_bias" | "detection_bias" | "attrition_bias" | "reporting_bias" | "overall" | "concerns">;
     
+    SearchResultEvaluation: ClassViewer<'SearchResultEvaluation', "target_reached" | "relevance_score" | "relevant_article_count" | "reasoning" | "improvement_suggestions">;
+    
+    SearchStrategy: ClassViewer<'SearchStrategy', "term" | "filters" | "sort" | "reasoning">;
+    
+    SearchStrategyAdjustment: ClassViewer<'SearchStrategyAdjustment', "adjusted_term" | "filters_to_add" | "filters_to_remove" | "sort" | "reasoning">;
+    
     StatisticalResults: ClassViewer<'StatisticalResults', "main_findings" | "effect_measures" | "p_value" | "nnt" | "adverse_events">;
     
     StudyDesign: ClassViewer<'StudyDesign', "design_type" | "blinding" | "randomization" | "duration" | "num_centers" | "country" | "setting">;
@@ -60,13 +68,17 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "ClinicalImplications","Demographics","EffectMeasures","Intervention","Outcome","PICOExtraction","PaperMetadata","PaperSummary","Population","QualityAssessment","Resume","RiskOfBias","StatisticalResults","StudyDesign",
+            "ArticleResult","ClinicalImplications","Demographics","EffectMeasures","Intervention","Outcome","PICOExtraction","PaperMetadata","PaperSummary","Population","QualityAssessment","Resume","RiskOfBias","SearchResultEvaluation","SearchStrategy","SearchStrategyAdjustment","StatisticalResults","StudyDesign",
           ]),
           enums: new Set([
             
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
+        
+        this.ArticleResult = this.tb.classViewer("ArticleResult", [
+          "pmid","title","snippet","journal_citation",
+        ]);
         
         this.ClinicalImplications = this.tb.classViewer("ClinicalImplications", [
           "key_findings","clinical_relevance","applicability","recommendations","safety_concerns",
@@ -114,6 +126,18 @@ export default class TypeBuilder {
         
         this.RiskOfBias = this.tb.classViewer("RiskOfBias", [
           "selection_bias","performance_bias","detection_bias","attrition_bias","reporting_bias","overall","concerns",
+        ]);
+        
+        this.SearchResultEvaluation = this.tb.classViewer("SearchResultEvaluation", [
+          "target_reached","relevance_score","relevant_article_count","reasoning","improvement_suggestions",
+        ]);
+        
+        this.SearchStrategy = this.tb.classViewer("SearchStrategy", [
+          "term","filters","sort","reasoning",
+        ]);
+        
+        this.SearchStrategyAdjustment = this.tb.classViewer("SearchStrategyAdjustment", [
+          "adjusted_term","filters_to_add","filters_to_remove","sort","reasoning",
         ]);
         
         this.StatisticalResults = this.tb.classViewer("StatisticalResults", [

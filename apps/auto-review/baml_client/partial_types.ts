@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  ClinicalImplications,  Demographics,  EffectMeasures,  Intervention,  Outcome,  PICOExtraction,  PaperMetadata,  PaperSummary,  Population,  QualityAssessment,  Resume,  RiskOfBias,  StatisticalResults,  StudyDesign } from "./types"
+import type {  ArticleResult,  ClinicalImplications,  Demographics,  EffectMeasures,  Intervention,  Outcome,  PICOExtraction,  PaperMetadata,  PaperSummary,  Population,  QualityAssessment,  Resume,  RiskOfBias,  SearchResultEvaluation,  SearchStrategy,  SearchStrategyAdjustment,  StatisticalResults,  StudyDesign } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -36,6 +36,12 @@ export interface StreamState<T> {
 }
 
 export namespace partial_types {
+    export interface ArticleResult {
+      pmid?: string | null
+      title?: string | null
+      snippet?: string | null
+      journal_citation?: string | null
+    }
     export interface ClinicalImplications {
       key_findings?: string | null
       clinical_relevance?: string | null
@@ -125,6 +131,26 @@ export namespace partial_types {
       reporting_bias?: string | null
       overall?: string | null
       concerns: string[]
+    }
+    export interface SearchResultEvaluation {
+      target_reached?: boolean | null
+      relevance_score?: number | null
+      relevant_article_count?: number | null
+      reasoning?: string | null
+      improvement_suggestions?: string | null
+    }
+    export interface SearchStrategy {
+      term?: string | null
+      filters: string[]
+      sort?: string | null
+      reasoning?: string | null
+    }
+    export interface SearchStrategyAdjustment {
+      adjusted_term?: string | null
+      filters_to_add: string[]
+      filters_to_remove: string[]
+      sort?: string | null
+      reasoning?: string | null
     }
     export interface StatisticalResults {
       main_findings?: string | null

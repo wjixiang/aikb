@@ -47,6 +47,14 @@ export function all_succeeded<CheckName extends string>(checks: Record<CheckName
 export function get_checks<CheckName extends string>(checks: Record<CheckName, Check>): Check[] {
     return Object.values(checks)
 }
+export interface ArticleResult {
+  pmid: string
+  title: string
+  snippet: string
+  journal_citation: string
+  
+}
+
 export interface ClinicalImplications {
   key_findings: string
   clinical_relevance: string
@@ -158,6 +166,32 @@ export interface RiskOfBias {
   reporting_bias: string
   overall: string
   concerns: string[]
+  
+}
+
+export interface SearchResultEvaluation {
+  target_reached: boolean
+  relevance_score: number
+  relevant_article_count: number
+  reasoning: string
+  improvement_suggestions?: string | null
+  
+}
+
+export interface SearchStrategy {
+  term: string
+  filters: string[]
+  sort: string
+  reasoning: string
+  
+}
+
+export interface SearchStrategyAdjustment {
+  adjusted_term: string
+  filters_to_add: string[]
+  filters_to_remove: string[]
+  sort: string
+  reasoning: string
   
 }
 
