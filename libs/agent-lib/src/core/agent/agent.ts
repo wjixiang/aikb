@@ -618,16 +618,21 @@ export class Agent {
         this.formatMessage(m)
       );
 
-      // Combine workspace contexts with memory context
-      const combinedMemoryContext = [...memoryContext, ...workspaceContextStrings];
+      // Get current workspace context (rendered as string)
+      const currentWorkspaceContext = await this.workspace.render();
+      const currentWorkspaceMessage = `[Workspace Context (Current)]\n${currentWorkspaceContext}`;
 
-      // Get workspace context
-      const workspaceContext = await this.workspace.render();
+      // Sequential rendering: combine all contexts in order (memory context + historical workspace contexts + current workspace)
+      const combinedMemoryContext = [
+        ...memoryContext,
+        ...workspaceContextStrings,
+        currentWorkspaceMessage,
+      ];
 
       // Call LLM
       const response = await this.apiClient.makeRequest(
         systemPrompt,
-        workspaceContext,
+        '', // Empty workspaceContext since it's now part of combinedMemoryContext
         combinedMemoryContext,
         { timeout: this.config.apiRequestTimeout },
         tools
@@ -648,8 +653,8 @@ export class Agent {
         await this.memoryModule.addMessage(assistantMsg);
       }
 
-      // Record current workspace context for future iterations
-      this.memoryModule.recordWorkspaceContext(workspaceContext, iterations);
+      // Record current workspace context for future iterations (for next turn's historical record)
+      this.memoryModule.recordWorkspaceContext(currentWorkspaceContext, iterations);
 
       // Execute tool calls
       if (response.toolCalls && response.toolCalls.length > 0) {
