@@ -49,8 +49,6 @@ export default class TypeBuilder {
     
     QualityAssessment: ClassViewer<'QualityAssessment', "strengths" | "limitations" | "gaps_in_evidence">;
     
-    Resume: ClassViewer<'Resume', "name" | "email" | "experience" | "skills">;
-    
     RiskOfBias: ClassViewer<'RiskOfBias', "selection_bias" | "performance_bias" | "detection_bias" | "attrition_bias" | "reporting_bias" | "overall" | "concerns">;
     
     SearchResultEvaluation: ClassViewer<'SearchResultEvaluation', "target_reached" | "relevance_score" | "relevant_article_count" | "reasoning" | "improvement_suggestions">;
@@ -68,7 +66,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "ArticleResult","ClinicalImplications","Demographics","EffectMeasures","Intervention","Outcome","PICOExtraction","PaperMetadata","PaperSummary","Population","QualityAssessment","Resume","RiskOfBias","SearchResultEvaluation","SearchStrategy","SearchStrategyAdjustment","StatisticalResults","StudyDesign",
+            "ArticleResult","ClinicalImplications","Demographics","EffectMeasures","Intervention","Outcome","PICOExtraction","PaperMetadata","PaperSummary","Population","QualityAssessment","RiskOfBias","SearchResultEvaluation","SearchStrategy","SearchStrategyAdjustment","StatisticalResults","StudyDesign",
           ]),
           enums: new Set([
             
@@ -118,10 +116,6 @@ export default class TypeBuilder {
         
         this.QualityAssessment = this.tb.classViewer("QualityAssessment", [
           "strengths","limitations","gaps_in_evidence",
-        ]);
-        
-        this.Resume = this.tb.classViewer("Resume", [
-          "name","email","experience","skills",
         ]);
         
         this.RiskOfBias = this.tb.classViewer("RiskOfBias", [

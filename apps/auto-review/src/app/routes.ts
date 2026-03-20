@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getContainer, ServiceContainer } from '../di/index.js';
 import { validateBody, reviewRequestSchema, progressRequestSchema, HttpError } from '../utils/validation.js';
 import type { ProgressResponse } from './app.dto.js';
+import type { ReviewSection } from '../article-search/base.engine.js';
 
 /**
  * Register app routes
@@ -15,24 +16,33 @@ export function registerAppRoutes(fastify: FastifyInstance, container: ServiceCo
       const { AppService } = await import('./app.service.js');
       appService = new AppService(
         container.prisma,
-        container.researchEngine,
+        container.epidemiologyEngine,
+        container.pathophysiologyEngine,
+        container.clinicalEngine,
+        container.treatmentEngine,
       );
     }
     return appService;
   };
 
   /**
-   * POST /app/review - Create review task
+   * POST /app/review - Create review task for specific section
    */
   fastify.post('/app/review', {
     schema: {
-      description: 'Create a new review task',
+      description: 'Create a new review task for a specific section',
       tags: ['app'],
       body: {
         type: 'object',
         required: ['reviewTarget'],
         properties: {
           reviewTarget: { type: 'string', description: 'Disease or topic to review' },
+          section: {
+            type: 'string',
+            enum: ['epidemiology', 'pathophysiology', 'clinical', 'treatment', 'all'],
+            default: 'epidemiology',
+            description: 'Review section to search',
+          },
         },
       },
       response: {
@@ -41,22 +51,23 @@ export function registerAppRoutes(fastify: FastifyInstance, container: ServiceCo
           properties: {
             id: { type: 'string' },
             taskInput: { type: 'string' },
+            section: { type: 'string' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
         },
       },
     },
-  }, async (request: FastifyRequest<{ Body: { reviewTarget: string } }>, reply: FastifyReply) => {
+  }, async (request: FastifyRequest<{ Body: { reviewTarget: string; section?: string } }>, reply: FastifyReply) => {
     const service = await getService();
     try {
-      const body = validateBody(reviewRequestSchema, request.body);
-      const result = await service.createTask({
-        taskInput: body.reviewTarget,
-      });
+      const body = request.body as { reviewTarget: string; section?: string };
+      const result = body.section === 'all'
+        ? await service.createAllSectionsTask({ taskInput: body.reviewTarget })
+        : await service.createTask({ taskInput: body.reviewTarget, section: (body.section as ReviewSection) || 'epidemiology' });
       return result;
     } catch (error) {
-      console.error(error)
+      console.error(error);
       if (error instanceof HttpError) {
         reply.status(error.statusCode).send({
           success: false,
@@ -91,6 +102,7 @@ export function registerAppRoutes(fastify: FastifyInstance, container: ServiceCo
           properties: {
             taskId: { type: 'string' },
             taskInput: { type: 'string' },
+            section: { type: 'string' },
             progress: {
               type: 'array',
               items: {
@@ -133,5 +145,43 @@ export function registerAppRoutes(fastify: FastifyInstance, container: ServiceCo
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  });
+
+  /**
+   * GET /app/sections - List available review sections
+   */
+  fastify.get('/app/sections', {
+    schema: {
+      description: 'List available review sections',
+      tags: ['app'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            sections: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async () => {
+    return {
+      sections: [
+        { id: 'epidemiology', name: 'Epidemiology', description: 'Prevalence, incidence, risk factors, population studies' },
+        { id: 'pathophysiology', name: 'Pathophysiology', description: 'Disease mechanisms, cellular and molecular processes' },
+        { id: 'clinical', name: 'Clinical Manifestations', description: 'Signs, symptoms, diagnosis, clinical presentation' },
+        { id: 'treatment', name: 'Treatment', description: 'Therapeutic interventions, drug treatments, procedures' },
+        { id: 'all', name: 'All Sections', description: 'Run all four sections sequentially' },
+      ],
+    };
   });
 }

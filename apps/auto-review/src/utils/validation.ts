@@ -108,6 +108,7 @@ export class InternalServerError extends HttpError {
  */
 export const reviewRequestSchema = z.object({
   reviewTarget: z.string().min(1, 'Review target is required'),
+  section: z.enum(['epidemiology', 'pathophysiology', 'clinical', 'treatment', 'all']).optional().default('epidemiology'),
 });
 
 export const progressRequestSchema = z.object({

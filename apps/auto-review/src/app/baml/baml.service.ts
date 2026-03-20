@@ -59,14 +59,16 @@ export class BamlService {
 
   /**
    * Generate initial search strategy for a disease
+   * @param disease - The disease/topic to search for
+   * @param searchFocus - Optional focus area (epidemiology, pathophysiology, clinical, treatment)
    */
-  async generateSearchStrategy(disease: string): Promise<SearchStrategy> {
+  async generateSearchStrategy(disease: string, searchFocus?: string): Promise<SearchStrategy> {
     try {
       if (!this.bamlClient) {
         throw new Error('BAML client not initialized. Call init() first.');
       }
 
-      const result = await this.bamlClient.GenerateSearchStrategy(disease);
+      const result = await this.bamlClient.GenerateSearchStrategy(disease, searchFocus);
       return {
         term: result.term,
         filters: result.filters || [],
@@ -82,6 +84,7 @@ export class BamlService {
   /**
    * Analyze search results and suggest adjustments
    * @param topArticles - Top 10 articles with pmid, title, snippet, journal_citation
+   * @param searchFocus - Optional focus area for the search
    */
   async adjustSearchStrategy(
     disease: string,
@@ -90,6 +93,7 @@ export class BamlService {
     topArticles: ArticleResult[],
     currentFilters: string[],
     currentSort: string,
+    searchFocus?: string,
   ): Promise<SearchStrategyAdjustment> {
     try {
       if (!this.bamlClient) {
@@ -103,6 +107,7 @@ export class BamlService {
         topArticles,
         currentFilters,
         currentSort,
+        searchFocus,
       );
 
       return {
@@ -120,6 +125,7 @@ export class BamlService {
 
   /**
    * Evaluate search results to determine if target is reached
+   * @param searchFocus - Optional focus area for the search
    */
   async evaluateSearchResults(
     disease: string,
@@ -129,6 +135,7 @@ export class BamlService {
     currentFilters: string[],
     targetCountMin: number = 80,
     targetCountMax: number = 150,
+    searchFocus?: string,
   ): Promise<SearchResultEvaluation> {
     try {
       if (!this.bamlClient) {
@@ -143,6 +150,7 @@ export class BamlService {
         currentFilters,
         targetCountMin,
         targetCountMax,
+        searchFocus,
       );
 
       return {
@@ -154,6 +162,382 @@ export class BamlService {
       };
     } catch (error) {
       console.error(`Failed to evaluate search results: ${error}`);
+      throw error;
+    }
+  }
+
+  // =========================================================================
+  // Specialized methods for each review section
+  // =========================================================================
+
+  /**
+   * Generate epidemiology-focused search strategy
+   */
+  async generateEpidemiologyStrategy(disease: string): Promise<SearchStrategy> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.GenerateEpidemiologyStrategy(disease);
+      return {
+        term: result.term,
+        filters: result.filters || [],
+        sort: result.sort || 'pubdate',
+        reasoning: result.reasoning || '',
+      };
+    } catch (error) {
+      console.error(`Failed to generate epidemiology strategy: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Adjust epidemiology search strategy
+   */
+  async adjustEpidemiologyStrategy(
+    disease: string,
+    previousTerm: string,
+    resultCount: number,
+    topArticles: ArticleResult[],
+    currentFilters: string[],
+  ): Promise<SearchStrategyAdjustment> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.AdjustEpidemiologyStrategy(
+        disease,
+        previousTerm,
+        resultCount,
+        topArticles,
+        currentFilters,
+      );
+      return {
+        adjusted_term: result.adjusted_term,
+        filters_to_add: result.filters_to_add || [],
+        filters_to_remove: result.filters_to_remove || [],
+        sort: result.sort || 'pubdate',
+        reasoning: result.reasoning,
+      };
+    } catch (error) {
+      console.error(`Failed to adjust epidemiology strategy: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Evaluate epidemiology search results
+   */
+  async evaluateEpidemiologyResults(
+    disease: string,
+    currentTerm: string,
+    resultCount: number,
+    topArticles: ArticleResult[],
+    currentFilters: string[],
+    targetCountMin: number = 80,
+    targetCountMax: number = 150,
+  ): Promise<SearchResultEvaluation> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.EvaluateEpidemiologyResults(
+        disease,
+        currentTerm,
+        resultCount,
+        topArticles,
+        currentFilters,
+        targetCountMin,
+        targetCountMax,
+      );
+      return {
+        target_reached: result.target_reached,
+        relevance_score: result.relevance_score,
+        relevant_article_count: result.relevant_article_count,
+        reasoning: result.reasoning,
+        improvement_suggestions: result.improvement_suggestions,
+      };
+    } catch (error) {
+      console.error(`Failed to evaluate epidemiology results: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate pathophysiology-focused search strategy
+   */
+  async generatePathophysiologyStrategy(disease: string): Promise<SearchStrategy> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.GeneratePathophysiologyStrategy(disease);
+      return {
+        term: result.term,
+        filters: result.filters || [],
+        sort: result.sort || 'pubdate',
+        reasoning: result.reasoning || '',
+      };
+    } catch (error) {
+      console.error(`Failed to generate pathophysiology strategy: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Adjust pathophysiology search strategy
+   */
+  async adjustPathophysiologyStrategy(
+    disease: string,
+    previousTerm: string,
+    resultCount: number,
+    topArticles: ArticleResult[],
+    currentFilters: string[],
+  ): Promise<SearchStrategyAdjustment> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.AdjustPathophysiologyStrategy(
+        disease,
+        previousTerm,
+        resultCount,
+        topArticles,
+        currentFilters,
+      );
+      return {
+        adjusted_term: result.adjusted_term,
+        filters_to_add: result.filters_to_add || [],
+        filters_to_remove: result.filters_to_remove || [],
+        sort: result.sort || 'pubdate',
+        reasoning: result.reasoning,
+      };
+    } catch (error) {
+      console.error(`Failed to adjust pathophysiology strategy: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Evaluate pathophysiology search results
+   */
+  async evaluatePathophysiologyResults(
+    disease: string,
+    currentTerm: string,
+    resultCount: number,
+    topArticles: ArticleResult[],
+    currentFilters: string[],
+    targetCountMin: number = 80,
+    targetCountMax: number = 150,
+  ): Promise<SearchResultEvaluation> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.EvaluatePathophysiologyResults(
+        disease,
+        currentTerm,
+        resultCount,
+        topArticles,
+        currentFilters,
+        targetCountMin,
+        targetCountMax,
+      );
+      return {
+        target_reached: result.target_reached,
+        relevance_score: result.relevance_score,
+        relevant_article_count: result.relevant_article_count,
+        reasoning: result.reasoning,
+        improvement_suggestions: result.improvement_suggestions,
+      };
+    } catch (error) {
+      console.error(`Failed to evaluate pathophysiology results: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate clinical-focused search strategy
+   */
+  async generateClinicalStrategy(disease: string): Promise<SearchStrategy> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.GenerateClinicalStrategy(disease);
+      return {
+        term: result.term,
+        filters: result.filters || [],
+        sort: result.sort || 'pubdate',
+        reasoning: result.reasoning || '',
+      };
+    } catch (error) {
+      console.error(`Failed to generate clinical strategy: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Adjust clinical search strategy
+   */
+  async adjustClinicalStrategy(
+    disease: string,
+    previousTerm: string,
+    resultCount: number,
+    topArticles: ArticleResult[],
+    currentFilters: string[],
+  ): Promise<SearchStrategyAdjustment> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.AdjustClinicalStrategy(
+        disease,
+        previousTerm,
+        resultCount,
+        topArticles,
+        currentFilters,
+      );
+      return {
+        adjusted_term: result.adjusted_term,
+        filters_to_add: result.filters_to_add || [],
+        filters_to_remove: result.filters_to_remove || [],
+        sort: result.sort || 'pubdate',
+        reasoning: result.reasoning,
+      };
+    } catch (error) {
+      console.error(`Failed to adjust clinical strategy: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Evaluate clinical search results
+   */
+  async evaluateClinicalResults(
+    disease: string,
+    currentTerm: string,
+    resultCount: number,
+    topArticles: ArticleResult[],
+    currentFilters: string[],
+    targetCountMin: number = 80,
+    targetCountMax: number = 150,
+  ): Promise<SearchResultEvaluation> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.EvaluateClinicalResults(
+        disease,
+        currentTerm,
+        resultCount,
+        topArticles,
+        currentFilters,
+        targetCountMin,
+        targetCountMax,
+      );
+      return {
+        target_reached: result.target_reached,
+        relevance_score: result.relevance_score,
+        relevant_article_count: result.relevant_article_count,
+        reasoning: result.reasoning,
+        improvement_suggestions: result.improvement_suggestions,
+      };
+    } catch (error) {
+      console.error(`Failed to evaluate clinical results: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate treatment-focused search strategy
+   */
+  async generateTreatmentStrategy(disease: string): Promise<SearchStrategy> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.GenerateTreatmentStrategy(disease);
+      return {
+        term: result.term,
+        filters: result.filters || [],
+        sort: result.sort || 'pubdate',
+        reasoning: result.reasoning || '',
+      };
+    } catch (error) {
+      console.error(`Failed to generate treatment strategy: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Adjust treatment search strategy
+   */
+  async adjustTreatmentStrategy(
+    disease: string,
+    previousTerm: string,
+    resultCount: number,
+    topArticles: ArticleResult[],
+    currentFilters: string[],
+  ): Promise<SearchStrategyAdjustment> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.AdjustTreatmentStrategy(
+        disease,
+        previousTerm,
+        resultCount,
+        topArticles,
+        currentFilters,
+      );
+      return {
+        adjusted_term: result.adjusted_term,
+        filters_to_add: result.filters_to_add || [],
+        filters_to_remove: result.filters_to_remove || [],
+        sort: result.sort || 'pubdate',
+        reasoning: result.reasoning,
+      };
+    } catch (error) {
+      console.error(`Failed to adjust treatment strategy: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Evaluate treatment search results
+   */
+  async evaluateTreatmentResults(
+    disease: string,
+    currentTerm: string,
+    resultCount: number,
+    topArticles: ArticleResult[],
+    currentFilters: string[],
+    targetCountMin: number = 80,
+    targetCountMax: number = 150,
+  ): Promise<SearchResultEvaluation> {
+    try {
+      if (!this.bamlClient) {
+        throw new Error('BAML client not initialized. Call init() first.');
+      }
+      const result = await this.bamlClient.EvaluateTreatmentResults(
+        disease,
+        currentTerm,
+        resultCount,
+        topArticles,
+        currentFilters,
+        targetCountMin,
+        targetCountMax,
+      );
+      return {
+        target_reached: result.target_reached,
+        relevance_score: result.relevance_score,
+        relevant_article_count: result.relevant_article_count,
+        reasoning: result.reasoning,
+        improvement_suggestions: result.improvement_suggestions,
+      };
+    } catch (error) {
+      console.error(`Failed to evaluate treatment results: ${error}`);
       throw error;
     }
   }

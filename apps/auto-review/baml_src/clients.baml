@@ -4,7 +4,7 @@
 // client<llm> MiniMax {
 //   provider anthropic
 //   options {
-//     model "minimax-m2.5-highspeed"
+//     model "MiniMax-M2.5-highspeed"
 //     base_url "https://api.minimaxi.com/anthropic"
 //     api_key env.MINIMAX_API_KEY
 //   }

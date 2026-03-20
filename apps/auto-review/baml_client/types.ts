@@ -150,14 +150,6 @@ export interface QualityAssessment {
   
 }
 
-export interface Resume {
-  name: string
-  email: string
-  experience: string[]
-  skills: string[]
-  
-}
-
 export interface RiskOfBias {
   selection_bias: string
   performance_bias: string

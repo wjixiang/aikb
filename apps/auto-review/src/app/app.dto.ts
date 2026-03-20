@@ -1,5 +1,6 @@
 export class ReviewRequest {
     reviewTarget: string
+    section?: 'epidemiology' | 'pathophysiology' | 'clinical' | 'treatment' | 'all'
 }
 
 export class ProgressRequest {
@@ -9,6 +10,7 @@ export class ProgressRequest {
 export interface ProgressResponse {
     taskId: string
     taskInput: string
+    section?: string
     progress: Array<{
         id: string
         done: string

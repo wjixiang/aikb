@@ -16,6 +16,7 @@ datasource db {
 model ReviewTask {
   id        String         @id @unique @default(uuid())
   taskInput String
+  section   String         @default("epidemiology")
   progress  TaskProgress[]
 }
 

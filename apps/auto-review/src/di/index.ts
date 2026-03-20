@@ -8,7 +8,8 @@ import { BamlService } from '../app/baml/baml.service.js';
 import { SearchService } from '../search/search.service.js';
 import { ArticleAnalysisService } from '../article-analysis/article-analysis.service.js';
 import { LiteratureSummaryService } from '../literature-summary/literature-summary.service.js';
-import { EpidemiologyResearchEngine } from '../app/task.js';
+import { EpidemiologySearchEngine } from '../article-search/epidemiology.engine.js';
+import type { BaseSearchEngine, ReviewSection } from '../article-search/base.engine.js';
 import { config } from '../config.js';
 
 // Service container type
@@ -18,7 +19,11 @@ export interface ServiceContainer {
   search: SearchService;
   articleAnalysis: ArticleAnalysisService;
   literatureSummary: LiteratureSummaryService;
-  researchEngine: EpidemiologyResearchEngine;
+  // Search engines for different review sections
+  epidemiologyEngine: EpidemiologySearchEngine;
+  pathophysiologyEngine: BaseSearchEngine;
+  clinicalEngine: BaseSearchEngine;
+  treatmentEngine: BaseSearchEngine;
 }
 
 // Singleton instances
@@ -49,8 +54,15 @@ export async function initContainer(): Promise<ServiceContainer> {
   // Initialize literature summary service
   const literatureSummary = new LiteratureSummaryService();
 
-  // Initialize research engine (depends on BAML and Prisma)
-  const researchEngine = new EpidemiologyResearchEngine(baml, prisma);
+  // Initialize specialized search engines (each depends on BAML)
+  const epidemiologyEngine = new EpidemiologySearchEngine(baml);
+  const { PathophysiologySearchEngine } = await import('../article-search/pathophysiology.engine.js');
+  const { ClinicalManifestationsSearchEngine } = await import('../article-search/clinical.engine.js');
+  const { TreatmentSearchEngine } = await import('../article-search/treatment.engine.js');
+
+  const pathophysiologyEngine = new PathophysiologySearchEngine(baml);
+  const clinicalEngine = new ClinicalManifestationsSearchEngine(baml);
+  const treatmentEngine = new TreatmentSearchEngine(baml);
 
   _container = {
     prisma,
@@ -58,7 +70,10 @@ export async function initContainer(): Promise<ServiceContainer> {
     search,
     articleAnalysis,
     literatureSummary,
-    researchEngine,
+    epidemiologyEngine,
+    pathophysiologyEngine,
+    clinicalEngine,
+    treatmentEngine,
   };
 
   return _container;

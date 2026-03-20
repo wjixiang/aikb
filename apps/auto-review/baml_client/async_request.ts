@@ -23,7 +23,7 @@ import type { BamlRuntime, BamlCtxManager, Image, Audio, Pdf, Video, FunctionLog
 import { toBamlError, HTTPRequest, ClientRegistry } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {ArticleResult, ClinicalImplications, Demographics, EffectMeasures, Intervention, Outcome, PICOExtraction, PaperMetadata, PaperSummary, Population, QualityAssessment, Resume, RiskOfBias, SearchResultEvaluation, SearchStrategy, SearchStrategyAdjustment, StatisticalResults, StudyDesign} from "./types"
+import type {ArticleResult, ClinicalImplications, Demographics, EffectMeasures, Intervention, Outcome, PICOExtraction, PaperMetadata, PaperSummary, Population, QualityAssessment, RiskOfBias, SearchResultEvaluation, SearchStrategy, SearchStrategyAdjustment, StatisticalResults, StudyDesign} from "./types"
 import type TypeBuilder from "./type_builder"
 import type * as events from "./events"
 
@@ -42,8 +42,107 @@ env?: Record<string, string | undefined>
   constructor(private runtime: BamlRuntime, private ctxManager: BamlCtxManager) {}
 
   
+  async AdjustClinicalStrategy(
+  disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "AdjustClinicalStrategy",
+      {
+      "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async AdjustEpidemiologyStrategy(
+  disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "AdjustEpidemiologyStrategy",
+      {
+      "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async AdjustPathophysiologyStrategy(
+  disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "AdjustPathophysiologyStrategy",
+      {
+      "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
   async AdjustSearchStrategy(
-  disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],current_sort: string,
+  disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],current_sort: string,search_focus: string,
   __baml_options__?: BamlCallOptions<never>
   ): Promise<HTTPRequest> {
     try {
@@ -62,7 +161,40 @@ env?: Record<string, string | undefined>
       return await this.runtime.buildRequest(
       "AdjustSearchStrategy",
       {
-      "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters,"current_sort": current_sort
+      "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters,"current_sort": current_sort,"search_focus": search_focus
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async AdjustTreatmentStrategy(
+  disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "AdjustTreatmentStrategy",
+      {
+      "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters
       },
       this.ctxManager.cloneContext(),
       __baml_options__?.tb?.__tb(),
@@ -108,7 +240,7 @@ env?: Record<string, string | undefined>
       }
       }
       
-  async EvaluateSearchResults(
+  async EvaluateClinicalResults(
   disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,
   __baml_options__?: BamlCallOptions<never>
   ): Promise<HTTPRequest> {
@@ -126,7 +258,139 @@ env?: Record<string, string | undefined>
       }
 
       return await this.runtime.buildRequest(
+      "EvaluateClinicalResults",
+      {
+      "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async EvaluateEpidemiologyResults(
+  disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "EvaluateEpidemiologyResults",
+      {
+      "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async EvaluatePathophysiologyResults(
+  disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "EvaluatePathophysiologyResults",
+      {
+      "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async EvaluateSearchResults(
+  disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,search_focus: string,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
       "EvaluateSearchResults",
+      {
+      "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max,"search_focus": search_focus
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async EvaluateTreatmentResults(
+  disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "EvaluateTreatmentResults",
       {
       "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max
       },
@@ -174,40 +438,7 @@ env?: Record<string, string | undefined>
       }
       }
       
-  async ExtractResume(
-  resume: string,
-  __baml_options__?: BamlCallOptions<never>
-  ): Promise<HTTPRequest> {
-    try {
-    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-    const __env__: Record<string, string> = Object.fromEntries(
-      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
-      );
-
-      // Resolve client option to clientRegistry (client takes precedence)
-      let __clientRegistry__ = __baml_options__?.clientRegistry;
-      if (__baml_options__?.client) {
-        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
-        __clientRegistry__.setPrimary(__baml_options__.client);
-      }
-
-      return await this.runtime.buildRequest(
-      "ExtractResume",
-      {
-      "resume": resume
-      },
-      this.ctxManager.cloneContext(),
-      __baml_options__?.tb?.__tb(),
-      __clientRegistry__,
-      false,
-      __env__
-      )
-      } catch (error) {
-      throw toBamlError(error);
-      }
-      }
-      
-  async GenerateSearchStrategy(
+  async GenerateClinicalStrategy(
   disease: string,
   __baml_options__?: BamlCallOptions<never>
   ): Promise<HTTPRequest> {
@@ -225,7 +456,139 @@ env?: Record<string, string | undefined>
       }
 
       return await this.runtime.buildRequest(
+      "GenerateClinicalStrategy",
+      {
+      "disease": disease
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async GenerateEpidemiologyStrategy(
+  disease: string,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "GenerateEpidemiologyStrategy",
+      {
+      "disease": disease
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async GeneratePathophysiologyStrategy(
+  disease: string,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "GeneratePathophysiologyStrategy",
+      {
+      "disease": disease
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async GenerateSearchStrategy(
+  disease: string,search_focus: string,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
       "GenerateSearchStrategy",
+      {
+      "disease": disease,"search_focus": search_focus
+      },
+      this.ctxManager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __clientRegistry__,
+      false,
+      __env__
+      )
+      } catch (error) {
+      throw toBamlError(error);
+      }
+      }
+      
+  async GenerateTreatmentStrategy(
+  disease: string,
+  __baml_options__?: BamlCallOptions<never>
+  ): Promise<HTTPRequest> {
+    try {
+    const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+    const __env__: Record<string, string> = Object.fromEntries(
+      Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return await this.runtime.buildRequest(
+      "GenerateTreatmentStrategy",
       {
       "disease": disease
       },
@@ -312,8 +675,107 @@ env?: Record<string, string | undefined>
       constructor(private runtime: BamlRuntime, private ctxManager: BamlCtxManager) {}
 
       
+      async AdjustClinicalStrategy(
+      disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "AdjustClinicalStrategy",
+          {
+          "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async AdjustEpidemiologyStrategy(
+      disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "AdjustEpidemiologyStrategy",
+          {
+          "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async AdjustPathophysiologyStrategy(
+      disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "AdjustPathophysiologyStrategy",
+          {
+          "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
       async AdjustSearchStrategy(
-      disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],current_sort: string,
+      disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],current_sort: string,search_focus: string,
       __baml_options__?: BamlCallOptions<never>
       ): Promise<HTTPRequest> {
         try {
@@ -332,7 +794,40 @@ env?: Record<string, string | undefined>
           return await this.runtime.buildRequest(
           "AdjustSearchStrategy",
           {
-          "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters,"current_sort": current_sort
+          "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters,"current_sort": current_sort,"search_focus": search_focus
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async AdjustTreatmentStrategy(
+      disease: string,previous_term: string,previous_count: number,top_articles: types.ArticleResult[],current_filters: string[],
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "AdjustTreatmentStrategy",
+          {
+          "disease": disease,"previous_term": previous_term,"previous_count": previous_count,"top_articles": top_articles,"current_filters": current_filters
           },
           this.ctxManager.cloneContext(),
           __baml_options__?.tb?.__tb(),
@@ -378,7 +873,7 @@ env?: Record<string, string | undefined>
           }
           }
           
-      async EvaluateSearchResults(
+      async EvaluateClinicalResults(
       disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,
       __baml_options__?: BamlCallOptions<never>
       ): Promise<HTTPRequest> {
@@ -396,7 +891,139 @@ env?: Record<string, string | undefined>
           }
 
           return await this.runtime.buildRequest(
+          "EvaluateClinicalResults",
+          {
+          "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async EvaluateEpidemiologyResults(
+      disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "EvaluateEpidemiologyResults",
+          {
+          "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async EvaluatePathophysiologyResults(
+      disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "EvaluatePathophysiologyResults",
+          {
+          "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async EvaluateSearchResults(
+      disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,search_focus: string,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
           "EvaluateSearchResults",
+          {
+          "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max,"search_focus": search_focus
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async EvaluateTreatmentResults(
+      disease: string,current_term: string,result_count: number,top_articles: types.ArticleResult[],current_filters: string[],target_count_min: number,target_count_max: number,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "EvaluateTreatmentResults",
           {
           "disease": disease,"current_term": current_term,"result_count": result_count,"top_articles": top_articles,"current_filters": current_filters,"target_count_min": target_count_min,"target_count_max": target_count_max
           },
@@ -444,40 +1071,7 @@ env?: Record<string, string | undefined>
           }
           }
           
-      async ExtractResume(
-      resume: string,
-      __baml_options__?: BamlCallOptions<never>
-      ): Promise<HTTPRequest> {
-        try {
-        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
-        const __env__: Record<string, string> = Object.fromEntries(
-          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
-          );
-
-          // Resolve client option to clientRegistry (client takes precedence)
-          let __clientRegistry__ = __baml_options__?.clientRegistry;
-          if (__baml_options__?.client) {
-            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
-            __clientRegistry__.setPrimary(__baml_options__.client);
-          }
-
-          return await this.runtime.buildRequest(
-          "ExtractResume",
-          {
-          "resume": resume
-          },
-          this.ctxManager.cloneContext(),
-          __baml_options__?.tb?.__tb(),
-          __clientRegistry__,
-          true,
-          __env__
-          )
-          } catch (error) {
-          throw toBamlError(error);
-          }
-          }
-          
-      async GenerateSearchStrategy(
+      async GenerateClinicalStrategy(
       disease: string,
       __baml_options__?: BamlCallOptions<never>
       ): Promise<HTTPRequest> {
@@ -495,7 +1089,139 @@ env?: Record<string, string | undefined>
           }
 
           return await this.runtime.buildRequest(
+          "GenerateClinicalStrategy",
+          {
+          "disease": disease
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async GenerateEpidemiologyStrategy(
+      disease: string,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "GenerateEpidemiologyStrategy",
+          {
+          "disease": disease
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async GeneratePathophysiologyStrategy(
+      disease: string,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "GeneratePathophysiologyStrategy",
+          {
+          "disease": disease
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async GenerateSearchStrategy(
+      disease: string,search_focus: string,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
           "GenerateSearchStrategy",
+          {
+          "disease": disease,"search_focus": search_focus
+          },
+          this.ctxManager.cloneContext(),
+          __baml_options__?.tb?.__tb(),
+          __clientRegistry__,
+          true,
+          __env__
+          )
+          } catch (error) {
+          throw toBamlError(error);
+          }
+          }
+          
+      async GenerateTreatmentStrategy(
+      disease: string,
+      __baml_options__?: BamlCallOptions<never>
+      ): Promise<HTTPRequest> {
+        try {
+        const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+        const __env__: Record<string, string> = Object.fromEntries(
+          Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+          );
+
+          // Resolve client option to clientRegistry (client takes precedence)
+          let __clientRegistry__ = __baml_options__?.clientRegistry;
+          if (__baml_options__?.client) {
+            __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+            __clientRegistry__.setPrimary(__baml_options__.client);
+          }
+
+          return await this.runtime.buildRequest(
+          "GenerateTreatmentStrategy",
           {
           "disease": disease
           },

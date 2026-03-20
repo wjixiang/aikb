@@ -22,6 +22,7 @@ import {
   type ComponentRegistration,
 } from '../../components/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
+import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 
 /**
  * Default VirtualWorkspace configuration
@@ -97,6 +98,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     // Register all components from registry as tool providers
     this.registerComponentTools();
+
+    // Register global tools (attempt_completion, etc.)
+    const globalToolProvider = new GlobalToolProvider();
+    this.toolManager.registerProvider(globalToolProvider);
 
     // Initialize global components from config (sync factories only)
     if (config.globalComponents) {

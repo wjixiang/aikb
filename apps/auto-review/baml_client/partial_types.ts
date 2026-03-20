@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  ArticleResult,  ClinicalImplications,  Demographics,  EffectMeasures,  Intervention,  Outcome,  PICOExtraction,  PaperMetadata,  PaperSummary,  Population,  QualityAssessment,  Resume,  RiskOfBias,  SearchResultEvaluation,  SearchStrategy,  SearchStrategyAdjustment,  StatisticalResults,  StudyDesign } from "./types"
+import type {  ArticleResult,  ClinicalImplications,  Demographics,  EffectMeasures,  Intervention,  Outcome,  PICOExtraction,  PaperMetadata,  PaperSummary,  Population,  QualityAssessment,  RiskOfBias,  SearchResultEvaluation,  SearchStrategy,  SearchStrategyAdjustment,  StatisticalResults,  StudyDesign } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -116,12 +116,6 @@ export namespace partial_types {
       strengths: string[]
       limitations: string[]
       gaps_in_evidence: string[]
-    }
-    export interface Resume {
-      name?: string | null
-      email?: string | null
-      experience: string[]
-      skills: string[]
     }
     export interface RiskOfBias {
       selection_bias?: string | null
