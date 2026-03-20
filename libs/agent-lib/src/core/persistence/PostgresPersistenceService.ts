@@ -179,4 +179,64 @@ export class PostgresPersistenceService implements IPersistenceService {
       totalCost: costResult._sum.totalCost ?? 0,
     };
   }
+
+  // ==================== Memory 持久化 (Phase 2) ====================
+
+  async saveMemory(
+    sessionId: string,
+    memory: {
+      messages: unknown[];
+      workspaceContexts: unknown[];
+      config: unknown;
+    },
+  ): Promise<void> {
+    // First, get the internal session ID from taskId
+    const session = await this.prisma.agentSession.findUnique({
+      where: { taskId: sessionId },
+    });
+
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+
+    await this.prisma.agentMemory.upsert({
+      where: { sessionId: session.id },
+      create: {
+        sessionId: session.id,
+        messages: memory.messages as object,
+        workspaceContexts: memory.workspaceContexts as object,
+        config: memory.config as object,
+      },
+      update: {
+        messages: memory.messages as object,
+        workspaceContexts: memory.workspaceContexts as object,
+        config: memory.config as object,
+      },
+    });
+
+    this.logger.debug('[PersistenceService] Memory saved', { sessionId });
+  }
+
+  async loadMemory(
+    sessionId: string,
+  ): Promise<{
+    messages: unknown[];
+    workspaceContexts: unknown[];
+    config: unknown;
+  } | null> {
+    const session = await this.prisma.agentSession.findUnique({
+      where: { taskId: sessionId },
+      include: { memory: true },
+    });
+
+    if (!session?.memory) {
+      return null;
+    }
+
+    return {
+      messages: session.memory.messages as unknown[],
+      workspaceContexts: session.memory.workspaceContexts as unknown[],
+      config: session.memory.config,
+    };
+  }
 }
