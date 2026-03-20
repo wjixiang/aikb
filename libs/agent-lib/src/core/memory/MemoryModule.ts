@@ -73,6 +73,9 @@ export class MemoryModule implements IMemoryModule {
     // Workspace context storage (for storing workspace state at each iteration)
     private workspaceContexts: WorkspaceContextEntry[] = [];
 
+    // Previous full context for diff calculation
+    private _previousFullContext: string | null = null;
+
     // Error storage
     private savedErrors: Error[] = [];
 
@@ -275,15 +278,128 @@ export class MemoryModule implements IMemoryModule {
     // ==================== Workspace Context Management ====================
 
     /**
+     * Parse workspace context into sections by component
+     * Returns a map of section name -> content
+     */
+    private _parseContextBySections(context: string): Map<string, string> {
+        const sections = new Map<string, string>();
+        const lines = context.split('\n');
+
+        let currentSection = 'header';
+        let currentContent: string[] = [];
+
+        for (const line of lines) {
+            // Match ## section-name pattern
+            const sectionMatch = line.match(/^##\s+(.+)$/);
+            if (sectionMatch) {
+                // Save previous section
+                if (currentSection || currentContent.length > 0) {
+                    sections.set(currentSection, currentContent.join('\n'));
+                }
+                currentSection = sectionMatch[1].trim();
+                currentContent = [];
+            } else {
+                currentContent.push(line);
+            }
+        }
+
+        // Save last section
+        if (currentSection || currentContent.length > 0) {
+            sections.set(currentSection, currentContent.join('\n'));
+        }
+
+        return sections;
+    }
+
+    /**
+     * Compute diff between previous context and current context
+     * Returns diff structure indicating what changed
+     * Ignores changes in Recent Tool Calls section (always changes)
+     */
+    private _computeContextDiff(
+        prevContext: string | null,
+        currContext: string
+    ): { hasChanges: boolean; changedSections: string[] } {
+        if (!prevContext) {
+            // First context
+            return { hasChanges: true, changedSections: ['[INITIAL]'] };
+        }
+
+        // Strip Recent Tool Calls section before comparison (always changes)
+        const stripToolCalls = (text: string): string => {
+            const toolCallsMarker = '**Recent Tool Calls**';
+            const idx = text.indexOf(toolCallsMarker);
+            return idx >= 0 ? text.substring(0, idx).trimEnd() : text;
+        };
+
+        const prevClean = stripToolCalls(prevContext);
+        const currClean = stripToolCalls(currContext);
+
+        if (prevClean === currClean) {
+            return { hasChanges: false, changedSections: [] };
+        }
+
+        const prevSections = this._parseContextBySections(prevClean);
+        const currSections = this._parseContextBySections(currClean);
+
+        const changedSections: string[] = [];
+
+        // Check all sections in current
+        for (const [section, content] of currSections) {
+            const prevContent = prevSections.get(section);
+            if (prevContent !== content) {
+                changedSections.push(section);
+            }
+        }
+
+        // Check for removed sections
+        for (const [section] of prevSections) {
+            if (!currSections.has(section)) {
+                changedSections.push(`${section}[REMOVED]`);
+            }
+        }
+
+        return {
+            hasChanges: changedSections.length > 0,
+            changedSections,
+        };
+    }
+
+    /**
      * Record a workspace context snapshot
+     * Only stores when context actually changes, skips duplicate entries
+     * Strips Recent Tool Calls section to avoid false positives
      */
     recordWorkspaceContext(context: string, iteration: number): void {
+        // Strip Recent Tool Calls section before storing/comparing
+        const stripToolCalls = (text: string): string => {
+            const toolCallsMarker = '**Recent Tool Calls**';
+            const idx = text.indexOf(toolCallsMarker);
+            return idx >= 0 ? text.substring(0, idx).trimEnd() : text;
+        };
+
+        const cleanedContext = stripToolCalls(context);
+        const diffResult = this._computeContextDiff(this._previousFullContext, cleanedContext);
+
+        if (!diffResult.hasChanges) {
+            // No changes, skip storing this entry
+            this.logger.debug(
+                `[MemoryModule] Skipped workspace context for iteration ${iteration} (unchanged)`
+            );
+            return;
+        }
+
+        // Changes detected, store cleaned context
         this.workspaceContexts.push({
-            content: context,
+            content: cleanedContext,
             ts: Date.now(),
             iteration,
+            isDiff: false,
         });
-        this.logger.debug(`[MemoryModule] Recorded workspace context for iteration ${iteration}`);
+        this._previousFullContext = cleanedContext;
+        this.logger.debug(
+            `[MemoryModule] Recorded workspace context for iteration ${iteration} (changed: ${diffResult.changedSections.join(', ')})`
+        );
     }
 
     /**
@@ -296,6 +412,7 @@ export class MemoryModule implements IMemoryModule {
     /**
      * Get workspace contexts formatted for prompt injection
      * Returns them as system messages with special formatting
+     * Only returns entries where context actually changed
      */
     getWorkspaceContextsForPrompt(): ApiMessage[] {
         if (this.workspaceContexts.length === 0) {

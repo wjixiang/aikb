@@ -23,12 +23,58 @@ import { toBamlError } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {Resume} from "./types"
+import type {ClinicalImplications, Demographics, EffectMeasures, Intervention, Outcome, PICOExtraction, PaperMetadata, PaperSummary, Population, QualityAssessment, Resume, RiskOfBias, StatisticalResults, StudyDesign} from "./types"
 import type TypeBuilder from "./type_builder"
 
 export class LlmResponseParser {
   constructor(private runtime: BamlRuntime, private ctxManager: BamlCtxManager) {}
 
+  
+  AssessStudyQuality(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): types.RiskOfBias {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "AssessStudyQuality",
+        llmResponse,
+        false,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as types.RiskOfBias
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  ExtractPICO(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): types.PICOExtraction {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "ExtractPICO",
+        llmResponse,
+        false,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as types.PICOExtraction
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
   
   ExtractResume(
       llmResponse: string,
@@ -53,11 +99,103 @@ export class LlmResponseParser {
     }
   }
   
+  SummarizeMedicalLiterature(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): types.PaperSummary {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "SummarizeMedicalLiterature",
+        llmResponse,
+        false,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as types.PaperSummary
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  SummarizeMultiplePapers(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): types.PaperSummary[] {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "SummarizeMultiplePapers",
+        llmResponse,
+        false,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as types.PaperSummary[]
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
 }
 
 export class LlmStreamParser {
   constructor(private runtime: BamlRuntime, private ctxManager: BamlCtxManager) {}
 
+  
+  AssessStudyQuality(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): partial_types.RiskOfBias {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "AssessStudyQuality",
+        llmResponse,
+        true,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as partial_types.RiskOfBias
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  ExtractPICO(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): partial_types.PICOExtraction {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "ExtractPICO",
+        llmResponse,
+        true,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as partial_types.PICOExtraction
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
   
   ExtractResume(
       llmResponse: string,
@@ -77,6 +215,52 @@ export class LlmStreamParser {
         __baml_options__?.clientRegistry,
         __env__,
       ) as partial_types.Resume
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  SummarizeMedicalLiterature(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): partial_types.PaperSummary {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "SummarizeMedicalLiterature",
+        llmResponse,
+        true,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as partial_types.PaperSummary
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  SummarizeMultiplePapers(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): partial_types.PaperSummary[] {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "SummarizeMultiplePapers",
+        llmResponse,
+        true,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as partial_types.PaperSummary[]
     } catch (error) {
       throw toBamlError(error);
     }

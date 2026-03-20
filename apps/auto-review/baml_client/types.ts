@@ -47,10 +47,136 @@ export function all_succeeded<CheckName extends string>(checks: Record<CheckName
 export function get_checks<CheckName extends string>(checks: Record<CheckName, Check>): Check[] {
     return Object.values(checks)
 }
+export interface ClinicalImplications {
+  key_findings: string
+  clinical_relevance: string
+  applicability: string
+  recommendations: string[]
+  safety_concerns: string[]
+  
+}
+
+export interface Demographics {
+  age_range: string
+  gender?: string | null
+  disease_status: string
+  
+}
+
+export interface EffectMeasures {
+  relative_risk?: string | null
+  odds_ratio?: string | null
+  hazard_ratio?: string | null
+  mean_difference?: string | null
+  confidence_interval?: string | null
+  
+}
+
+export interface Intervention {
+  name: string
+  dosage?: string | null
+  duration?: string | null
+  route?: string | null
+  comparator?: string | null
+  
+}
+
+export interface Outcome {
+  primary_outcomes: string[]
+  secondary_outcomes: string[]
+  measurement_tools: string[]
+  follow_up_duration?: string | null
+  
+}
+
+export interface PICOExtraction {
+  population: string
+  intervention: string
+  comparator: string
+  outcome: string
+  
+}
+
+export interface PaperMetadata {
+  title: string
+  authors: string[]
+  journal: string
+  publication_year: number
+  volume?: string | null
+  issue?: string | null
+  pages?: string | null
+  doi?: string | null
+  url?: string | null
+  abstract: string
+  
+}
+
+export interface PaperSummary {
+  metadata: PaperMetadata
+  study_design: StudyDesign
+  population: Population
+  intervention: Intervention
+  outcome: Outcome
+  results: StatisticalResults
+  risk_of_bias: RiskOfBias
+  quality: QualityAssessment
+  clinical_implications: ClinicalImplications
+  plain_english_summary: string
+  keywords: string[]
+  
+}
+
+export interface Population {
+  description: string
+  sample_size: number
+  inclusion_criteria: string[]
+  exclusion_criteria: string[]
+  demographics: Demographics
+  
+}
+
+export interface QualityAssessment {
+  strengths: string[]
+  limitations: string[]
+  gaps_in_evidence: string[]
+  
+}
+
 export interface Resume {
   name: string
   email: string
   experience: string[]
   skills: string[]
+  
+}
+
+export interface RiskOfBias {
+  selection_bias: string
+  performance_bias: string
+  detection_bias: string
+  attrition_bias: string
+  reporting_bias: string
+  overall: string
+  concerns: string[]
+  
+}
+
+export interface StatisticalResults {
+  main_findings: string
+  effect_measures: EffectMeasures
+  p_value?: string | null
+  nnt?: number | null
+  adverse_events: string[]
+  
+}
+
+export interface StudyDesign {
+  design_type: string
+  blinding?: string | null
+  randomization?: string | null
+  duration?: string | null
+  num_centers?: number | null
+  country?: string | null
+  setting?: string | null
   
 }

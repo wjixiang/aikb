@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.0.0",
   "engineVersion": "0c19ccc313cf9911a90d99d2ac2eb0280c76c513",
   "activeProvider": "postgresql",
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Get a free hosted Postgres database in seconds: `npx create-db`\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel ExpertInstance {\n  id            String @id @default(uuid())\n  expertClassId String\n  instanceId    String\n  status        String @default(\"idle\")\n  agentStatus   String @default(\"idle\")\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@unique([expertClassId, instanceId])\n  @@index([status])\n  @@index([expertClassId])\n}\n",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Get a free hosted Postgres database in seconds: `npx create-db`\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel ExpertInstance {\n  id            String @id @default(uuid())\n  expertClassId String\n  instanceId    String\n  status        String @default(\"idle\")\n  agentStatus   String @default(\"idle\")\n  resultData    Json? // JSON storing exported component data from exportResult()\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@unique([expertClassId, instanceId])\n  @@index([status])\n  @@index([expertClassId])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -28,7 +28,7 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"ExpertInstance\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expertClassId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"instanceId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"agentStatus\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"ExpertInstance\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expertClassId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"instanceId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"agentStatus\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"resultData\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')

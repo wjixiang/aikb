@@ -165,6 +165,30 @@ class DatabaseSettings(BaseSettings):
     )
 
 
+class MinerUSettings(BaseSettings):
+    """MinerU API 配置"""
+
+    model_config = SettingsConfigDict(
+        env_prefix="MINERU_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    token: Optional[str] = Field(
+        default=None,
+        description="MinerU API Token (用于 Precision API)",
+    )
+    download_dir: str = Field(
+        default="./mineru-downloads",
+        description="MinerU 下载目录",
+    )
+    default_backend: str = Field(
+        default="mineru_agent",
+        description="默认渲染后端: docling, mineru_agent, mineru_precision",
+    )
+
+
 class Settings(BaseSettings):
     """全局配置"""
 
@@ -179,6 +203,7 @@ class Settings(BaseSettings):
     conversion: ConversionSettings = Field(default_factory=ConversionSettings)
     server: ServerSettings = Field(default_factory=ServerSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    mineru: MinerUSettings = Field(default_factory=MinerUSettings)
 
     # 应用元信息
     app_name: str = Field(

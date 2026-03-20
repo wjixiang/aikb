@@ -27,14 +27,40 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
+    ClinicalImplications: ClassViewer<'ClinicalImplications', "key_findings" | "clinical_relevance" | "applicability" | "recommendations" | "safety_concerns">;
+    
+    Demographics: ClassViewer<'Demographics', "age_range" | "gender" | "disease_status">;
+    
+    EffectMeasures: ClassViewer<'EffectMeasures', "relative_risk" | "odds_ratio" | "hazard_ratio" | "mean_difference" | "confidence_interval">;
+    
+    Intervention: ClassViewer<'Intervention', "name" | "dosage" | "duration" | "route" | "comparator">;
+    
+    Outcome: ClassViewer<'Outcome', "primary_outcomes" | "secondary_outcomes" | "measurement_tools" | "follow_up_duration">;
+    
+    PICOExtraction: ClassViewer<'PICOExtraction', "population" | "intervention" | "comparator" | "outcome">;
+    
+    PaperMetadata: ClassViewer<'PaperMetadata', "title" | "authors" | "journal" | "publication_year" | "volume" | "issue" | "pages" | "doi" | "url" | "abstract">;
+    
+    PaperSummary: ClassViewer<'PaperSummary', "metadata" | "study_design" | "population" | "intervention" | "outcome" | "results" | "risk_of_bias" | "quality" | "clinical_implications" | "plain_english_summary" | "keywords">;
+    
+    Population: ClassViewer<'Population', "description" | "sample_size" | "inclusion_criteria" | "exclusion_criteria" | "demographics">;
+    
+    QualityAssessment: ClassViewer<'QualityAssessment', "strengths" | "limitations" | "gaps_in_evidence">;
+    
     Resume: ClassViewer<'Resume', "name" | "email" | "experience" | "skills">;
+    
+    RiskOfBias: ClassViewer<'RiskOfBias', "selection_bias" | "performance_bias" | "detection_bias" | "attrition_bias" | "reporting_bias" | "overall" | "concerns">;
+    
+    StatisticalResults: ClassViewer<'StatisticalResults', "main_findings" | "effect_measures" | "p_value" | "nnt" | "adverse_events">;
+    
+    StudyDesign: ClassViewer<'StudyDesign', "design_type" | "blinding" | "randomization" | "duration" | "num_centers" | "country" | "setting">;
     
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Resume",
+            "ClinicalImplications","Demographics","EffectMeasures","Intervention","Outcome","PICOExtraction","PaperMetadata","PaperSummary","Population","QualityAssessment","Resume","RiskOfBias","StatisticalResults","StudyDesign",
           ]),
           enums: new Set([
             
@@ -42,8 +68,60 @@ export default class TypeBuilder {
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
         
+        this.ClinicalImplications = this.tb.classViewer("ClinicalImplications", [
+          "key_findings","clinical_relevance","applicability","recommendations","safety_concerns",
+        ]);
+        
+        this.Demographics = this.tb.classViewer("Demographics", [
+          "age_range","gender","disease_status",
+        ]);
+        
+        this.EffectMeasures = this.tb.classViewer("EffectMeasures", [
+          "relative_risk","odds_ratio","hazard_ratio","mean_difference","confidence_interval",
+        ]);
+        
+        this.Intervention = this.tb.classViewer("Intervention", [
+          "name","dosage","duration","route","comparator",
+        ]);
+        
+        this.Outcome = this.tb.classViewer("Outcome", [
+          "primary_outcomes","secondary_outcomes","measurement_tools","follow_up_duration",
+        ]);
+        
+        this.PICOExtraction = this.tb.classViewer("PICOExtraction", [
+          "population","intervention","comparator","outcome",
+        ]);
+        
+        this.PaperMetadata = this.tb.classViewer("PaperMetadata", [
+          "title","authors","journal","publication_year","volume","issue","pages","doi","url","abstract",
+        ]);
+        
+        this.PaperSummary = this.tb.classViewer("PaperSummary", [
+          "metadata","study_design","population","intervention","outcome","results","risk_of_bias","quality","clinical_implications","plain_english_summary","keywords",
+        ]);
+        
+        this.Population = this.tb.classViewer("Population", [
+          "description","sample_size","inclusion_criteria","exclusion_criteria","demographics",
+        ]);
+        
+        this.QualityAssessment = this.tb.classViewer("QualityAssessment", [
+          "strengths","limitations","gaps_in_evidence",
+        ]);
+        
         this.Resume = this.tb.classViewer("Resume", [
           "name","email","experience","skills",
+        ]);
+        
+        this.RiskOfBias = this.tb.classViewer("RiskOfBias", [
+          "selection_bias","performance_bias","detection_bias","attrition_bias","reporting_bias","overall","concerns",
+        ]);
+        
+        this.StatisticalResults = this.tb.classViewer("StatisticalResults", [
+          "main_findings","effect_measures","p_value","nnt","adverse_events",
+        ]);
+        
+        this.StudyDesign = this.tb.classViewer("StudyDesign", [
+          "design_type","blinding","randomization","duration","num_centers","country","setting",
         ]);
         
         

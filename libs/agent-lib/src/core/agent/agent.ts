@@ -504,6 +504,10 @@ export class Agent {
     // Track if we need to continue the loop
     let needsNewTurn = true;
 
+    // Track consecutive text-only responses (no tool calls) to detect infinite loops
+    let consecutiveNoToolCalls = 0;
+    const MAX_CONSECUTIVE_NO_TOOL_CALLS = 3;
+
     while (needsNewTurn) {
       // Get available tools
       const allTools = this.workspace.getAllTools();
@@ -520,30 +524,65 @@ export class Agent {
         } else {
           needsNewTurn = false;
         }
+        // Reset counter on successful loop iteration
+        consecutiveNoToolCalls = 0;
       } catch (error) {
         // Properly serialize error to extract message, name, and stack
         const errorMessage = error instanceof Error ? error.message : String(error);
-        // Push error for context AND add as a message for history
-        if (error instanceof Error) {
+
+        // Check if this is a NoToolsUsedError
+        const isNoToolsError = error instanceof NoToolsUsedError;
+
+        if (isNoToolsError) {
+          consecutiveNoToolCalls++;
+          this.logger.warn(
+            `[Agent] No tool calls made (${consecutiveNoToolCalls}/${MAX_CONSECUTIVE_NO_TOOL_CALLS}): ${errorMessage}`
+          );
+
+          // Add error to memory for the LLM to see
           this.memoryModule.pushErrors([error]);
-          // Also add error as a system message so it persists in getAllMessages()
           const errorApiMessage: ApiMessage = {
             role: 'system',
             content: [{ type: 'text' as const, text: `[Error: ${error.message}]` }],
             ts: Date.now(),
           };
           await this.memoryModule.addMessage(errorApiMessage);
-        }
-        this.logger.error({
-          errorName: error instanceof Error ? error.name : undefined,
-          errorStack: error instanceof Error ? error.stack : undefined,
-          originalError: error instanceof Error ? undefined : error,
-        }, errorMessage + '(error messages have added to memory)');
 
-        if (this._status === 'aborted') {
-          needsNewTurn = false;
+          // If too many consecutive text-only responses, abort the loop
+          if (consecutiveNoToolCalls >= MAX_CONSECUTIVE_NO_TOOL_CALLS) {
+            this.logger.error(
+              `[Agent] Too many consecutive text-only responses (${consecutiveNoToolCalls}). Aborting to prevent infinite loop.`
+            );
+            this.abort(
+              `Infinite loop detected: ${consecutiveNoToolCalls} consecutive responses without tool calls`,
+              'error',
+              { consecutiveNoToolCalls, lastError: errorMessage }
+            );
+            needsNewTurn = false;
+            break;
+          }
         } else {
-          needsNewTurn = true;
+          // Handle other errors normally
+          if (error instanceof Error) {
+            this.memoryModule.pushErrors([error]);
+            const errorApiMessage: ApiMessage = {
+              role: 'system',
+              content: [{ type: 'text' as const, text: `[Error: ${error.message}]` }],
+              ts: Date.now(),
+            };
+            await this.memoryModule.addMessage(errorApiMessage);
+          }
+          this.logger.error({
+            errorName: error instanceof Error ? error.name : undefined,
+            errorStack: error instanceof Error ? error.stack : undefined,
+            originalError: error instanceof Error ? undefined : error,
+          }, errorMessage + '(error messages have added to memory)');
+
+          if (this._status === 'aborted') {
+            needsNewTurn = false;
+          } else {
+            needsNewTurn = true;
+          }
         }
       }
     }

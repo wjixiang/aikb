@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MinerUClient, AgentUrlParseRequest } from 'mineru-client';
+import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -12,6 +13,7 @@ export interface PdfExtractOptions {
   enableTable?: boolean;
   pageRanges?: string;
   useAgentApi?: boolean;
+  useDocling?: boolean;
   pollInterval?: number;
   timeout?: number;
   downloadDir?: string;
@@ -22,6 +24,7 @@ export interface PdfExtractResult {
   images: string[];
   taskId: string;
   downloadedFiles: string[];
+  backend?: 'mineru_agent' | 'mineru_precision' | 'docling';
 }
 
 @Injectable()
@@ -29,11 +32,13 @@ export class ArticleAnalysisService {
   private readonly logger = new Logger(ArticleAnalysisService.name);
   private client: MinerUClient;
   private downloadDir: string;
+  private fileRendererUrl: string;
 
   constructor() {
     // Initialize MinerU client
     const token = process.env.MINERU_TOKEN;
     this.downloadDir = process.env.MINERU_DOWNLOAD_DIR || './mineru-downloads';
+    this.fileRendererUrl = process.env.FILE_RENDERER_URL || 'http://localhost:8000';
 
     this.client = new MinerUClient({
       token,
@@ -48,6 +53,7 @@ export class ArticleAnalysisService {
     });
 
     this.logger.log(`MinerUClient initialized, download dir: ${this.downloadDir}`);
+    this.logger.log(`File Renderer URL: ${this.fileRendererUrl}`);
   }
 
   /**
@@ -62,6 +68,7 @@ export class ArticleAnalysisService {
       enableTable = true,
       pageRanges,
       useAgentApi = false,
+      useDocling = false,
       pollInterval = 5000,
       timeout = 300000,
     } = options;
@@ -71,14 +78,17 @@ export class ArticleAnalysisService {
     }
 
     this.logger.log(`Extracting PDF from URL: ${url}`);
-    this.logger.log(`Using Agent API: ${useAgentApi}`);
+    this.logger.log(`Using Agent API: ${useAgentApi}, Docling: ${useDocling}`);
 
     // Ensure download directory exists
     if (!fs.existsSync(this.downloadDir)) {
       fs.mkdirSync(this.downloadDir, { recursive: true });
     }
 
-    if (useAgentApi) {
+    if (useDocling) {
+      // Use Docling via file-renderer service
+      return this.extractUsingDocling(url);
+    } else if (useAgentApi) {
       // Use Agent Lightweight API (no auth required)
       return this.extractUsingAgentApi(url, language, pollInterval, timeout);
     } else {
@@ -93,6 +103,52 @@ export class ArticleAnalysisService {
         pollInterval,
         timeout,
       );
+    }
+  }
+
+  /**
+   * Extract using Docling via file-renderer service
+   */
+  private async extractUsingDocling(url: string): Promise<PdfExtractResult> {
+    this.logger.log('Extracting PDF using Docling...');
+
+    try {
+      const response = await axios.post(
+        `${this.fileRendererUrl}/api/v1/render/from-url`,
+        {
+          url,
+          options: {
+            backend: 'docling',
+          },
+        },
+        {
+          timeout: 120000,
+        },
+      );
+
+      const data = response.data;
+
+      if (!data.success) {
+        throw new Error(data.error_message || 'Docling extraction failed');
+      }
+
+      // If markdown is empty but we have a markdown_url in metadata, fetch it
+      let markdown = data.markdown || '';
+      if (!markdown && data.metadata?.markdown_url) {
+        const mdResponse = await axios.get(data.metadata.markdown_url, { timeout: 60000 });
+        markdown = mdResponse.data;
+      }
+
+      return {
+        markdown,
+        images: data.images || [],
+        taskId: data.task_id || 'docling',
+        downloadedFiles: [],
+        backend: 'docling',
+      };
+    } catch (error: any) {
+      this.logger.error(`Docling extraction failed: ${error.message}`);
+      throw new Error(`Docling extraction failed: ${error.message}`);
     }
   }
 

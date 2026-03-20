@@ -22,7 +22,7 @@ import type { BamlRuntime, BamlCtxManager, Image, Audio, Pdf, Video } from "@bou
 import { toBamlError, HTTPRequest, ClientRegistry } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {Resume} from "./types"
+import type {ClinicalImplications, Demographics, EffectMeasures, Intervention, Outcome, PICOExtraction, PaperMetadata, PaperSummary, Population, QualityAssessment, Resume, RiskOfBias, StatisticalResults, StudyDesign} from "./types"
 import type TypeBuilder from "./type_builder"
 import type * as events from "./events"
 
@@ -37,6 +37,72 @@ type BamlCallOptions<EventsT = never> = {
 export class HttpRequest {
   constructor(private runtime: BamlRuntime, private ctxManager: BamlCtxManager) {}
 
+  
+  AssessStudyQuality(
+      content: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "AssessStudyQuality",
+        {
+          "content": content
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        false,
+        __env__,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  ExtractPICO(
+      content: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "ExtractPICO",
+        {
+          "content": content
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        false,
+        __env__,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
   
   ExtractResume(
       resume: string,
@@ -71,11 +137,143 @@ export class HttpRequest {
     }
   }
   
+  SummarizeMedicalLiterature(
+      content: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "SummarizeMedicalLiterature",
+        {
+          "content": content
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        false,
+        __env__,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  SummarizeMultiplePapers(
+      papers: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "SummarizeMultiplePapers",
+        {
+          "papers": papers
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        false,
+        __env__,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
 }
 
 export class HttpStreamRequest {
   constructor(private runtime: BamlRuntime, private ctxManager: BamlCtxManager) {}
 
+  
+  AssessStudyQuality(
+      content: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "AssessStudyQuality",
+        {
+          "content": content
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        true,
+        __env__,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  ExtractPICO(
+      content: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "ExtractPICO",
+        {
+          "content": content
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        true,
+        __env__,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
   
   ExtractResume(
       resume: string,
@@ -98,6 +296,72 @@ export class HttpStreamRequest {
         "ExtractResume",
         {
           "resume": resume
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        true,
+        __env__,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  SummarizeMedicalLiterature(
+      content: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "SummarizeMedicalLiterature",
+        {
+          "content": content
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        true,
+        __env__,
+      )
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  SummarizeMultiplePapers(
+      papers: string,
+      __baml_options__?: BamlCallOptions<never>
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "SummarizeMultiplePapers",
+        {
+          "papers": papers
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),

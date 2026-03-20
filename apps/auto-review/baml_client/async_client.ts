@@ -24,7 +24,7 @@ import { toBamlError, BamlStream, BamlAbortError, Collector, ClientRegistry } fr
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {Resume} from "./types"
+import type {ClinicalImplications, Demographics, EffectMeasures, Intervention, Outcome, PICOExtraction, PaperMetadata, PaperSummary, Population, QualityAssessment, Resume, RiskOfBias, StatisticalResults, StudyDesign} from "./types"
 import type TypeBuilder from "./type_builder"
 import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -97,6 +97,118 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
         }
 
         
+        async AssessStudyQuality(
+        content: string,
+        __baml_options__?: BamlCallOptions<never>
+        ): Promise<types.RiskOfBias> {
+          try {
+          const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+          const __signal__ = __options__.signal;
+
+          if (__signal__?.aborted) {
+          throw new BamlAbortError('Operation was aborted', __signal__.reason);
+          }
+
+          // Check if onTick is provided - route through streaming if so
+          if (__options__.onTick) {
+          const __stream__ = this.stream.AssessStudyQuality(
+          content,
+          __baml_options__
+          );
+
+          return await __stream__.getFinalResponse();
+          }
+
+          const __collector__ = __options__.collector ? (Array.isArray(__options__.collector) ? __options__.collector :
+          [__options__.collector]) : [];
+          const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+          const __env__: Record<string, string> = Object.fromEntries(
+            Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+            );
+
+            // Resolve client option to clientRegistry (client takes precedence)
+            let __clientRegistry__ = __options__.clientRegistry;
+            if (__options__.client) {
+              __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+              __clientRegistry__.setPrimary(__options__.client);
+            }
+
+            const __raw__ = await this.runtime.callFunction(
+            "AssessStudyQuality",
+            {
+            "content": content
+            },
+            this.ctxManager.cloneContext(),
+            __options__.tb?.__tb(),
+            __clientRegistry__,
+            __collector__,
+            __options__.tags || {},
+            __env__,
+            __signal__,
+            __options__.watchers,
+            )
+            return __raw__.parsed(false) as types.RiskOfBias
+            } catch (error) {
+            throw toBamlError(error);
+            }
+            }
+            
+        async ExtractPICO(
+        content: string,
+        __baml_options__?: BamlCallOptions<never>
+        ): Promise<types.PICOExtraction> {
+          try {
+          const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+          const __signal__ = __options__.signal;
+
+          if (__signal__?.aborted) {
+          throw new BamlAbortError('Operation was aborted', __signal__.reason);
+          }
+
+          // Check if onTick is provided - route through streaming if so
+          if (__options__.onTick) {
+          const __stream__ = this.stream.ExtractPICO(
+          content,
+          __baml_options__
+          );
+
+          return await __stream__.getFinalResponse();
+          }
+
+          const __collector__ = __options__.collector ? (Array.isArray(__options__.collector) ? __options__.collector :
+          [__options__.collector]) : [];
+          const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+          const __env__: Record<string, string> = Object.fromEntries(
+            Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+            );
+
+            // Resolve client option to clientRegistry (client takes precedence)
+            let __clientRegistry__ = __options__.clientRegistry;
+            if (__options__.client) {
+              __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+              __clientRegistry__.setPrimary(__options__.client);
+            }
+
+            const __raw__ = await this.runtime.callFunction(
+            "ExtractPICO",
+            {
+            "content": content
+            },
+            this.ctxManager.cloneContext(),
+            __options__.tb?.__tb(),
+            __clientRegistry__,
+            __collector__,
+            __options__.tags || {},
+            __env__,
+            __signal__,
+            __options__.watchers,
+            )
+            return __raw__.parsed(false) as types.PICOExtraction
+            } catch (error) {
+            throw toBamlError(error);
+            }
+            }
+            
         async ExtractResume(
         resume: string,
         __baml_options__?: BamlCallOptions<never>
@@ -153,6 +265,118 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             }
             
+        async SummarizeMedicalLiterature(
+        content: string,
+        __baml_options__?: BamlCallOptions<never>
+        ): Promise<types.PaperSummary> {
+          try {
+          const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+          const __signal__ = __options__.signal;
+
+          if (__signal__?.aborted) {
+          throw new BamlAbortError('Operation was aborted', __signal__.reason);
+          }
+
+          // Check if onTick is provided - route through streaming if so
+          if (__options__.onTick) {
+          const __stream__ = this.stream.SummarizeMedicalLiterature(
+          content,
+          __baml_options__
+          );
+
+          return await __stream__.getFinalResponse();
+          }
+
+          const __collector__ = __options__.collector ? (Array.isArray(__options__.collector) ? __options__.collector :
+          [__options__.collector]) : [];
+          const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+          const __env__: Record<string, string> = Object.fromEntries(
+            Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+            );
+
+            // Resolve client option to clientRegistry (client takes precedence)
+            let __clientRegistry__ = __options__.clientRegistry;
+            if (__options__.client) {
+              __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+              __clientRegistry__.setPrimary(__options__.client);
+            }
+
+            const __raw__ = await this.runtime.callFunction(
+            "SummarizeMedicalLiterature",
+            {
+            "content": content
+            },
+            this.ctxManager.cloneContext(),
+            __options__.tb?.__tb(),
+            __clientRegistry__,
+            __collector__,
+            __options__.tags || {},
+            __env__,
+            __signal__,
+            __options__.watchers,
+            )
+            return __raw__.parsed(false) as types.PaperSummary
+            } catch (error) {
+            throw toBamlError(error);
+            }
+            }
+            
+        async SummarizeMultiplePapers(
+        papers: string,
+        __baml_options__?: BamlCallOptions<never>
+        ): Promise<types.PaperSummary[]> {
+          try {
+          const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+          const __signal__ = __options__.signal;
+
+          if (__signal__?.aborted) {
+          throw new BamlAbortError('Operation was aborted', __signal__.reason);
+          }
+
+          // Check if onTick is provided - route through streaming if so
+          if (__options__.onTick) {
+          const __stream__ = this.stream.SummarizeMultiplePapers(
+          papers,
+          __baml_options__
+          );
+
+          return await __stream__.getFinalResponse();
+          }
+
+          const __collector__ = __options__.collector ? (Array.isArray(__options__.collector) ? __options__.collector :
+          [__options__.collector]) : [];
+          const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+          const __env__: Record<string, string> = Object.fromEntries(
+            Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+            );
+
+            // Resolve client option to clientRegistry (client takes precedence)
+            let __clientRegistry__ = __options__.clientRegistry;
+            if (__options__.client) {
+              __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+              __clientRegistry__.setPrimary(__options__.client);
+            }
+
+            const __raw__ = await this.runtime.callFunction(
+            "SummarizeMultiplePapers",
+            {
+            "papers": papers
+            },
+            this.ctxManager.cloneContext(),
+            __options__.tb?.__tb(),
+            __clientRegistry__,
+            __collector__,
+            __options__.tags || {},
+            __env__,
+            __signal__,
+            __options__.watchers,
+            )
+            return __raw__.parsed(false) as types.PaperSummary[]
+            } catch (error) {
+            throw toBamlError(error);
+            }
+            }
+            
             }
 
             class BamlStreamClient {
@@ -167,6 +391,154 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
 
             
+            AssessStudyQuality(
+            content: string,
+            __baml_options__?: BamlCallOptions<never>
+            ): BamlStream<partial_types.RiskOfBias, types.RiskOfBias>
+              {
+              try {
+              const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+              const __signal__ = __options__.signal;
+
+              if (__signal__?.aborted) {
+              throw new BamlAbortError('Operation was aborted', __signal__.reason);
+              }
+
+              let __collector__ = __options__.collector ? (Array.isArray(__options__.collector) ? __options__.collector :
+              [__options__.collector]) : [];
+
+              let __onTickWrapper__: (() => void) | undefined;
+
+              // Create collector and wrap onTick if provided
+              if (__options__.onTick) {
+              const __tickCollector__ = new Collector("on-tick-collector");
+              __collector__ = [...__collector__, __tickCollector__];
+
+              __onTickWrapper__ = () => {
+              const __log__ = __tickCollector__.last;
+              if (__log__) {
+              try {
+              __options__.onTick!("Unknown", __log__);
+              } catch (error) {
+              console.error("Error in onTick callback for AssessStudyQuality", error);
+              }
+              }
+              };
+              }
+
+              const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+              const __env__: Record<string, string> = Object.fromEntries(
+                Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+                );
+
+                // Resolve client option to clientRegistry (client takes precedence)
+                let __clientRegistry__ = __options__.clientRegistry;
+                if (__options__.client) {
+                  __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+                  __clientRegistry__.setPrimary(__options__.client);
+                }
+
+                const __raw__ = this.runtime.streamFunction(
+                "AssessStudyQuality",
+                {
+                "content": content
+                },
+                undefined,
+                this.ctxManager.cloneContext(),
+                __options__.tb?.__tb(),
+                __clientRegistry__,
+                __collector__,
+                __options__.tags || {},
+                __env__,
+                __signal__,
+                __onTickWrapper__,
+                )
+                return new BamlStream<partial_types.RiskOfBias, types.RiskOfBias>(
+                  __raw__,
+                  (a): partial_types.RiskOfBias => a,
+                  (a): types.RiskOfBias => a,
+                  this.ctxManager.cloneContext(),
+                  __options__.signal,
+                  )
+                  } catch (error) {
+                  throw toBamlError(error);
+                  }
+                  }
+                  
+            ExtractPICO(
+            content: string,
+            __baml_options__?: BamlCallOptions<never>
+            ): BamlStream<partial_types.PICOExtraction, types.PICOExtraction>
+              {
+              try {
+              const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+              const __signal__ = __options__.signal;
+
+              if (__signal__?.aborted) {
+              throw new BamlAbortError('Operation was aborted', __signal__.reason);
+              }
+
+              let __collector__ = __options__.collector ? (Array.isArray(__options__.collector) ? __options__.collector :
+              [__options__.collector]) : [];
+
+              let __onTickWrapper__: (() => void) | undefined;
+
+              // Create collector and wrap onTick if provided
+              if (__options__.onTick) {
+              const __tickCollector__ = new Collector("on-tick-collector");
+              __collector__ = [...__collector__, __tickCollector__];
+
+              __onTickWrapper__ = () => {
+              const __log__ = __tickCollector__.last;
+              if (__log__) {
+              try {
+              __options__.onTick!("Unknown", __log__);
+              } catch (error) {
+              console.error("Error in onTick callback for ExtractPICO", error);
+              }
+              }
+              };
+              }
+
+              const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+              const __env__: Record<string, string> = Object.fromEntries(
+                Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+                );
+
+                // Resolve client option to clientRegistry (client takes precedence)
+                let __clientRegistry__ = __options__.clientRegistry;
+                if (__options__.client) {
+                  __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+                  __clientRegistry__.setPrimary(__options__.client);
+                }
+
+                const __raw__ = this.runtime.streamFunction(
+                "ExtractPICO",
+                {
+                "content": content
+                },
+                undefined,
+                this.ctxManager.cloneContext(),
+                __options__.tb?.__tb(),
+                __clientRegistry__,
+                __collector__,
+                __options__.tags || {},
+                __env__,
+                __signal__,
+                __onTickWrapper__,
+                )
+                return new BamlStream<partial_types.PICOExtraction, types.PICOExtraction>(
+                  __raw__,
+                  (a): partial_types.PICOExtraction => a,
+                  (a): types.PICOExtraction => a,
+                  this.ctxManager.cloneContext(),
+                  __options__.signal,
+                  )
+                  } catch (error) {
+                  throw toBamlError(error);
+                  }
+                  }
+                  
             ExtractResume(
             resume: string,
             __baml_options__?: BamlCallOptions<never>
@@ -233,6 +605,154 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   __raw__,
                   (a): partial_types.Resume => a,
                   (a): types.Resume => a,
+                  this.ctxManager.cloneContext(),
+                  __options__.signal,
+                  )
+                  } catch (error) {
+                  throw toBamlError(error);
+                  }
+                  }
+                  
+            SummarizeMedicalLiterature(
+            content: string,
+            __baml_options__?: BamlCallOptions<never>
+            ): BamlStream<partial_types.PaperSummary, types.PaperSummary>
+              {
+              try {
+              const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+              const __signal__ = __options__.signal;
+
+              if (__signal__?.aborted) {
+              throw new BamlAbortError('Operation was aborted', __signal__.reason);
+              }
+
+              let __collector__ = __options__.collector ? (Array.isArray(__options__.collector) ? __options__.collector :
+              [__options__.collector]) : [];
+
+              let __onTickWrapper__: (() => void) | undefined;
+
+              // Create collector and wrap onTick if provided
+              if (__options__.onTick) {
+              const __tickCollector__ = new Collector("on-tick-collector");
+              __collector__ = [...__collector__, __tickCollector__];
+
+              __onTickWrapper__ = () => {
+              const __log__ = __tickCollector__.last;
+              if (__log__) {
+              try {
+              __options__.onTick!("Unknown", __log__);
+              } catch (error) {
+              console.error("Error in onTick callback for SummarizeMedicalLiterature", error);
+              }
+              }
+              };
+              }
+
+              const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+              const __env__: Record<string, string> = Object.fromEntries(
+                Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+                );
+
+                // Resolve client option to clientRegistry (client takes precedence)
+                let __clientRegistry__ = __options__.clientRegistry;
+                if (__options__.client) {
+                  __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+                  __clientRegistry__.setPrimary(__options__.client);
+                }
+
+                const __raw__ = this.runtime.streamFunction(
+                "SummarizeMedicalLiterature",
+                {
+                "content": content
+                },
+                undefined,
+                this.ctxManager.cloneContext(),
+                __options__.tb?.__tb(),
+                __clientRegistry__,
+                __collector__,
+                __options__.tags || {},
+                __env__,
+                __signal__,
+                __onTickWrapper__,
+                )
+                return new BamlStream<partial_types.PaperSummary, types.PaperSummary>(
+                  __raw__,
+                  (a): partial_types.PaperSummary => a,
+                  (a): types.PaperSummary => a,
+                  this.ctxManager.cloneContext(),
+                  __options__.signal,
+                  )
+                  } catch (error) {
+                  throw toBamlError(error);
+                  }
+                  }
+                  
+            SummarizeMultiplePapers(
+            papers: string,
+            __baml_options__?: BamlCallOptions<never>
+            ): BamlStream<partial_types.PaperSummary[], types.PaperSummary[]>
+              {
+              try {
+              const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) }
+              const __signal__ = __options__.signal;
+
+              if (__signal__?.aborted) {
+              throw new BamlAbortError('Operation was aborted', __signal__.reason);
+              }
+
+              let __collector__ = __options__.collector ? (Array.isArray(__options__.collector) ? __options__.collector :
+              [__options__.collector]) : [];
+
+              let __onTickWrapper__: (() => void) | undefined;
+
+              // Create collector and wrap onTick if provided
+              if (__options__.onTick) {
+              const __tickCollector__ = new Collector("on-tick-collector");
+              __collector__ = [...__collector__, __tickCollector__];
+
+              __onTickWrapper__ = () => {
+              const __log__ = __tickCollector__.last;
+              if (__log__) {
+              try {
+              __options__.onTick!("Unknown", __log__);
+              } catch (error) {
+              console.error("Error in onTick callback for SummarizeMultiplePapers", error);
+              }
+              }
+              };
+              }
+
+              const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+              const __env__: Record<string, string> = Object.fromEntries(
+                Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+                );
+
+                // Resolve client option to clientRegistry (client takes precedence)
+                let __clientRegistry__ = __options__.clientRegistry;
+                if (__options__.client) {
+                  __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+                  __clientRegistry__.setPrimary(__options__.client);
+                }
+
+                const __raw__ = this.runtime.streamFunction(
+                "SummarizeMultiplePapers",
+                {
+                "papers": papers
+                },
+                undefined,
+                this.ctxManager.cloneContext(),
+                __options__.tb?.__tb(),
+                __clientRegistry__,
+                __collector__,
+                __options__.tags || {},
+                __env__,
+                __signal__,
+                __onTickWrapper__,
+                )
+                return new BamlStream<partial_types.PaperSummary[], types.PaperSummary[]>(
+                  __raw__,
+                  (a): partial_types.PaperSummary[] => a,
+                  (a): types.PaperSummary[] => a,
                   this.ctxManager.cloneContext(),
                   __options__.signal,
                   )

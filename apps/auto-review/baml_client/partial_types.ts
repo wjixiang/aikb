@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Resume } from "./types"
+import type {  ClinicalImplications,  Demographics,  EffectMeasures,  Intervention,  Outcome,  PICOExtraction,  PaperMetadata,  PaperSummary,  Population,  QualityAssessment,  Resume,  RiskOfBias,  StatisticalResults,  StudyDesign } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -36,10 +36,110 @@ export interface StreamState<T> {
 }
 
 export namespace partial_types {
+    export interface ClinicalImplications {
+      key_findings?: string | null
+      clinical_relevance?: string | null
+      applicability?: string | null
+      recommendations: string[]
+      safety_concerns: string[]
+    }
+    export interface Demographics {
+      age_range?: string | null
+      gender?: string | null
+      disease_status?: string | null
+    }
+    export interface EffectMeasures {
+      relative_risk?: string | null
+      odds_ratio?: string | null
+      hazard_ratio?: string | null
+      mean_difference?: string | null
+      confidence_interval?: string | null
+    }
+    export interface Intervention {
+      name?: string | null
+      dosage?: string | null
+      duration?: string | null
+      route?: string | null
+      comparator?: string | null
+    }
+    export interface Outcome {
+      primary_outcomes: string[]
+      secondary_outcomes: string[]
+      measurement_tools: string[]
+      follow_up_duration?: string | null
+    }
+    export interface PICOExtraction {
+      population?: string | null
+      intervention?: string | null
+      comparator?: string | null
+      outcome?: string | null
+    }
+    export interface PaperMetadata {
+      title?: string | null
+      authors: string[]
+      journal?: string | null
+      publication_year?: number | null
+      volume?: string | null
+      issue?: string | null
+      pages?: string | null
+      doi?: string | null
+      url?: string | null
+      abstract?: string | null
+    }
+    export interface PaperSummary {
+      metadata?: PaperMetadata | null
+      study_design?: StudyDesign | null
+      population?: Population | null
+      intervention?: Intervention | null
+      outcome?: Outcome | null
+      results?: StatisticalResults | null
+      risk_of_bias?: RiskOfBias | null
+      quality?: QualityAssessment | null
+      clinical_implications?: ClinicalImplications | null
+      plain_english_summary?: string | null
+      keywords: string[]
+    }
+    export interface Population {
+      description?: string | null
+      sample_size?: number | null
+      inclusion_criteria: string[]
+      exclusion_criteria: string[]
+      demographics?: Demographics | null
+    }
+    export interface QualityAssessment {
+      strengths: string[]
+      limitations: string[]
+      gaps_in_evidence: string[]
+    }
     export interface Resume {
       name?: string | null
       email?: string | null
       experience: string[]
       skills: string[]
+    }
+    export interface RiskOfBias {
+      selection_bias?: string | null
+      performance_bias?: string | null
+      detection_bias?: string | null
+      attrition_bias?: string | null
+      reporting_bias?: string | null
+      overall?: string | null
+      concerns: string[]
+    }
+    export interface StatisticalResults {
+      main_findings?: string | null
+      effect_measures?: EffectMeasures | null
+      p_value?: string | null
+      nnt?: number | null
+      adverse_events: string[]
+    }
+    export interface StudyDesign {
+      design_type?: string | null
+      blinding?: string | null
+      randomization?: string | null
+      duration?: string | null
+      num_centers?: number | null
+      country?: string | null
+      setting?: string | null
     }
 }

@@ -50,6 +50,7 @@ export type ExpertInstanceCountAggregateOutputType = {
   instanceId: number
   status: number
   agentStatus: number
+  resultData: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -82,6 +83,7 @@ export type ExpertInstanceCountAggregateInputType = {
   instanceId?: true
   status?: true
   agentStatus?: true
+  resultData?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -165,6 +167,7 @@ export type ExpertInstanceGroupByOutputType = {
   instanceId: string
   status: string
   agentStatus: string
+  resultData: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
   _count: ExpertInstanceCountAggregateOutputType | null
@@ -196,6 +199,7 @@ export type ExpertInstanceWhereInput = {
   instanceId?: Prisma.StringFilter<"ExpertInstance"> | string
   status?: Prisma.StringFilter<"ExpertInstance"> | string
   agentStatus?: Prisma.StringFilter<"ExpertInstance"> | string
+  resultData?: Prisma.JsonNullableFilter<"ExpertInstance">
   createdAt?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
 }
@@ -206,6 +210,7 @@ export type ExpertInstanceOrderByWithRelationInput = {
   instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   agentStatus?: Prisma.SortOrder
+  resultData?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -220,6 +225,7 @@ export type ExpertInstanceWhereUniqueInput = Prisma.AtLeast<{
   instanceId?: Prisma.StringFilter<"ExpertInstance"> | string
   status?: Prisma.StringFilter<"ExpertInstance"> | string
   agentStatus?: Prisma.StringFilter<"ExpertInstance"> | string
+  resultData?: Prisma.JsonNullableFilter<"ExpertInstance">
   createdAt?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ExpertInstance"> | Date | string
 }, "id" | "expertClassId_instanceId">
@@ -230,6 +236,7 @@ export type ExpertInstanceOrderByWithAggregationInput = {
   instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   agentStatus?: Prisma.SortOrder
+  resultData?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ExpertInstanceCountOrderByAggregateInput
@@ -246,6 +253,7 @@ export type ExpertInstanceScalarWhereWithAggregatesInput = {
   instanceId?: Prisma.StringWithAggregatesFilter<"ExpertInstance"> | string
   status?: Prisma.StringWithAggregatesFilter<"ExpertInstance"> | string
   agentStatus?: Prisma.StringWithAggregatesFilter<"ExpertInstance"> | string
+  resultData?: Prisma.JsonNullableWithAggregatesFilter<"ExpertInstance">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ExpertInstance"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ExpertInstance"> | Date | string
 }
@@ -256,6 +264,7 @@ export type ExpertInstanceCreateInput = {
   instanceId: string
   status?: string
   agentStatus?: string
+  resultData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -266,6 +275,7 @@ export type ExpertInstanceUncheckedCreateInput = {
   instanceId: string
   status?: string
   agentStatus?: string
+  resultData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -276,6 +286,7 @@ export type ExpertInstanceUpdateInput = {
   instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   agentStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  resultData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -286,6 +297,7 @@ export type ExpertInstanceUncheckedUpdateInput = {
   instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   agentStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  resultData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -296,6 +308,7 @@ export type ExpertInstanceCreateManyInput = {
   instanceId: string
   status?: string
   agentStatus?: string
+  resultData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -306,6 +319,7 @@ export type ExpertInstanceUpdateManyMutationInput = {
   instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   agentStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  resultData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -316,6 +330,7 @@ export type ExpertInstanceUncheckedUpdateManyInput = {
   instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   agentStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  resultData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -331,6 +346,7 @@ export type ExpertInstanceCountOrderByAggregateInput = {
   instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   agentStatus?: Prisma.SortOrder
+  resultData?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -371,6 +387,7 @@ export type ExpertInstanceSelect<ExtArgs extends runtime.Types.Extensions.Intern
   instanceId?: boolean
   status?: boolean
   agentStatus?: boolean
+  resultData?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["expertInstance"]>
@@ -381,6 +398,7 @@ export type ExpertInstanceSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   instanceId?: boolean
   status?: boolean
   agentStatus?: boolean
+  resultData?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["expertInstance"]>
@@ -391,6 +409,7 @@ export type ExpertInstanceSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   instanceId?: boolean
   status?: boolean
   agentStatus?: boolean
+  resultData?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["expertInstance"]>
@@ -401,11 +420,12 @@ export type ExpertInstanceSelectScalar = {
   instanceId?: boolean
   status?: boolean
   agentStatus?: boolean
+  resultData?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ExpertInstanceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "expertClassId" | "instanceId" | "status" | "agentStatus" | "createdAt" | "updatedAt", ExtArgs["result"]["expertInstance"]>
+export type ExpertInstanceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "expertClassId" | "instanceId" | "status" | "agentStatus" | "resultData" | "createdAt" | "updatedAt", ExtArgs["result"]["expertInstance"]>
 
 export type $ExpertInstancePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ExpertInstance"
@@ -416,6 +436,7 @@ export type $ExpertInstancePayload<ExtArgs extends runtime.Types.Extensions.Inte
     instanceId: string
     status: string
     agentStatus: string
+    resultData: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["expertInstance"]>
@@ -846,6 +867,7 @@ export interface ExpertInstanceFieldRefs {
   readonly instanceId: Prisma.FieldRef<"ExpertInstance", 'String'>
   readonly status: Prisma.FieldRef<"ExpertInstance", 'String'>
   readonly agentStatus: Prisma.FieldRef<"ExpertInstance", 'String'>
+  readonly resultData: Prisma.FieldRef<"ExpertInstance", 'Json'>
   readonly createdAt: Prisma.FieldRef<"ExpertInstance", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ExpertInstance", 'DateTime'>
 }

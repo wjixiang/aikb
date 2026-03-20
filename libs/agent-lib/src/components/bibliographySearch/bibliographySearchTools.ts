@@ -3,7 +3,10 @@ import {
     searchPubmedParamsSchema,
     viewArticleParamsSchema,
     navigatePageParamsSchema,
-    clearResultsParamsSchema
+    clearResultsParamsSchema,
+    saveArticleParamsSchema,
+    removeFromFavoritesParamsSchema,
+    getFavoritesParamsSchema
 } from './bibliographySearchSchemas.js'
 
 /**
@@ -92,6 +95,54 @@ export const clearResultsTool: Tool = {
 };
 
 /**
+ * Tool for saving an article to favorites/collection
+ */
+export const saveArticleTool: Tool = {
+    toolName: 'save_article',
+    desc: 'Save an article to favorites/collection by PMID. The article must be currently viewed or previously searched.',
+    paramsSchema: saveArticleParamsSchema,
+    examples: [
+        {
+            description: 'Save an article by PMID',
+            params: { pmid: '12345678' },
+            expectedResult: 'Article saved to favorites',
+        },
+    ],
+};
+
+/**
+ * Tool for removing an article from favorites
+ */
+export const removeFromFavoritesTool: Tool = {
+    toolName: 'remove_from_favorites',
+    desc: 'Remove an article from favorites/collection by PMID.',
+    paramsSchema: removeFromFavoritesParamsSchema,
+    examples: [
+        {
+            description: 'Remove an article from favorites',
+            params: { pmid: '12345678' },
+            expectedResult: 'Article removed from favorites',
+        },
+    ],
+};
+
+/**
+ * Tool for getting all saved/favorite articles
+ */
+export const getFavoritesTool: Tool = {
+    toolName: 'get_favorites',
+    desc: 'Get all saved/favorite articles. Returns list of saved articles with basic info.',
+    paramsSchema: getFavoritesParamsSchema,
+    examples: [
+        {
+            description: 'Get all favorites',
+            params: {},
+            expectedResult: 'Returns list of all saved articles',
+        },
+    ],
+};
+
+/**
  * Map of all bibliography search tools
  * Can be used to initialize the toolSet in BibliographySearchComponent
  */
@@ -102,6 +153,9 @@ export function createBibliographySearchToolSet(): Map<string, Tool> {
     tools.set('view_article', viewArticleTool);
     tools.set('navigate_page', navigatePageTool);
     tools.set('clear_results', clearResultsTool);
+    tools.set('save_article', saveArticleTool);
+    tools.set('remove_from_favorites', removeFromFavoritesTool);
+    tools.set('get_favorites', getFavoritesTool);
 
     return tools;
 }
@@ -113,5 +167,8 @@ export const bibliographySearchTools = {
     searchPubmed: searchPubmedTool,
     viewArticle: viewArticleTool,
     navigatePage: navigatePageTool,
-    clearResults: clearResultsTool
+    clearResults: clearResultsTool,
+    saveArticle: saveArticleTool,
+    removeFromFavorites: removeFromFavoritesTool,
+    getFavorites: getFavoritesTool
 };

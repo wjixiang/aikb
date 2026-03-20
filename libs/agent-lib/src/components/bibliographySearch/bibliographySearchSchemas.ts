@@ -52,3 +52,22 @@ export const navigatePageParamsSchema = z.object({
  * Schema for clear_results tool parameters
  */
 export const clearResultsParamsSchema = z.object({});
+
+/**
+ * Schema for save_article tool parameters
+ */
+export const saveArticleParamsSchema = z.object({
+    pmid: z.string().describe('PubMed ID (PMID) of article to save to favorites')
+});
+
+/**
+ * Schema for remove_from_favorites tool parameters
+ */
+export const removeFromFavoritesParamsSchema = z.object({
+    pmid: z.string().describe('PubMed ID (PMID) of article to remove from favorites')
+});
+
+/**
+ * Schema for get_favorites tool parameters
+ */
+export const getFavoritesParamsSchema = z.object({});

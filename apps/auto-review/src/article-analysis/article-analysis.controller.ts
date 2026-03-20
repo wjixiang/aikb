@@ -23,6 +23,7 @@ export class ExtractPdfDto {
   enableTable?: boolean;
   pageRanges?: string;
   useAgentApi?: boolean;
+  useDocling?: boolean;
 }
 
 export class ExtractResultResponse {
@@ -56,6 +57,7 @@ export class ArticleAnalysisController {
         enableTable: dto.enableTable ?? true,
         pageRanges: dto.pageRanges,
         useAgentApi: dto.useAgentApi ?? false,
+        useDocling: dto.useDocling ?? false,
       });
 
       return { success: true, data: result };

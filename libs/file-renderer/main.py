@@ -61,6 +61,7 @@ from routers import (
     json_router,
     markdown_router,
     pdf_router,
+    pdf_render_router,
     tex_router,
     text_router,
     xml_router,
@@ -109,6 +110,10 @@ TAGS_METADATA = [
     {
         "name": "pdf",
         "description": "PDF 文件 API - 创建和解析 PDF 文件，支持分页读取",
+    },
+    {
+        "name": "pdf-render",
+        "description": "PDF 渲染 API - 使用 MinerU/Docling 将 PDF 转换为 Markdown 和图片，支持多种渲染后端",
     },
     {
         "name": "tex",
@@ -363,6 +368,7 @@ app.include_router(xml_router, prefix="/api/v1/xml")
 app.include_router(csv_router, prefix="/api/v1/csv")
 app.include_router(binary_router, prefix="/api/v1/binary")
 app.include_router(pdf_router, prefix="/api/v1/pdf")
+app.include_router(pdf_render_router, prefix="/api/v1")
 app.include_router(tex_router, prefix="/api/v1/tex")
 app.include_router(docling_router, prefix="/api/v1")
 app.include_router(editor_router, prefix="/api/v1")

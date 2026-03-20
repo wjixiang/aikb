@@ -101,6 +101,8 @@ export interface IVirtualWorkspace {
      * Get all registered global component IDs
      */
     getGlobalComponentIds(): string[];
+
+    exportResult(): Record<string, any>;
 }
 
 /**
