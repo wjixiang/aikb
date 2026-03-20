@@ -5,6 +5,7 @@ import {
   type Tool,
   type IVirtualWorkspace,
   type ToolCallResult,
+  type ComponentStateBase,
   tdiv,
   MdDiv,
   MdHeading,
@@ -746,6 +747,50 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   unregisterExternalRenderer(id: string): void {
     this.externalRenderers.delete(id);
+  }
+
+  // ==================== Component State Export/Import (Phase 3) ====================
+
+  /**
+   * Export all component states for persistence
+   */
+  exportComponentStates(): Map<string, ComponentStateBase> {
+    const states = new Map<string, ComponentStateBase>();
+    const registrations = this.componentRegistry.getAllRegistrations();
+
+    for (const registration of registrations) {
+      if (registration.component.exportState) {
+        try {
+          states.set(registration.id, registration.component.exportState());
+        } catch (error) {
+          console.error(
+            `[VirtualWorkspace] Failed to export state for ${registration.id}:`,
+            error,
+          );
+        }
+      }
+    }
+
+    return states;
+  }
+
+  /**
+   * Import component states from persistence
+   */
+  importComponentStates(states: Map<string, ComponentStateBase>): void {
+    for (const [componentId, state] of states) {
+      try {
+        const registration = this.componentRegistry.getRegistration(componentId);
+        if (registration?.component.restoreState) {
+          registration.component.restoreState(state);
+        }
+      } catch (error) {
+        console.error(
+          `[VirtualWorkspace] Failed to restore state for ${componentId}:`,
+          error,
+        );
+      }
+    }
   }
 }
 
