@@ -5,7 +5,7 @@ import { config as conf } from 'dotenv';
 conf();
 
 async function main() {
-  const apiKey = process.env['MINIMAX_API_KEY'];
+  const apiKey = process.env['GLM_API_KEY'];
   const mailboxUrl = process.env['MAILBOX_URL'] || 'http://localhost:3000';
 
   if (!apiKey) {
@@ -17,9 +17,10 @@ async function main() {
   const executor = new ExpertExecutor(registry, undefined);
 
   config.apiConfiguration = {
-    apiProvider: 'minimax',
+    apiProvider: 'zai',
     apiKey: apiKey,
-    apiModelId: 'Minimax-M2.5-highspeed',
+    apiModelId: 'glm-4.5',
+    zaiApiLine: 'china_coding'
   };
 
   // 2. Register ExpertConfig
