@@ -1,15 +1,23 @@
 // Learn more about clients at https://docs.boundaryml.com/docs/snippets/clients/overview
 
 // Using the new OpenAI Responses API for enhanced formatting
+// client<llm> MiniMax {
+//   provider anthropic
+//   options {
+//     model "minimax-m2.5-highspeed"
+//     base_url "https://api.minimaxi.com/anthropic"
+//     api_key env.MINIMAX_API_KEY
+//   }
+// }
+
 client<llm> MiniMax {
-  provider anthropic
+  provider openai
   options {
-    model "minimax-m2.5-highspeed"
-    base_url "https://api.minimaxi.com/anthropic"
-    api_key env.MINIMAX_API_KEY
+    model "glm-4.5-air"
+    base_url "https://open.bigmodel.cn/api/coding/paas/v4"
+    api_key env.GLM_API_KEY
   }
 }
-
 
 // Example Google AI client (uncomment to use)
 // client<llm> CustomGemini {

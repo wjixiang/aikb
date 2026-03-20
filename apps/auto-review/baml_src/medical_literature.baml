@@ -190,6 +190,15 @@ function SummarizeMultiplePapers(papers: string) -> PaperSummary[] {
   "#
 }
 
+test TestName {
+  functions [SummarizeMultiplePapers]
+  args {
+    papers #"
+      hello world
+    "#
+  }
+}
+
 // ============ Tests ============
 
 test summarize_aspirin_rct {

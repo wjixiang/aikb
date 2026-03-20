@@ -86,7 +86,9 @@
       "Bash(pip install:*)",
       "Bash(.venv/bin/python -m mypy services/docling_service.py --ignore-missing-imports)",
       "Bash(.venv/bin/pip install:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(tail -50 ~/.claude/projects/-mnt-disk1-project-project-aikb/e51a89d5-03ed-44c9-ac0c-82a4e55d1e8c/tool-results/*.txt)",
+      "Bash(npx baml-cli:*)"
     ]
   }
 }

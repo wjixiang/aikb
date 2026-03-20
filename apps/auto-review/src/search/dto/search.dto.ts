@@ -1,6 +1,3 @@
-import { IsString, IsOptional, IsInt, IsEnum, IsArray } from 'class-validator';
-import { Type } from 'class-transformer';
-
 export enum SortOrder {
   MATCH = 'match',
   DATE = 'date',
@@ -9,76 +6,58 @@ export enum SortOrder {
   JOUR = 'jour',
 }
 
-export class SearchQueryDto {
-  @IsString()
-  q!: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  page?: number;
-
-  @IsOptional()
-  @IsEnum(SortOrder)
-  sort?: SortOrder;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  filter?: string[];
-}
-
-export class ArticleProfileDto {
-  doi!: string | null;
-  pmid!: string;
-  title!: string;
-  authors!: string;
-  journalCitation!: string;
-  snippet!: string;
+export interface ArticleProfileDto {
+  doi: string | null;
+  pmid: string;
+  title: string;
+  authors: string;
+  journalCitation: string;
+  snippet: string;
   position?: number;
 }
 
-export class ArticleSearchResultDto {
-  totalResults!: number | null;
-  totalPages!: number | null;
-  articleProfiles!: ArticleProfileDto[];
+export interface ArticleSearchResultDto {
+  totalResults: number | null;
+  totalPages: number | null;
+  articleProfiles: ArticleProfileDto[];
 }
 
-export class AffiliationDto {
+export interface AffiliationDto {
   institution?: string;
   city?: string;
   country?: string;
   email?: string;
 }
 
-export class AuthorDto {
-  name!: string;
+export interface AuthorDto {
+  name: string;
   position?: number;
-  affiliations!: AffiliationDto[];
+  affiliations: AffiliationDto[];
 }
 
-export class KeywordDto {
-  text!: string;
+export interface KeywordDto {
+  text: string;
   isMeSH?: boolean;
+  majorTopic?: boolean;
 }
 
-export class ReferenceDto {
+export interface ReferenceDto {
   pmid?: string;
-  citation!: string;
+  citation: string;
 }
 
-export class SimilarArticleDto {
-  pmid!: string;
-  title!: string;
+export interface SimilarArticleDto {
+  pmid: string;
+  title: string;
 }
 
-export class FullTextSourceDto {
-  name!: string;
-  url!: string;
+export interface FullTextSourceDto {
+  name: string;
+  url: string;
   type?: string;
 }
 
-export class JournalInfoDto {
+export interface JournalInfoDto {
   title?: string;
   volume?: string;
   issue?: string;
@@ -86,32 +65,32 @@ export class JournalInfoDto {
   pubDate?: string;
 }
 
-export class ArticleDetailDto {
-  doi!: string;
-  pmid!: string;
-  title!: string;
-  authors!: AuthorDto[];
-  affiliations!: AffiliationDto[];
-  abstract!: string;
-  keywords!: KeywordDto[];
-  conflictOfInterestStatement!: string;
-  similarArticles!: SimilarArticleDto[];
-  references!: ReferenceDto[];
-  publicationTypes!: string[];
-  meshTerms!: KeywordDto[];
-  relatedInformation!: Record<string, string[]>;
-  fullTextSources!: FullTextSourceDto[];
-  journalInfo!: JournalInfoDto;
+export interface ArticleDetailDto {
+  doi: string;
+  pmid: string;
+  title: string;
+  authors: AuthorDto[];
+  affiliations: AffiliationDto[];
+  abstract: string;
+  keywords: KeywordDto[];
+  conflictOfInterestStatement: string;
+  similarArticles: SimilarArticleDto[];
+  references: ReferenceDto[];
+  publicationTypes: string[];
+  meshTerms: KeywordDto[];
+  relatedInformation: Record<string, string[]>;
+  fullTextSources: FullTextSourceDto[];
+  journalInfo: JournalInfoDto;
 }
 
-export class SearchResponseDto {
-  success!: boolean;
+export interface SearchResponseDto {
+  success: boolean;
   data?: ArticleSearchResultDto;
   error?: string;
 }
 
-export class ArticleDetailResponseDto {
-  success!: boolean;
+export interface ArticleDetailResponseDto {
+  success: boolean;
   data?: ArticleDetailDto;
   error?: string;
 }

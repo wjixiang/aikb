@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { MinerUClient, AgentUrlParseRequest } from 'mineru-client';
 import axios from 'axios';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import config from '../config.js';
+import { Logger } from '../utils/logger.js';
 
 export interface PdfExtractOptions {
   url?: string;
@@ -27,7 +28,9 @@ export interface PdfExtractResult {
   backend?: 'mineru_agent' | 'mineru_precision' | 'docling';
 }
 
-@Injectable()
+/**
+ * ArticleAnalysisService - PDF extraction using MinerU
+ */
 export class ArticleAnalysisService {
   private readonly logger = new Logger(ArticleAnalysisService.name);
   private client: MinerUClient;
@@ -36,9 +39,9 @@ export class ArticleAnalysisService {
 
   constructor() {
     // Initialize MinerU client
-    const token = process.env.MINERU_TOKEN;
-    this.downloadDir = process.env.MINERU_DOWNLOAD_DIR || './mineru-downloads';
-    this.fileRendererUrl = process.env.FILE_RENDERER_URL || 'http://localhost:8000';
+    const token = config.mineruToken;
+    this.downloadDir = config.mineruDownloadDir;
+    this.fileRendererUrl = config.fileRendererUrl;
 
     this.client = new MinerUClient({
       token,
@@ -81,9 +84,7 @@ export class ArticleAnalysisService {
     this.logger.log(`Using Agent API: ${useAgentApi}, Docling: ${useDocling}`);
 
     // Ensure download directory exists
-    if (!fs.existsSync(this.downloadDir)) {
-      fs.mkdirSync(this.downloadDir, { recursive: true });
-    }
+    await fs.mkdir(this.downloadDir, { recursive: true });
 
     if (useDocling) {
       // Use Docling via file-renderer service
@@ -194,7 +195,7 @@ export class ArticleAnalysisService {
 
     if (downloadedFiles && downloadedFiles.length > 0) {
       const zipPath = downloadedFiles[0];
-      const zipBuffer = await fs.promises.readFile(zipPath);
+      const zipBuffer = await fs.readFile(zipPath);
       markdown = (await zipProcessor.extractMarkdownFromZip(zipBuffer)) || '';
       this.logger.log(`Extracted ${markdown.length} chars of markdown`);
     }
@@ -244,7 +245,9 @@ export class ArticleAnalysisService {
   ): Promise<PdfExtractResult> {
     const { language = 'ch', useAgentApi = true } = options;
 
-    if (!fs.existsSync(filePath)) {
+    try {
+      await fs.access(filePath);
+    } catch {
       throw new Error(`File not found: ${filePath}`);
     }
 

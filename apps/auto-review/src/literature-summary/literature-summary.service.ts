@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
+import config from '../config.js';
+import { Logger } from '../utils/logger.js';
 
 /**
  * Structured output for medical literature summarization
@@ -102,7 +103,7 @@ export interface PICOExtractionResult {
 }
 
 const SUMMARIZATION_PROMPT = `You are an expert in evidence-based medicine and systematic review.
-Analyze the following medical literature article and provide a comprehensive structured summary in JSON format.
+Analyze of following medical literature article and provide a comprehensive structured summary in JSON format.
 
 Article Content:
 {{content}}
@@ -190,7 +191,7 @@ Output the result as valid JSON matching this exact schema (use null for unknown
   "keywords": ["array of 5-10 keywords"]
 }
 
-Return ONLY the JSON, no markdown formatting or explanation.`;
+Return ONLY JSON, no markdown formatting or explanation.`;
 
 const PICO_PROMPT = `Extract the PICO (Population, Intervention, Comparator, Outcome) elements from this medical literature:
 
@@ -224,17 +225,19 @@ Output ONLY valid JSON matching this schema:
   }
 }
 
-Return ONLY the JSON, no markdown formatting.`;
+Return ONLY JSON, no markdown formatting.`;
 
-@Injectable()
+/**
+ * LiteratureSummaryService - Summarize medical literature using LLM
+ */
 export class LiteratureSummaryService {
   private readonly logger = new Logger(LiteratureSummaryService.name);
   private readonly apiUrl: string;
   private readonly apiKey: string;
 
   constructor() {
-    this.apiUrl = process.env.LLM_API_URL || 'https://api.minimaxi.com/anthropic/v1/messages';
-    this.apiKey = process.env.MINIMAX_API_KEY || '';
+    this.apiUrl = config.llmApiUrl;
+    this.apiKey = config.llmApiKey;
   }
 
   /**
@@ -338,7 +341,7 @@ Analyze the following multiple medical papers and provide:
 2. A synthesis comparing all papers
 3. Common themes identified
 4. Any conflicts or discrepancies between findings
-5. Gaps in the evidence
+5. Gaps in evidence
 
 Papers:
 ${papersText}
@@ -365,7 +368,7 @@ Output ONLY valid JSON with this structure:
   "gaps": ["array of evidence gaps"]
 }
 
-Return ONLY the JSON.`;
+Return ONLY JSON.`;
 
       const response = await this.callLLM(prompt);
 

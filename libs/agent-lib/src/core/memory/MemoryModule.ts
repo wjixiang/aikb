@@ -14,6 +14,7 @@ import type { IMemoryModule, MemoryModuleConfig } from './types.js';
 import { TYPES } from '../di/types.js';
 import { tiktoken } from '../utils/tiktoken.js';
 import type { ApiClient } from '../api-client/index.js';
+import { diffChars } from 'diff'
 
 // Re-export types
 export type { MemoryModuleConfig };
@@ -316,7 +317,7 @@ export class MemoryModule implements IMemoryModule {
      * Returns diff structure indicating what changed
      * Ignores changes in Recent Tool Calls section (always changes)
      */
-    private _computeContextDiff(
+    _computeContextDiff(
         prevContext: string | null,
         currContext: string
     ): { hasChanges: boolean; changedSections: string[] } {
@@ -339,25 +340,11 @@ export class MemoryModule implements IMemoryModule {
             return { hasChanges: false, changedSections: [] };
         }
 
-        const prevSections = this._parseContextBySections(prevClean);
-        const currSections = this._parseContextBySections(currClean);
+        const difResult = diffChars(prevClean, currClean)
+        console.log(difResult)
 
-        const changedSections: string[] = [];
-
-        // Check all sections in current
-        for (const [section, content] of currSections) {
-            const prevContent = prevSections.get(section);
-            if (prevContent !== content) {
-                changedSections.push(section);
-            }
-        }
-
-        // Check for removed sections
-        for (const [section] of prevSections) {
-            if (!currSections.has(section)) {
-                changedSections.push(`${section}[REMOVED]`);
-            }
-        }
+        const changedSections = difResult.filter(e => ((e.added || e.removed) === true))
+            .map(e => `[${e.added ? 'ADDED' : 'REMOVED'}] ${e.value}`)
 
         return {
             hasChanges: changedSections.length > 0,
