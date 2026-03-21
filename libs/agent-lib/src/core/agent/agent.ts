@@ -346,6 +346,60 @@ export class Agent {
   }
 
   /**
+   * Save memory state to persistence
+   */
+  private async saveMemory(): Promise<void> {
+    if (!this.persistenceService) return;
+
+    // Check if persistence service supports memory persistence
+    if (typeof this.persistenceService.saveMemory !== 'function') {
+      return;
+    }
+
+    try {
+      await this.persistenceService.saveMemory(this.instanceId, {
+        messages: this.memoryModule.getAllMessages(),
+        workspaceContexts: this.memoryModule.getWorkspaceContexts(),
+        config: this.memoryModule.getConfig(),
+      });
+      this.logger.debug('[Agent] Memory saved to persistence');
+    } catch (error) {
+      this.logger.warn({ error }, '[Agent] Failed to save memory');
+    }
+  }
+
+  /**
+   * Load memory state from persistence
+   */
+  public async loadMemory(): Promise<boolean> {
+    if (!this.persistenceService) return false;
+
+    // Check if persistence service supports memory loading
+    if (typeof this.persistenceService.loadMemory !== 'function') {
+      return false;
+    }
+
+    try {
+      const memory = await this.persistenceService.loadMemory(this.instanceId);
+      if (memory) {
+        // Import memory state into memory module
+        this.memoryModule.import({
+          messages: memory.messages,
+          workspaceContexts: memory.workspaceContexts,
+        });
+        this.logger.info(
+          { instanceId: this.instanceId, messageCount: (memory.messages as unknown[]).length },
+          '[Agent] Memory loaded from persistence',
+        );
+        return true;
+      }
+    } catch (error) {
+      this.logger.warn({ error }, '[Agent] Failed to load memory');
+    }
+    return false;
+  }
+
+  /**
    * Initialize TaskModule after expert identity is set
    * Called internally when setExpertIdentity is invoked
    */
@@ -826,6 +880,9 @@ export class Agent {
         }
         // Reset consecutive error count on successful loop iteration
         this.resetConsecutiveErrorCount();
+
+        // Save memory to persistence after each iteration
+        await this.saveMemory();
       } catch (error) {
         // Properly serialize error to extract message, name, and stack
         const errorMessage =

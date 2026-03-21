@@ -10,6 +10,7 @@ import type {
   PersistenceConfig,
   InstanceMetadata,
 } from './types.js';
+import type { ApiMessage, WorkspaceContextEntry } from '../memory/types.js';
 import { TYPES } from '../di/types.js';
 import pino from 'pino';
 
@@ -22,10 +23,9 @@ export class PostgresPersistenceService implements IPersistenceService {
     @inject(TYPES.PrismaClient) private prisma: PrismaClient,
     @inject(TYPES.PersistenceConfig) @optional() config?: PersistenceConfig,
   ) {
-    this.config = { enabled: true, autoCommit: true, ...config };
+    this.config = { autoCommit: true, ...config };
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'info' });
     this.logger.info(
-      { enabled: this.config.enabled },
       '[PersistenceService] Initialized',
     );
   }
@@ -189,24 +189,24 @@ export class PostgresPersistenceService implements IPersistenceService {
   async saveMemory(
     instanceId: string,
     memory: {
-      messages: unknown[];
-      workspaceContexts: unknown[];
+      messages: ApiMessage[];
+      workspaceContexts: WorkspaceContextEntry[];
       config: unknown;
     },
   ): Promise<void> {
-    // First, get the internal session ID from instanceId
-    const session = await this.prisma.agentSession.findUnique({
+    // Verify instance exists
+    const instance = await this.prisma.agentInstance.findUnique({
       where: { instanceId },
     });
 
-    if (!session) {
-      throw new Error(`Session not found for instance: ${instanceId}`);
+    if (!instance) {
+      throw new Error(`Instance not found: ${instanceId}`);
     }
 
     await this.prisma.agentMemory.upsert({
-      where: { sessionId: session.id },
+      where: { instanceId },
       create: {
-        sessionId: session.id,
+        instanceId,
         messages: memory.messages as object,
         workspaceContexts: memory.workspaceContexts as object,
         config: memory.config as object,
@@ -222,23 +222,22 @@ export class PostgresPersistenceService implements IPersistenceService {
   }
 
   async loadMemory(instanceId: string): Promise<{
-    messages: unknown[];
-    workspaceContexts: unknown[];
+    messages: ApiMessage[];
+    workspaceContexts: WorkspaceContextEntry[];
     config: unknown;
   } | null> {
-    const session = await this.prisma.agentSession.findUnique({
+    const memory = await this.prisma.agentMemory.findUnique({
       where: { instanceId },
-      include: { memory: true },
     });
 
-    if (!session?.memory) {
+    if (!memory) {
       return null;
     }
 
     return {
-      messages: session.memory.messages as unknown[],
-      workspaceContexts: session.memory.workspaceContexts as unknown[],
-      config: session.memory.config,
+      messages: memory.messages as unknown as ApiMessage[],
+      workspaceContexts: memory.workspaceContexts as unknown as WorkspaceContextEntry[],
+      config: memory.config,
     };
   }
 

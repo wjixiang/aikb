@@ -135,6 +135,11 @@ export const TYPES = {
    */
   TaskId: Symbol('TaskId'),
 
+  /**
+   * MemoryInstanceId - Instance ID for memory persistence
+   */
+  MemoryInstanceId: Symbol('MemoryInstanceId'),
+
   // ==================== Tool Management ====================
 
   /**

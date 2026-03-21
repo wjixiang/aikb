@@ -4,6 +4,7 @@
 
 import type { AgentConfig } from '../agent/agent.js';
 import type { AgentStatus } from '../common/types.js';
+import type { ApiMessage, WorkspaceContextEntry } from '../memory/types.js';
 
 /**
  * Agent Instance 元数据结构
@@ -39,7 +40,7 @@ export interface AgentSessionData {
  * 持久化服务配置
  */
 export interface PersistenceConfig {
-  enabled: boolean;
+  // enabled: boolean;
   databaseUrl?: string;
   autoCommit?: boolean; // 自动提交变更
 }
@@ -95,11 +96,11 @@ export interface IPersistenceService {
   /**
    * 保存 Memory 快照
    */
-  saveMemory?(
+  saveMemory(
     instanceId: string,
     memory: {
-      messages: unknown[];
-      workspaceContexts: unknown[];
+      messages: ApiMessage[];
+      workspaceContexts: WorkspaceContextEntry[];
       config: unknown;
     },
   ): Promise<void>;
@@ -107,11 +108,11 @@ export interface IPersistenceService {
   /**
    * 加载 Memory 快照
    */
-  loadMemory?(
+  loadMemory(
     instanceId: string,
   ): Promise<{
-    messages: unknown[];
-    workspaceContexts: unknown[];
+    messages: ApiMessage[];
+    workspaceContexts: WorkspaceContextEntry[];
     config: unknown;
   } | null>;
 

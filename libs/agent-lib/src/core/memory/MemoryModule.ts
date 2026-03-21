@@ -14,6 +14,7 @@ import type { IMemoryModule, MemoryModuleConfig } from './types.js';
 import { TYPES } from '../di/types.js';
 import { tiktoken } from '../utils/tiktoken.js';
 import type { ApiClient } from '../api-client/index.js';
+import type { IPersistenceService } from '../persistence/types.js';
 import { diffChars } from 'diff'
 
 // Re-export types
@@ -121,13 +122,23 @@ export class MemoryModule implements IMemoryModule {
     // Flag to prevent recursive compression
     private _isCompressing = false;
 
+    // Persistence service for memory durability
+    private persistenceService: IPersistenceService | null = null;
+
+    // Instance ID for persistence (injected via Inversify)
+    private instanceId: string | null = null;
+
     constructor(
         @inject(TYPES.Logger) private logger: Logger,
         @inject(TYPES.MemoryModuleConfig) @optional() config: Partial<MemoryModuleConfig> = {},
         @inject(TYPES.ApiClient) @optional() apiClient: ApiClient | null = null,
+        @inject(TYPES.IPersistenceService) @optional() persistenceService: IPersistenceService | null = null,
+        @inject(TYPES.MemoryInstanceId) @optional() instanceId: string | null = null,
     ) {
         this.config = { ...defaultMemoryConfig, ...config };
         this.apiClient = apiClient || null;
+        this.persistenceService = persistenceService || null;
+        this.instanceId = instanceId;
     }
 
     /**
@@ -151,6 +162,30 @@ export class MemoryModule implements IMemoryModule {
         this.config = { ...this.config, ...config };
     }
 
+    // ==================== Persistence ====================
+
+    /**
+     * Persist memory to storage (if persistence service is available)
+     */
+    private async _persistMemory(): Promise<void> {
+        if (!this.persistenceService || !this.instanceId) {
+            this.logger.warn('PersistenceService not exist in MemoryModule, skip memory persisting.')
+            return;
+        }
+
+        try {
+            await this.persistenceService.saveMemory(this.instanceId, {
+                messages: this.messages,
+                workspaceContexts: this.workspaceContexts,
+                config: this.config,
+            });
+
+            this.logger.debug('[MemoryModule] Memory has been persisted')
+        } catch (error) {
+            this.logger.warn(`[MemoryModule] Failed to persist memory: ${error}`);
+        }
+    }
+
     // ==================== Message Management ====================
 
     /**
@@ -164,6 +199,9 @@ export class MemoryModule implements IMemoryModule {
         if (!this._isCompressing && !this.isSummaryMessage(message)) {
             await this.compressIfNeeded();
         }
+
+        // Persist memory after adding message
+        await this._persistMemory();
 
         return message;
     }
@@ -180,9 +218,11 @@ export class MemoryModule implements IMemoryModule {
     /**
      * Add message (sync version for compatibility - doesn't trigger compression)
      */
-    addMessageSync(message: ApiMessage): ApiMessage {
+    async addMessageSync(message: ApiMessage): Promise<ApiMessage> {
         this.messages.push(message);
         this._cachedTokenCount = null;
+        // Persist memory after adding message
+        await this._persistMemory();
         return message;
     }
 
@@ -476,6 +516,9 @@ export class MemoryModule implements IMemoryModule {
         this.logger.debug(
             `[MemoryModule] Recorded workspace context for iteration ${iteration}`
         );
+
+        // Persist memory after recording workspace context
+        await this._persistMemory();
     }
 
     /**
@@ -881,6 +924,8 @@ Please analyze the changes between these two workspace contexts.`
             this.savedErrors = data.savedErrors;
         }
         this._cachedTokenCount = null;
+        // Persist after import
+        this._persistMemory();
     }
 
     /**
@@ -891,6 +936,7 @@ Please analyze the changes between these two workspace contexts.`
         this.workspaceContexts = [];
         this.savedErrors = [];
         this._cachedTokenCount = null;
+        this._previousFullContext = null;
     }
 }
 
