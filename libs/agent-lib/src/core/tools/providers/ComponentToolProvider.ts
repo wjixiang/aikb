@@ -1,7 +1,8 @@
-import { injectable } from 'inversify';
-import type { Tool, ToolComponent } from '../../../components/index.js';
+import { inject, injectable } from 'inversify';
+import type { IVirtualWorkspace, Tool, ToolComponent } from '../../../components/index.js';
 import type { IToolProvider } from '../IToolProvider.js';
 import { BaseToolProvider } from '../IToolProvider.js';
+import { TYPES } from '../../di/types.js';
 
 /**
  * Callback type for tool execution notifications
@@ -41,6 +42,7 @@ export class ComponentToolProvider extends BaseToolProvider implements IToolProv
     constructor(
         private componentKey: string,
         private component: ToolComponent,
+        // @inject(TYPES.VirtualWorkspace) workspace: IVirtualWorkspace,
         onToolExecuted?: ToolExecutedCallback
     ) {
         super();

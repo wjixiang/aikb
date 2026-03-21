@@ -255,6 +255,13 @@ export class AgentContainer {
         this.container
             .bind<Container>(TYPES.Container)
             .toConstantValue(this.container);
+
+        // Bind ToolComponents array for DI-managed registration
+        if (this.config.components && this.config.components.length > 0) {
+            this.container
+                .bind<Array<{ id: string; component: import('../../components/core/toolComponent.js').ToolComponent; priority?: number }>>(TYPES.ToolComponents)
+                .toConstantValue(this.config.components);
+        }
     }
 
     async getAgent(): Promise<Agent> {

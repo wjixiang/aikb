@@ -277,6 +277,14 @@ export const TYPES = {
    * @scope Singleton - Shared across all agents
    */
   PersistenceConfig: Symbol('PersistenceConfig'),
+
+  // ==================== Tool Components (DI-managed) ====================
+
+  /**
+   * ToolComponents - Array of component registrations managed by DI
+   * @scope Singleton - Bound at container creation
+   */
+  ToolComponents: Symbol('ToolComponents'),
 } as const;
 
 export type TestOverrides = {
