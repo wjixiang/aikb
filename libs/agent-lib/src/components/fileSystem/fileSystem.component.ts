@@ -1,13 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
 import {
-  Tool,
-  ToolCallResult,
-  TUIElement,
-  tdiv,
-  th,
-  tp,
-} from '../ui/index.js';
+  ToolComponent,
+  ExportOptions,
+  ComponentStateBase,
+} from '../core/toolComponent.js';
+import { Tool, ToolCallResult, TUIElement, tdiv, th, tp } from '../ui/index.js';
 import {
   FileSystemComponentConfig,
   fileSystemToolSchemas,
@@ -78,7 +75,11 @@ export interface FileSystemHooks {
   /** Read file content */
   read(s3Key: string): Promise<string>;
   /** Write file content (creates or overwrites) */
-  write(s3Key: string, content: string, contentType?: string): Promise<FileCreateResponse>;
+  write(
+    s3Key: string,
+    content: string,
+    contentType?: string,
+  ): Promise<FileCreateResponse>;
   /** List files with prefix */
   list(prefix?: string, limit?: number): Promise<FileListItem[]>;
   /** Delete file */
@@ -126,13 +127,14 @@ export interface FileSystemHooks {
 export class FileSystemComponent extends ToolComponent {
   override componentId = 'fileSystem';
   override displayName = 'FileSystem';
-  override description = 'Cloud file storage system for agent file management with S3 backend';
+  override description =
+    'Cloud file storage system for agent file management with S3 backend';
 
   toolSet: Map<string, Tool>;
   private config: FileSystemComponentConfig;
 
-  // Property-based state
-  private state: FileSystemComponentState = {
+  // Property-based state (renamed to avoid conflict with base class state getter)
+  private componentState: FileSystemComponentState = {
     files: [],
     totalFiles: 0,
     recentOperations: [],
@@ -152,11 +154,35 @@ export class FileSystemComponent extends ToolComponent {
   // ==================== State Management ====================
 
   private _setState(state: Partial<FileSystemComponentState>): void {
-    this.state = { ...this.state, ...state };
+    this.componentState = { ...this.componentState, ...state };
   }
 
   private _getState(): FileSystemComponentState {
-    return { ...this.state };
+    return { ...this.componentState };
+  }
+
+  // ==================== Persistence (Phase 3) ====================
+
+  override exportState(): FileSystemComponentState & ComponentStateBase {
+    return {
+      ...this._state,
+      ...this.componentState,
+    };
+  }
+
+  override restoreState(
+    state: FileSystemComponentState & ComponentStateBase,
+  ): void {
+    this._state = {
+      version: state.version,
+      updatedAt: state.updatedAt,
+    };
+    this.componentState = {
+      files: state.files || [],
+      totalFiles: state.totalFiles || 0,
+      activeFile: state.activeFile,
+      recentOperations: state.recentOperations || [],
+    };
   }
 
   // ==================== Tool Definitions ====================
@@ -164,7 +190,10 @@ export class FileSystemComponent extends ToolComponent {
   private initializeToolSet(): Map<string, Tool> {
     const tools = new Map<string, Tool>();
 
-    const toolEntries: [string, (typeof fileSystemToolSchemas)[keyof typeof fileSystemToolSchemas]][] = [
+    const toolEntries: [
+      string,
+      (typeof fileSystemToolSchemas)[keyof typeof fileSystemToolSchemas],
+    ][] = [
       ['listFiles', fileSystemToolSchemas.listFiles],
       ['readFile', fileSystemToolSchemas.readFile],
       ['createFile', fileSystemToolSchemas.createFile],
@@ -192,7 +221,10 @@ export class FileSystemComponent extends ToolComponent {
   // ==================== Tool Call Handler ====================
 
   handleToolCall: {
-    <T extends FileSystemToolName>(toolName: T, params: unknown): Promise<ToolCallResult<ToolReturnType<T>>>;
+    <T extends FileSystemToolName>(
+      toolName: T,
+      params: unknown,
+    ): Promise<ToolCallResult<ToolReturnType<T>>>;
     (toolName: string, params: unknown): Promise<ToolCallResult<any>>;
   } = async (
     toolName: string,
@@ -217,17 +249,29 @@ export class FileSystemComponent extends ToolComponent {
         case 'fileExists':
           return await this.handleFileExists(params as FileExistsParams);
         case 'getFileMetadata':
-          return await this.handleGetFileMetadata(params as GetFileMetadataParams);
+          return await this.handleGetFileMetadata(
+            params as GetFileMetadataParams,
+          );
         case 'readMarkdownByPage':
-          return await this.handleReadMarkdownByPage(params as ReadMarkdownByPageParams);
+          return await this.handleReadMarkdownByPage(
+            params as ReadMarkdownByPageParams,
+          );
         case 'editMarkdownReplace':
-          return await this.handleEditMarkdownReplace(params as EditMarkdownReplaceParams);
+          return await this.handleEditMarkdownReplace(
+            params as EditMarkdownReplaceParams,
+          );
         case 'editMarkdownInsert':
-          return await this.handleEditMarkdownInsert(params as EditMarkdownInsertParams);
+          return await this.handleEditMarkdownInsert(
+            params as EditMarkdownInsertParams,
+          );
         case 'editMarkdownDelete':
-          return await this.handleEditMarkdownDelete(params as EditMarkdownDeleteParams);
+          return await this.handleEditMarkdownDelete(
+            params as EditMarkdownDeleteParams,
+          );
         case 'convertToMarkdown':
-          return await this.handleConvertToMarkdown(params as ConvertToMarkdownParams);
+          return await this.handleConvertToMarkdown(
+            params as ConvertToMarkdownParams,
+          );
         case 'convertToText':
           return await this.handleConvertToText(params as ConvertToTextParams);
         default:
@@ -455,16 +499,21 @@ export class FileSystemComponent extends ToolComponent {
 
   // ==================== Internal Helpers ====================
 
-  private _addOperation(operation: string, s3Key: string, success: boolean): void {
-    this.state.recentOperations.push({
+  private _addOperation(
+    operation: string,
+    s3Key: string,
+    success: boolean,
+  ): void {
+    this.componentState.recentOperations.push({
       operation,
       s3Key,
       timestamp: Date.now(),
       success,
     });
     // Keep only last 10 operations
-    if (this.state.recentOperations.length > 10) {
-      this.state.recentOperations = this.state.recentOperations.slice(-10);
+    if (this.componentState.recentOperations.length > 10) {
+      this.componentState.recentOperations =
+        this.componentState.recentOperations.slice(-10);
     }
   }
 
@@ -493,7 +542,9 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async createFile(params: CreateFileParams): Promise<FileCreateResponse> {
+  private async createFile(
+    params: CreateFileParams,
+  ): Promise<FileCreateResponse> {
     return this.request<FileCreateResponse>('/editor/create', {
       method: 'POST',
       body: JSON.stringify({
@@ -505,7 +556,9 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async updateFile(params: UpdateFileParams): Promise<FileUpdateResponse> {
+  private async updateFile(
+    params: UpdateFileParams,
+  ): Promise<FileUpdateResponse> {
     return this.request<FileUpdateResponse>('/editor/update', {
       method: 'POST',
       body: JSON.stringify({
@@ -517,7 +570,9 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async deleteFile(params: DeleteFileParams): Promise<FileDeleteResponse> {
+  private async deleteFile(
+    params: DeleteFileParams,
+  ): Promise<FileDeleteResponse> {
     return this.request<FileDeleteResponse>('/editor/delete', {
       method: 'POST',
       body: JSON.stringify({ s3_key: params.s3Key }),
@@ -544,14 +599,18 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async fileExists(params: FileExistsParams): Promise<FileExistsResponse> {
+  private async fileExists(
+    params: FileExistsParams,
+  ): Promise<FileExistsResponse> {
     return this.request<FileExistsResponse>('/editor/exists', {
       method: 'POST',
       body: JSON.stringify({ s3_key: params.s3Key }),
     });
   }
 
-  private async getFileMetadata(params: GetFileMetadataParams): Promise<FileMetadataResponse> {
+  private async getFileMetadata(
+    params: GetFileMetadataParams,
+  ): Promise<FileMetadataResponse> {
     // Use list with prefix filter to find the file, then get its metadata
     const listResult = await this.listFiles({
       prefix: params.s3Key,
@@ -560,7 +619,7 @@ export class FileSystemComponent extends ToolComponent {
       filterType: 'all',
       includeMetadata: true,
     });
-    const file = listResult.files.find(f => f.s3_key === params.s3Key);
+    const file = listResult.files.find((f) => f.s3_key === params.s3Key);
     if (file) {
       return {
         success: true,
@@ -572,7 +631,10 @@ export class FileSystemComponent extends ToolComponent {
       };
     }
     // Fallback: try to read the file directly
-    const readResult = await this.readFile({ s3Key: params.s3Key, encoding: 'utf-8' });
+    const readResult = await this.readFile({
+      s3Key: params.s3Key,
+      encoding: 'utf-8',
+    });
     if (readResult.success) {
       return {
         success: true,
@@ -591,7 +653,9 @@ export class FileSystemComponent extends ToolComponent {
     };
   }
 
-  private async readMarkdownByPage(params: ReadMarkdownByPageParams): Promise<MarkdownPageResponse> {
+  private async readMarkdownByPage(
+    params: ReadMarkdownByPageParams,
+  ): Promise<MarkdownPageResponse> {
     return this.request<MarkdownPageResponse>('/markdown/read/bypage', {
       method: 'POST',
       body: JSON.stringify({
@@ -602,7 +666,9 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async editMarkdownReplace(params: EditMarkdownReplaceParams): Promise<MarkdownEditResponse> {
+  private async editMarkdownReplace(
+    params: EditMarkdownReplaceParams,
+  ): Promise<MarkdownEditResponse> {
     return this.request<MarkdownEditResponse>('/markdown/edit/replace', {
       method: 'POST',
       body: JSON.stringify({
@@ -614,7 +680,9 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async editMarkdownInsert(params: EditMarkdownInsertParams): Promise<MarkdownEditResponse> {
+  private async editMarkdownInsert(
+    params: EditMarkdownInsertParams,
+  ): Promise<MarkdownEditResponse> {
     return this.request<MarkdownEditResponse>('/markdown/edit/insert', {
       method: 'POST',
       body: JSON.stringify({
@@ -626,7 +694,9 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async editMarkdownDelete(params: EditMarkdownDeleteParams): Promise<MarkdownEditResponse> {
+  private async editMarkdownDelete(
+    params: EditMarkdownDeleteParams,
+  ): Promise<MarkdownEditResponse> {
     return this.request<MarkdownEditResponse>('/markdown/edit/delete', {
       method: 'POST',
       body: JSON.stringify({
@@ -637,7 +707,9 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async convertToMarkdown(params: ConvertToMarkdownParams): Promise<ConversionResponse> {
+  private async convertToMarkdown(
+    params: ConvertToMarkdownParams,
+  ): Promise<ConversionResponse> {
     return this.request<ConversionResponse>('/docling/convert', {
       method: 'POST',
       body: JSON.stringify({
@@ -649,7 +721,9 @@ export class FileSystemComponent extends ToolComponent {
     });
   }
 
-  private async convertToText(params: ConvertToTextParams): Promise<ConversionResponse> {
+  private async convertToText(
+    params: ConvertToTextParams,
+  ): Promise<ConversionResponse> {
     return this.request<ConversionResponse>('/docling/convert', {
       method: 'POST',
       body: JSON.stringify({
@@ -696,8 +770,14 @@ export class FileSystemComponent extends ToolComponent {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: response.statusText })) as { detail?: string };
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+        const errorData = (await response
+          .json()
+          .catch(() => ({ detail: response.statusText }))) as {
+          detail?: string;
+        };
+        throw new Error(
+          errorData.detail || `HTTP ${response.status}: ${response.statusText}`,
+        );
       }
 
       return (await response.json()) as T;
@@ -729,7 +809,8 @@ export class FileSystemComponent extends ToolComponent {
         return this.createFile({
           s3Key,
           content,
-          contentType: contentType || this.config.defaultContentType || 'text/plain',
+          contentType:
+            contentType || this.config.defaultContentType || 'text/plain',
           encoding: 'utf-8',
         });
       },
@@ -776,7 +857,7 @@ export class FileSystemComponent extends ToolComponent {
     if (this.config.defaultPrefix) {
       infoTexts.push(`Prefix: ${this.config.defaultPrefix}`);
     }
-    infoTexts.push(`Files: ${this.state.totalFiles}`);
+    infoTexts.push(`Files: ${this.componentState.totalFiles}`);
 
     elements.push(
       new tdiv({
@@ -789,12 +870,12 @@ export class FileSystemComponent extends ToolComponent {
     );
 
     // File list view
-    if (this.state.files.length > 0) {
+    if (this.componentState.files.length > 0) {
       elements.push(this.renderFileList());
     }
 
     // Recent operations
-    if (this.state.recentOperations.length > 0) {
+    if (this.componentState.recentOperations.length > 0) {
       elements.push(new tp({ content: '', indent: 1 }));
       elements.push(new tp({ content: '─'.repeat(60), indent: 1 }));
       elements.push(
@@ -804,7 +885,9 @@ export class FileSystemComponent extends ToolComponent {
           textStyle: { bold: true },
         }),
       );
-      for (const op of this.state.recentOperations.slice(-5).reverse()) {
+      for (const op of this.componentState.recentOperations
+        .slice(-5)
+        .reverse()) {
         const status = op.success ? '[OK]' : '[FAIL]';
         const time = new Date(op.timestamp).toLocaleTimeString();
         elements.push(
@@ -826,13 +909,13 @@ export class FileSystemComponent extends ToolComponent {
 
     container.addChild(
       new tp({
-        content: `Files (${this.state.files.length} of ${this.state.totalFiles}):`,
+        content: `Files (${this.componentState.files.length} of ${this.componentState.totalFiles}):`,
         indent: 1,
         textStyle: { bold: true },
       }),
     );
 
-    for (const file of this.state.files.slice(0, 10)) {
+    for (const file of this.componentState.files.slice(0, 10)) {
       container.addChild(
         new tp({
           content: `  ${file.file_name}`,
@@ -853,10 +936,10 @@ export class FileSystemComponent extends ToolComponent {
       );
     }
 
-    if (this.state.files.length > 10) {
+    if (this.componentState.files.length > 10) {
       container.addChild(
         new tp({
-          content: `  ... and ${this.state.files.length - 10} more files`,
+          content: `  ... and ${this.componentState.files.length - 10} more files`,
           indent: 2,
           textStyle: { italic: true },
         }),

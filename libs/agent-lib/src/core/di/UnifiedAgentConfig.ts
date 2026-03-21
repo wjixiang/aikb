@@ -2,6 +2,7 @@ import type { AgentConfig, SOP } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
+import type { PersistenceConfig } from '../persistence/types.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
@@ -14,6 +15,7 @@ export interface UnifiedAgentConfig {
   api: ProviderSettings;
   workspace: VirtualWorkspaceConfig;
   memory: MemoryModuleConfig;
+  persistence?: PersistenceConfig;
 }
 
 export interface AgentCreationOptions {
@@ -25,6 +27,7 @@ export interface AgentCreationOptions {
   api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
   memory?: Partial<MemoryModuleConfig>;
+  persistence?: Partial<PersistenceConfig>;
   observers?: any;
 }
 
@@ -48,6 +51,9 @@ export const defaultUnifiedConfig: UnifiedAgentConfig = {
     alwaysRenderAllComponents: false,
   },
   memory: defaultMemoryConfig,
+  persistence: {
+    enabled: true,
+  },
 };
 
 export function mergeWithDefaults(
@@ -74,6 +80,10 @@ export function mergeWithDefaults(
       ...defaultUnifiedConfig.memory,
       ...partial.memory,
     },
+    persistence:
+      partial.persistence !== undefined
+        ? { enabled: true, ...partial.persistence }
+        : defaultUnifiedConfig.persistence,
   };
   return result;
 }

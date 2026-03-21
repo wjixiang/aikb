@@ -44,3 +44,18 @@ export { Prisma }
  * 
  */
 export type AgentSession = Prisma.AgentSessionModel
+/**
+ * Model AgentMemory
+ * 
+ */
+export type AgentMemory = Prisma.AgentMemoryModel
+/**
+ * Model ComponentState
+ * 
+ */
+export type ComponentState = Prisma.ComponentStateModel
+/**
+ * Model AgentInstance
+ * 
+ */
+export type AgentInstance = Prisma.AgentInstanceModel

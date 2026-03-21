@@ -167,6 +167,39 @@ export class SearchResultService {
     );
   }
 
+  async updateArticleNote(resultId: string, note: string) {
+    const trimmedNote = note.trim();
+    if (trimmedNote === '') {
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE "ArticleSearchResult" SET note = NULL WHERE id = $1`,
+        resultId,
+      );
+    } else {
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE "ArticleSearchResult" SET note = $1 WHERE id = $2`,
+        trimmedNote,
+        resultId,
+      );
+    }
+  }
+
+  async getArticleResult(resultId: string) {
+    const result = await this.prisma.$queryRaw`
+      SELECT asr.*,
+             JSON_BUILD_OBJECT(
+               'id', ae.id,
+               'provider', ae.provider,
+               'model', ae.model,
+               'dimension', ae.dimension,
+               'isActive', ae."isActive"
+             ) as embedding
+      FROM "ArticleSearchResult" asr
+      LEFT JOIN "ArticleEmbedding" ae ON ae."resultId" = asr.id
+      WHERE asr.id = ${resultId}
+    `;
+    return result;
+  }
+
   async getArticleWithoutEmbeddings(limit: number = 100) {
     return this.prisma.$queryRaw`
       SELECT asr.id, asr.pmid, asr.title, asr.snippet

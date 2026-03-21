@@ -14,6 +14,8 @@
  * ```
  */
 export const TYPES = {
+  AgentInstanceId: Symbol('AgentInstanceId'),
+
   Logger: Symbol('Logger'),
 
   /**

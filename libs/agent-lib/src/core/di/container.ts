@@ -13,6 +13,8 @@ import type { IMemoryModule } from '../memory/types.js';
 import type { IToolManager } from '../tools/index.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 import pino from 'pino';
 import {
   type UnifiedAgentConfig,
@@ -41,18 +43,101 @@ type Logger = ReturnType<typeof pino>;
  */
 export class AgentContainer {
   private container: Container;
+  public instanceId: string;
   private config: UnifiedAgentConfig;
   private agentInstance: Agent | null = null;
+  private isRestoring = false;
 
-  constructor(options: AgentCreationOptions = {}) {
-    this.config = mergeWithDefaults(options);
+  constructor(options: AgentCreationOptions = {}, instanceId?: string) {
     this.container = new Container({
       defaultScope: 'Singleton',
     });
-    this.setupBindings();
+
+    if (instanceId) {
+      // Restore agent: setup bindings first to get persistence service
+      this.instanceId = instanceId;
+      this.config = mergeWithDefaults(options); // Use provided options as base
+      this.isRestoring = true;
+      this.setupBindings();
+      this.restoreInstanceMetadata();
+    } else {
+      // Create new agent
+      this.config = mergeWithDefaults(options);
+      this.instanceId = crypto.randomUUID();
+      this.setupBindings();
+      this.persistInstanceMetadata();
+    }
+  }
+
+  private async restoreInstanceMetadata(): Promise<void> {
+    if (this.config.persistence?.enabled === false) {
+      return;
+    }
+
+    try {
+      const persistenceService = this.container.get<IPersistenceService>(
+        TYPES.IPersistenceService,
+      );
+      const metadata = await persistenceService.getInstanceMetadata(
+        this.instanceId,
+      );
+      if (metadata) {
+        // Restore config from stored metadata
+        if (metadata.config) {
+          this.config = metadata.config as UnifiedAgentConfig;
+        }
+        this.logger?.info(
+          { instanceId: this.instanceId, status: metadata.status },
+          '[AgentContainer] Instance metadata restored',
+        );
+      } else {
+        this.logger?.warn(
+          { instanceId: this.instanceId },
+          '[AgentContainer] Instance not found, will create new',
+        );
+        // Instance doesn't exist, persist it
+        await this.persistInstanceMetadata();
+      }
+    } catch (error) {
+      pino({ level: 'warn' }).warn(
+        { error, instanceId: this.instanceId },
+        '[AgentContainer] Failed to restore instance metadata',
+      );
+    }
+  }
+
+  private async persistInstanceMetadata(): Promise<void> {
+    if (this.config.persistence?.enabled === false) {
+      return;
+    }
+
+    try {
+      const persistenceService = this.container.get<IPersistenceService>(
+        TYPES.IPersistenceService,
+      );
+      await persistenceService.saveInstanceMetadata(this.instanceId, {
+        status: 'idle',
+        config: this.config,
+      });
+    } catch (error) {
+      pino({ level: 'warn' }).warn(
+        { error, instanceId: this.instanceId },
+        '[AgentContainer] Failed to persist instance metadata',
+      );
+    }
+  }
+
+  private get logger(): pino.Logger | undefined {
+    try {
+      return this.container.get<pino.Logger>(TYPES.Logger);
+    } catch {
+      return undefined;
+    }
   }
 
   private setupBindings(): void {
+    this.container.bind(TYPES.AgentInstanceId).toConstantValue(this.instanceId);
+
     // Logger
     this.container.bind<Logger>(TYPES.Logger).toDynamicValue(() =>
       pino({
@@ -115,11 +200,15 @@ export class AgentContainer {
       if (databaseUrl) {
         // Prisma Client
         this.container
-          .bind<PrismaClient>('PrismaClient')
+          .bind<PrismaClient>(TYPES.PrismaClient)
           .toDynamicValue(() => {
-            return new PrismaClient({
-              datasources: { db: { url: databaseUrl } },
-            });
+            const connectionString = databaseUrl || process.env['DATABASE_URL'];
+            if (!connectionString) {
+              throw new Error('Database URL not configured');
+            }
+            const pool = new pg.Pool({ connectionString });
+            const adapter = new PrismaPg(pool);
+            return new PrismaClient({ adapter });
           })
           .inSingletonScope();
 
@@ -147,6 +236,12 @@ export class AgentContainer {
   getAgent(): Agent {
     if (!this.agentInstance) {
       this.agentInstance = this.container.get<Agent>(TYPES.Agent);
+
+      // Restore component states if this is a restored instance
+      if (this.isRestoring) {
+        this.agentInstance.restoreComponentStates();
+        this.isRestoring = false;
+      }
     }
     return this.agentInstance;
   }

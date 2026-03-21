@@ -13,6 +13,7 @@ import {
  */
 export function registerSearchRoutes(fastify: FastifyInstance, container: ServiceContainer) {
   const searchService = container.search;
+  const searchResultService = container.searchResult;
 
   /**
    * GET /search/pubmed - PubMed search
@@ -166,6 +167,189 @@ export function registerSearchRoutes(fastify: FastifyInstance, container: Servic
       return {
         success: true,
         data: article,
+      };
+    } catch (error) {
+      if (error instanceof HttpError) {
+        reply.status(error.statusCode).send({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+      reply.status(500).send({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * GET /search/article/:resultId - Get article result by ID
+   */
+  fastify.get('/search/article/:resultId', {
+    schema: {
+      description: 'Get article result by result ID',
+      tags: ['search'],
+      params: {
+        type: 'object',
+        required: ['resultId'],
+        properties: {
+          resultId: { type: 'string', description: 'Article search result ID' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                searchId: { type: 'string' },
+                pmid: { type: 'string' },
+                title: { type: 'string' },
+                authors: { type: 'string' },
+                journalCitation: { type: 'string' },
+                snippet: { type: 'string', nullable: true },
+                doi: { type: 'string', nullable: true },
+                position: { type: 'number', nullable: true },
+                note: { type: 'string', nullable: true },
+                embedding: {
+                  type: 'object',
+                  nullable: true,
+                  properties: {
+                    id: { type: 'string' },
+                    provider: { type: 'string' },
+                    model: { type: 'string' },
+                    dimension: { type: 'number' },
+                    isActive: { type: 'boolean' },
+                  },
+                },
+                createdAt: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (request: any, reply: any) => {
+    try {
+      const resultId = request.params.resultId;
+
+      if (!resultId) {
+        throw new BadRequestError('Result ID is required');
+      }
+
+      const results = await searchResultService.getArticleResult(resultId);
+
+      if (!results || results.length === 0) {
+        throw new NotFoundError(`Article result with ID ${resultId} not found`);
+      }
+
+      return {
+        success: true,
+        data: results[0],
+      };
+    } catch (error) {
+      if (error instanceof HttpError) {
+        reply.status(error.statusCode).send({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+      reply.status(500).send({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * PATCH /search/article/:resultId/note - Update article note
+   */
+  fastify.patch('/search/article/:resultId/note', {
+    schema: {
+      description: 'Update note for an article search result',
+      tags: ['search'],
+      params: {
+        type: 'object',
+        required: ['resultId'],
+        properties: {
+          resultId: { type: 'string', description: 'Article search result ID' },
+        },
+      },
+      body: {
+        type: 'object',
+        required: ['note'],
+        properties: {
+          note: { type: 'string', description: 'Note content (empty string clears the note)' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                searchId: { type: 'string' },
+                pmid: { type: 'string' },
+                title: { type: 'string' },
+                authors: { type: 'string' },
+                journalCitation: { type: 'string' },
+                snippet: { type: 'string', nullable: true },
+                doi: { type: 'string', nullable: true },
+                position: { type: 'number', nullable: true },
+                note: { type: 'string', nullable: true },
+                embedding: {
+                  type: 'object',
+                  nullable: true,
+                  properties: {
+                    id: { type: 'string' },
+                    provider: { type: 'string' },
+                    model: { type: 'string' },
+                    dimension: { type: 'number' },
+                    isActive: { type: 'boolean' },
+                  },
+                },
+                createdAt: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (request: any, reply: any) => {
+    try {
+      const resultId = request.params.resultId;
+      const { note } = request.body;
+
+      if (!resultId) {
+        throw new BadRequestError('Result ID is required');
+      }
+
+      if (typeof note !== 'string') {
+        throw new BadRequestError('Note must be a string');
+      }
+
+      // Check if result exists
+      const results = await searchResultService.getArticleResult(resultId);
+      if (!results || results.length === 0) {
+        throw new NotFoundError(`Article result with ID ${resultId} not found`);
+      }
+
+      await searchResultService.updateArticleNote(resultId, note);
+
+      // Fetch updated result
+      const updatedResults = await searchResultService.getArticleResult(resultId);
+
+      return {
+        success: true,
+        data: updatedResults[0],
       };
     } catch (error) {
       if (error instanceof HttpError) {

@@ -51,7 +51,10 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  AgentSession: 'AgentSession'
+  AgentSession: 'AgentSession',
+  AgentMemory: 'AgentMemory',
+  ComponentState: 'ComponentState',
+  AgentInstance: 'AgentInstance'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -72,7 +75,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const AgentSessionScalarFieldEnum = {
   id: 'id',
-  taskId: 'taskId',
+  instanceId: 'instanceId',
   status: 'status',
   abortReason: 'abortReason',
   abortSource: 'abortSource',
@@ -91,6 +94,44 @@ export const AgentSessionScalarFieldEnum = {
 export type AgentSessionScalarFieldEnum = (typeof AgentSessionScalarFieldEnum)[keyof typeof AgentSessionScalarFieldEnum]
 
 
+export const AgentMemoryScalarFieldEnum = {
+  id: 'id',
+  sessionId: 'sessionId',
+  messages: 'messages',
+  workspaceContexts: 'workspaceContexts',
+  config: 'config',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AgentMemoryScalarFieldEnum = (typeof AgentMemoryScalarFieldEnum)[keyof typeof AgentMemoryScalarFieldEnum]
+
+
+export const ComponentStateScalarFieldEnum = {
+  id: 'id',
+  sessionId: 'sessionId',
+  componentId: 'componentId',
+  stateData: 'stateData',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ComponentStateScalarFieldEnum = (typeof ComponentStateScalarFieldEnum)[keyof typeof ComponentStateScalarFieldEnum]
+
+
+export const AgentInstanceScalarFieldEnum = {
+  id: 'id',
+  instanceId: 'instanceId',
+  status: 'status',
+  config: 'config',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  completedAt: 'completedAt'
+} as const
+
+export type AgentInstanceScalarFieldEnum = (typeof AgentInstanceScalarFieldEnum)[keyof typeof AgentInstanceScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -105,6 +146,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: 'JsonNull'
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

@@ -17,7 +17,7 @@ datasource db {
 
 model AgentSession {
   id              String   @id @default(uuid())
-  taskId          String   @unique // Agent 创建时分配的 UUID
+  instanceId      String   // 关联 AgentInstance.instanceId
 
   // 状态信息
   status          String   @default("idle") // idle/running/completed/aborted
@@ -45,9 +45,11 @@ model AgentSession {
   completedAt     DateTime?
 
   // Relations
+  instance        AgentInstance @relation(fields: [instanceId], references: [instanceId], onDelete: Cascade)
   memory          AgentMemory?
   componentStates ComponentState[]
 
+  @@unique([instanceId])  // 一个 AgentInstance 只有一条 Session 记录
   @@index([status])
   @@index([createdAt])
 }
@@ -79,4 +81,27 @@ model ComponentState {
   updatedAt       DateTime @updatedAt
 
   @@unique([sessionId, componentId])
+}
+
+// AgentContainer 实例元数据持久化
+model AgentInstance {
+  id              String   @id @default(uuid())
+  instanceId      String   @unique  // AgentContainer 的 instanceId
+
+  // 状态信息
+  status          String   @default("idle") // idle/running/completed/aborted
+
+  // 配置快照
+  config          Json?    // UnifiedAgentConfig 序列化
+
+  // 时间戳
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+
+  // Relations
+  sessions        AgentSession[]
+
+  @@index([instanceId])
+  @@index([status])
 }

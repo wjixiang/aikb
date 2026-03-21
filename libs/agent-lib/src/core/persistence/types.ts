@@ -6,10 +6,22 @@ import type { AgentConfig } from '../agent/agent.js';
 import type { AgentStatus } from '../common/types.js';
 
 /**
+ * Agent Instance 元数据结构
+ */
+export interface InstanceMetadata {
+  instanceId: string;
+  status: 'idle' | 'running' | 'completed' | 'aborted';
+  config?: unknown; // UnifiedAgentConfig
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt?: Date;
+}
+
+/**
  * Agent Session 数据结构
  */
 export interface AgentSessionData {
-  taskId: string;
+  instanceId: string;
   status: AgentStatus;
   abortReason?: string;
   abortSource?: string;
@@ -44,19 +56,19 @@ export interface IPersistenceService {
   createSession(data: AgentSessionData): Promise<string>;
 
   /**
-   * 根据 taskId 获取 Session
+   * 根据 instanceId 获取 Session
    */
-  getSession(taskId: string): Promise<AgentSessionData | null>;
+  getSession(instanceId: string): Promise<AgentSessionData | null>;
 
   /**
    * 更新 Session 数据（支持部分更新）
    */
-  updateSession(taskId: string, data: Partial<AgentSessionData>): Promise<void>;
+  updateSession(instanceId: string, data: Partial<AgentSessionData>): Promise<void>;
 
   /**
    * 删除 Session
    */
-  deleteSession(taskId: string): Promise<void>;
+  deleteSession(instanceId: string): Promise<void>;
 
   /**
    * 列出所有 Sessions（分页）
@@ -84,7 +96,7 @@ export interface IPersistenceService {
    * 保存 Memory 快照
    */
   saveMemory?(
-    sessionId: string,
+    instanceId: string,
     memory: {
       messages: unknown[];
       workspaceContexts: unknown[];
@@ -96,10 +108,67 @@ export interface IPersistenceService {
    * 加载 Memory 快照
    */
   loadMemory?(
-    sessionId: string,
+    instanceId: string,
   ): Promise<{
     messages: unknown[];
     workspaceContexts: unknown[];
     config: unknown;
   } | null>;
+
+  // ==================== AgentInstance 生命周期 ====================
+
+  /**
+   * 保存实例元数据（新建）
+   */
+  saveInstanceMetadata(
+    instanceId: string,
+    data: Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>,
+  ): Promise<void>;
+
+  /**
+   * 获取实例元数据
+   */
+  getInstanceMetadata(instanceId: string): Promise<InstanceMetadata | null>;
+
+  /**
+   * 更新实例元数据（支持部分更新）
+   */
+  updateInstanceMetadata(
+    instanceId: string,
+    data: Partial<Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>>,
+  ): Promise<void>;
+
+  // ==================== ComponentState 持久化 (Phase 3) ====================
+
+  /**
+   * 保存组件状态（upsert）
+   */
+  saveComponentState(
+    instanceId: string,
+    componentId: string,
+    stateData: unknown,
+  ): Promise<void>;
+
+  /**
+   * 获取单个组件状态
+   */
+  getComponentState(
+    instanceId: string,
+    componentId: string,
+  ): Promise<unknown | null>;
+
+  /**
+   * 获取所有组件状态
+   */
+  getAllComponentStates(
+    instanceId: string,
+  ): Promise<Record<string, unknown>>;
+
+  /**
+   * 删除组件状态
+   */
+  deleteComponentState(
+    instanceId: string,
+    componentId: string,
+  ): Promise<void>;
 }

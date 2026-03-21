@@ -42,7 +42,7 @@ export type AgentSessionSumAggregateOutputType = {
 
 export type AgentSessionMinAggregateOutputType = {
   id: string | null
-  taskId: string | null
+  instanceId: string | null
   status: string | null
   abortReason: string | null
   abortSource: string | null
@@ -57,7 +57,7 @@ export type AgentSessionMinAggregateOutputType = {
 
 export type AgentSessionMaxAggregateOutputType = {
   id: string | null
-  taskId: string | null
+  instanceId: string | null
   status: string | null
   abortReason: string | null
   abortSource: string | null
@@ -72,7 +72,7 @@ export type AgentSessionMaxAggregateOutputType = {
 
 export type AgentSessionCountAggregateOutputType = {
   id: number
-  taskId: number
+  instanceId: number
   status: number
   abortReason: number
   abortSource: number
@@ -106,7 +106,7 @@ export type AgentSessionSumAggregateInputType = {
 
 export type AgentSessionMinAggregateInputType = {
   id?: true
-  taskId?: true
+  instanceId?: true
   status?: true
   abortReason?: true
   abortSource?: true
@@ -121,7 +121,7 @@ export type AgentSessionMinAggregateInputType = {
 
 export type AgentSessionMaxAggregateInputType = {
   id?: true
-  taskId?: true
+  instanceId?: true
   status?: true
   abortReason?: true
   abortSource?: true
@@ -136,7 +136,7 @@ export type AgentSessionMaxAggregateInputType = {
 
 export type AgentSessionCountAggregateInputType = {
   id?: true
-  taskId?: true
+  instanceId?: true
   status?: true
   abortReason?: true
   abortSource?: true
@@ -241,7 +241,7 @@ export type AgentSessionGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
 
 export type AgentSessionGroupByOutputType = {
   id: string
-  taskId: string
+  instanceId: string
   status: string
   abortReason: string | null
   abortSource: string | null
@@ -282,7 +282,7 @@ export type AgentSessionWhereInput = {
   OR?: Prisma.AgentSessionWhereInput[]
   NOT?: Prisma.AgentSessionWhereInput | Prisma.AgentSessionWhereInput[]
   id?: Prisma.StringFilter<"AgentSession"> | string
-  taskId?: Prisma.StringFilter<"AgentSession"> | string
+  instanceId?: Prisma.StringFilter<"AgentSession"> | string
   status?: Prisma.StringFilter<"AgentSession"> | string
   abortReason?: Prisma.StringNullableFilter<"AgentSession"> | string | null
   abortSource?: Prisma.StringNullableFilter<"AgentSession"> | string | null
@@ -296,11 +296,14 @@ export type AgentSessionWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentSession"> | Date | string | null
+  instance?: Prisma.XOR<Prisma.AgentInstanceScalarRelationFilter, Prisma.AgentInstanceWhereInput>
+  memory?: Prisma.XOR<Prisma.AgentMemoryNullableScalarRelationFilter, Prisma.AgentMemoryWhereInput> | null
+  componentStates?: Prisma.ComponentStateListRelationFilter
 }
 
 export type AgentSessionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  taskId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   abortReason?: Prisma.SortOrderInput | Prisma.SortOrder
   abortSource?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -314,11 +317,14 @@ export type AgentSessionOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  instance?: Prisma.AgentInstanceOrderByWithRelationInput
+  memory?: Prisma.AgentMemoryOrderByWithRelationInput
+  componentStates?: Prisma.ComponentStateOrderByRelationAggregateInput
 }
 
 export type AgentSessionWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  taskId?: string
+  instanceId?: string
   AND?: Prisma.AgentSessionWhereInput | Prisma.AgentSessionWhereInput[]
   OR?: Prisma.AgentSessionWhereInput[]
   NOT?: Prisma.AgentSessionWhereInput | Prisma.AgentSessionWhereInput[]
@@ -335,11 +341,14 @@ export type AgentSessionWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentSession"> | Date | string | null
-}, "id" | "taskId">
+  instance?: Prisma.XOR<Prisma.AgentInstanceScalarRelationFilter, Prisma.AgentInstanceWhereInput>
+  memory?: Prisma.XOR<Prisma.AgentMemoryNullableScalarRelationFilter, Prisma.AgentMemoryWhereInput> | null
+  componentStates?: Prisma.ComponentStateListRelationFilter
+}, "id" | "instanceId">
 
 export type AgentSessionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  taskId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   abortReason?: Prisma.SortOrderInput | Prisma.SortOrder
   abortSource?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -365,7 +374,7 @@ export type AgentSessionScalarWhereWithAggregatesInput = {
   OR?: Prisma.AgentSessionScalarWhereWithAggregatesInput[]
   NOT?: Prisma.AgentSessionScalarWhereWithAggregatesInput | Prisma.AgentSessionScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"AgentSession"> | string
-  taskId?: Prisma.StringWithAggregatesFilter<"AgentSession"> | string
+  instanceId?: Prisma.StringWithAggregatesFilter<"AgentSession"> | string
   status?: Prisma.StringWithAggregatesFilter<"AgentSession"> | string
   abortReason?: Prisma.StringNullableWithAggregatesFilter<"AgentSession"> | string | null
   abortSource?: Prisma.StringNullableWithAggregatesFilter<"AgentSession"> | string | null
@@ -383,7 +392,6 @@ export type AgentSessionScalarWhereWithAggregatesInput = {
 
 export type AgentSessionCreateInput = {
   id?: string
-  taskId: string
   status?: string
   abortReason?: string | null
   abortSource?: string | null
@@ -397,11 +405,14 @@ export type AgentSessionCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
+  instance: Prisma.AgentInstanceCreateNestedOneWithoutSessionsInput
+  memory?: Prisma.AgentMemoryCreateNestedOneWithoutSessionInput
+  componentStates?: Prisma.ComponentStateCreateNestedManyWithoutSessionInput
 }
 
 export type AgentSessionUncheckedCreateInput = {
   id?: string
-  taskId: string
+  instanceId: string
   status?: string
   abortReason?: string | null
   abortSource?: string | null
@@ -415,11 +426,12 @@ export type AgentSessionUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutSessionInput
+  componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type AgentSessionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  taskId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -433,11 +445,14 @@ export type AgentSessionUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instance?: Prisma.AgentInstanceUpdateOneRequiredWithoutSessionsNestedInput
+  memory?: Prisma.AgentMemoryUpdateOneWithoutSessionNestedInput
+  componentStates?: Prisma.ComponentStateUpdateManyWithoutSessionNestedInput
 }
 
 export type AgentSessionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  taskId?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -451,11 +466,13 @@ export type AgentSessionUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutSessionNestedInput
+  componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type AgentSessionCreateManyInput = {
   id?: string
-  taskId: string
+  instanceId: string
   status?: string
   abortReason?: string | null
   abortSource?: string | null
@@ -473,7 +490,6 @@ export type AgentSessionCreateManyInput = {
 
 export type AgentSessionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  taskId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -491,7 +507,7 @@ export type AgentSessionUpdateManyMutationInput = {
 
 export type AgentSessionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  taskId?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -509,7 +525,7 @@ export type AgentSessionUncheckedUpdateManyInput = {
 
 export type AgentSessionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  taskId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   abortReason?: Prisma.SortOrder
   abortSource?: Prisma.SortOrder
@@ -534,7 +550,7 @@ export type AgentSessionAvgOrderByAggregateInput = {
 
 export type AgentSessionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  taskId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   abortReason?: Prisma.SortOrder
   abortSource?: Prisma.SortOrder
@@ -549,7 +565,7 @@ export type AgentSessionMaxOrderByAggregateInput = {
 
 export type AgentSessionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  taskId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   abortReason?: Prisma.SortOrder
   abortSource?: Prisma.SortOrder
@@ -567,6 +583,21 @@ export type AgentSessionSumOrderByAggregateInput = {
   totalTokensOut?: Prisma.SortOrder
   totalCost?: Prisma.SortOrder
   consecutiveMistakeCount?: Prisma.SortOrder
+}
+
+export type AgentSessionScalarRelationFilter = {
+  is?: Prisma.AgentSessionWhereInput
+  isNot?: Prisma.AgentSessionWhereInput
+}
+
+export type AgentSessionListRelationFilter = {
+  every?: Prisma.AgentSessionWhereInput
+  some?: Prisma.AgentSessionWhereInput
+  none?: Prisma.AgentSessionWhereInput
+}
+
+export type AgentSessionOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -601,11 +632,451 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
 
+export type AgentSessionCreateNestedOneWithoutMemoryInput = {
+  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutMemoryInput, Prisma.AgentSessionUncheckedCreateWithoutMemoryInput>
+  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutMemoryInput
+  connect?: Prisma.AgentSessionWhereUniqueInput
+}
+
+export type AgentSessionUpdateOneRequiredWithoutMemoryNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutMemoryInput, Prisma.AgentSessionUncheckedCreateWithoutMemoryInput>
+  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutMemoryInput
+  upsert?: Prisma.AgentSessionUpsertWithoutMemoryInput
+  connect?: Prisma.AgentSessionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentSessionUpdateToOneWithWhereWithoutMemoryInput, Prisma.AgentSessionUpdateWithoutMemoryInput>, Prisma.AgentSessionUncheckedUpdateWithoutMemoryInput>
+}
+
+export type AgentSessionCreateNestedOneWithoutComponentStatesInput = {
+  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutComponentStatesInput, Prisma.AgentSessionUncheckedCreateWithoutComponentStatesInput>
+  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutComponentStatesInput
+  connect?: Prisma.AgentSessionWhereUniqueInput
+}
+
+export type AgentSessionUpdateOneRequiredWithoutComponentStatesNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutComponentStatesInput, Prisma.AgentSessionUncheckedCreateWithoutComponentStatesInput>
+  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutComponentStatesInput
+  upsert?: Prisma.AgentSessionUpsertWithoutComponentStatesInput
+  connect?: Prisma.AgentSessionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentSessionUpdateToOneWithWhereWithoutComponentStatesInput, Prisma.AgentSessionUpdateWithoutComponentStatesInput>, Prisma.AgentSessionUncheckedUpdateWithoutComponentStatesInput>
+}
+
+export type AgentSessionCreateNestedManyWithoutInstanceInput = {
+  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutInstanceInput, Prisma.AgentSessionUncheckedCreateWithoutInstanceInput> | Prisma.AgentSessionCreateWithoutInstanceInput[] | Prisma.AgentSessionUncheckedCreateWithoutInstanceInput[]
+  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutInstanceInput | Prisma.AgentSessionCreateOrConnectWithoutInstanceInput[]
+  createMany?: Prisma.AgentSessionCreateManyInstanceInputEnvelope
+  connect?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+}
+
+export type AgentSessionUncheckedCreateNestedManyWithoutInstanceInput = {
+  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutInstanceInput, Prisma.AgentSessionUncheckedCreateWithoutInstanceInput> | Prisma.AgentSessionCreateWithoutInstanceInput[] | Prisma.AgentSessionUncheckedCreateWithoutInstanceInput[]
+  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutInstanceInput | Prisma.AgentSessionCreateOrConnectWithoutInstanceInput[]
+  createMany?: Prisma.AgentSessionCreateManyInstanceInputEnvelope
+  connect?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+}
+
+export type AgentSessionUpdateManyWithoutInstanceNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutInstanceInput, Prisma.AgentSessionUncheckedCreateWithoutInstanceInput> | Prisma.AgentSessionCreateWithoutInstanceInput[] | Prisma.AgentSessionUncheckedCreateWithoutInstanceInput[]
+  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutInstanceInput | Prisma.AgentSessionCreateOrConnectWithoutInstanceInput[]
+  upsert?: Prisma.AgentSessionUpsertWithWhereUniqueWithoutInstanceInput | Prisma.AgentSessionUpsertWithWhereUniqueWithoutInstanceInput[]
+  createMany?: Prisma.AgentSessionCreateManyInstanceInputEnvelope
+  set?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+  disconnect?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+  delete?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+  connect?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+  update?: Prisma.AgentSessionUpdateWithWhereUniqueWithoutInstanceInput | Prisma.AgentSessionUpdateWithWhereUniqueWithoutInstanceInput[]
+  updateMany?: Prisma.AgentSessionUpdateManyWithWhereWithoutInstanceInput | Prisma.AgentSessionUpdateManyWithWhereWithoutInstanceInput[]
+  deleteMany?: Prisma.AgentSessionScalarWhereInput | Prisma.AgentSessionScalarWhereInput[]
+}
+
+export type AgentSessionUncheckedUpdateManyWithoutInstanceNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutInstanceInput, Prisma.AgentSessionUncheckedCreateWithoutInstanceInput> | Prisma.AgentSessionCreateWithoutInstanceInput[] | Prisma.AgentSessionUncheckedCreateWithoutInstanceInput[]
+  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutInstanceInput | Prisma.AgentSessionCreateOrConnectWithoutInstanceInput[]
+  upsert?: Prisma.AgentSessionUpsertWithWhereUniqueWithoutInstanceInput | Prisma.AgentSessionUpsertWithWhereUniqueWithoutInstanceInput[]
+  createMany?: Prisma.AgentSessionCreateManyInstanceInputEnvelope
+  set?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+  disconnect?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+  delete?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+  connect?: Prisma.AgentSessionWhereUniqueInput | Prisma.AgentSessionWhereUniqueInput[]
+  update?: Prisma.AgentSessionUpdateWithWhereUniqueWithoutInstanceInput | Prisma.AgentSessionUpdateWithWhereUniqueWithoutInstanceInput[]
+  updateMany?: Prisma.AgentSessionUpdateManyWithWhereWithoutInstanceInput | Prisma.AgentSessionUpdateManyWithWhereWithoutInstanceInput[]
+  deleteMany?: Prisma.AgentSessionScalarWhereInput | Prisma.AgentSessionScalarWhereInput[]
+}
+
+export type AgentSessionCreateWithoutMemoryInput = {
+  id?: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  instance: Prisma.AgentInstanceCreateNestedOneWithoutSessionsInput
+  componentStates?: Prisma.ComponentStateCreateNestedManyWithoutSessionInput
+}
+
+export type AgentSessionUncheckedCreateWithoutMemoryInput = {
+  id?: string
+  instanceId: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutSessionInput
+}
+
+export type AgentSessionCreateOrConnectWithoutMemoryInput = {
+  where: Prisma.AgentSessionWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentSessionCreateWithoutMemoryInput, Prisma.AgentSessionUncheckedCreateWithoutMemoryInput>
+}
+
+export type AgentSessionUpsertWithoutMemoryInput = {
+  update: Prisma.XOR<Prisma.AgentSessionUpdateWithoutMemoryInput, Prisma.AgentSessionUncheckedUpdateWithoutMemoryInput>
+  create: Prisma.XOR<Prisma.AgentSessionCreateWithoutMemoryInput, Prisma.AgentSessionUncheckedCreateWithoutMemoryInput>
+  where?: Prisma.AgentSessionWhereInput
+}
+
+export type AgentSessionUpdateToOneWithWhereWithoutMemoryInput = {
+  where?: Prisma.AgentSessionWhereInput
+  data: Prisma.XOR<Prisma.AgentSessionUpdateWithoutMemoryInput, Prisma.AgentSessionUncheckedUpdateWithoutMemoryInput>
+}
+
+export type AgentSessionUpdateWithoutMemoryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instance?: Prisma.AgentInstanceUpdateOneRequiredWithoutSessionsNestedInput
+  componentStates?: Prisma.ComponentStateUpdateManyWithoutSessionNestedInput
+}
+
+export type AgentSessionUncheckedUpdateWithoutMemoryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutSessionNestedInput
+}
+
+export type AgentSessionCreateWithoutComponentStatesInput = {
+  id?: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  instance: Prisma.AgentInstanceCreateNestedOneWithoutSessionsInput
+  memory?: Prisma.AgentMemoryCreateNestedOneWithoutSessionInput
+}
+
+export type AgentSessionUncheckedCreateWithoutComponentStatesInput = {
+  id?: string
+  instanceId: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutSessionInput
+}
+
+export type AgentSessionCreateOrConnectWithoutComponentStatesInput = {
+  where: Prisma.AgentSessionWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentSessionCreateWithoutComponentStatesInput, Prisma.AgentSessionUncheckedCreateWithoutComponentStatesInput>
+}
+
+export type AgentSessionUpsertWithoutComponentStatesInput = {
+  update: Prisma.XOR<Prisma.AgentSessionUpdateWithoutComponentStatesInput, Prisma.AgentSessionUncheckedUpdateWithoutComponentStatesInput>
+  create: Prisma.XOR<Prisma.AgentSessionCreateWithoutComponentStatesInput, Prisma.AgentSessionUncheckedCreateWithoutComponentStatesInput>
+  where?: Prisma.AgentSessionWhereInput
+}
+
+export type AgentSessionUpdateToOneWithWhereWithoutComponentStatesInput = {
+  where?: Prisma.AgentSessionWhereInput
+  data: Prisma.XOR<Prisma.AgentSessionUpdateWithoutComponentStatesInput, Prisma.AgentSessionUncheckedUpdateWithoutComponentStatesInput>
+}
+
+export type AgentSessionUpdateWithoutComponentStatesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  instance?: Prisma.AgentInstanceUpdateOneRequiredWithoutSessionsNestedInput
+  memory?: Prisma.AgentMemoryUpdateOneWithoutSessionNestedInput
+}
+
+export type AgentSessionUncheckedUpdateWithoutComponentStatesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutSessionNestedInput
+}
+
+export type AgentSessionCreateWithoutInstanceInput = {
+  id?: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  memory?: Prisma.AgentMemoryCreateNestedOneWithoutSessionInput
+  componentStates?: Prisma.ComponentStateCreateNestedManyWithoutSessionInput
+}
+
+export type AgentSessionUncheckedCreateWithoutInstanceInput = {
+  id?: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutSessionInput
+  componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutSessionInput
+}
+
+export type AgentSessionCreateOrConnectWithoutInstanceInput = {
+  where: Prisma.AgentSessionWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentSessionCreateWithoutInstanceInput, Prisma.AgentSessionUncheckedCreateWithoutInstanceInput>
+}
+
+export type AgentSessionCreateManyInstanceInputEnvelope = {
+  data: Prisma.AgentSessionCreateManyInstanceInput | Prisma.AgentSessionCreateManyInstanceInput[]
+  skipDuplicates?: boolean
+}
+
+export type AgentSessionUpsertWithWhereUniqueWithoutInstanceInput = {
+  where: Prisma.AgentSessionWhereUniqueInput
+  update: Prisma.XOR<Prisma.AgentSessionUpdateWithoutInstanceInput, Prisma.AgentSessionUncheckedUpdateWithoutInstanceInput>
+  create: Prisma.XOR<Prisma.AgentSessionCreateWithoutInstanceInput, Prisma.AgentSessionUncheckedCreateWithoutInstanceInput>
+}
+
+export type AgentSessionUpdateWithWhereUniqueWithoutInstanceInput = {
+  where: Prisma.AgentSessionWhereUniqueInput
+  data: Prisma.XOR<Prisma.AgentSessionUpdateWithoutInstanceInput, Prisma.AgentSessionUncheckedUpdateWithoutInstanceInput>
+}
+
+export type AgentSessionUpdateManyWithWhereWithoutInstanceInput = {
+  where: Prisma.AgentSessionScalarWhereInput
+  data: Prisma.XOR<Prisma.AgentSessionUpdateManyMutationInput, Prisma.AgentSessionUncheckedUpdateManyWithoutInstanceInput>
+}
+
+export type AgentSessionScalarWhereInput = {
+  AND?: Prisma.AgentSessionScalarWhereInput | Prisma.AgentSessionScalarWhereInput[]
+  OR?: Prisma.AgentSessionScalarWhereInput[]
+  NOT?: Prisma.AgentSessionScalarWhereInput | Prisma.AgentSessionScalarWhereInput[]
+  id?: Prisma.StringFilter<"AgentSession"> | string
+  instanceId?: Prisma.StringFilter<"AgentSession"> | string
+  status?: Prisma.StringFilter<"AgentSession"> | string
+  abortReason?: Prisma.StringNullableFilter<"AgentSession"> | string | null
+  abortSource?: Prisma.StringNullableFilter<"AgentSession"> | string | null
+  config?: Prisma.JsonNullableFilter<"AgentSession">
+  totalTokensIn?: Prisma.IntFilter<"AgentSession"> | number
+  totalTokensOut?: Prisma.IntFilter<"AgentSession"> | number
+  totalCost?: Prisma.FloatFilter<"AgentSession"> | number
+  toolUsage?: Prisma.JsonNullableFilter<"AgentSession">
+  consecutiveMistakeCount?: Prisma.IntFilter<"AgentSession"> | number
+  collectedErrors?: Prisma.JsonNullableFilter<"AgentSession">
+  createdAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
+  completedAt?: Prisma.DateTimeNullableFilter<"AgentSession"> | Date | string | null
+}
+
+export type AgentSessionCreateManyInstanceInput = {
+  id?: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+}
+
+export type AgentSessionUpdateWithoutInstanceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memory?: Prisma.AgentMemoryUpdateOneWithoutSessionNestedInput
+  componentStates?: Prisma.ComponentStateUpdateManyWithoutSessionNestedInput
+}
+
+export type AgentSessionUncheckedUpdateWithoutInstanceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutSessionNestedInput
+  componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutSessionNestedInput
+}
+
+export type AgentSessionUncheckedUpdateManyWithoutInstanceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+
+/**
+ * Count Type AgentSessionCountOutputType
+ */
+
+export type AgentSessionCountOutputType = {
+  componentStates: number
+}
+
+export type AgentSessionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  componentStates?: boolean | AgentSessionCountOutputTypeCountComponentStatesArgs
+}
+
+/**
+ * AgentSessionCountOutputType without action
+ */
+export type AgentSessionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentSessionCountOutputType
+   */
+  select?: Prisma.AgentSessionCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * AgentSessionCountOutputType without action
+ */
+export type AgentSessionCountOutputTypeCountComponentStatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ComponentStateWhereInput
+}
 
 
 export type AgentSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  taskId?: boolean
+  instanceId?: boolean
   status?: boolean
   abortReason?: boolean
   abortSource?: boolean
@@ -619,11 +1090,15 @@ export type AgentSessionSelect<ExtArgs extends runtime.Types.Extensions.Internal
   createdAt?: boolean
   updatedAt?: boolean
   completedAt?: boolean
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
+  memory?: boolean | Prisma.AgentSession$memoryArgs<ExtArgs>
+  componentStates?: boolean | Prisma.AgentSession$componentStatesArgs<ExtArgs>
+  _count?: boolean | Prisma.AgentSessionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentSession"]>
 
 export type AgentSessionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  taskId?: boolean
+  instanceId?: boolean
   status?: boolean
   abortReason?: boolean
   abortSource?: boolean
@@ -637,11 +1112,12 @@ export type AgentSessionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   createdAt?: boolean
   updatedAt?: boolean
   completedAt?: boolean
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentSession"]>
 
 export type AgentSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  taskId?: boolean
+  instanceId?: boolean
   status?: boolean
   abortReason?: boolean
   abortSource?: boolean
@@ -655,11 +1131,12 @@ export type AgentSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   createdAt?: boolean
   updatedAt?: boolean
   completedAt?: boolean
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentSession"]>
 
 export type AgentSessionSelectScalar = {
   id?: boolean
-  taskId?: boolean
+  instanceId?: boolean
   status?: boolean
   abortReason?: boolean
   abortSource?: boolean
@@ -675,14 +1152,30 @@ export type AgentSessionSelectScalar = {
   completedAt?: boolean
 }
 
-export type AgentSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "taskId" | "status" | "abortReason" | "abortSource" | "config" | "totalTokensIn" | "totalTokensOut" | "totalCost" | "toolUsage" | "consecutiveMistakeCount" | "collectedErrors" | "createdAt" | "updatedAt" | "completedAt", ExtArgs["result"]["agentSession"]>
+export type AgentSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "instanceId" | "status" | "abortReason" | "abortSource" | "config" | "totalTokensIn" | "totalTokensOut" | "totalCost" | "toolUsage" | "consecutiveMistakeCount" | "collectedErrors" | "createdAt" | "updatedAt" | "completedAt", ExtArgs["result"]["agentSession"]>
+export type AgentSessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
+  memory?: boolean | Prisma.AgentSession$memoryArgs<ExtArgs>
+  componentStates?: boolean | Prisma.AgentSession$componentStatesArgs<ExtArgs>
+  _count?: boolean | Prisma.AgentSessionCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type AgentSessionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
+}
+export type AgentSessionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
+}
 
 export type $AgentSessionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "AgentSession"
-  objects: {}
+  objects: {
+    instance: Prisma.$AgentInstancePayload<ExtArgs>
+    memory: Prisma.$AgentMemoryPayload<ExtArgs> | null
+    componentStates: Prisma.$ComponentStatePayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    taskId: string
+    instanceId: string
     status: string
     abortReason: string | null
     abortSource: string | null
@@ -1090,6 +1583,9 @@ readonly fields: AgentSessionFieldRefs;
  */
 export interface Prisma__AgentSessionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  instance<T extends Prisma.AgentInstanceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstanceDefaultArgs<ExtArgs>>): Prisma.Prisma__AgentInstanceClient<runtime.Types.Result.GetResult<Prisma.$AgentInstancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  memory<T extends Prisma.AgentSession$memoryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentSession$memoryArgs<ExtArgs>>): Prisma.Prisma__AgentMemoryClient<runtime.Types.Result.GetResult<Prisma.$AgentMemoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  componentStates<T extends Prisma.AgentSession$componentStatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentSession$componentStatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ComponentStatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1120,7 +1616,7 @@ export interface Prisma__AgentSessionClient<T, Null = never, ExtArgs extends run
  */
 export interface AgentSessionFieldRefs {
   readonly id: Prisma.FieldRef<"AgentSession", 'String'>
-  readonly taskId: Prisma.FieldRef<"AgentSession", 'String'>
+  readonly instanceId: Prisma.FieldRef<"AgentSession", 'String'>
   readonly status: Prisma.FieldRef<"AgentSession", 'String'>
   readonly abortReason: Prisma.FieldRef<"AgentSession", 'String'>
   readonly abortSource: Prisma.FieldRef<"AgentSession", 'String'>
@@ -1151,6 +1647,10 @@ export type AgentSessionFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
+  /**
    * Filter, which AgentSession to fetch.
    */
   where: Prisma.AgentSessionWhereUniqueInput
@@ -1169,6 +1669,10 @@ export type AgentSessionFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Exte
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
+  /**
    * Filter, which AgentSession to fetch.
    */
   where: Prisma.AgentSessionWhereUniqueInput
@@ -1186,6 +1690,10 @@ export type AgentSessionFindFirstArgs<ExtArgs extends runtime.Types.Extensions.I
    * Omit specific fields from the AgentSession
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
   /**
    * Filter, which AgentSession to fetch.
    */
@@ -1235,6 +1743,10 @@ export type AgentSessionFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Exten
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
+  /**
    * Filter, which AgentSession to fetch.
    */
   where?: Prisma.AgentSessionWhereInput
@@ -1283,6 +1795,10 @@ export type AgentSessionFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
+  /**
    * Filter, which AgentSessions to fetch.
    */
   where?: Prisma.AgentSessionWhereInput
@@ -1326,6 +1842,10 @@ export type AgentSessionCreateArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
+  /**
    * The data needed to create a AgentSession.
    */
   data: Prisma.XOR<Prisma.AgentSessionCreateInput, Prisma.AgentSessionUncheckedCreateInput>
@@ -1359,6 +1879,10 @@ export type AgentSessionCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Ex
    */
   data: Prisma.AgentSessionCreateManyInput | Prisma.AgentSessionCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1373,6 +1897,10 @@ export type AgentSessionUpdateArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Omit specific fields from the AgentSession
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
   /**
    * The data needed to update a AgentSession.
    */
@@ -1425,6 +1953,10 @@ export type AgentSessionUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Ex
    * Limit how many AgentSessions to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1439,6 +1971,10 @@ export type AgentSessionUpsertArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Omit specific fields from the AgentSession
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
   /**
    * The filter to search for the AgentSession to update in case it exists.
    */
@@ -1466,6 +2002,10 @@ export type AgentSessionDeleteArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
+  /**
    * Filter which AgentSession to delete.
    */
   where: Prisma.AgentSessionWhereUniqueInput
@@ -1486,6 +2026,49 @@ export type AgentSessionDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
 }
 
 /**
+ * AgentSession.memory
+ */
+export type AgentSession$memoryArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentMemory
+   */
+  select?: Prisma.AgentMemorySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AgentMemory
+   */
+  omit?: Prisma.AgentMemoryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentMemoryInclude<ExtArgs> | null
+  where?: Prisma.AgentMemoryWhereInput
+}
+
+/**
+ * AgentSession.componentStates
+ */
+export type AgentSession$componentStatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ComponentState
+   */
+  select?: Prisma.ComponentStateSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ComponentState
+   */
+  omit?: Prisma.ComponentStateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ComponentStateInclude<ExtArgs> | null
+  where?: Prisma.ComponentStateWhereInput
+  orderBy?: Prisma.ComponentStateOrderByWithRelationInput | Prisma.ComponentStateOrderByWithRelationInput[]
+  cursor?: Prisma.ComponentStateWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ComponentStateScalarFieldEnum | Prisma.ComponentStateScalarFieldEnum[]
+}
+
+/**
  * AgentSession without action
  */
 export type AgentSessionDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1497,4 +2080,8 @@ export type AgentSessionDefaultArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Omit specific fields from the AgentSession
    */
   omit?: Prisma.AgentSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentSessionInclude<ExtArgs> | null
 }

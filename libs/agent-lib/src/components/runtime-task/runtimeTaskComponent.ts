@@ -19,7 +19,7 @@ import {
 import { type ITaskStorage, InMemoryTaskStorage } from './storage.js';
 
 export interface RuntimeTaskComponentConfig {
-  expertId: string;
+  instanceId: string;
   storage?: ITaskStorage;
   maxQueueSize?: number;
 }
@@ -114,7 +114,7 @@ export class RuntimeTaskComponent extends ToolComponent {
     params: GetPendingTasksParams,
   ): Promise<ToolCallResult<{ tasks: RuntimeTask[] }>> {
     try {
-      const tasks = await this.storage.getPending(this.config.expertId);
+      const tasks = await this.storage.getPending(this.config.instanceId);
       const limitedTasks = tasks.slice(0, params.limit);
       return {
         success: true,
@@ -213,7 +213,7 @@ export class RuntimeTaskComponent extends ToolComponent {
         description: params.description,
         input: params.input,
         priority: params.priority ?? 'normal',
-        sender: this.config.expertId,
+        sender: this.config.instanceId,
       });
 
       return {
@@ -275,7 +275,7 @@ export class RuntimeTaskComponent extends ToolComponent {
       status: 'pending',
       createdAt: new Date(),
       sender: task.sender,
-      receiver: task.receiver ?? this.config.expertId,
+      receiver: task.receiver ?? this.config.instanceId,
       correlationId: task.correlationId,
       parentTaskId: task.parentTaskId,
     };
@@ -322,13 +322,15 @@ export class RuntimeTaskComponent extends ToolComponent {
 
     elements.push(
       new tdiv({
-        content: `Expert: ${this.config.expertId}`,
+        content: `Expert: ${this.config.instanceId}`,
         styles: { align: 'center', padding: { vertical: 1 } },
       }),
     );
 
     try {
-      const pendingTasks = await this.storage.getPending(this.config.expertId);
+      const pendingTasks = await this.storage.getPending(
+        this.config.instanceId,
+      );
 
       elements.push(
         new tp({
@@ -384,7 +386,7 @@ export class RuntimeTaskComponent extends ToolComponent {
   };
 
   async exportData(options?: ExportOptions) {
-    const pendingTasks = await this.storage.getPending(this.config.expertId);
+    const pendingTasks = await this.storage.getPending(this.config.instanceId);
     const allTasks = await this.storage.query({});
 
     return {

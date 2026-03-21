@@ -9,4 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/AgentSession'
+export type * from './models/AgentMemory'
+export type * from './models/ComponentState'
+export type * from './models/AgentInstance'
 export type * from './commonInputTypes'

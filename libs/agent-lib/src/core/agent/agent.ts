@@ -24,6 +24,7 @@ import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.
 import {
   RuntimeTaskComponent,
   createRuntimeTaskComponent,
+  type ComponentStateBase,
 } from '../../components/index.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import pino from 'pino';
@@ -81,14 +82,6 @@ export interface AbortInfo {
  * This is the markdown content defining the agent's behavior and capabilities
  */
 export type SOP = string;
-
-/**
- * Expert identity interface - for Agents that represent Experts
- */
-export interface AgentExpertIdentity {
-  expertId: string;
-  instanceId: string;
-}
 
 /**
  * Result of a tool execution
@@ -149,7 +142,6 @@ export class Agent {
 
   // Expert identity (optional - for Agents that represent Experts)
   // @deprecated - Will be removed in future versions. Use taskId for identification instead.
-  private _expertIdentity?: AgentExpertIdentity;
 
   // Memory module (dependency injected, always present)
   private memoryModule: IMemoryModule;
@@ -169,8 +161,9 @@ export class Agent {
 
   private agentSop: SOP;
   private logger: pino.Logger;
-
+  public instanceId: string;
   constructor(
+    @inject(TYPES.AgentInstanceId) instanceId: string,
     @inject(TYPES.AgentConfig)
     @optional()
     public config: AgentConfig = defaultAgentConfig,
@@ -180,8 +173,11 @@ export class Agent {
     @inject(TYPES.ApiClient) apiClient: ApiClient,
     @inject(TYPES.IToolManager) toolManager: IToolManager,
     @inject(TYPES.TaskId) @optional() taskId?: string,
-    @inject(TYPES.IPersistenceService) @optional() persistenceService?: IPersistenceService,
+    @inject(TYPES.IPersistenceService)
+    @optional()
+    persistenceService?: IPersistenceService,
   ) {
+    this.instanceId = instanceId;
     // Instantiate pino logger directly
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'debug' });
     this.workspace = workspace as unknown as VirtualWorkspace;
@@ -209,7 +205,7 @@ export class Agent {
 
     try {
       await this.persistenceService.createSession({
-        taskId: this._taskId,
+        instanceId: this.instanceId,
         status: this._status,
         totalTokensIn: this._tokenUsage.totalTokensIn,
         totalTokensOut: this._tokenUsage.totalTokensOut,
@@ -218,7 +214,7 @@ export class Agent {
         collectedErrors: this._collectedErrors,
       });
     } catch (error) {
-      this.logger.error('[Agent] Failed to create session', { error });
+      this.logger.error({ error }, '[Agent] Failed to create session');
     }
   }
 
@@ -229,7 +225,7 @@ export class Agent {
     if (!this.persistenceService) return;
 
     try {
-      await this.persistenceService.updateSession(this._taskId, {
+      await this.persistenceService.updateSession(this.instanceId, {
         status: this._status,
         abortReason: this._abortInfo?.reason,
         abortSource: this._abortInfo?.source,
@@ -241,10 +237,111 @@ export class Agent {
         collectedErrors: this._collectedErrors,
       });
     } catch (error) {
-      this.logger.error('[Agent] Failed to persist state', {
-        error,
-        taskId: this._taskId,
+      this.logger.error(
+        { error, instanceId: this.instanceId },
+        '[Agent] Failed to persist state',
+      );
+    }
+  }
+
+  /**
+   * End the current session
+   * Updates both Session and Instance status to 'completed' or 'aborted'
+   */
+  public async endSession(reason?: string): Promise<void> {
+    if (!this.persistenceService) {
+      this.logger.warn('[Agent] No persistence service, skipping endSession');
+      return;
+    }
+
+    const finalStatus = reason === 'aborted' ? 'aborted' : 'completed';
+
+    try {
+      // Save component states first
+      await this.saveComponentStates();
+
+      // Update session status
+      await this.persistenceService.updateSession(this.instanceId, {
+        status: finalStatus,
+        abortReason: reason,
+        abortSource: 'system',
+        totalTokensIn: this._tokenUsage.totalTokensIn,
+        totalTokensOut: this._tokenUsage.totalTokensOut,
+        totalCost: this._tokenUsage.totalCost,
+        toolUsage: this._toolUsage,
+        consecutiveMistakeCount: this._consecutiveMistakeCount,
+        collectedErrors: this._collectedErrors,
       });
+
+      // Update instance metadata status
+      await this.persistenceService.updateInstanceMetadata(this.instanceId, {
+        status: finalStatus,
+      });
+
+      this.logger.info(
+        { instanceId: this.instanceId, status: finalStatus },
+        '[Agent] Session ended',
+      );
+    } catch (error) {
+      this.logger.error(
+        { error, instanceId: this.instanceId },
+        '[Agent] Failed to end session',
+      );
+    }
+  }
+
+  /**
+   * Save all component states to persistence
+   */
+  public async saveComponentStates(): Promise<void> {
+    if (!this.persistenceService) return;
+
+    try {
+      const states = this.workspace.exportComponentStates();
+      for (const [componentId, state] of states) {
+        await this.persistenceService.saveComponentState(
+          this.instanceId,
+          componentId,
+          state,
+        );
+      }
+      this.logger.debug(
+        { instanceId: this.instanceId, count: states.size },
+        '[Agent] Component states saved',
+      );
+    } catch (error) {
+      this.logger.error(
+        { error, instanceId: this.instanceId },
+        '[Agent] Failed to save component states',
+      );
+    }
+  }
+
+  /**
+   * Restore all component states from persistence
+   */
+  public async restoreComponentStates(): Promise<void> {
+    if (!this.persistenceService) return;
+
+    try {
+      const states = await this.persistenceService.getAllComponentStates(
+        this.instanceId,
+      );
+      if (Object.keys(states).length > 0) {
+        const stateMap = new Map<string, ComponentStateBase>(
+          Object.entries(states) as [string, ComponentStateBase][],
+        );
+        this.workspace.importComponentStates(stateMap);
+        this.logger.info(
+          { instanceId: this.instanceId, count: Object.keys(states).length },
+          '[Agent] Component states restored',
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        { error, instanceId: this.instanceId },
+        '[Agent] Failed to restore component states',
+      );
     }
   }
 
@@ -257,9 +354,8 @@ export class Agent {
       return; // Already initialized
     }
 
-    const expertId = this._expertIdentity?.expertId || 'default';
     this.taskModule = createRuntimeTaskComponent({
-      expertId,
+      instanceId: this.instanceId,
       maxQueueSize: 100,
     });
 
@@ -299,28 +395,6 @@ export class Agent {
    */
   public get getTaskId(): string {
     return this._taskId;
-  }
-
-  /**
-   * Set expert identity (for Agents representing Experts)
-   */
-  setExpertIdentity(identity: AgentExpertIdentity): void {
-    this._expertIdentity = identity;
-    this.initializeTaskModule();
-  }
-
-  /**
-   * Get expert ID (for Agents representing Experts)
-   */
-  get expertId(): string | undefined {
-    return this._expertIdentity?.expertId;
-  }
-
-  /**
-   * Get instance ID (for Agents representing Experts)
-   */
-  get instanceId(): string | undefined {
-    return this._expertIdentity?.instanceId;
   }
 
   /**
@@ -399,7 +473,8 @@ export class Agent {
    */
   complete(): void {
     this._status = 'completed';
-    void this.persistState(); // 持久化状态变更
+    void this.persistState();
+    void this.endSession(); // 结束 session
   }
 
   /**
@@ -420,7 +495,8 @@ export class Agent {
       source,
       details,
     };
-    void this.persistState(); // 持久化状态变更
+    void this.persistState();
+    void this.endSession('aborted'); // 结束 session
   }
 
   /**
@@ -486,7 +562,7 @@ export class Agent {
       );
       this.logger.warn(
         '[MailDriven] Available components: ' +
-        (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
+          (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
       );
       return;
     }

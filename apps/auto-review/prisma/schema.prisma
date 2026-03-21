@@ -61,6 +61,7 @@ model ArticleSearchResult {
   snippet         String?
   doi             String?
   position        Int?
+  note            String?
   embedding       ArticleEmbedding?
 
   createdAt       DateTime      @default(now())

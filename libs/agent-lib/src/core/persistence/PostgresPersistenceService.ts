@@ -8,7 +8,9 @@ import type {
   IPersistenceService,
   AgentSessionData,
   PersistenceConfig,
+  InstanceMetadata,
 } from './types.js';
+import { TYPES } from '../di/types.js';
 import pino from 'pino';
 
 @injectable()
@@ -17,20 +19,21 @@ export class PostgresPersistenceService implements IPersistenceService {
   private logger: pino.Logger;
 
   constructor(
-    @inject('PrismaClient') private prisma: PrismaClient,
-    @inject('PersistenceConfig') @optional() config?: PersistenceConfig,
+    @inject(TYPES.PrismaClient) private prisma: PrismaClient,
+    @inject(TYPES.PersistenceConfig) @optional() config?: PersistenceConfig,
   ) {
     this.config = { enabled: true, autoCommit: true, ...config };
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'info' });
-    this.logger.info('[PersistenceService] Initialized', {
-      enabled: this.config.enabled,
-    });
+    this.logger.info(
+      { enabled: this.config.enabled },
+      '[PersistenceService] Initialized',
+    );
   }
 
   async createSession(data: AgentSessionData): Promise<string> {
     const session = await this.prisma.agentSession.create({
       data: {
-        taskId: data.taskId,
+        instanceId: data.instanceId,
         status: data.status,
         abortReason: data.abortReason,
         abortSource: data.abortSource,
@@ -45,15 +48,16 @@ export class PostgresPersistenceService implements IPersistenceService {
       },
     });
 
-    this.logger.info('[PersistenceService] Session created', {
-      taskId: data.taskId,
-    });
+    this.logger.info(
+      { instanceId: data.instanceId },
+      '[PersistenceService] Session created',
+    );
     return session.id;
   }
 
-  async getSession(taskId: string): Promise<AgentSessionData | null> {
+  async getSession(instanceId: string): Promise<AgentSessionData | null> {
     const session = await this.prisma.agentSession.findUnique({
-      where: { taskId },
+      where: { instanceId },
     });
 
     if (!session) {
@@ -61,11 +65,11 @@ export class PostgresPersistenceService implements IPersistenceService {
     }
 
     return {
-      taskId: session.taskId,
+      instanceId: session.instanceId,
       status: session.status as AgentSessionData['status'],
       abortReason: session.abortReason ?? undefined,
       abortSource: session.abortSource ?? undefined,
-      config: session.config as AgentSessionData['config'],
+      config: session.config as unknown as AgentSessionData['config'],
       totalTokensIn: session.totalTokensIn,
       totalTokensOut: session.totalTokensOut,
       totalCost: session.totalCost,
@@ -77,7 +81,7 @@ export class PostgresPersistenceService implements IPersistenceService {
   }
 
   async updateSession(
-    taskId: string,
+    instanceId: string,
     data: Partial<AgentSessionData>,
   ): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,22 +110,22 @@ export class PostgresPersistenceService implements IPersistenceService {
     }
 
     await this.prisma.agentSession.update({
-      where: { taskId },
+      where: { instanceId },
       data: updateData,
     });
 
-    this.logger.debug('[PersistenceService] Session updated', {
-      taskId,
-      fields: Object.keys(updateData),
-    });
+    this.logger.debug(
+      { instanceId, fields: Object.keys(updateData) },
+      '[PersistenceService] Session updated',
+    );
   }
 
-  async deleteSession(taskId: string): Promise<void> {
+  async deleteSession(instanceId: string): Promise<void> {
     await this.prisma.agentSession.delete({
-      where: { taskId },
+      where: { instanceId },
     });
 
-    this.logger.info('[PersistenceService] Session deleted', { taskId });
+    this.logger.info({ instanceId }, '[PersistenceService] Session deleted');
   }
 
   async listSessions(options?: {
@@ -137,11 +141,11 @@ export class PostgresPersistenceService implements IPersistenceService {
     });
 
     return sessions.map((s) => ({
-      taskId: s.taskId,
+      instanceId: s.instanceId,
       status: s.status as AgentSessionData['status'],
       abortReason: s.abortReason ?? undefined,
       abortSource: s.abortSource ?? undefined,
-      config: s.config as AgentSessionData['config'],
+      config: s.config as unknown as AgentSessionData['config'],
       totalTokensIn: s.totalTokensIn,
       totalTokensOut: s.totalTokensOut,
       totalCost: s.totalCost,
@@ -183,20 +187,20 @@ export class PostgresPersistenceService implements IPersistenceService {
   // ==================== Memory 持久化 (Phase 2) ====================
 
   async saveMemory(
-    sessionId: string,
+    instanceId: string,
     memory: {
       messages: unknown[];
       workspaceContexts: unknown[];
       config: unknown;
     },
   ): Promise<void> {
-    // First, get the internal session ID from taskId
+    // First, get the internal session ID from instanceId
     const session = await this.prisma.agentSession.findUnique({
-      where: { taskId: sessionId },
+      where: { instanceId },
     });
 
     if (!session) {
-      throw new Error(`Session not found: ${sessionId}`);
+      throw new Error(`Session not found for instance: ${instanceId}`);
     }
 
     await this.prisma.agentMemory.upsert({
@@ -214,18 +218,16 @@ export class PostgresPersistenceService implements IPersistenceService {
       },
     });
 
-    this.logger.debug('[PersistenceService] Memory saved', { sessionId });
+    this.logger.debug({ instanceId }, '[PersistenceService] Memory saved');
   }
 
-  async loadMemory(
-    sessionId: string,
-  ): Promise<{
+  async loadMemory(instanceId: string): Promise<{
     messages: unknown[];
     workspaceContexts: unknown[];
     config: unknown;
   } | null> {
     const session = await this.prisma.agentSession.findUnique({
-      where: { taskId: sessionId },
+      where: { instanceId },
       include: { memory: true },
     });
 
@@ -238,5 +240,180 @@ export class PostgresPersistenceService implements IPersistenceService {
       workspaceContexts: session.memory.workspaceContexts as unknown[],
       config: session.memory.config,
     };
+  }
+
+  // ==================== AgentInstance 生命周期 ====================
+
+  async saveInstanceMetadata(
+    instanceId: string,
+    data: Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>,
+  ): Promise<void> {
+    await this.prisma.agentInstance.create({
+      data: {
+        instanceId,
+        status: data.status,
+        config: data.config as object,
+        completedAt: data.completedAt,
+      },
+    });
+
+    this.logger.info(
+      { instanceId },
+      '[PersistenceService] Instance metadata saved',
+    );
+  }
+
+  async getInstanceMetadata(
+    instanceId: string,
+  ): Promise<InstanceMetadata | null> {
+    const instance = await this.prisma.agentInstance.findUnique({
+      where: { instanceId },
+    });
+
+    if (!instance) {
+      return null;
+    }
+
+    return {
+      instanceId: instance.instanceId,
+      status: instance.status as InstanceMetadata['status'],
+      config: instance.config as unknown,
+      createdAt: instance.createdAt,
+      updatedAt: instance.updatedAt,
+      completedAt: instance.completedAt ?? undefined,
+    };
+  }
+
+  async updateInstanceMetadata(
+    instanceId: string,
+    data: Partial<Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>>,
+  ): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {};
+
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.config !== undefined) updateData.config = data.config;
+
+    // 自动设置 completedAt
+    if (data.status === 'completed' || data.status === 'aborted') {
+      updateData.completedAt = new Date();
+    }
+
+    await this.prisma.agentInstance.update({
+      where: { instanceId },
+      data: updateData,
+    });
+
+    this.logger.debug(
+      { instanceId, fields: Object.keys(updateData) },
+      '[PersistenceService] Instance metadata updated',
+    );
+  }
+
+  // ==================== ComponentState 持久化 (Phase 3) ====================
+
+  async saveComponentState(
+    instanceId: string,
+    componentId: string,
+    stateData: unknown,
+  ): Promise<void> {
+    // First, get the internal session ID from instanceId
+    const session = await this.prisma.agentSession.findUnique({
+      where: { instanceId },
+    });
+
+    if (!session) {
+      throw new Error(`Session not found for instance: ${instanceId}`);
+    }
+
+    await this.prisma.componentState.upsert({
+      where: {
+        sessionId_componentId: {
+          sessionId: session.id,
+          componentId,
+        },
+      },
+      create: {
+        sessionId: session.id,
+        componentId,
+        stateData: stateData as object,
+      },
+      update: {
+        stateData: stateData as object,
+      },
+    });
+
+    this.logger.debug(
+      { instanceId, componentId },
+      '[PersistenceService] Component state saved',
+    );
+  }
+
+  async getComponentState(
+    instanceId: string,
+    componentId: string,
+  ): Promise<unknown | null> {
+    const session = await this.prisma.agentSession.findUnique({
+      where: { instanceId },
+      include: {
+        componentStates: {
+          where: { componentId },
+        },
+      },
+    });
+
+    const componentState = session?.componentStates[0];
+    if (!componentState) {
+      return null;
+    }
+
+    return componentState.stateData as unknown;
+  }
+
+  async getAllComponentStates(
+    instanceId: string,
+  ): Promise<Record<string, unknown>> {
+    const session = await this.prisma.agentSession.findUnique({
+      where: { instanceId },
+      include: {
+        componentStates: true,
+      },
+    });
+
+    if (!session) {
+      return {};
+    }
+
+    const result: Record<string, unknown> = {};
+    for (const cs of session.componentStates) {
+      result[cs.componentId] = cs.stateData as unknown;
+    }
+
+    return result;
+  }
+
+  async deleteComponentState(
+    instanceId: string,
+    componentId: string,
+  ): Promise<void> {
+    const session = await this.prisma.agentSession.findUnique({
+      where: { instanceId },
+    });
+
+    if (!session) {
+      throw new Error(`Session not found for instance: ${instanceId}`);
+    }
+
+    await this.prisma.componentState.deleteMany({
+      where: {
+        sessionId: session.id,
+        componentId,
+      },
+    });
+
+    this.logger.debug(
+      { instanceId, componentId },
+      '[PersistenceService] Component state deleted',
+    );
   }
 }
