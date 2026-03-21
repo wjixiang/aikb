@@ -641,7 +641,7 @@ describe('FileSystemComponent', () => {
 
       await component.handleToolCall('listFiles', { prefix: '', limit: 10 });
 
-      const state = (component as any).state;
+      const state = (component as any).componentState;
       expect(state.recentOperations.length).toBeGreaterThan(0);
       expect(state.recentOperations[0].operation).toBe('listFiles');
     });
@@ -666,7 +666,7 @@ describe('FileSystemComponent', () => {
 
       await component.handleToolCall('listFiles', { prefix: '', limit: 10 });
 
-      const state = (component as any).state;
+      const state = (component as any).componentState;
       expect(state.files).toHaveLength(1);
       expect(state.totalFiles).toBe(1);
     });
@@ -687,7 +687,7 @@ describe('FileSystemComponent', () => {
 
       await component.handleToolCall('readFile', { s3Key: 'test/active.md', encoding: 'utf-8' });
 
-      const state = (component as any).state;
+      const state = (component as any).componentState;
       expect(state.activeFile).toBe('test/active.md');
     });
   });

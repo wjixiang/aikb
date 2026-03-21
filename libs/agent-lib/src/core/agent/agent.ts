@@ -1021,7 +1021,7 @@ export class Agent {
           this.memoryModule.pushErrors([new Error(errorMsg)]);
           // Create error tool result and add to memory
           const errorResult: ApiMessage = {
-            role: 'user',
+            role: 'system',
             content: [
               {
                 type: 'tool_result' as const,
@@ -1111,7 +1111,7 @@ export class Agent {
 
         // Add tool result message to memory
         const toolResultMsg: ApiMessage = {
-          role: 'user',
+          role: 'system',
           content: [
             {
               type: 'tool_result' as const,

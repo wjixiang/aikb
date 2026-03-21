@@ -23,24 +23,24 @@ describe('AgentContainer', () => {
       expect(internalContainer).toBeInstanceOf(Container);
     });
 
-    it('should create agent via getAgent()', () => {
+    it('should create agent via getAgent()', async () => {
       const container = new AgentContainer({ api: { apiKey: 'test-key' } });
-      const agent = container.getAgent();
+      const agent = await container.getAgent();
       expect(agent).toBeInstanceOf(Agent);
     });
 
-    it('should return same agent instance on multiple getAgent() calls', () => {
+    it('should return same agent instance on multiple getAgent() calls', async () => {
       const container = new AgentContainer({ api: { apiKey: 'test-key' } });
-      const agent1 = container.getAgent();
-      const agent2 = container.getAgent();
+      const agent1 = await container.getAgent();
+      const agent2 = await container.getAgent();
       expect(agent1).toBe(agent2);
     });
   });
 
   describe('Service Bindings', () => {
-    it('should bind services as singletons within container', () => {
+    it('should bind services as singletons within container', async () => {
       const container = new AgentContainer({ api: { apiKey: 'test-key' } });
-      const agent = container.getAgent();
+      const agent = await container.getAgent();
       const workspace = agent.workspace;
       const memoryModule = agent.getMemoryModule();
 
@@ -48,12 +48,12 @@ describe('AgentContainer', () => {
       expect(memoryModule).toBeInstanceOf(MemoryModule);
     });
 
-    it('should have isolated services per container', () => {
+    it('should have isolated services per container', async () => {
       const container1 = new AgentContainer({ api: { apiKey: 'key-1' } });
       const container2 = new AgentContainer({ api: { apiKey: 'key-2' } });
 
-      const agent1 = container1.getAgent();
-      const agent2 = container2.getAgent();
+      const agent1 = await container1.getAgent();
+      const agent2 = await container2.getAgent();
 
       expect(agent1.workspace).not.toBe(agent2.workspace);
       expect(agent1.getMemoryModule()).not.toBe(agent2.getMemoryModule());
@@ -115,7 +115,7 @@ describe('AgentContainer', () => {
       expect(config.workspace.name).toBe('My Workspace');
     });
 
-    it('should accept taskId', () => {
+    it('should accept taskId', async () => {
       const container = new AgentContainer({
         agent: {
           taskId: 'test-task-123',
@@ -124,13 +124,13 @@ describe('AgentContainer', () => {
           apiKey: 'test-key',
         },
       });
-      const agent = container.getAgent();
+      const agent = await container.getAgent();
       expect(agent.getTaskId).toBe('test-task-123');
     });
   });
 
   describe('Agent Access', () => {
-    it('should create agent with correct configuration', () => {
+    it('should create agent with correct configuration', async () => {
       const container = new AgentContainer({
         agent: {
           sop: 'Test SOP',
@@ -138,25 +138,25 @@ describe('AgentContainer', () => {
         },
         api: { apiKey: 'test-key' },
       });
-      const agent = container.getAgent();
+      const agent = await container.getAgent();
       expect(agent).toBeInstanceOf(Agent);
       expect(agent.getTaskId).toBe('test-123');
     });
 
-    it('should have workspace available on agent', () => {
+    it('should have workspace available on agent', async () => {
       const container = new AgentContainer({
         api: { apiKey: 'test-key' },
       });
-      const agent = container.getAgent();
+      const agent = await container.getAgent();
       expect(agent.workspace).toBeDefined();
       expect(agent.workspace).toBeInstanceOf(VirtualWorkspace);
     });
 
-    it('should have memory module available on agent', () => {
+    it('should have memory module available on agent', async () => {
       const container = new AgentContainer({
         api: { apiKey: 'test-key' },
       });
-      const agent = container.getAgent();
+      const agent = await container.getAgent();
       expect(agent.getMemoryModule()).toBeDefined();
     });
   });
@@ -164,16 +164,16 @@ describe('AgentContainer', () => {
 
 describe('AgentFactory', () => {
   describe('create', () => {
-    it('should create a container with Agent', () => {
+    it('should create a container with Agent', async () => {
       const container = AgentFactory.create({
         agent: { sop: 'Test SOP' },
         api: { apiKey: 'test-key' },
       });
       expect(container).toBeInstanceOf(AgentContainer);
-      expect(container.getAgent()).toBeInstanceOf(Agent);
+      expect(await container.getAgent()).toBeInstanceOf(Agent);
     });
 
-    it('should pass configuration to container', () => {
+    it('should pass configuration to container', async () => {
       const container = AgentFactory.create({
         agent: {
           sop: 'Factory SOP',
@@ -181,22 +181,22 @@ describe('AgentFactory', () => {
         },
         api: { apiKey: 'test-key' },
       });
-      const agent = container.getAgent();
+      const agent = await container.getAgent();
       expect(agent.getTaskId).toBe('factory-task');
     });
   });
 
   describe('createAgent', () => {
-    it('should create and return agent directly', () => {
-      const agent = AgentFactory.createAgent({
+    it('should create and return agent directly', async () => {
+      const agent = await AgentFactory.createAgent({
         agent: { sop: 'Direct SOP' },
         api: { apiKey: 'test-key' },
       });
       expect(agent).toBeInstanceOf(Agent);
     });
 
-    it('should accept full configuration', () => {
-      const agent = AgentFactory.createAgent({
+    it('should accept full configuration', async () => {
+      const agent = await AgentFactory.createAgent({
         agent: {
           sop: 'Full Config SOP',
           taskId: 'full-config-task',
@@ -211,7 +211,7 @@ describe('AgentFactory', () => {
 });
 
 describe('Multiple Containers', () => {
-  it('should create isolated agents in separate containers', () => {
+  it('should create isolated agents in separate containers', async () => {
     const container1 = new AgentContainer({
       agent: { taskId: 'agent-1' },
       api: { apiKey: 'key-1' },
@@ -221,8 +221,8 @@ describe('Multiple Containers', () => {
       api: { apiKey: 'key-2' },
     });
 
-    const agent1 = container1.getAgent();
-    const agent2 = container2.getAgent();
+    const agent1 = await container1.getAgent();
+    const agent2 = await container2.getAgent();
 
     expect(agent1).not.toBe(agent2);
     expect(agent1.getTaskId).toBe('agent-1');

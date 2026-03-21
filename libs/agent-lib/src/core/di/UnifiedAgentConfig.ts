@@ -52,7 +52,7 @@ export const defaultUnifiedConfig: UnifiedAgentConfig = {
   },
   memory: defaultMemoryConfig,
   persistence: {
-    enabled: true,
+    // enabled: true,
   },
 };
 
@@ -82,7 +82,7 @@ export function mergeWithDefaults(
     },
     persistence:
       partial.persistence !== undefined
-        ? { enabled: true, ...partial.persistence }
+        ? { ...partial.persistence }
         : defaultUnifiedConfig.persistence,
   };
   return result;

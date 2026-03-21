@@ -765,7 +765,7 @@ export type AgentSessionScalarFieldEnum = (typeof AgentSessionScalarFieldEnum)[k
 
 export const AgentMemoryScalarFieldEnum = {
   id: 'id',
-  sessionId: 'sessionId',
+  instanceId: 'instanceId',
   messages: 'messages',
   workspaceContexts: 'workspaceContexts',
   config: 'config',

@@ -195,6 +195,7 @@ export type AgentInstanceWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"AgentInstance"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentInstance"> | Date | string | null
   sessions?: Prisma.AgentSessionListRelationFilter
+  memory?: Prisma.XOR<Prisma.AgentMemoryNullableScalarRelationFilter, Prisma.AgentMemoryWhereInput> | null
 }
 
 export type AgentInstanceOrderByWithRelationInput = {
@@ -206,6 +207,7 @@ export type AgentInstanceOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sessions?: Prisma.AgentSessionOrderByRelationAggregateInput
+  memory?: Prisma.AgentMemoryOrderByWithRelationInput
 }
 
 export type AgentInstanceWhereUniqueInput = Prisma.AtLeast<{
@@ -220,6 +222,7 @@ export type AgentInstanceWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"AgentInstance"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentInstance"> | Date | string | null
   sessions?: Prisma.AgentSessionListRelationFilter
+  memory?: Prisma.XOR<Prisma.AgentMemoryNullableScalarRelationFilter, Prisma.AgentMemoryWhereInput> | null
 }, "id" | "instanceId">
 
 export type AgentInstanceOrderByWithAggregationInput = {
@@ -257,6 +260,7 @@ export type AgentInstanceCreateInput = {
   updatedAt?: Date | string
   completedAt?: Date | string | null
   sessions?: Prisma.AgentSessionCreateNestedManyWithoutInstanceInput
+  memory?: Prisma.AgentMemoryCreateNestedOneWithoutInstanceInput
 }
 
 export type AgentInstanceUncheckedCreateInput = {
@@ -268,6 +272,7 @@ export type AgentInstanceUncheckedCreateInput = {
   updatedAt?: Date | string
   completedAt?: Date | string | null
   sessions?: Prisma.AgentSessionUncheckedCreateNestedManyWithoutInstanceInput
+  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutInstanceInput
 }
 
 export type AgentInstanceUpdateInput = {
@@ -279,6 +284,7 @@ export type AgentInstanceUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sessions?: Prisma.AgentSessionUpdateManyWithoutInstanceNestedInput
+  memory?: Prisma.AgentMemoryUpdateOneWithoutInstanceNestedInput
 }
 
 export type AgentInstanceUncheckedUpdateInput = {
@@ -290,6 +296,7 @@ export type AgentInstanceUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sessions?: Prisma.AgentSessionUncheckedUpdateManyWithoutInstanceNestedInput
+  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutInstanceNestedInput
 }
 
 export type AgentInstanceCreateManyInput = {
@@ -369,6 +376,20 @@ export type AgentInstanceUpdateOneRequiredWithoutSessionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AgentInstanceUpdateToOneWithWhereWithoutSessionsInput, Prisma.AgentInstanceUpdateWithoutSessionsInput>, Prisma.AgentInstanceUncheckedUpdateWithoutSessionsInput>
 }
 
+export type AgentInstanceCreateNestedOneWithoutMemoryInput = {
+  create?: Prisma.XOR<Prisma.AgentInstanceCreateWithoutMemoryInput, Prisma.AgentInstanceUncheckedCreateWithoutMemoryInput>
+  connectOrCreate?: Prisma.AgentInstanceCreateOrConnectWithoutMemoryInput
+  connect?: Prisma.AgentInstanceWhereUniqueInput
+}
+
+export type AgentInstanceUpdateOneRequiredWithoutMemoryNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentInstanceCreateWithoutMemoryInput, Prisma.AgentInstanceUncheckedCreateWithoutMemoryInput>
+  connectOrCreate?: Prisma.AgentInstanceCreateOrConnectWithoutMemoryInput
+  upsert?: Prisma.AgentInstanceUpsertWithoutMemoryInput
+  connect?: Prisma.AgentInstanceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentInstanceUpdateToOneWithWhereWithoutMemoryInput, Prisma.AgentInstanceUpdateWithoutMemoryInput>, Prisma.AgentInstanceUncheckedUpdateWithoutMemoryInput>
+}
+
 export type AgentInstanceCreateWithoutSessionsInput = {
   id?: string
   instanceId: string
@@ -377,6 +398,7 @@ export type AgentInstanceCreateWithoutSessionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
+  memory?: Prisma.AgentMemoryCreateNestedOneWithoutInstanceInput
 }
 
 export type AgentInstanceUncheckedCreateWithoutSessionsInput = {
@@ -387,6 +409,7 @@ export type AgentInstanceUncheckedCreateWithoutSessionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutInstanceInput
 }
 
 export type AgentInstanceCreateOrConnectWithoutSessionsInput = {
@@ -413,6 +436,7 @@ export type AgentInstanceUpdateWithoutSessionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memory?: Prisma.AgentMemoryUpdateOneWithoutInstanceNestedInput
 }
 
 export type AgentInstanceUncheckedUpdateWithoutSessionsInput = {
@@ -423,6 +447,67 @@ export type AgentInstanceUncheckedUpdateWithoutSessionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutInstanceNestedInput
+}
+
+export type AgentInstanceCreateWithoutMemoryInput = {
+  id?: string
+  instanceId: string
+  status?: string
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  sessions?: Prisma.AgentSessionCreateNestedManyWithoutInstanceInput
+}
+
+export type AgentInstanceUncheckedCreateWithoutMemoryInput = {
+  id?: string
+  instanceId: string
+  status?: string
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  sessions?: Prisma.AgentSessionUncheckedCreateNestedManyWithoutInstanceInput
+}
+
+export type AgentInstanceCreateOrConnectWithoutMemoryInput = {
+  where: Prisma.AgentInstanceWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentInstanceCreateWithoutMemoryInput, Prisma.AgentInstanceUncheckedCreateWithoutMemoryInput>
+}
+
+export type AgentInstanceUpsertWithoutMemoryInput = {
+  update: Prisma.XOR<Prisma.AgentInstanceUpdateWithoutMemoryInput, Prisma.AgentInstanceUncheckedUpdateWithoutMemoryInput>
+  create: Prisma.XOR<Prisma.AgentInstanceCreateWithoutMemoryInput, Prisma.AgentInstanceUncheckedCreateWithoutMemoryInput>
+  where?: Prisma.AgentInstanceWhereInput
+}
+
+export type AgentInstanceUpdateToOneWithWhereWithoutMemoryInput = {
+  where?: Prisma.AgentInstanceWhereInput
+  data: Prisma.XOR<Prisma.AgentInstanceUpdateWithoutMemoryInput, Prisma.AgentInstanceUncheckedUpdateWithoutMemoryInput>
+}
+
+export type AgentInstanceUpdateWithoutMemoryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sessions?: Prisma.AgentSessionUpdateManyWithoutInstanceNestedInput
+}
+
+export type AgentInstanceUncheckedUpdateWithoutMemoryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sessions?: Prisma.AgentSessionUncheckedUpdateManyWithoutInstanceNestedInput
 }
 
 
@@ -465,6 +550,7 @@ export type AgentInstanceSelect<ExtArgs extends runtime.Types.Extensions.Interna
   updatedAt?: boolean
   completedAt?: boolean
   sessions?: boolean | Prisma.AgentInstance$sessionsArgs<ExtArgs>
+  memory?: boolean | Prisma.AgentInstance$memoryArgs<ExtArgs>
   _count?: boolean | Prisma.AgentInstanceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentInstance"]>
 
@@ -501,6 +587,7 @@ export type AgentInstanceSelectScalar = {
 export type AgentInstanceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "instanceId" | "status" | "config" | "createdAt" | "updatedAt" | "completedAt", ExtArgs["result"]["agentInstance"]>
 export type AgentInstanceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   sessions?: boolean | Prisma.AgentInstance$sessionsArgs<ExtArgs>
+  memory?: boolean | Prisma.AgentInstance$memoryArgs<ExtArgs>
   _count?: boolean | Prisma.AgentInstanceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AgentInstanceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -510,6 +597,7 @@ export type $AgentInstancePayload<ExtArgs extends runtime.Types.Extensions.Inter
   name: "AgentInstance"
   objects: {
     sessions: Prisma.$AgentSessionPayload<ExtArgs>[]
+    memory: Prisma.$AgentMemoryPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -914,6 +1002,7 @@ readonly fields: AgentInstanceFieldRefs;
 export interface Prisma__AgentInstanceClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   sessions<T extends Prisma.AgentInstance$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstance$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  memory<T extends Prisma.AgentInstance$memoryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstance$memoryArgs<ExtArgs>>): Prisma.Prisma__AgentMemoryClient<runtime.Types.Result.GetResult<Prisma.$AgentMemoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1359,6 +1448,25 @@ export type AgentInstance$sessionsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.AgentSessionScalarFieldEnum | Prisma.AgentSessionScalarFieldEnum[]
+}
+
+/**
+ * AgentInstance.memory
+ */
+export type AgentInstance$memoryArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentMemory
+   */
+  select?: Prisma.AgentMemorySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AgentMemory
+   */
+  omit?: Prisma.AgentMemoryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentMemoryInclude<ExtArgs> | null
+  where?: Prisma.AgentMemoryWhereInput
 }
 
 /**

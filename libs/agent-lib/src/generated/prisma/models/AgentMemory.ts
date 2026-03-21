@@ -26,21 +26,21 @@ export type AggregateAgentMemory = {
 
 export type AgentMemoryMinAggregateOutputType = {
   id: string | null
-  sessionId: string | null
+  instanceId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type AgentMemoryMaxAggregateOutputType = {
   id: string | null
-  sessionId: string | null
+  instanceId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type AgentMemoryCountAggregateOutputType = {
   id: number
-  sessionId: number
+  instanceId: number
   messages: number
   workspaceContexts: number
   config: number
@@ -52,21 +52,21 @@ export type AgentMemoryCountAggregateOutputType = {
 
 export type AgentMemoryMinAggregateInputType = {
   id?: true
-  sessionId?: true
+  instanceId?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type AgentMemoryMaxAggregateInputType = {
   id?: true
-  sessionId?: true
+  instanceId?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type AgentMemoryCountAggregateInputType = {
   id?: true
-  sessionId?: true
+  instanceId?: true
   messages?: true
   workspaceContexts?: true
   config?: true
@@ -149,7 +149,7 @@ export type AgentMemoryGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 
 export type AgentMemoryGroupByOutputType = {
   id: string
-  sessionId: string
+  instanceId: string
   messages: runtime.JsonValue
   workspaceContexts: runtime.JsonValue | null
   config: runtime.JsonValue | null
@@ -180,29 +180,29 @@ export type AgentMemoryWhereInput = {
   OR?: Prisma.AgentMemoryWhereInput[]
   NOT?: Prisma.AgentMemoryWhereInput | Prisma.AgentMemoryWhereInput[]
   id?: Prisma.StringFilter<"AgentMemory"> | string
-  sessionId?: Prisma.StringFilter<"AgentMemory"> | string
+  instanceId?: Prisma.StringFilter<"AgentMemory"> | string
   messages?: Prisma.JsonFilter<"AgentMemory">
   workspaceContexts?: Prisma.JsonNullableFilter<"AgentMemory">
   config?: Prisma.JsonNullableFilter<"AgentMemory">
   createdAt?: Prisma.DateTimeFilter<"AgentMemory"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentMemory"> | Date | string
-  session?: Prisma.XOR<Prisma.AgentSessionScalarRelationFilter, Prisma.AgentSessionWhereInput>
+  instance?: Prisma.XOR<Prisma.AgentInstanceScalarRelationFilter, Prisma.AgentInstanceWhereInput>
 }
 
 export type AgentMemoryOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   messages?: Prisma.SortOrder
   workspaceContexts?: Prisma.SortOrderInput | Prisma.SortOrder
   config?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  session?: Prisma.AgentSessionOrderByWithRelationInput
+  instance?: Prisma.AgentInstanceOrderByWithRelationInput
 }
 
 export type AgentMemoryWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  sessionId?: string
+  instanceId?: string
   AND?: Prisma.AgentMemoryWhereInput | Prisma.AgentMemoryWhereInput[]
   OR?: Prisma.AgentMemoryWhereInput[]
   NOT?: Prisma.AgentMemoryWhereInput | Prisma.AgentMemoryWhereInput[]
@@ -211,12 +211,12 @@ export type AgentMemoryWhereUniqueInput = Prisma.AtLeast<{
   config?: Prisma.JsonNullableFilter<"AgentMemory">
   createdAt?: Prisma.DateTimeFilter<"AgentMemory"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentMemory"> | Date | string
-  session?: Prisma.XOR<Prisma.AgentSessionScalarRelationFilter, Prisma.AgentSessionWhereInput>
-}, "id" | "sessionId">
+  instance?: Prisma.XOR<Prisma.AgentInstanceScalarRelationFilter, Prisma.AgentInstanceWhereInput>
+}, "id" | "instanceId">
 
 export type AgentMemoryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   messages?: Prisma.SortOrder
   workspaceContexts?: Prisma.SortOrderInput | Prisma.SortOrder
   config?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -232,7 +232,7 @@ export type AgentMemoryScalarWhereWithAggregatesInput = {
   OR?: Prisma.AgentMemoryScalarWhereWithAggregatesInput[]
   NOT?: Prisma.AgentMemoryScalarWhereWithAggregatesInput | Prisma.AgentMemoryScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"AgentMemory"> | string
-  sessionId?: Prisma.StringWithAggregatesFilter<"AgentMemory"> | string
+  instanceId?: Prisma.StringWithAggregatesFilter<"AgentMemory"> | string
   messages?: Prisma.JsonWithAggregatesFilter<"AgentMemory">
   workspaceContexts?: Prisma.JsonNullableWithAggregatesFilter<"AgentMemory">
   config?: Prisma.JsonNullableWithAggregatesFilter<"AgentMemory">
@@ -247,12 +247,12 @@ export type AgentMemoryCreateInput = {
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  session: Prisma.AgentSessionCreateNestedOneWithoutMemoryInput
+  instance: Prisma.AgentInstanceCreateNestedOneWithoutMemoryInput
 }
 
 export type AgentMemoryUncheckedCreateInput = {
   id?: string
-  sessionId: string
+  instanceId: string
   messages: Prisma.JsonNullValueInput | runtime.InputJsonValue
   workspaceContexts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -267,12 +267,12 @@ export type AgentMemoryUpdateInput = {
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  session?: Prisma.AgentSessionUpdateOneRequiredWithoutMemoryNestedInput
+  instance?: Prisma.AgentInstanceUpdateOneRequiredWithoutMemoryNestedInput
 }
 
 export type AgentMemoryUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   messages?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   workspaceContexts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -282,7 +282,7 @@ export type AgentMemoryUncheckedUpdateInput = {
 
 export type AgentMemoryCreateManyInput = {
   id?: string
-  sessionId: string
+  instanceId: string
   messages: Prisma.JsonNullValueInput | runtime.InputJsonValue
   workspaceContexts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -301,7 +301,7 @@ export type AgentMemoryUpdateManyMutationInput = {
 
 export type AgentMemoryUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   messages?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   workspaceContexts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -309,14 +309,9 @@ export type AgentMemoryUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type AgentMemoryNullableScalarRelationFilter = {
-  is?: Prisma.AgentMemoryWhereInput | null
-  isNot?: Prisma.AgentMemoryWhereInput | null
-}
-
 export type AgentMemoryCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   messages?: Prisma.SortOrder
   workspaceContexts?: Prisma.SortOrder
   config?: Prisma.SortOrder
@@ -326,51 +321,56 @@ export type AgentMemoryCountOrderByAggregateInput = {
 
 export type AgentMemoryMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type AgentMemoryMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
-export type AgentMemoryCreateNestedOneWithoutSessionInput = {
-  create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutSessionInput, Prisma.AgentMemoryUncheckedCreateWithoutSessionInput>
-  connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutSessionInput
+export type AgentMemoryNullableScalarRelationFilter = {
+  is?: Prisma.AgentMemoryWhereInput | null
+  isNot?: Prisma.AgentMemoryWhereInput | null
+}
+
+export type AgentMemoryCreateNestedOneWithoutInstanceInput = {
+  create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutInstanceInput, Prisma.AgentMemoryUncheckedCreateWithoutInstanceInput>
+  connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutInstanceInput
   connect?: Prisma.AgentMemoryWhereUniqueInput
 }
 
-export type AgentMemoryUncheckedCreateNestedOneWithoutSessionInput = {
-  create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutSessionInput, Prisma.AgentMemoryUncheckedCreateWithoutSessionInput>
-  connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutSessionInput
+export type AgentMemoryUncheckedCreateNestedOneWithoutInstanceInput = {
+  create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutInstanceInput, Prisma.AgentMemoryUncheckedCreateWithoutInstanceInput>
+  connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutInstanceInput
   connect?: Prisma.AgentMemoryWhereUniqueInput
 }
 
-export type AgentMemoryUpdateOneWithoutSessionNestedInput = {
-  create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutSessionInput, Prisma.AgentMemoryUncheckedCreateWithoutSessionInput>
-  connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutSessionInput
-  upsert?: Prisma.AgentMemoryUpsertWithoutSessionInput
+export type AgentMemoryUpdateOneWithoutInstanceNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutInstanceInput, Prisma.AgentMemoryUncheckedCreateWithoutInstanceInput>
+  connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutInstanceInput
+  upsert?: Prisma.AgentMemoryUpsertWithoutInstanceInput
   disconnect?: Prisma.AgentMemoryWhereInput | boolean
   delete?: Prisma.AgentMemoryWhereInput | boolean
   connect?: Prisma.AgentMemoryWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentMemoryUpdateToOneWithWhereWithoutSessionInput, Prisma.AgentMemoryUpdateWithoutSessionInput>, Prisma.AgentMemoryUncheckedUpdateWithoutSessionInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentMemoryUpdateToOneWithWhereWithoutInstanceInput, Prisma.AgentMemoryUpdateWithoutInstanceInput>, Prisma.AgentMemoryUncheckedUpdateWithoutInstanceInput>
 }
 
-export type AgentMemoryUncheckedUpdateOneWithoutSessionNestedInput = {
-  create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutSessionInput, Prisma.AgentMemoryUncheckedCreateWithoutSessionInput>
-  connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutSessionInput
-  upsert?: Prisma.AgentMemoryUpsertWithoutSessionInput
+export type AgentMemoryUncheckedUpdateOneWithoutInstanceNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutInstanceInput, Prisma.AgentMemoryUncheckedCreateWithoutInstanceInput>
+  connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutInstanceInput
+  upsert?: Prisma.AgentMemoryUpsertWithoutInstanceInput
   disconnect?: Prisma.AgentMemoryWhereInput | boolean
   delete?: Prisma.AgentMemoryWhereInput | boolean
   connect?: Prisma.AgentMemoryWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentMemoryUpdateToOneWithWhereWithoutSessionInput, Prisma.AgentMemoryUpdateWithoutSessionInput>, Prisma.AgentMemoryUncheckedUpdateWithoutSessionInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentMemoryUpdateToOneWithWhereWithoutInstanceInput, Prisma.AgentMemoryUpdateWithoutInstanceInput>, Prisma.AgentMemoryUncheckedUpdateWithoutInstanceInput>
 }
 
-export type AgentMemoryCreateWithoutSessionInput = {
+export type AgentMemoryCreateWithoutInstanceInput = {
   id?: string
   messages: Prisma.JsonNullValueInput | runtime.InputJsonValue
   workspaceContexts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -379,7 +379,7 @@ export type AgentMemoryCreateWithoutSessionInput = {
   updatedAt?: Date | string
 }
 
-export type AgentMemoryUncheckedCreateWithoutSessionInput = {
+export type AgentMemoryUncheckedCreateWithoutInstanceInput = {
   id?: string
   messages: Prisma.JsonNullValueInput | runtime.InputJsonValue
   workspaceContexts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -388,23 +388,23 @@ export type AgentMemoryUncheckedCreateWithoutSessionInput = {
   updatedAt?: Date | string
 }
 
-export type AgentMemoryCreateOrConnectWithoutSessionInput = {
+export type AgentMemoryCreateOrConnectWithoutInstanceInput = {
   where: Prisma.AgentMemoryWhereUniqueInput
-  create: Prisma.XOR<Prisma.AgentMemoryCreateWithoutSessionInput, Prisma.AgentMemoryUncheckedCreateWithoutSessionInput>
+  create: Prisma.XOR<Prisma.AgentMemoryCreateWithoutInstanceInput, Prisma.AgentMemoryUncheckedCreateWithoutInstanceInput>
 }
 
-export type AgentMemoryUpsertWithoutSessionInput = {
-  update: Prisma.XOR<Prisma.AgentMemoryUpdateWithoutSessionInput, Prisma.AgentMemoryUncheckedUpdateWithoutSessionInput>
-  create: Prisma.XOR<Prisma.AgentMemoryCreateWithoutSessionInput, Prisma.AgentMemoryUncheckedCreateWithoutSessionInput>
+export type AgentMemoryUpsertWithoutInstanceInput = {
+  update: Prisma.XOR<Prisma.AgentMemoryUpdateWithoutInstanceInput, Prisma.AgentMemoryUncheckedUpdateWithoutInstanceInput>
+  create: Prisma.XOR<Prisma.AgentMemoryCreateWithoutInstanceInput, Prisma.AgentMemoryUncheckedCreateWithoutInstanceInput>
   where?: Prisma.AgentMemoryWhereInput
 }
 
-export type AgentMemoryUpdateToOneWithWhereWithoutSessionInput = {
+export type AgentMemoryUpdateToOneWithWhereWithoutInstanceInput = {
   where?: Prisma.AgentMemoryWhereInput
-  data: Prisma.XOR<Prisma.AgentMemoryUpdateWithoutSessionInput, Prisma.AgentMemoryUncheckedUpdateWithoutSessionInput>
+  data: Prisma.XOR<Prisma.AgentMemoryUpdateWithoutInstanceInput, Prisma.AgentMemoryUncheckedUpdateWithoutInstanceInput>
 }
 
-export type AgentMemoryUpdateWithoutSessionInput = {
+export type AgentMemoryUpdateWithoutInstanceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   messages?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   workspaceContexts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -413,7 +413,7 @@ export type AgentMemoryUpdateWithoutSessionInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type AgentMemoryUncheckedUpdateWithoutSessionInput = {
+export type AgentMemoryUncheckedUpdateWithoutInstanceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   messages?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   workspaceContexts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -426,40 +426,40 @@ export type AgentMemoryUncheckedUpdateWithoutSessionInput = {
 
 export type AgentMemorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  sessionId?: boolean
+  instanceId?: boolean
   messages?: boolean
   workspaceContexts?: boolean
   config?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentMemory"]>
 
 export type AgentMemorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  sessionId?: boolean
+  instanceId?: boolean
   messages?: boolean
   workspaceContexts?: boolean
   config?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentMemory"]>
 
 export type AgentMemorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  sessionId?: boolean
+  instanceId?: boolean
   messages?: boolean
   workspaceContexts?: boolean
   config?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentMemory"]>
 
 export type AgentMemorySelectScalar = {
   id?: boolean
-  sessionId?: boolean
+  instanceId?: boolean
   messages?: boolean
   workspaceContexts?: boolean
   config?: boolean
@@ -467,25 +467,25 @@ export type AgentMemorySelectScalar = {
   updatedAt?: boolean
 }
 
-export type AgentMemoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "messages" | "workspaceContexts" | "config" | "createdAt" | "updatedAt", ExtArgs["result"]["agentMemory"]>
+export type AgentMemoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "instanceId" | "messages" | "workspaceContexts" | "config" | "createdAt" | "updatedAt", ExtArgs["result"]["agentMemory"]>
 export type AgentMemoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }
 export type AgentMemoryIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }
 export type AgentMemoryIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }
 
 export type $AgentMemoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "AgentMemory"
   objects: {
-    session: Prisma.$AgentSessionPayload<ExtArgs>
+    instance: Prisma.$AgentInstancePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    sessionId: string
+    instanceId: string
     messages: runtime.JsonValue
     workspaceContexts: runtime.JsonValue | null
     config: runtime.JsonValue | null
@@ -885,7 +885,7 @@ readonly fields: AgentMemoryFieldRefs;
  */
 export interface Prisma__AgentMemoryClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  session<T extends Prisma.AgentSessionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentSessionDefaultArgs<ExtArgs>>): Prisma.Prisma__AgentSessionClient<runtime.Types.Result.GetResult<Prisma.$AgentSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  instance<T extends Prisma.AgentInstanceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstanceDefaultArgs<ExtArgs>>): Prisma.Prisma__AgentInstanceClient<runtime.Types.Result.GetResult<Prisma.$AgentInstancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -916,7 +916,7 @@ export interface Prisma__AgentMemoryClient<T, Null = never, ExtArgs extends runt
  */
 export interface AgentMemoryFieldRefs {
   readonly id: Prisma.FieldRef<"AgentMemory", 'String'>
-  readonly sessionId: Prisma.FieldRef<"AgentMemory", 'String'>
+  readonly instanceId: Prisma.FieldRef<"AgentMemory", 'String'>
   readonly messages: Prisma.FieldRef<"AgentMemory", 'Json'>
   readonly workspaceContexts: Prisma.FieldRef<"AgentMemory", 'Json'>
   readonly config: Prisma.FieldRef<"AgentMemory", 'Json'>

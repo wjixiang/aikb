@@ -30,7 +30,7 @@ describe('Agent - Quick Integration Test', () => {
       },
     });
 
-    const agent = container.getAgent();
+    const agent = await container.getAgent();
     expect(agent).toBeDefined();
     expect(agent.status).toBe('idle');
   });
@@ -64,7 +64,7 @@ describe('Agent - Quick Integration Test', () => {
       },
     });
 
-    const agent = container.getAgent();
+    const agent = await container.getAgent();
 
     vi.spyOn(agent as any, 'apiClient', 'get').mockReturnValue(mockClient);
 

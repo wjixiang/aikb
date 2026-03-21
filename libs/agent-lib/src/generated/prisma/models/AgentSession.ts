@@ -297,7 +297,6 @@ export type AgentSessionWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentSession"> | Date | string | null
   instance?: Prisma.XOR<Prisma.AgentInstanceScalarRelationFilter, Prisma.AgentInstanceWhereInput>
-  memory?: Prisma.XOR<Prisma.AgentMemoryNullableScalarRelationFilter, Prisma.AgentMemoryWhereInput> | null
   componentStates?: Prisma.ComponentStateListRelationFilter
 }
 
@@ -318,7 +317,6 @@ export type AgentSessionOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   instance?: Prisma.AgentInstanceOrderByWithRelationInput
-  memory?: Prisma.AgentMemoryOrderByWithRelationInput
   componentStates?: Prisma.ComponentStateOrderByRelationAggregateInput
 }
 
@@ -342,7 +340,6 @@ export type AgentSessionWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentSession"> | Date | string | null
   instance?: Prisma.XOR<Prisma.AgentInstanceScalarRelationFilter, Prisma.AgentInstanceWhereInput>
-  memory?: Prisma.XOR<Prisma.AgentMemoryNullableScalarRelationFilter, Prisma.AgentMemoryWhereInput> | null
   componentStates?: Prisma.ComponentStateListRelationFilter
 }, "id" | "instanceId">
 
@@ -406,7 +403,6 @@ export type AgentSessionCreateInput = {
   updatedAt?: Date | string
   completedAt?: Date | string | null
   instance: Prisma.AgentInstanceCreateNestedOneWithoutSessionsInput
-  memory?: Prisma.AgentMemoryCreateNestedOneWithoutSessionInput
   componentStates?: Prisma.ComponentStateCreateNestedManyWithoutSessionInput
 }
 
@@ -426,7 +422,6 @@ export type AgentSessionUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
-  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutSessionInput
   componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutSessionInput
 }
 
@@ -446,7 +441,6 @@ export type AgentSessionUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   instance?: Prisma.AgentInstanceUpdateOneRequiredWithoutSessionsNestedInput
-  memory?: Prisma.AgentMemoryUpdateOneWithoutSessionNestedInput
   componentStates?: Prisma.ComponentStateUpdateManyWithoutSessionNestedInput
 }
 
@@ -466,7 +460,6 @@ export type AgentSessionUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutSessionNestedInput
   componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutSessionNestedInput
 }
 
@@ -632,20 +625,6 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
 
-export type AgentSessionCreateNestedOneWithoutMemoryInput = {
-  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutMemoryInput, Prisma.AgentSessionUncheckedCreateWithoutMemoryInput>
-  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutMemoryInput
-  connect?: Prisma.AgentSessionWhereUniqueInput
-}
-
-export type AgentSessionUpdateOneRequiredWithoutMemoryNestedInput = {
-  create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutMemoryInput, Prisma.AgentSessionUncheckedCreateWithoutMemoryInput>
-  connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutMemoryInput
-  upsert?: Prisma.AgentSessionUpsertWithoutMemoryInput
-  connect?: Prisma.AgentSessionWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentSessionUpdateToOneWithWhereWithoutMemoryInput, Prisma.AgentSessionUpdateWithoutMemoryInput>, Prisma.AgentSessionUncheckedUpdateWithoutMemoryInput>
-}
-
 export type AgentSessionCreateNestedOneWithoutComponentStatesInput = {
   create?: Prisma.XOR<Prisma.AgentSessionCreateWithoutComponentStatesInput, Prisma.AgentSessionUncheckedCreateWithoutComponentStatesInput>
   connectOrCreate?: Prisma.AgentSessionCreateOrConnectWithoutComponentStatesInput
@@ -702,98 +681,6 @@ export type AgentSessionUncheckedUpdateManyWithoutInstanceNestedInput = {
   deleteMany?: Prisma.AgentSessionScalarWhereInput | Prisma.AgentSessionScalarWhereInput[]
 }
 
-export type AgentSessionCreateWithoutMemoryInput = {
-  id?: string
-  status?: string
-  abortReason?: string | null
-  abortSource?: string | null
-  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  totalTokensIn?: number
-  totalTokensOut?: number
-  totalCost?: number
-  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  consecutiveMistakeCount?: number
-  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  completedAt?: Date | string | null
-  instance: Prisma.AgentInstanceCreateNestedOneWithoutSessionsInput
-  componentStates?: Prisma.ComponentStateCreateNestedManyWithoutSessionInput
-}
-
-export type AgentSessionUncheckedCreateWithoutMemoryInput = {
-  id?: string
-  instanceId: string
-  status?: string
-  abortReason?: string | null
-  abortSource?: string | null
-  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  totalTokensIn?: number
-  totalTokensOut?: number
-  totalCost?: number
-  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  consecutiveMistakeCount?: number
-  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  completedAt?: Date | string | null
-  componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutSessionInput
-}
-
-export type AgentSessionCreateOrConnectWithoutMemoryInput = {
-  where: Prisma.AgentSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.AgentSessionCreateWithoutMemoryInput, Prisma.AgentSessionUncheckedCreateWithoutMemoryInput>
-}
-
-export type AgentSessionUpsertWithoutMemoryInput = {
-  update: Prisma.XOR<Prisma.AgentSessionUpdateWithoutMemoryInput, Prisma.AgentSessionUncheckedUpdateWithoutMemoryInput>
-  create: Prisma.XOR<Prisma.AgentSessionCreateWithoutMemoryInput, Prisma.AgentSessionUncheckedCreateWithoutMemoryInput>
-  where?: Prisma.AgentSessionWhereInput
-}
-
-export type AgentSessionUpdateToOneWithWhereWithoutMemoryInput = {
-  where?: Prisma.AgentSessionWhereInput
-  data: Prisma.XOR<Prisma.AgentSessionUpdateWithoutMemoryInput, Prisma.AgentSessionUncheckedUpdateWithoutMemoryInput>
-}
-
-export type AgentSessionUpdateWithoutMemoryInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
-  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
-  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  instance?: Prisma.AgentInstanceUpdateOneRequiredWithoutSessionsNestedInput
-  componentStates?: Prisma.ComponentStateUpdateManyWithoutSessionNestedInput
-}
-
-export type AgentSessionUncheckedUpdateWithoutMemoryInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
-  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
-  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
-  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutSessionNestedInput
-}
-
 export type AgentSessionCreateWithoutComponentStatesInput = {
   id?: string
   status?: string
@@ -810,7 +697,6 @@ export type AgentSessionCreateWithoutComponentStatesInput = {
   updatedAt?: Date | string
   completedAt?: Date | string | null
   instance: Prisma.AgentInstanceCreateNestedOneWithoutSessionsInput
-  memory?: Prisma.AgentMemoryCreateNestedOneWithoutSessionInput
 }
 
 export type AgentSessionUncheckedCreateWithoutComponentStatesInput = {
@@ -829,7 +715,6 @@ export type AgentSessionUncheckedCreateWithoutComponentStatesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
-  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutSessionInput
 }
 
 export type AgentSessionCreateOrConnectWithoutComponentStatesInput = {
@@ -864,7 +749,6 @@ export type AgentSessionUpdateWithoutComponentStatesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   instance?: Prisma.AgentInstanceUpdateOneRequiredWithoutSessionsNestedInput
-  memory?: Prisma.AgentMemoryUpdateOneWithoutSessionNestedInput
 }
 
 export type AgentSessionUncheckedUpdateWithoutComponentStatesInput = {
@@ -883,7 +767,6 @@ export type AgentSessionUncheckedUpdateWithoutComponentStatesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutSessionNestedInput
 }
 
 export type AgentSessionCreateWithoutInstanceInput = {
@@ -901,7 +784,6 @@ export type AgentSessionCreateWithoutInstanceInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
-  memory?: Prisma.AgentMemoryCreateNestedOneWithoutSessionInput
   componentStates?: Prisma.ComponentStateCreateNestedManyWithoutSessionInput
 }
 
@@ -920,7 +802,6 @@ export type AgentSessionUncheckedCreateWithoutInstanceInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
-  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutSessionInput
   componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutSessionInput
 }
 
@@ -1003,7 +884,6 @@ export type AgentSessionUpdateWithoutInstanceInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  memory?: Prisma.AgentMemoryUpdateOneWithoutSessionNestedInput
   componentStates?: Prisma.ComponentStateUpdateManyWithoutSessionNestedInput
 }
 
@@ -1022,7 +902,6 @@ export type AgentSessionUncheckedUpdateWithoutInstanceInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutSessionNestedInput
   componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutSessionNestedInput
 }
 
@@ -1091,7 +970,6 @@ export type AgentSessionSelect<ExtArgs extends runtime.Types.Extensions.Internal
   updatedAt?: boolean
   completedAt?: boolean
   instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
-  memory?: boolean | Prisma.AgentSession$memoryArgs<ExtArgs>
   componentStates?: boolean | Prisma.AgentSession$componentStatesArgs<ExtArgs>
   _count?: boolean | Prisma.AgentSessionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentSession"]>
@@ -1155,7 +1033,6 @@ export type AgentSessionSelectScalar = {
 export type AgentSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "instanceId" | "status" | "abortReason" | "abortSource" | "config" | "totalTokensIn" | "totalTokensOut" | "totalCost" | "toolUsage" | "consecutiveMistakeCount" | "collectedErrors" | "createdAt" | "updatedAt" | "completedAt", ExtArgs["result"]["agentSession"]>
 export type AgentSessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
-  memory?: boolean | Prisma.AgentSession$memoryArgs<ExtArgs>
   componentStates?: boolean | Prisma.AgentSession$componentStatesArgs<ExtArgs>
   _count?: boolean | Prisma.AgentSessionCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1170,7 +1047,6 @@ export type $AgentSessionPayload<ExtArgs extends runtime.Types.Extensions.Intern
   name: "AgentSession"
   objects: {
     instance: Prisma.$AgentInstancePayload<ExtArgs>
-    memory: Prisma.$AgentMemoryPayload<ExtArgs> | null
     componentStates: Prisma.$ComponentStatePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1584,7 +1460,6 @@ readonly fields: AgentSessionFieldRefs;
 export interface Prisma__AgentSessionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   instance<T extends Prisma.AgentInstanceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstanceDefaultArgs<ExtArgs>>): Prisma.Prisma__AgentInstanceClient<runtime.Types.Result.GetResult<Prisma.$AgentInstancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  memory<T extends Prisma.AgentSession$memoryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentSession$memoryArgs<ExtArgs>>): Prisma.Prisma__AgentMemoryClient<runtime.Types.Result.GetResult<Prisma.$AgentMemoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   componentStates<T extends Prisma.AgentSession$componentStatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentSession$componentStatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ComponentStatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2023,25 +1898,6 @@ export type AgentSessionDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Limit how many AgentSessions to delete.
    */
   limit?: number
-}
-
-/**
- * AgentSession.memory
- */
-export type AgentSession$memoryArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the AgentMemory
-   */
-  select?: Prisma.AgentMemorySelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the AgentMemory
-   */
-  omit?: Prisma.AgentMemoryOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.AgentMemoryInclude<ExtArgs> | null
-  where?: Prisma.AgentMemoryWhereInput
 }
 
 /**

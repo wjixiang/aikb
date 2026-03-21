@@ -8,10 +8,10 @@ import {
 import { AgentFactory } from '../AgentFactory.js';
 
 describe('ObservableAgent', () => {
-  let agent: ReturnType<typeof AgentFactory.createAgent>;
+  let agent: Awaited<ReturnType<typeof AgentFactory.createAgent>>;
 
-  beforeEach(() => {
-    agent = AgentFactory.createAgent({
+  beforeEach(async () => {
+    agent = await AgentFactory.createAgent({
       agent: { sop: 'Test SOP' },
       api: { apiKey: 'test-key' },
     });

@@ -1,12 +1,15 @@
-import 'dotenv/config';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { config as dotenvConfig } from 'dotenv';
 import { AgentFactory } from '../AgentFactory';
 import { BibliographySearchComponent } from '../../../components';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load .env from agent-lib directory
+dotenvConfig({ path: join(__dirname, '..', '..', '..', '..', '.env') });
 
 const container = AgentFactory.create({
     agent: {
@@ -21,7 +24,7 @@ const container = AgentFactory.create({
     },
 });
 
-const agent = container.getAgent();
+const agent = await container.getAgent();
 agent.workspace.registerComponents([
     { id: 'article-retrieve', component: new BibliographySearchComponent() },
 ]);

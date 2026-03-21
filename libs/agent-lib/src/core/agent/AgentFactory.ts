@@ -58,7 +58,7 @@ export class AgentFactory {
   /**
    * Create and return an Agent instance directly
    */
-  static createAgent(options: AgentFactoryOptions = {}): Agent {
+  static async createAgent(options: AgentFactoryOptions = {}): Promise<Agent> {
     const container = this.create(options);
     return container.getAgent();
   }
