@@ -13,12 +13,12 @@ dotenvConfig({ path: join(__dirname, '..', '..', '..', '..', '.env') });
 
 const container = AgentFactory.create({
     agent: {
-        sop: readFileSync(join(__dirname, 'sop.md')).toString(),
+        sop: readFileSync(join(__dirname, 'sop-article-retrieve.md')).toString(),
     },
     api: {
         apiProvider: 'openai',
         openAiBaseUrl: 'https://ark.cn-beijing.volces.com/api/coding/v3',
-        apiKey: '5be76e94-fa7f-4827-8cc7-296a84b79ef1',
+        apiKey: process.env['OPENAI_API_KEY'],
         apiModelId: 'glm-4.7',
         zaiApiLine: 'china_coding',
     },

@@ -83,6 +83,7 @@ export type AgentSessionCountAggregateOutputType = {
   toolUsage: number
   consecutiveMistakeCount: number
   collectedErrors: number
+  exportResult: number
   createdAt: number
   updatedAt: number
   completedAt: number
@@ -147,6 +148,7 @@ export type AgentSessionCountAggregateInputType = {
   toolUsage?: true
   consecutiveMistakeCount?: true
   collectedErrors?: true
+  exportResult?: true
   createdAt?: true
   updatedAt?: true
   completedAt?: true
@@ -252,6 +254,7 @@ export type AgentSessionGroupByOutputType = {
   toolUsage: runtime.JsonValue | null
   consecutiveMistakeCount: number
   collectedErrors: runtime.JsonValue | null
+  exportResult: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
   completedAt: Date | null
@@ -293,6 +296,7 @@ export type AgentSessionWhereInput = {
   toolUsage?: Prisma.JsonNullableFilter<"AgentSession">
   consecutiveMistakeCount?: Prisma.IntFilter<"AgentSession"> | number
   collectedErrors?: Prisma.JsonNullableFilter<"AgentSession">
+  exportResult?: Prisma.JsonNullableFilter<"AgentSession">
   createdAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentSession"> | Date | string | null
@@ -313,6 +317,7 @@ export type AgentSessionOrderByWithRelationInput = {
   toolUsage?: Prisma.SortOrderInput | Prisma.SortOrder
   consecutiveMistakeCount?: Prisma.SortOrder
   collectedErrors?: Prisma.SortOrderInput | Prisma.SortOrder
+  exportResult?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -336,6 +341,7 @@ export type AgentSessionWhereUniqueInput = Prisma.AtLeast<{
   toolUsage?: Prisma.JsonNullableFilter<"AgentSession">
   consecutiveMistakeCount?: Prisma.IntFilter<"AgentSession"> | number
   collectedErrors?: Prisma.JsonNullableFilter<"AgentSession">
+  exportResult?: Prisma.JsonNullableFilter<"AgentSession">
   createdAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentSession"> | Date | string | null
@@ -356,6 +362,7 @@ export type AgentSessionOrderByWithAggregationInput = {
   toolUsage?: Prisma.SortOrderInput | Prisma.SortOrder
   consecutiveMistakeCount?: Prisma.SortOrder
   collectedErrors?: Prisma.SortOrderInput | Prisma.SortOrder
+  exportResult?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -382,6 +389,7 @@ export type AgentSessionScalarWhereWithAggregatesInput = {
   toolUsage?: Prisma.JsonNullableWithAggregatesFilter<"AgentSession">
   consecutiveMistakeCount?: Prisma.IntWithAggregatesFilter<"AgentSession"> | number
   collectedErrors?: Prisma.JsonNullableWithAggregatesFilter<"AgentSession">
+  exportResult?: Prisma.JsonNullableWithAggregatesFilter<"AgentSession">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"AgentSession"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"AgentSession"> | Date | string
   completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"AgentSession"> | Date | string | null
@@ -399,6 +407,7 @@ export type AgentSessionCreateInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
@@ -419,6 +428,7 @@ export type AgentSessionUncheckedCreateInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
@@ -437,6 +447,7 @@ export type AgentSessionUpdateInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -457,6 +468,7 @@ export type AgentSessionUncheckedUpdateInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -476,6 +488,7 @@ export type AgentSessionCreateManyInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
@@ -493,6 +506,7 @@ export type AgentSessionUpdateManyMutationInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -511,6 +525,7 @@ export type AgentSessionUncheckedUpdateManyInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -529,6 +544,7 @@ export type AgentSessionCountOrderByAggregateInput = {
   toolUsage?: Prisma.SortOrder
   consecutiveMistakeCount?: Prisma.SortOrder
   collectedErrors?: Prisma.SortOrder
+  exportResult?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -693,6 +709,7 @@ export type AgentSessionCreateWithoutComponentStatesInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
@@ -712,6 +729,7 @@ export type AgentSessionUncheckedCreateWithoutComponentStatesInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
@@ -745,6 +763,7 @@ export type AgentSessionUpdateWithoutComponentStatesInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -764,6 +783,7 @@ export type AgentSessionUncheckedUpdateWithoutComponentStatesInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -781,6 +801,7 @@ export type AgentSessionCreateWithoutInstanceInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
@@ -799,6 +820,7 @@ export type AgentSessionUncheckedCreateWithoutInstanceInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
@@ -847,6 +869,7 @@ export type AgentSessionScalarWhereInput = {
   toolUsage?: Prisma.JsonNullableFilter<"AgentSession">
   consecutiveMistakeCount?: Prisma.IntFilter<"AgentSession"> | number
   collectedErrors?: Prisma.JsonNullableFilter<"AgentSession">
+  exportResult?: Prisma.JsonNullableFilter<"AgentSession">
   createdAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentSession"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"AgentSession"> | Date | string | null
@@ -864,6 +887,7 @@ export type AgentSessionCreateManyInstanceInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   completedAt?: Date | string | null
@@ -881,6 +905,7 @@ export type AgentSessionUpdateWithoutInstanceInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -899,6 +924,7 @@ export type AgentSessionUncheckedUpdateWithoutInstanceInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -917,6 +943,7 @@ export type AgentSessionUncheckedUpdateManyWithoutInstanceInput = {
   toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
   collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -966,6 +993,7 @@ export type AgentSessionSelect<ExtArgs extends runtime.Types.Extensions.Internal
   toolUsage?: boolean
   consecutiveMistakeCount?: boolean
   collectedErrors?: boolean
+  exportResult?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   completedAt?: boolean
@@ -987,6 +1015,7 @@ export type AgentSessionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   toolUsage?: boolean
   consecutiveMistakeCount?: boolean
   collectedErrors?: boolean
+  exportResult?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   completedAt?: boolean
@@ -1006,6 +1035,7 @@ export type AgentSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   toolUsage?: boolean
   consecutiveMistakeCount?: boolean
   collectedErrors?: boolean
+  exportResult?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   completedAt?: boolean
@@ -1025,12 +1055,13 @@ export type AgentSessionSelectScalar = {
   toolUsage?: boolean
   consecutiveMistakeCount?: boolean
   collectedErrors?: boolean
+  exportResult?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   completedAt?: boolean
 }
 
-export type AgentSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "instanceId" | "status" | "abortReason" | "abortSource" | "config" | "totalTokensIn" | "totalTokensOut" | "totalCost" | "toolUsage" | "consecutiveMistakeCount" | "collectedErrors" | "createdAt" | "updatedAt" | "completedAt", ExtArgs["result"]["agentSession"]>
+export type AgentSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "instanceId" | "status" | "abortReason" | "abortSource" | "config" | "totalTokensIn" | "totalTokensOut" | "totalCost" | "toolUsage" | "consecutiveMistakeCount" | "collectedErrors" | "exportResult" | "createdAt" | "updatedAt" | "completedAt", ExtArgs["result"]["agentSession"]>
 export type AgentSessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
   componentStates?: boolean | Prisma.AgentSession$componentStatesArgs<ExtArgs>
@@ -1062,6 +1093,7 @@ export type $AgentSessionPayload<ExtArgs extends runtime.Types.Extensions.Intern
     toolUsage: runtime.JsonValue | null
     consecutiveMistakeCount: number
     collectedErrors: runtime.JsonValue | null
+    exportResult: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
     completedAt: Date | null
@@ -1502,6 +1534,7 @@ export interface AgentSessionFieldRefs {
   readonly toolUsage: Prisma.FieldRef<"AgentSession", 'Json'>
   readonly consecutiveMistakeCount: Prisma.FieldRef<"AgentSession", 'Int'>
   readonly collectedErrors: Prisma.FieldRef<"AgentSession", 'Json'>
+  readonly exportResult: Prisma.FieldRef<"AgentSession", 'Json'>
   readonly createdAt: Prisma.FieldRef<"AgentSession", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"AgentSession", 'DateTime'>
   readonly completedAt: Prisma.FieldRef<"AgentSession", 'DateTime'>

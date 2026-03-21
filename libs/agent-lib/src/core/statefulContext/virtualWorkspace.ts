@@ -13,6 +13,9 @@ import {
   type TUIElement,
   MdElement,
   renderToolSection,
+  ExportOptions,
+  ExportResult,
+  GlobalComponentDefinition,
 } from '../../components/index.js';
 import { ToolSource } from '../tools/IToolProvider.js';
 import { TYPES } from '../di/types.js';
@@ -85,7 +88,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   }
 
   private initializeGlobalComponents(
-    definitions: import('../../components/index.js').GlobalComponentDefinition[],
+    definitions: GlobalComponentDefinition[],
   ): void {
     for (const def of definitions) {
       if (def.factory) {
@@ -712,11 +715,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   }
 
   async exportResult(
-    options?: import('../../components/index.js').ExportOptions,
-  ): Promise<Record<string, import('../../components/index.js').ExportResult>> {
+    options?: ExportOptions,
+  ): Promise<Record<string, ExportResult>> {
     const results: Record<
       string,
-      import('../../components/index.js').ExportResult
+      ExportResult
     > = {};
 
     const registrations = this.componentRegistry.getAllRegistrations();

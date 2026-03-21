@@ -260,6 +260,16 @@ export class Agent {
       // Save component states first
       await this.saveComponentStates();
 
+      // Export and persist component results
+      const exportResults = await this.workspace.exportResult();
+      if (Object.keys(exportResults).length > 0) {
+        await this.persistenceService.saveExportResult(this.instanceId, exportResults as Record<string, unknown>);
+        this.logger.info(
+          { instanceId: this.instanceId, resultCount: Object.keys(exportResults).length },
+          '[Agent] Export results saved',
+        );
+      }
+
       // Update session status
       await this.persistenceService.updateSession(this.instanceId, {
         status: finalStatus,

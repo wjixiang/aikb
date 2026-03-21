@@ -172,4 +172,14 @@ export interface IPersistenceService {
     instanceId: string,
     componentId: string,
   ): Promise<void>;
+
+  // ==================== Result Export 持久化 (Phase 4) ====================
+
+  /**
+   * 保存导出结果到 Session
+   */
+  saveExportResult(
+    instanceId: string,
+    exportResult: Record<string, unknown>,
+  ): Promise<void>;
 }

@@ -415,4 +415,21 @@ export class PostgresPersistenceService implements IPersistenceService {
       '[PersistenceService] Component state deleted',
     );
   }
+
+  // ==================== Result Export 持久化 (Phase 4) ====================
+
+  async saveExportResult(
+    instanceId: string,
+    exportResult: Record<string, unknown>,
+  ): Promise<void> {
+    await this.prisma.agentSession.update({
+      where: { instanceId },
+      data: { exportResult: exportResult as object },
+    });
+
+    this.logger.debug(
+      { instanceId, componentCount: Object.keys(exportResult).length },
+      '[PersistenceService] Export result saved',
+    );
+  }
 }

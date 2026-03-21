@@ -86,6 +86,7 @@ export const AgentSessionScalarFieldEnum = {
   toolUsage: 'toolUsage',
   consecutiveMistakeCount: 'consecutiveMistakeCount',
   collectedErrors: 'collectedErrors',
+  exportResult: 'exportResult',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   completedAt: 'completedAt'

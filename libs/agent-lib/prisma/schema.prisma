@@ -39,6 +39,9 @@ model AgentSession {
   consecutiveMistakeCount Int @default(0)
   collectedErrors Json? // string[]
 
+  // 导出结果 (Phase 4: Result Export Persistence)
+  exportResult    Json?    // Record<string, ExportResult>
+
   // 时间戳
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
