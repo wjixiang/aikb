@@ -252,12 +252,14 @@ export class PostgresPersistenceService implements IPersistenceService {
         instanceId,
         status: data.status,
         config: data.config as object,
+        name: data.name,
+        agentType: data.agentType,
         completedAt: data.completedAt,
       },
     });
 
     this.logger.info(
-      { instanceId },
+      { instanceId, name: data.name, agentType: data.agentType },
       '[PersistenceService] Instance metadata saved',
     );
   }
@@ -277,6 +279,8 @@ export class PostgresPersistenceService implements IPersistenceService {
       instanceId: instance.instanceId,
       status: instance.status as InstanceMetadata['status'],
       config: instance.config as unknown,
+      name: instance.name ?? undefined,
+      agentType: instance.agentType ?? undefined,
       createdAt: instance.createdAt,
       updatedAt: instance.updatedAt,
       completedAt: instance.completedAt ?? undefined,
@@ -292,6 +296,8 @@ export class PostgresPersistenceService implements IPersistenceService {
 
     if (data.status !== undefined) updateData.status = data.status;
     if (data.config !== undefined) updateData.config = data.config;
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.agentType !== undefined) updateData.agentType = data.agentType;
 
     // 自动设置 completedAt
     if (data.status === 'completed' || data.status === 'aborted') {

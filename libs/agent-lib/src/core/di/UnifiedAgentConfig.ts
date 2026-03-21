@@ -11,6 +11,9 @@ export interface UnifiedAgentConfig {
     sop: SOP;
     config: AgentConfig;
     taskId?: string;
+    name?: string;       // Agent 友好名称
+    type?: string;       // Agent 类型标识
+    description?: string; // Agent 描述
   };
   api: ProviderSettings;
   workspace: VirtualWorkspaceConfig;
@@ -23,6 +26,9 @@ export interface AgentCreationOptions {
     sop?: SOP;
     config?: Partial<AgentConfig>;
     taskId?: string;
+    name?: string;       // Agent 友好名称
+    type?: string;       // Agent 类型标识
+    description?: string; // Agent 描述
   };
   api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
@@ -67,6 +73,9 @@ export function mergeWithDefaults(
         ...partial.agent?.config,
       },
       taskId: partial.agent?.taskId ?? defaultUnifiedConfig.agent.taskId,
+      name: partial.agent?.name,
+      type: partial.agent?.type,
+      description: partial.agent?.description,
     },
     api: {
       ...defaultUnifiedConfig.api,

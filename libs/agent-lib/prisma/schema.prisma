@@ -96,6 +96,10 @@ model AgentInstance {
   // 配置快照
   config          Json?    // UnifiedAgentConfig 序列化
 
+  // AgentMetadata 字段 (用于 AgentRegistry)
+  name            String?   // Agent 友好名称
+  agentType       String?   // Agent 类型标识 (如 'pubmed-retrieve')
+
   // 时间戳
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -107,4 +111,34 @@ model AgentInstance {
 
   @@index([instanceId])
   @@index([status])
+  @@index([agentType])
+}
+
+// Runtime Task - 中心任务队列
+model RuntimeTask {
+  id              String   @id @default(uuid())
+  taskId          String   @unique
+
+  // 任务信息
+  description     String
+  input           Json?
+  priority        String   @default("normal")  // low/normal/high/urgent
+  status          String   @default("pending") // pending/processing/completed/failed
+
+  // 路由信息 (直接指定目标 Agent)
+  targetInstanceId String
+
+  // 结果 - 存储 workspace.exportResult() 的输出
+  output          Json?
+  error           String?
+
+  // 时间戳
+  createdAt       DateTime @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  expiresAt       DateTime?
+
+  @@index([status])
+  @@index([targetInstanceId])
+  @@index([createdAt])
 }

@@ -53,6 +53,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   private toolCallLog: ToolCallSummary[] = [];
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
     new Map();
+  private globalComponentIds: Set<string> = new Set();
 
   constructor(
     @inject(TYPES.VirtualWorkspaceConfig)
@@ -165,6 +166,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   ): void {
     this.componentRegistry.register(id, component, priority);
     this._registerToolProvider(id, component);
+    this.globalComponentIds.add(id);
     console.log(`[VirtualWorkspace] Registered global component: ${id}`);
   }
 
@@ -531,7 +533,17 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
-    for (const registration of sortedRegistrations) {
+    const globalRegistrations = sortedRegistrations.filter((r) =>
+      this.globalComponentIds.has(r.id),
+    );
+    const nonGlobalRegistrations = sortedRegistrations.filter(
+      (r) => !this.globalComponentIds.has(r.id),
+    );
+
+    for (const registration of [
+      ...globalRegistrations,
+      ...nonGlobalRegistrations,
+    ]) {
       const componentContainer = new MdDiv(
         { content: `## ${registration.id}`, styles: { showBorder: true } },
         [],
@@ -595,7 +607,17 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
-    for (const registration of sortedRegistrations) {
+    const globalRegistrations = sortedRegistrations.filter((r) =>
+      this.globalComponentIds.has(r.id),
+    );
+    const nonGlobalRegistrations = sortedRegistrations.filter(
+      (r) => !this.globalComponentIds.has(r.id),
+    );
+
+    for (const registration of [
+      ...globalRegistrations,
+      ...nonGlobalRegistrations,
+    ]) {
       const componentContainer = new tdiv({
         content: registration.id,
         styles: { showBorder: true },
@@ -717,10 +739,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   async exportResult(
     options?: ExportOptions,
   ): Promise<Record<string, ExportResult>> {
-    const results: Record<
-      string,
-      ExportResult
-    > = {};
+    const results: Record<string, ExportResult> = {};
 
     const registrations = this.componentRegistry.getAllRegistrations();
     for (const registration of registrations) {
@@ -783,7 +802,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   importComponentStates(states: Map<string, ComponentStateBase>): void {
     for (const [componentId, state] of states) {
       try {
-        const registration = this.componentRegistry.getRegistration(componentId);
+        const registration =
+          this.componentRegistry.getRegistration(componentId);
         if (registration?.component.restoreState) {
           registration.component.restoreState(state);
         }

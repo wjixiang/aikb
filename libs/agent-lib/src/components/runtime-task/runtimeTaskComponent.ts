@@ -328,25 +328,30 @@ export class RuntimeTaskComponent extends ToolComponent {
     );
 
     try {
-      const pendingTasks = await this.storage.getPending(
-        this.config.instanceId,
+      const activeTasks = await this.storage.getActive(this.config.instanceId);
+
+      const pendingTasks = activeTasks.filter((t) => t.status === 'pending');
+      const processingTasks = activeTasks.filter(
+        (t) => t.status === 'processing',
       );
 
       elements.push(
         new tp({
-          content: `Pending: ${pendingTasks.length}`,
+          content: `Active: ${activeTasks.length} (Pending: ${pendingTasks.length} | Processing: ${processingTasks.length})`,
           indent: 1,
           textStyle: { bold: true },
         }),
       );
 
-      if (pendingTasks.length > 0) {
+      if (activeTasks.length > 0) {
         elements.push(new tp({ content: '─'.repeat(60), indent: 1 }));
 
-        pendingTasks.slice(0, 10).forEach((task, index) => {
+        const displayTasks = activeTasks.slice(0, 10);
+        displayTasks.forEach((task, index) => {
+          const pinPrefix = task.status === 'processing' ? '📌 ' : '';
           elements.push(
             new tp({
-              content: `${index + 1}. [${task.priority}] ${task.description.substring(0, 60)}${task.description.length > 60 ? '...' : ''}`,
+              content: `${index + 1}. ${pinPrefix}[${task.priority}] ${task.description.substring(0, 60 - (task.status === 'processing' ? 3 : 0))}${task.description.length > 60 ? '...' : ''}`,
               indent: 1,
               textStyle: {
                 bold: task.priority === 'urgent' || task.priority === 'high',
@@ -361,17 +366,17 @@ export class RuntimeTaskComponent extends ToolComponent {
           );
         });
 
-        if (pendingTasks.length > 10) {
+        if (activeTasks.length > 10) {
           elements.push(
             new tp({
-              content: `... and ${pendingTasks.length - 10} more task(s)`,
+              content: `... and ${activeTasks.length - 10} more task(s)`,
               indent: 1,
               textStyle: { italic: true },
             }),
           );
         }
       } else {
-        elements.push(new tp({ content: 'No pending tasks.', indent: 1 }));
+        elements.push(new tp({ content: 'No active tasks.', indent: 1 }));
       }
     } catch (error) {
       elements.push(
@@ -386,13 +391,13 @@ export class RuntimeTaskComponent extends ToolComponent {
   };
 
   async exportData(options?: ExportOptions) {
-    const pendingTasks = await this.storage.getPending(this.config.instanceId);
+    const activeTasks = await this.storage.getActive(this.config.instanceId);
     const allTasks = await this.storage.query({});
 
     return {
       data: {
         config: this.config,
-        pendingTasks: pendingTasks.length,
+        activeTasks: activeTasks.length,
         totalTasks: allTasks.length,
       },
       format: options?.format ?? 'json',

@@ -13,6 +13,8 @@ export interface InstanceMetadata {
   instanceId: string;
   status: 'idle' | 'running' | 'completed' | 'aborted';
   config?: unknown; // UnifiedAgentConfig
+  name?: string;    // Agent 友好名称
+  agentType?: string; // Agent 类型标识
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;

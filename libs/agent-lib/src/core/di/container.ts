@@ -119,6 +119,8 @@ export class AgentContainer {
             await persistenceService.saveInstanceMetadata(this.instanceId, {
                 status: 'idle',
                 config: this.config,
+                name: this.config.agent.name,
+                agentType: this.config.agent.type,
             });
         } catch (error) {
             pino({ level: 'warn' }).warn(

@@ -19,6 +19,8 @@ export interface ITaskStorage {
 
   getPending(receiver?: string): Promise<RuntimeTask[]>;
 
+  getActive(receiver?: string): Promise<RuntimeTask[]>;
+
   saveResult(result: RuntimeTaskResult): Promise<void>;
 
   getResult(taskId: string): Promise<RuntimeTaskResult | undefined>;
@@ -71,6 +73,22 @@ export class InMemoryTaskStorage implements ITaskStorage {
 
   async getPending(receiver?: string): Promise<RuntimeTask[]> {
     return this.query({ status: 'pending', receiver });
+  }
+
+  async getActive(receiver?: string): Promise<RuntimeTask[]> {
+    let tasks = Array.from(this.tasks.values());
+    if (receiver) {
+      tasks = tasks.filter(
+        (t) =>
+          t.receiver === receiver &&
+          (t.status === 'pending' || t.status === 'processing'),
+      );
+    } else {
+      tasks = tasks.filter(
+        (t) => t.status === 'pending' || t.status === 'processing',
+      );
+    }
+    return tasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
   async saveResult(result: RuntimeTaskResult): Promise<void> {
