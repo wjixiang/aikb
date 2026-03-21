@@ -269,8 +269,9 @@ export class PubmedService {
     }
 
     if (dateRangeFilters.length > 0) {
+      // Convert YYYY:YYYY format to PubMed standard YYYY/YYYY[dp] format
       const dateFilterStr = dateRangeFilters
-        .map((f) => `${f}[dp]`)
+        .map((f) => `${f.replace(':', '/')}[dp]`)
         .join(' AND ');
       searchTerm = `${searchTerm} AND ${dateFilterStr}`;
     }

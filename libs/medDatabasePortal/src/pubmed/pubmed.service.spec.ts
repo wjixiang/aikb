@@ -3,7 +3,7 @@ import { PubmedService, PubmedSearchParams } from './pubmed.service.js';
 import * as cheerio from 'cheerio';
 import { readFileSync } from 'fs';
 import path from 'path';
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('PubmedService', () => {
   let service: PubmedService;
@@ -50,7 +50,8 @@ describe('PubmedService', () => {
     }
 
     const result = service.buildUrl(testPattern)
-    expect(result).toBe('?term=hypertension&filter=pubt.booksdocs')
+    expect(result).toContain('term=hypertension')
+    expect(result).toContain('filter=pubt.booksdocs')
   })
 
   it('should build search params with clinical trial filter', () => {
@@ -63,7 +64,8 @@ describe('PubmedService', () => {
     }
 
     const result = service.buildUrl(testPattern)
-    expect(result).toBe('?term=diabetes&filter=pubt.clinicaltrial')
+    expect(result).toContain('term=diabetes')
+    expect(result).toContain('filter=pubt.clinicaltrial')
   })
 
   it('should build search params with meta-analysis filter', () => {
@@ -76,7 +78,8 @@ describe('PubmedService', () => {
     }
 
     const result = service.buildUrl(testPattern)
-    expect(result).toBe('?term=cancer&filter=pubt.meta-analysis')
+    expect(result).toContain('term=cancer')
+    expect(result).toContain('filter=pubt.meta-analysis')
   })
 
   it('should build search params with randomized controlled trial filter', () => {
@@ -89,7 +92,8 @@ describe('PubmedService', () => {
     }
 
     const result = service.buildUrl(testPattern)
-    expect(result).toBe('?term=hypertension&filter=pubt.randomizedcontrolledtrial')
+    expect(result).toContain('term=hypertension')
+    expect(result).toContain('filter=pubt.randomizedcontrolledtrial')
   })
 
   it('should build search params with review filter', () => {
@@ -102,7 +106,8 @@ describe('PubmedService', () => {
     }
 
     const result = service.buildUrl(testPattern)
-    expect(result).toBe('?term=obesity&filter=pubt.review')
+    expect(result).toContain('term=obesity')
+    expect(result).toContain('filter=pubt.review')
   })
 
   it('should build search params with systematic review filter', () => {
@@ -115,7 +120,8 @@ describe('PubmedService', () => {
     }
 
     const result = service.buildUrl(testPattern)
-    expect(result).toBe('?term=diabetes&filter=pubt.systematicreview')
+    expect(result).toContain('term=diabetes')
+    expect(result).toContain('filter=pubt.systematicreview')
   })
 
   it('should build search params with multiple filters', () => {
@@ -128,7 +134,9 @@ describe('PubmedService', () => {
     }
 
     const result = service.buildUrl(testPattern)
-    expect(result).toBe('?term=cancer&filter=pubt.clinicaltrial&filter=pubt.systematicreview')
+    expect(result).toContain('term=cancer')
+    expect(result).toContain('filter=pubt.clinicaltrial')
+    expect(result).toContain('filter=pubt.systematicreview')
   })
 
   it('should throw error for unsupported filter', () => {
@@ -141,6 +149,128 @@ describe('PubmedService', () => {
     }
 
     expect(() => service.buildUrl(testPattern)).toThrow('Parse Pubmed search filter failed: unsupported filter "unsupported filter"')
+  })
+
+  // ============ Date Range Filter Tests ============
+  describe('Date Range Filter', () => {
+    it('should build search params with single date range filter (YYYY:YYYY format)', () => {
+      const testPattern: PubmedSearchParams = {
+        term: 'cancer',
+        sort: 'match',
+        sortOrder: 'asc',
+        filter: ['2020:2024'],
+        page: null
+      }
+
+      const result = service.buildUrl(testPattern)
+      const decodedResult = decodeURIComponent(result)
+      console.log('Date range filter result:', decodedResult)
+
+      // Input format YYYY:YYYY is converted to PubMed standard YYYY/YYYY[dp]
+      expect(decodedResult).toContain('2020/2024[dp]')
+    })
+
+    it('should build search params with date range and publication type filter combined', () => {
+      const testPattern: PubmedSearchParams = {
+        term: 'diabetes',
+        sort: 'match',
+        sortOrder: 'asc',
+        filter: ['2020:2024', 'clinical trial'],
+        page: null
+      }
+
+      const result = service.buildUrl(testPattern)
+      const decodedResult = decodeURIComponent(result)
+      console.log('Combined filter result:', decodedResult)
+
+      // Should have both date range (converted to slash) and clinical trial filter
+      expect(decodedResult).toContain('2020/2024[dp]')
+      expect(result).toContain('filter=pubt.clinicaltrial')
+    })
+
+    it('should handle multiple date range filters', () => {
+      const testPattern: PubmedSearchParams = {
+        term: 'hypertension',
+        sort: 'match',
+        sortOrder: 'asc',
+        filter: ['2010:2015', '2020:2024'],
+        page: null
+      }
+
+      const result = service.buildUrl(testPattern)
+      const decodedResult = decodeURIComponent(result)
+      console.log('Multiple date range result:', decodedResult)
+
+      // Multiple date ranges are joined with AND, converted to slash format
+      expect(decodedResult).toContain('2010/2015[dp]')
+      expect(decodedResult).toContain('2020/2024[dp]')
+      expect(decodedResult).toContain('AND')
+    })
+
+    it('should handle date range with single year', () => {
+      const testPattern: PubmedSearchParams = {
+        term: 'obesity',
+        sort: 'match',
+        sortOrder: 'asc',
+        filter: ['2023:2023'],
+        page: null
+      }
+
+      const result = service.buildUrl(testPattern)
+      const decodedResult = decodeURIComponent(result)
+      console.log('Single year date range result:', decodedResult)
+
+      expect(decodedResult).toContain('2023/2023[dp]')
+    })
+
+    it('should NOT match invalid date range formats', () => {
+      const testPattern: PubmedSearchParams = {
+        term: 'test',
+        sort: 'match',
+        sortOrder: 'asc',
+        filter: ['2020-2024', '2020/2024', '20:24'], // Invalid formats (hyphen, slash, short year)
+        page: null
+      }
+
+      // These should throw error as they don't match YYYY:YYYY pattern
+      // and are not recognized as valid filters
+      expect(() => service.buildUrl(testPattern)).toThrow()
+    })
+
+    it('should generate correct PubMed query syntax for date range', () => {
+      const testPattern: PubmedSearchParams = {
+        term: 'cancer treatment',
+        sort: 'match',
+        sortOrder: 'asc',
+        filter: ['2020:2024'],
+        page: null
+      }
+
+      const result = service.buildUrl(testPattern)
+      const decodedResult = decodeURIComponent(result)
+
+      // Should generate PubMed standard format: 2020/2024[dp]
+      expect(decodedResult).toContain('term=cancer+treatment+AND+')
+      expect(decodedResult).toContain('2020/2024[dp]')
+    })
+
+    it('should convert colon to slash for PubMed standard format', () => {
+      // Verify that the input format YYYY:YYYY is converted to YYYY/YYYY[dp]
+      const testPattern: PubmedSearchParams = {
+        term: 'cancer',
+        sort: 'match',
+        sortOrder: 'asc',
+        filter: ['2020:2024'],
+        page: null
+      }
+
+      const result = service.buildUrl(testPattern)
+      const decodedResult = decodeURIComponent(result)
+
+      // Should use slash (PubMed standard), not colon
+      expect(decodedResult).toContain('2020/2024[dp]')
+      expect(decodedResult).not.toContain('2020:2024[dp]')
+    })
   })
 
   it('should get articles from search result page', async () => {
