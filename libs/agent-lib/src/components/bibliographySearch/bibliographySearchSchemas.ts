@@ -41,7 +41,21 @@ export const searchPubmedParamsSchema = z
       .array(z.string())
       .optional()
       .describe(
-        'Filters to apply. Two types:\n1. Date Range: format "YYYY:YYYY" (e.g., "2020:2025" for 2020 to 2025 inclusive)\n2. Article Type (exact match, case-insensitive):\n   - "Books and Documents"\n   - "Clinical Trial"\n   - "Meta-Analysis"\n   - "Randomized Controlled Trial"\n   - "Review"\n   - "Systematic Review"\n\nExamples: filter=["2020:2025"], filter=["Systematic Review"], filter=["2020:2025", "Systematic Review"]',
+        `Filters to apply. Two types:
+1. Date Range: format "YYYY/YYYY" (e.g., "2020/2025" for 2020 to 2025 inclusive).
+   NOTE: Use slash "/" not colon ":" between years.
+2. Article Type (exact match, case-insensitive):
+   - "Books and Documents"
+   - "Clinical Trial"
+   - "Meta-Analysis"
+   - "Randomized Controlled Trial"
+   - "Review"
+   - "Systematic Review"
+
+Examples:
+- filter=["2020/2025"]  → articles from 2020-2025
+- filter=["Systematic Review"]  → systematic reviews only
+- filter=["2020/2025", "Systematic Review"]  → systematic reviews from 2020-2025`,
       ),
     page: z.number().optional().describe('Page number to retrieve'),
   })

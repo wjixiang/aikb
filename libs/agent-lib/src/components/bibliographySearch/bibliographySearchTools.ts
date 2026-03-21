@@ -16,7 +16,10 @@ import {
  */
 export const searchPubmedTool: Tool = {
   toolName: 'search_pubmed',
-  desc: 'Search PubMed articles using a search term. Returns article list with PMIDs, titles, and authors.',
+  desc: `Search PubMed articles using a search term. Returns article list with PMIDs, titles, and authors.
+
+IMPORTANT: For date range filtering, use the "filter" parameter with "YYYY/YYYY" format (e.g., "2020/2025").
+Do NOT use colon ":" between years.`,
   paramsSchema: searchPubmedParamsSchema,
   examples: [
     {
@@ -25,24 +28,24 @@ export const searchPubmedTool: Tool = {
       expectedResult: 'Returns list of articles matching the search term',
     },
     {
-      description: 'Search with date filter (2020-2025)',
+      description: 'Search with date filter (2020-2025) - CORRECT FORMAT',
       params: {
         term: 'COVID-19 treatment',
-        filter: ['2020:2025'],
+        filter: ['2020/2025'],
         page: 1,
       },
       expectedResult: 'Returns articles from 2020-2025',
     },
     {
-      description: 'Search for systematic reviews',
+      description: 'Search for systematic reviews from recent years',
       params: {
         term: 'diabetes metformin',
-        filter: ['Systematic Review'],
+        filter: ['Systematic Review', '2020/2025'],
         sort: 'date',
         sortOrder: 'dsc',
       },
       expectedResult:
-        'Returns systematic reviews sorted by date (newest first)',
+        'Returns systematic reviews from 2020-2025, sorted by date (newest first)',
     },
     {
       description: 'Search with author and topic',
