@@ -49,7 +49,11 @@ export { ToolComponent } from '../../components/index.js';
 export type { ComponentStateBase } from '../../components/index.js';
 
 // Re-export virtual workspace
-export { VirtualWorkspace, type ToolCallSummary } from './virtualWorkspace.js';
+export {
+  VirtualWorkspace,
+  type ToolCallSummary,
+  type DIComponentRegistration,
+} from './virtualWorkspace.js';
 
 // Re-export workspace hooks
 export { createWorkspaceHooks, isHookableComponent } from './workspaceHooks.js';

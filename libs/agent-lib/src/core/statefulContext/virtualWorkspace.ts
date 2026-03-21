@@ -28,6 +28,13 @@ import {
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 
+/** Component registration for DI-managed components */
+export interface DIComponentRegistration {
+  id: string;
+  component: ToolComponent;
+  priority?: number;
+}
+
 export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
   name: 'Default Workspace',
@@ -48,7 +55,7 @@ export interface ToolCallSummary {
 @injectable()
 export class VirtualWorkspace implements IVirtualWorkspace {
   private config: VirtualWorkspaceConfig;
-  private componentRegistry: ComponentRegistry;
+  protected componentRegistry: ComponentRegistry;
   private toolManager: IToolManager;
   private toolCallLog: ToolCallSummary[] = [];
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
@@ -60,6 +67,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     @optional()
     config: Partial<VirtualWorkspaceConfig> = {},
     @inject(TYPES.IToolManager) @optional() toolManager?: IToolManager,
+    @inject(TYPES.ToolComponents) @optional() diComponents?: DIComponentRegistration[],
+    @inject(TYPES.GlobalToolComponents) @optional() diGlobalComponents?: DIComponentRegistration[],
   ) {
     this.config = {
       ...DefaultVirtualWorkspaceConfig,
@@ -68,6 +77,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     this.componentRegistry = new ComponentRegistry();
 
+    // Register components from config (legacy support)
     if (config.components) {
       for (const comp of config.components) {
         this.componentRegistry.register(
@@ -77,13 +87,26 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       }
     }
 
+    // Register components from DI container (preferred)
+    if (diComponents && diComponents.length > 0) {
+      for (const { id, component, priority } of diComponents) {
+        this.componentRegistry.register(id, component, priority);
+      }
+    }
+
     this.toolManager = toolManager ?? new ToolManager();
     this.registerComponentTools();
 
     const globalToolProvider = new GlobalToolProvider();
     this.toolManager.registerProvider(globalToolProvider);
 
-    if (config.globalComponents) {
+    // Register global components from DI container (preferred)
+    if (diGlobalComponents && diGlobalComponents.length > 0) {
+      for (const { id, component, priority } of diGlobalComponents) {
+        this.registerGlobalComponent(id, component, priority);
+      }
+    } else if (config.globalComponents) {
+      // Legacy support: initialize from config
       this.initializeGlobalComponents(config.globalComponents);
     }
   }
@@ -105,7 +128,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
   }
 
-  private _registerToolProvider(id: string, component: ToolComponent): void {
+  protected _registerToolProvider(id: string, component: ToolComponent): void {
     const provider = new ComponentToolProvider(
       id,
       component,
@@ -118,28 +141,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     const registrations = this.componentRegistry.getAllRegistrations();
     for (const registration of registrations) {
       this._registerToolProvider(registration.id, registration.component);
-    }
-  }
-
-  registerComponent(
-    id: string,
-    component: ToolComponent,
-    priority?: number,
-  ): void {
-    this.componentRegistry.register(id, component, priority);
-    this._registerToolProvider(id, component);
-  }
-
-  registerComponents(
-    components: Array<{
-      id: string;
-      component: ToolComponent;
-      priority?: number;
-    }>,
-  ): void {
-    this.componentRegistry.registerWithPriority(components);
-    for (const { id, component } of components) {
-      this._registerToolProvider(id, component);
     }
   }
 

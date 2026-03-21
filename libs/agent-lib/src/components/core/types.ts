@@ -57,11 +57,6 @@ export interface IVirtualWorkspace {
   getToolManager(): IToolManager;
 
   /**
-   * Register a component with an ID
-   */
-  registerComponent(id: string, component: any, priority?: number): void;
-
-  /**
    * Get a registered component by ID
    */
   getComponent(id: string): any;

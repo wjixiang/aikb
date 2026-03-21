@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VirtualWorkspace } from '../virtualWorkspace.js';
+import type { DIComponentRegistration } from '../virtualWorkspace.js';
 import { TestComponent, TestComponent2 } from './testComponents.js';
 import type { ToolComponent } from '../../../components/index.js';
 
@@ -161,13 +162,21 @@ describe('VirtualWorkspace Global Component Management', () => {
       const regularComp = new TestComponent2();
 
       workspace.registerGlobalComponent('global-only', globalComp);
-      workspace.registerComponent('regular-only', regularComp);
+      // Use DI registration for regular component
+      const diComponents: DIComponentRegistration[] = [
+        { id: 'regular-only', component: regularComp }
+      ];
+      const ws = new VirtualWorkspace({
+        id: 'unified-test',
+        name: 'Unified Test',
+      }, undefined, diComponents);
+      ws.registerGlobalComponent('global-only', globalComp);
 
       // Both global and regular components are stored in the same registry
-      expect(workspace.getGlobalComponentIds()).toContain('global-only');
-      expect(workspace.getGlobalComponentIds()).toContain('regular-only');
-      expect(workspace.getComponentKeys()).toContain('global-only');
-      expect(workspace.getComponentKeys()).toContain('regular-only');
+      expect(ws.getGlobalComponentIds()).toContain('global-only');
+      expect(ws.getGlobalComponentIds()).toContain('regular-only');
+      expect(ws.getComponentKeys()).toContain('global-only');
+      expect(ws.getComponentKeys()).toContain('regular-only');
     });
 
     it('should allow same component registered via both APIs', () => {
@@ -175,7 +184,8 @@ describe('VirtualWorkspace Global Component Management', () => {
 
       // Register via both methods
       workspace.registerGlobalComponent('shared', component);
-      workspace.registerComponent('shared', component);
+      // Re-registering same component with same ID is idempotent
+      workspace.registerGlobalComponent('shared', component);
 
       // Both should return the same component
       expect(workspace.getGlobalComponent('shared')).toBe(component);

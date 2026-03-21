@@ -23,6 +23,7 @@ import {
     mergeWithDefaults,
 } from './UnifiedAgentConfig.js';
 import type { TestOverrides } from './types.js';
+import { ToolComponent } from '../../components/core/toolComponent.js';
 
 type Logger = ReturnType<typeof pino>;
 
@@ -259,8 +260,15 @@ export class AgentContainer {
         // Bind ToolComponents array for DI-managed registration
         if (this.config.components && this.config.components.length > 0) {
             this.container
-                .bind<Array<{ id: string; component: import('../../components/core/toolComponent.js').ToolComponent; priority?: number }>>(TYPES.ToolComponents)
+                .bind<Array<{ id: string; component: ToolComponent; priority?: number }>>(TYPES.ToolComponents)
                 .toConstantValue(this.config.components);
+        }
+
+        // Bind GlobalToolComponents array for DI-managed registration
+        if (this.config.globalComponents && this.config.globalComponents.length > 0) {
+            this.container
+                .bind<Array<{ id: string; component: ToolComponent; priority?: number }>>(TYPES.GlobalToolComponents)
+                .toConstantValue(this.config.globalComponents);
         }
     }
 
@@ -274,10 +282,8 @@ export class AgentContainer {
         if (!this.agentInstance) {
             this.agentInstance = this.container.get<Agent>(TYPES.Agent);
 
-            // Register components if provided in config
-            if (this.config.components && this.config.components.length > 0) {
-                this.agentInstance.workspace.registerComponents(this.config.components);
-            }
+            // Note: Components are now injected via DI constructor
+            // No need to manually register here
 
             // Restore component states if this is a restored instance
             if (this.isRestoring) {

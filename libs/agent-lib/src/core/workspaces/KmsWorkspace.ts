@@ -11,8 +11,7 @@
  * Or extend this class to add your own components.
  */
 
-import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
-import type { ComponentRegistration } from '../../components/index.js';
+import { VirtualWorkspace, type DIComponentRegistration } from '../statefulContext/virtualWorkspace.js';
 
 /**
  * Knowledge Management Workspace
@@ -21,27 +20,22 @@ import type { ComponentRegistration } from '../../components/index.js';
  * Users should extend this class and add their own components.
  */
 export class KmsWorkspace extends VirtualWorkspace {
-    constructor(components?: { bookViewer?: ComponentRegistration; knowledgeExplorer?: ComponentRegistration }) {
+    constructor(components?: DIComponentRegistration[]) {
         super({
             id: 'bookshelf-workspace',
             name: 'Bookshelf Workspace',
-            description: 'Workspace for viewing and searching through bookshelf content. Provides tools to select books, view content, and perform semantic search across book materials.'
+            description: 'Workspace for viewing and searching through bookshelf content. Provides tools to select books, view content, and perform semantic search across book materials.',
+            // Components are passed via config, which gets registered in constructor
         });
 
-        // Register components if provided
-        // Example:
-        // this.registerComponent({
-        //     key: 'book_viewer',
-        //     component: new BookViewerComponent(),
-        //     priority: 0
-        // });
-
-        if (components?.bookViewer) {
-            this.registerComponent(components.bookViewer.id, components.bookViewer.component, components.bookViewer.priority);
-        }
-
-        if (components?.knowledgeExplorer) {
-            this.registerComponent(components.knowledgeExplorer.id, components.knowledgeExplorer.component, components.knowledgeExplorer.priority);
+        // Note: Components should be passed via DI container (AgentContainer.components)
+        // or through config.components in the constructor
+        // This constructor signature is kept for backward compatibility
+        if (components && components.length > 0) {
+            for (const { id, component, priority } of components) {
+                this.componentRegistry.register(id, component, priority);
+                this._registerToolProvider(id, component);
+            }
         }
     }
 }

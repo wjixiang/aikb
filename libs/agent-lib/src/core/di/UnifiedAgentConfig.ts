@@ -7,6 +7,13 @@ import type { ToolComponent } from '../../components/core/toolComponent.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
+/** Component registration for DI injection */
+export interface DIComponentRegistration {
+  id: string;
+  component: ToolComponent;
+  priority?: number;
+}
+
 export interface UnifiedAgentConfig {
   agent: {
     sop: SOP;
@@ -25,11 +32,13 @@ export interface UnifiedAgentConfig {
    * Components to register with the agent's workspace
    * These will be automatically registered when the agent is created
    */
-  components?: Array<{
-    id: string;
-    component: ToolComponent;
-    priority?: number;
-  }>;
+  components?: DIComponentRegistration[];
+
+  /**
+   * Global components to register with the agent's workspace
+   * Global components are rendered first and shared across workspace
+   */
+  globalComponents?: DIComponentRegistration[];
 }
 
 export interface AgentCreationOptions {
@@ -51,11 +60,13 @@ export interface AgentCreationOptions {
    * Components to register with the agent's workspace
    * These will be automatically registered when the agent is created
    */
-  components?: Array<{
-    id: string;
-    component: ToolComponent;
-    priority?: number;
-  }>;
+  components?: DIComponentRegistration[];
+
+  /**
+   * Global components to register with the agent's workspace
+   * Global components are rendered first and shared across workspace
+   */
+  globalComponents?: DIComponentRegistration[];
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {
@@ -116,6 +127,8 @@ export function mergeWithDefaults(
         : defaultUnifiedConfig.persistence,
     // Pass components from top-level options
     components: partial.components,
+    // Pass global components from top-level options
+    globalComponents: partial.globalComponents,
   };
   return result;
 }

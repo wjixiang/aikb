@@ -285,6 +285,13 @@ export const TYPES = {
    * @scope Singleton - Bound at container creation
    */
   ToolComponents: Symbol('ToolComponents'),
+
+  /**
+   * GlobalToolComponents - Array of global component registrations managed by DI
+   * Global components are rendered first and shared across workspace
+   * @scope Singleton - Bound at container creation
+   */
+  GlobalToolComponents: Symbol('GlobalToolComponents'),
 } as const;
 
 export type TestOverrides = {
