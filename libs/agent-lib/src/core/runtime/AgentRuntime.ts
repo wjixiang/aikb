@@ -7,29 +7,24 @@
  * - Event-driven monitoring
  */
 
-import { Container } from 'inversify';
 import type { Agent } from '../agent/agent.js';
 import type { AgentContainer, AgentCreationOptions } from '../di/container.js';
 import { AgentFactory, type AgentFactoryOptions } from '../agent/AgentFactory.js';
-import type { IPersistenceService } from '../persistence/types.js';
-import { TYPES } from '../di/types.js';
 import type {
   AgentMetadata,
   AgentRuntimeConfig,
   AgentStatus,
   RuntimeTask,
-  RuntimeTaskResult,
   TaskSubmission,
   RuntimeEvent,
   RuntimeEventType,
-  ExportResult,
 } from './types.js';
 import type { IAgentRegistry } from './AgentRegistry.js';
-import { AgentRegistry, createAgentRegistry } from './AgentRegistry.js';
+import { AgentRegistry } from './AgentRegistry.js';
 import type { IEventDispatcher } from './EventDispatcher.js';
-import { EventDispatcher, createEventDispatcher } from './EventDispatcher.js';
+import { EventDispatcher } from './EventDispatcher.js';
 import type { ICentralTaskQueue } from './CentralTaskQueue.js';
-import { CentralTaskQueue, createCentralTaskQueue } from './CentralTaskQueue.js';
+import { CentralTaskQueue } from './CentralTaskQueue.js';
 
 /**
  * Agent filter options
@@ -38,6 +33,16 @@ export interface AgentFilter {
   status?: AgentStatus;
   agentType?: string;
   name?: string;
+}
+
+/**
+ * Runtime statistics
+ */
+export interface RuntimeStats {
+  totalAgents: number;
+  agentsByStatus: Record<AgentStatus, number>;
+  totalPendingTasks?: number;
+  totalProcessingTasks?: number;
 }
 
 /**
@@ -66,17 +71,7 @@ export interface IAgentRuntime {
   // Runtime control
   start(): Promise<void>;
   stop(): Promise<void>;
-  getStats(): RuntimeStats;
-}
-
-/**
- * Runtime statistics
- */
-export interface RuntimeStats {
-  totalAgents: number;
-  agentsByStatus: Record<AgentStatus, number>;
-  totalPendingTasks: number;
-  totalProcessingTasks: number;
+  getStats(): Promise<RuntimeStats>;
 }
 
 /**
@@ -87,7 +82,7 @@ export class AgentRuntime implements IAgentRuntime {
   private containers: Map<string, AgentContainer> = new Map();
   private registry: IAgentRegistry;
   private eventDispatcher: IEventDispatcher;
-  private taskQueue: ICentralTaskQueue;
+  private taskQueue: ICentralTaskQueue | null = null;
   private running: boolean = false;
   private taskPollingInterval?: ReturnType<typeof setInterval>;
 
@@ -97,11 +92,9 @@ export class AgentRuntime implements IAgentRuntime {
       ...config,
     };
 
-    // Create a minimal container for shared services
-    // Note: In production, this should integrate with the main DI container
-    this.registry = new AgentRegistry({} as Container);
+    // Create components that don't need DI container
+    this.registry = new AgentRegistry();
     this.eventDispatcher = new EventDispatcher();
-    this.taskQueue = {} as ICentralTaskQueue; // Will be initialized in start()
   }
 
   async createAgent(options: AgentFactoryOptions): Promise<string> {
@@ -113,6 +106,11 @@ export class AgentRuntime implements IAgentRuntime {
     const container = AgentFactory.create(options);
     const instanceId = container.instanceId;
 
+    // Initialize task queue with first agent's container
+    if (!this.taskQueue) {
+      this.taskQueue = new CentralTaskQueue(container.getContainer());
+    }
+
     // Wait for agent initialization
     const agent = await container.getAgent();
 
@@ -120,13 +118,14 @@ export class AgentRuntime implements IAgentRuntime {
     this.containers.set(instanceId, container);
 
     // Register in registry
+    const unifiedConfig = container.getConfig();
     const metadata: AgentMetadata = {
       instanceId,
       status: 'idle',
-      name: options.agent?.name,
-      agentType: options.agent?.type,
-      description: options.agent?.description,
-      config: container.getConfig(),
+      name: unifiedConfig.agent.name,
+      agentType: unifiedConfig.agent.type,
+      description: unifiedConfig.agent.description,
+      config: unifiedConfig as unknown as Record<string, unknown>,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -153,9 +152,6 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Update registry
     this.registry.update(instanceId, { status: 'running' });
-
-    // Start task-driven mode if configured
-    // The agent will automatically pull tasks from the queue
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:started', { instanceId });
@@ -231,6 +227,10 @@ export class AgentRuntime implements IAgentRuntime {
   }
 
   async submitTask(task: TaskSubmission): Promise<string> {
+    if (!this.taskQueue) {
+      throw new Error('Runtime not initialized. Create an agent first.');
+    }
+
     // Validate target agent exists
     if (!this.registry.has(task.targetInstanceId)) {
       throw new Error(`Target agent not found: ${task.targetInstanceId}`);
@@ -250,10 +250,16 @@ export class AgentRuntime implements IAgentRuntime {
   }
 
   async getTaskStatus(taskId: string): Promise<RuntimeTask | undefined> {
+    if (!this.taskQueue) {
+      return undefined;
+    }
     return this.taskQueue.getById(taskId);
   }
 
   async getPendingTasks(instanceId?: string): Promise<RuntimeTask[]> {
+    if (!this.taskQueue) {
+      return [];
+    }
     if (instanceId) {
       return this.taskQueue.getForAgent(instanceId);
     }
@@ -300,7 +306,7 @@ export class AgentRuntime implements IAgentRuntime {
     }
   }
 
-  getStats(): RuntimeStats {
+  async getStats(): Promise<RuntimeStats> {
     const allAgents = this.registry.getAll();
     const agentsByStatus: Record<AgentStatus, number> = {
       idle: 0,
@@ -313,11 +319,21 @@ export class AgentRuntime implements IAgentRuntime {
       agentsByStatus[agent.status]++;
     }
 
+    let totalPendingTasks = 0;
+    let totalProcessingTasks = 0;
+
+    if (this.taskQueue) {
+      const pendingCount = await this.taskQueue.getTaskCount('pending');
+      const processingCount = await this.taskQueue.getTaskCount('processing');
+      totalPendingTasks = pendingCount;
+      totalProcessingTasks = processingCount;
+    }
+
     return {
       totalAgents: allAgents.length,
       agentsByStatus,
-      totalPendingTasks: 0, // Will be updated from task queue
-      totalProcessingTasks: 0,
+      totalPendingTasks,
+      totalProcessingTasks,
     };
   }
 
@@ -341,6 +357,8 @@ export class AgentRuntime implements IAgentRuntime {
    * Process pending tasks for idle agents
    */
   private async processPendingTasks(): Promise<void> {
+    if (!this.taskQueue) return;
+
     const idleAgents = this.registry.findIdle();
 
     for (const agentMetadata of idleAgents) {
@@ -357,6 +375,8 @@ export class AgentRuntime implements IAgentRuntime {
    * Assign a task to an agent
    */
   private async assignTaskToAgent(taskId: string, instanceId: string): Promise<void> {
+    if (!this.taskQueue) return;
+
     const container = this.containers.get(instanceId);
     if (!container) return;
 
@@ -372,28 +392,27 @@ export class AgentRuntime implements IAgentRuntime {
       instanceId,
     });
 
-    // The actual task execution will be handled by the agent's
-    // RuntimeTaskComponent, which will call completeTask when done
+    // The actual task execution will be handled by the agent's RuntimeTaskComponent
   }
 
   /**
    * Called when an agent completes a task
    */
   async onAgentTaskComplete(instanceId: string, taskId: string): Promise<void> {
+    if (!this.taskQueue) return;
+
     const container = this.containers.get(instanceId);
     if (!container) return;
 
     const agent = await container.getAgent();
     const exportResults = await agent.workspace.exportResult();
 
-    const result: RuntimeTaskResult = {
+    await this.taskQueue.complete(taskId, {
       taskId,
       success: true,
       output: exportResults,
       completedAt: new Date(),
-    };
-
-    await this.taskQueue.complete(taskId, result);
+    });
 
     // Update registry
     this.registry.update(instanceId, { status: 'idle' });
@@ -410,6 +429,8 @@ export class AgentRuntime implements IAgentRuntime {
    * Called when an agent fails a task
    */
   async onAgentTaskFailed(instanceId: string, taskId: string, error: string): Promise<void> {
+    if (!this.taskQueue) return;
+
     await this.taskQueue.fail(taskId, error);
 
     // Update registry

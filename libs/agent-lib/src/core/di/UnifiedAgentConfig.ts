@@ -3,6 +3,7 @@ import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { PersistenceConfig } from '../persistence/types.js';
+import type { ToolComponent } from '../../components/core/toolComponent.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
@@ -19,6 +20,16 @@ export interface UnifiedAgentConfig {
   workspace: VirtualWorkspaceConfig;
   memory: MemoryModuleConfig;
   persistence?: PersistenceConfig;
+
+  /**
+   * Components to register with the agent's workspace
+   * These will be automatically registered when the agent is created
+   */
+  components?: Array<{
+    id: string;
+    component: ToolComponent;
+    priority?: number;
+  }>;
 }
 
 export interface AgentCreationOptions {
@@ -35,6 +46,16 @@ export interface AgentCreationOptions {
   memory?: Partial<MemoryModuleConfig>;
   persistence?: Partial<PersistenceConfig>;
   observers?: any;
+
+  /**
+   * Components to register with the agent's workspace
+   * These will be automatically registered when the agent is created
+   */
+  components?: Array<{
+    id: string;
+    component: ToolComponent;
+    priority?: number;
+  }>;
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {
@@ -93,6 +114,8 @@ export function mergeWithDefaults(
       partial.persistence !== undefined
         ? { ...partial.persistence }
         : defaultUnifiedConfig.persistence,
+    // Pass components from top-level options
+    components: partial.components,
   };
   return result;
 }

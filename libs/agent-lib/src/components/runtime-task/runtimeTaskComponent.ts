@@ -1,4 +1,4 @@
-import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
+import { ToolComponent, ExportOptions, type ExportResult } from '../core/toolComponent.js';
 import { Tool, ToolCallResult, TUIElement, tdiv, th, tp } from '../ui/index.js';
 import type {
   RuntimeTask,
@@ -17,11 +17,13 @@ import {
   type MarkTaskProcessingParams,
 } from './schemas.js';
 import { type ITaskStorage, InMemoryTaskStorage } from './storage.js';
+import type { ICentralTaskQueue } from '../../core/runtime/index.js';
 
 export interface RuntimeTaskComponentConfig {
   instanceId: string;
   storage?: ITaskStorage;
   maxQueueSize?: number;
+  centralTaskQueue?: ICentralTaskQueue; // 可选的中心任务队列
 }
 
 export class RuntimeTaskComponent extends ToolComponent {
@@ -32,6 +34,7 @@ export class RuntimeTaskComponent extends ToolComponent {
   toolSet: Map<string, Tool>;
   private config: RuntimeTaskComponentConfig;
   private storage: ITaskStorage;
+  private centralTaskQueue?: ICentralTaskQueue;
   private listeners: Set<TaskListener> = new Set();
 
   constructor(config: RuntimeTaskComponentConfig) {
@@ -41,6 +44,7 @@ export class RuntimeTaskComponent extends ToolComponent {
       ...config,
     };
     this.storage = config.storage ?? new InMemoryTaskStorage();
+    this.centralTaskQueue = config.centralTaskQueue;
     this.toolSet = this.initializeToolSet();
   }
 
@@ -114,8 +118,44 @@ export class RuntimeTaskComponent extends ToolComponent {
     params: GetPendingTasksParams,
   ): Promise<ToolCallResult<{ tasks: RuntimeTask[] }>> {
     try {
-      const tasks = await this.storage.getPending(this.config.instanceId);
-      const limitedTasks = tasks.slice(0, params.limit);
+      // Get tasks from both local storage and central queue
+      const localTasks = await this.storage.getPending(this.config.instanceId);
+      let centralTasks: RuntimeTask[] = [];
+
+      if (this.centralTaskQueue) {
+        // Convert RuntimeTask from CentralTaskQueue to local format
+        const queueTasks = await this.centralTaskQueue.getForAgent(
+          this.config.instanceId,
+        );
+        centralTasks = queueTasks.map((t) => ({
+          taskId: t.taskId,
+          description: t.description,
+          input: t.input,
+          priority: t.priority as TaskPriority,
+          status: t.status as RuntimeTask['status'],
+          targetInstanceId: t.targetInstanceId,
+          sender: undefined,
+          receiver: this.config.instanceId,
+          correlationId: undefined,
+          parentTaskId: undefined,
+          createdAt: t.createdAt,
+        }));
+      }
+
+      // Merge and deduplicate by taskId
+      const allTasks = new Map<string, RuntimeTask>();
+      for (const task of [...localTasks, ...centralTasks]) {
+        allTasks.set(task.taskId, task);
+      }
+
+      const mergedTasks = Array.from(allTasks.values()).sort(
+        (a, b) =>
+          (b.priority === 'urgent' ? 1 : 0) -
+          (a.priority === 'urgent' ? 1 : 0) ||
+          b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+
+      const limitedTasks = mergedTasks.slice(0, params.limit);
       return {
         success: true,
         data: { tasks: limitedTasks },
@@ -164,28 +204,46 @@ export class RuntimeTaskComponent extends ToolComponent {
     params: ReportTaskResultParams,
   ): Promise<ToolCallResult<{ success: boolean }>> {
     try {
-      const task = await this.storage.get(params.taskId);
-      if (!task) {
-        return {
-          success: false,
-          data: { error: `Task not found: ${params.taskId}` } as any,
-          summary: `[RuntimeTask] Task not found: ${params.taskId}`,
+      // Check if this is a central task (taskId format: task_xxx)
+      const isCentralTask = params.taskId.startsWith('task_');
+
+      if (isCentralTask && this.centralTaskQueue) {
+        // Report to central task queue
+        if (params.success) {
+          await this.centralTaskQueue.complete(params.taskId, {
+            taskId: params.taskId,
+            success: true,
+            output: params.output as Record<string, ExportResult> | undefined,
+            completedAt: new Date(),
+          });
+        } else {
+          await this.centralTaskQueue.fail(params.taskId, params.error ?? 'Task failed');
+        }
+      } else {
+        // Report to local storage
+        const task = await this.storage.get(params.taskId);
+        if (!task) {
+          return {
+            success: false,
+            data: { error: `Task not found: ${params.taskId}` } as any,
+            summary: `[RuntimeTask] Task not found: ${params.taskId}`,
+          };
+        }
+
+        await this.storage.update(params.taskId, {
+          status: params.success ? 'completed' : 'failed',
+        });
+
+        const result: RuntimeTaskResult = {
+          taskId: params.taskId,
+          success: params.success,
+          output: params.output,
+          error: params.error,
+          completedAt: new Date(),
         };
+
+        await this.storage.saveResult(result);
       }
-
-      await this.storage.update(params.taskId, {
-        status: params.success ? 'completed' : 'failed',
-      });
-
-      const result: RuntimeTaskResult = {
-        taskId: params.taskId,
-        success: params.success,
-        output: params.output,
-        error: params.error,
-        completedAt: new Date(),
-      };
-
-      await this.storage.saveResult(result);
 
       return {
         success: true,
@@ -328,30 +386,62 @@ export class RuntimeTaskComponent extends ToolComponent {
     );
 
     try {
-      const activeTasks = await this.storage.getActive(this.config.instanceId);
+      // Get tasks from local storage
+      const localActiveTasks = await this.storage.getActive(this.config.instanceId);
 
-      const pendingTasks = activeTasks.filter((t) => t.status === 'pending');
-      const processingTasks = activeTasks.filter(
-        (t) => t.status === 'processing',
+      // Get tasks from central queue (if available)
+      let centralActiveTasks: RuntimeTask[] = [];
+      if (this.centralTaskQueue) {
+        const queueTasks = await this.centralTaskQueue.getForAgent(
+          this.config.instanceId,
+        );
+        centralActiveTasks = queueTasks.map((t) => ({
+          taskId: t.taskId,
+          description: t.description,
+          input: t.input,
+          priority: t.priority as TaskPriority,
+          status: t.status as RuntimeTask['status'],
+          targetInstanceId: t.targetInstanceId,
+          sender: undefined,
+          receiver: this.config.instanceId,
+          correlationId: undefined,
+          parentTaskId: undefined,
+          createdAt: t.createdAt,
+        }));
+      }
+
+      // Merge tasks
+      const allTasksMap = new Map<string, RuntimeTask>();
+      for (const task of [...localActiveTasks, ...centralActiveTasks]) {
+        allTasksMap.set(task.taskId, task);
+      }
+      const allTasks = Array.from(allTasksMap.values()).sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
       );
+
+      const pendingTasks = allTasks.filter((t) => t.status === 'pending');
+      const processingTasks = allTasks.filter((t) => t.status === 'processing');
 
       elements.push(
         new tp({
-          content: `Active: ${activeTasks.length} (Pending: ${pendingTasks.length} | Processing: ${processingTasks.length})`,
+          content: `Active: ${allTasks.length} (Pending: ${pendingTasks.length} | Processing: ${processingTasks.length})`,
           indent: 1,
           textStyle: { bold: true },
         }),
       );
 
-      if (activeTasks.length > 0) {
+      if (allTasks.length > 0) {
         elements.push(new tp({ content: '─'.repeat(60), indent: 1 }));
 
-        const displayTasks = activeTasks.slice(0, 10);
+        const displayTasks = allTasks.slice(0, 10);
         displayTasks.forEach((task, index) => {
           const pinPrefix = task.status === 'processing' ? '📌 ' : '';
+          const isCentral = task.taskId.startsWith('task_');
+          const prefix = isCentral ? '🌐 ' : '';
+
           elements.push(
             new tp({
-              content: `${index + 1}. ${pinPrefix}[${task.priority}] ${task.description.substring(0, 60 - (task.status === 'processing' ? 3 : 0))}${task.description.length > 60 ? '...' : ''}`,
+              content: `${index + 1}. ${prefix}${pinPrefix}[${task.priority}] ${task.description.substring(0, 55)}${task.description.length > 55 ? '...' : ''}`,
               indent: 1,
               textStyle: {
                 bold: task.priority === 'urgent' || task.priority === 'high',
@@ -366,10 +456,10 @@ export class RuntimeTaskComponent extends ToolComponent {
           );
         });
 
-        if (activeTasks.length > 10) {
+        if (allTasks.length > 10) {
           elements.push(
             new tp({
-              content: `... and ${activeTasks.length - 10} more task(s)`,
+              content: `... and ${allTasks.length - 10} more task(s)`,
               indent: 1,
               textStyle: { italic: true },
             }),

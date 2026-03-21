@@ -14,7 +14,7 @@ import type {
 } from './types.js';
 import { generateTaskId, isTaskExpired, getDefaultPriority } from './types.js';
 import type { IPersistenceService } from '../persistence/types.js';
-import type { PrismaClient } from '../../generated/prisma/client.js';
+import { Prisma, type PrismaClient } from '../../generated/prisma/client.js';
 import { TYPES } from '../di/types.js';
 import type { Container } from 'inversify';
 
@@ -102,7 +102,7 @@ export class CentralTaskQueue implements ICentralTaskQueue {
       data: {
         taskId,
         description: task.description,
-        input: task.input ?? {},
+        input: (task.input ?? {}) as Prisma.InputJsonValue,
         priority: runtimeTask.priority,
         status: 'pending',
         targetInstanceId: task.targetInstanceId,
@@ -224,7 +224,7 @@ export class CentralTaskQueue implements ICentralTaskQueue {
       where: { taskId },
       data: {
         status: 'completed',
-        output: result.output ?? {},
+        output: (result.output ?? {}) as unknown as Prisma.InputJsonValue,
         completedAt: now,
       },
     });

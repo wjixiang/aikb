@@ -82,15 +82,21 @@ export interface IAgentRegistry {
  */
 export class AgentRegistry implements IAgentRegistry {
   private agents: Map<string, AgentMetadata> = new Map();
-  private container: Container;
+  private container?: Container;
   private persistenceService?: IPersistenceService;
 
-  constructor(container: Container) {
+  constructor(container?: Container) {
     this.container = container;
     this.tryInitPersistence();
   }
 
   private tryInitPersistence(): void {
+    if (!this.container) {
+      // No container provided, registry will be memory-only
+      this.persistenceService = undefined;
+      return;
+    }
+
     try {
       this.persistenceService = this.container.get<IPersistenceService>(
         TYPES.IPersistenceService,
@@ -156,14 +162,19 @@ export class AgentRegistry implements IAgentRegistry {
   }
 
   async syncFromDatabase(): Promise<void> {
-    if (!this.persistenceService) {
+    if (!this.persistenceService || !this.container) {
       return;
     }
 
     try {
-      // Get all agent instances from database
-      const instances = await this.persistenceService.listSessions({
-        limit: 1000,
+      // Access Prisma client directly to query AgentInstance table
+      const { TYPES } = await import('../di/types.js');
+      const prisma = this.container.get<import('../../generated/prisma/client.js').PrismaClient>(
+        TYPES.PrismaClient,
+      );
+
+      const instances = await prisma.agentInstance.findMany({
+        take: 1000,
       });
 
       // Clear and repopulate registry
@@ -174,9 +185,11 @@ export class AgentRegistry implements IAgentRegistry {
           instanceId: instance.instanceId,
           status: instance.status as AgentStatus,
           config: instance.config as Record<string, unknown>,
+          name: instance.name ?? undefined,
+          agentType: instance.agentType ?? undefined,
           createdAt: instance.createdAt,
           updatedAt: instance.updatedAt,
-          completedAt: instance.completedAt,
+          completedAt: instance.completedAt ?? undefined,
         });
       }
     } catch (error) {
@@ -208,6 +221,6 @@ export class AgentRegistry implements IAgentRegistry {
 /**
  * Create an AgentRegistry instance
  */
-export function createAgentRegistry(container: Container): IAgentRegistry {
+export function createAgentRegistry(container?: Container): IAgentRegistry {
   return new AgentRegistry(container);
 }

@@ -253,6 +253,11 @@ export class AgentContainer {
         if (!this.agentInstance) {
             this.agentInstance = this.container.get<Agent>(TYPES.Agent);
 
+            // Register components if provided in config
+            if (this.config.components && this.config.components.length > 0) {
+                this.agentInstance.workspace.registerComponents(this.config.components);
+            }
+
             // Restore component states if this is a restored instance
             if (this.isRestoring) {
                 this.agentInstance.restoreComponentStates();

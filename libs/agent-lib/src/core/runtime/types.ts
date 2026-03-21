@@ -5,8 +5,8 @@
  * which manages multiple Agent instances and provides a central task queue.
  */
 
-import type { ExportResult } from '../../components/core/types.js';
-import type { AgentStatus } from '../persistence/types.js';
+import type { ExportResult } from '../../components/core/toolComponent.js';
+import type { AgentStatus } from '../common/types.js';
 
 // =============================================================================
 // Agent Metadata - Registry entry for each Agent instance
@@ -190,6 +190,9 @@ export type RuntimeEventType =
  * Runtime event
  */
 export interface RuntimeEvent {
+  /** Unique event identifier */
+  id: string;
+
   /** Event type */
   type: RuntimeEventType;
 
@@ -280,3 +283,7 @@ export function isTaskExpired(task: RuntimeTask): boolean {
 export function getDefaultPriority(): TaskPriority {
   return 'normal';
 }
+
+// Re-export types from other modules
+export type { ExportResult } from '../../components/core/toolComponent.js';
+export type { AgentStatus } from '../common/types.js';
