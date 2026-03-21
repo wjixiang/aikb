@@ -83,9 +83,18 @@ export class AgentContainer {
                 this.instanceId,
             );
             if (metadata) {
-                // Restore config from stored metadata
+                // Restore config from stored metadata (merge with current options to preserve components)
                 if (metadata.config) {
-                    this.config = metadata.config as UnifiedAgentConfig;
+                    // Deep merge to ensure all required fields are present
+                    const storedConfig = metadata.config as Partial<UnifiedAgentConfig>;
+                    this.config = {
+                        agent: { ...this.config.agent, ...storedConfig.agent },
+                        api: { ...this.config.api, ...storedConfig.api },
+                        workspace: { ...this.config.workspace, ...storedConfig.workspace },
+                        memory: { ...this.config.memory, ...storedConfig.memory },
+                        persistence: storedConfig.persistence ?? this.config.persistence,
+                        components: this.config.components,
+                    };
                 }
                 this.logger?.info(
                     { instanceId: this.instanceId, status: metadata.status },
@@ -100,8 +109,9 @@ export class AgentContainer {
                 await this.persistInstanceMetadata();
             }
         } catch (error) {
-            pino({ level: 'warn' }).warn(
-                { error, instanceId: this.instanceId },
+            const logger = pino({ level: 'warn' });
+            logger.warn(
+                { error: error instanceof Error ? { message: error.message, stack: error.stack } : error, instanceId: this.instanceId },
                 '[AgentContainer] Failed to restore instance metadata',
             );
         }
@@ -116,17 +126,21 @@ export class AgentContainer {
             const persistenceService = this.container.get<IPersistenceService>(
                 TYPES.IPersistenceService,
             );
+            // Exclude non-serializable components from config
+            const { components, ...serializableConfig } = this.config;
             await persistenceService.saveInstanceMetadata(this.instanceId, {
                 status: 'idle',
-                config: this.config,
+                config: serializableConfig,
                 name: this.config.agent.name,
                 agentType: this.config.agent.type,
             });
         } catch (error) {
-            pino({ level: 'warn' }).warn(
-                { error, instanceId: this.instanceId },
+            const logger = pino({ level: 'warn' });
+            logger.warn(
+                { error: error instanceof Error ? { message: error.message, stack: error.stack } : error, instanceId: this.instanceId },
                 '[AgentContainer] Failed to persist instance metadata',
             );
+            throw error; // Re-throw to see full error in demo
         }
     }
 

@@ -54,7 +54,8 @@ export const ModelName = {
   AgentSession: 'AgentSession',
   AgentMemory: 'AgentMemory',
   ComponentState: 'ComponentState',
-  AgentInstance: 'AgentInstance'
+  AgentInstance: 'AgentInstance',
+  RuntimeTask: 'RuntimeTask'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -125,12 +126,33 @@ export const AgentInstanceScalarFieldEnum = {
   instanceId: 'instanceId',
   status: 'status',
   config: 'config',
+  name: 'name',
+  agentType: 'agentType',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   completedAt: 'completedAt'
 } as const
 
 export type AgentInstanceScalarFieldEnum = (typeof AgentInstanceScalarFieldEnum)[keyof typeof AgentInstanceScalarFieldEnum]
+
+
+export const RuntimeTaskScalarFieldEnum = {
+  id: 'id',
+  taskId: 'taskId',
+  description: 'description',
+  input: 'input',
+  priority: 'priority',
+  status: 'status',
+  targetInstanceId: 'targetInstanceId',
+  output: 'output',
+  error: 'error',
+  createdAt: 'createdAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  expiresAt: 'expiresAt'
+} as const
+
+export type RuntimeTaskScalarFieldEnum = (typeof RuntimeTaskScalarFieldEnum)[keyof typeof RuntimeTaskScalarFieldEnum]
 
 
 export const SortOrder = {

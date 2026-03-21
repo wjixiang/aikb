@@ -24,18 +24,20 @@ export interface ComponentRegistration {
   priority?: number;
 }
 
+export interface AgentSoul {
+  sop?: SOP;
+  config?: Partial<AgentConfig>;
+  taskId?: string;
+  name?: string;
+  type?: string;
+  description?: string;
+}
+
 /**
  * Configuration options for creating an Agent
  */
 export interface AgentFactoryOptions {
-  agent?: {
-    sop?: SOP;
-    config?: Partial<AgentConfig>;
-    taskId?: string;
-    name?: string;
-    type?: string;
-    description?: string;
-  };
+  agent?: AgentSoul
   api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;
