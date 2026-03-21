@@ -37,6 +37,10 @@ export default class TypeBuilder {
     
     Intervention: ClassViewer<'Intervention', "name" | "dosage" | "duration" | "route" | "comparator">;
     
+    LiteratureRef: ClassViewer<'LiteratureRef', "doi" | "title" | "year" | "authors" | "journal">;
+    
+    NarrativeReview: ClassViewer<'NarrativeReview', "title" | "abstract" | "keywords" | "sections" | "conclusions" | "all_references" | "future_directions">;
+    
     Outcome: ClassViewer<'Outcome', "primary_outcomes" | "secondary_outcomes" | "measurement_tools" | "follow_up_duration">;
     
     PICOExtraction: ClassViewer<'PICOExtraction', "population" | "intervention" | "comparator" | "outcome">;
@@ -49,7 +53,13 @@ export default class TypeBuilder {
     
     QualityAssessment: ClassViewer<'QualityAssessment', "strengths" | "limitations" | "gaps_in_evidence">;
     
+    ReviewSection: ClassViewer<'ReviewSection', "section_title" | "content" | "key_findings" | "cited_references">;
+    
+    ReviewSectionPlan: ClassViewer<'ReviewSectionPlan', "section_title" | "section_focus" | "search_keywords" | "expected_content">;
+    
     RiskOfBias: ClassViewer<'RiskOfBias', "selection_bias" | "performance_bias" | "detection_bias" | "attrition_bias" | "reporting_bias" | "overall" | "concerns">;
+    
+    SearchQuery: ClassViewer<'SearchQuery', "primary_query" | "alternative_queries" | "search_aspects">;
     
     SearchResultEvaluation: ClassViewer<'SearchResultEvaluation', "target_reached" | "relevance_score" | "relevant_article_count" | "reasoning" | "improvement_suggestions">;
     
@@ -66,7 +76,7 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "ArticleResult","ClinicalImplications","Demographics","EffectMeasures","Intervention","Outcome","PICOExtraction","PaperMetadata","PaperSummary","Population","QualityAssessment","RiskOfBias","SearchResultEvaluation","SearchStrategy","SearchStrategyAdjustment","StatisticalResults","StudyDesign",
+            "ArticleResult","ClinicalImplications","Demographics","EffectMeasures","Intervention","LiteratureRef","NarrativeReview","Outcome","PICOExtraction","PaperMetadata","PaperSummary","Population","QualityAssessment","ReviewSection","ReviewSectionPlan","RiskOfBias","SearchQuery","SearchResultEvaluation","SearchStrategy","SearchStrategyAdjustment","StatisticalResults","StudyDesign",
           ]),
           enums: new Set([
             
@@ -94,6 +104,14 @@ export default class TypeBuilder {
           "name","dosage","duration","route","comparator",
         ]);
         
+        this.LiteratureRef = this.tb.classViewer("LiteratureRef", [
+          "doi","title","year","authors","journal",
+        ]);
+        
+        this.NarrativeReview = this.tb.classViewer("NarrativeReview", [
+          "title","abstract","keywords","sections","conclusions","all_references","future_directions",
+        ]);
+        
         this.Outcome = this.tb.classViewer("Outcome", [
           "primary_outcomes","secondary_outcomes","measurement_tools","follow_up_duration",
         ]);
@@ -118,8 +136,20 @@ export default class TypeBuilder {
           "strengths","limitations","gaps_in_evidence",
         ]);
         
+        this.ReviewSection = this.tb.classViewer("ReviewSection", [
+          "section_title","content","key_findings","cited_references",
+        ]);
+        
+        this.ReviewSectionPlan = this.tb.classViewer("ReviewSectionPlan", [
+          "section_title","section_focus","search_keywords","expected_content",
+        ]);
+        
         this.RiskOfBias = this.tb.classViewer("RiskOfBias", [
           "selection_bias","performance_bias","detection_bias","attrition_bias","reporting_bias","overall","concerns",
+        ]);
+        
+        this.SearchQuery = this.tb.classViewer("SearchQuery", [
+          "primary_query","alternative_queries","search_aspects",
         ]);
         
         this.SearchResultEvaluation = this.tb.classViewer("SearchResultEvaluation", [

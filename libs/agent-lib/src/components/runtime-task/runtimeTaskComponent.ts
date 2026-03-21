@@ -34,7 +34,7 @@ export class RuntimeTaskComponent extends ToolComponent {
   toolSet: Map<string, Tool>;
   private config: RuntimeTaskComponentConfig;
   private storage: ITaskStorage;
-  private centralTaskQueue?: ICentralTaskQueue;
+  private _centralTaskQueue?: ICentralTaskQueue;
   private listeners: Set<TaskListener> = new Set();
 
   constructor(config: RuntimeTaskComponentConfig) {
@@ -44,8 +44,22 @@ export class RuntimeTaskComponent extends ToolComponent {
       ...config,
     };
     this.storage = config.storage ?? new InMemoryTaskStorage();
-    this.centralTaskQueue = config.centralTaskQueue;
+    this._centralTaskQueue = config.centralTaskQueue;
     this.toolSet = this.initializeToolSet();
+  }
+
+  /**
+   * Get the central task queue
+   */
+  get centralTaskQueue(): ICentralTaskQueue | undefined {
+    return this._centralTaskQueue;
+  }
+
+  /**
+   * Set the central task queue (used by runtime to connect agent to central queue)
+   */
+  set centralTaskQueue(queue: ICentralTaskQueue | undefined) {
+    this._centralTaskQueue = queue;
   }
 
   private initializeToolSet(): Map<string, Tool> {

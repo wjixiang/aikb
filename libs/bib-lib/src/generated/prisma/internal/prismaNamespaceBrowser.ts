@@ -82,6 +82,7 @@ export const ArticleScalarFieldEnum = {
   id: 'id',
   pmid: 'pmid',
   articleTitle: 'articleTitle',
+  abstract: 'abstract',
   language: 'language',
   publicationType: 'publicationType',
   dateCompleted: 'dateCompleted',

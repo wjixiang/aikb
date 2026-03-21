@@ -114,6 +114,9 @@ export class AgentRuntime implements IAgentRuntime {
     // Wait for agent initialization
     const agent = await container.getAgent();
 
+    // Pass central task queue to agent's task module
+    agent.setCentralTaskQueue(this.taskQueue);
+
     // Store container
     this.containers.set(instanceId, container);
 
@@ -380,6 +383,9 @@ export class AgentRuntime implements IAgentRuntime {
     const container = this.containers.get(instanceId);
     if (!container) return;
 
+    const task = await this.taskQueue.getById(taskId);
+    if (!task) return;
+
     // Mark task as processing
     await this.taskQueue.markProcessing(taskId, instanceId);
 
@@ -392,7 +398,9 @@ export class AgentRuntime implements IAgentRuntime {
       instanceId,
     });
 
-    // The actual task execution will be handled by the agent's RuntimeTaskComponent
+    // Wake up the agent to process the task
+    const agent = await container.getAgent();
+    await agent.wakeUpForTask(task);
   }
 
   /**

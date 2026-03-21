@@ -593,6 +593,11 @@ export class Agent {
   async wakeUpForTask(task: any): Promise<void> {
     this.logger.info(`Waking up agent for task processing: ${task.taskId}`);
 
+    // Ensure task module is initialized (registers external renderer)
+    if (!this.taskModule) {
+      this.initializeTaskModule();
+    }
+
     // Reset status to running if it was completed
     if (this._status === 'completed' || this._status === 'idle') {
       this._status = 'running';
@@ -601,6 +606,22 @@ export class Agent {
     // Trigger agent to process the task
     // The LLM will check task queue, process tasks, and report results
     await this.requestLoop();
+  }
+
+  /**
+   * Set the central task queue for the agent's task module
+   * This allows the agent to access runtime-managed tasks
+   */
+  setCentralTaskQueue(centralTaskQueue: any): void {
+    // Ensure task module is initialized
+    if (!this.taskModule) {
+      this.initializeTaskModule();
+    }
+    // Update the task module's central queue reference
+    if (this.taskModule) {
+      this.taskModule.centralTaskQueue = centralTaskQueue;
+      this.logger.info('[Agent] Central task queue set for task module');
+    }
   }
 
   /**

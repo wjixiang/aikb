@@ -79,15 +79,45 @@ export class AlibabaEmbeddingProvider implements IEmbeddingProvider {
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
-        const data: AlibabaEmbeddingResponse = await response.json();
+        const data: any = await response.json();
 
-        if (data.code && data.code !== 'success') {
+        // Debug log
+        console.log('Alibaba API response:', JSON.stringify(data).substring(0, 500));
+
+        // Handle different response formats from Alibaba
+        let embeddingsArray: Array<{ embedding: number[]; index: number }>;
+
+        if (data.code && data.code !== 'Success' && data.code !== 'success') {
           throw new Error(`Alibaba API error: ${data.code} - ${data.message}`);
+        }
+
+        // Format 1: {"data":[{"embedding":[...]}]}
+        if (data.data && Array.isArray(data.data)) {
+          embeddingsArray = data.data.map((item: any, index: number) => ({
+            embedding: item.embedding || item,
+            index
+          }));
+        }
+        // Format 2: {"data":{"embeddings":[{"embedding":[...],"index":0}]}}
+        else if (data.data && Array.isArray(data.data.embeddings)) {
+          embeddingsArray = data.data.embeddings;
+        }
+        // Format 3: {"data":{"output":{"embeddings":[...]}}}
+        else if (data.data && data.data.output && Array.isArray(data.data.output.embeddings)) {
+          embeddingsArray = data.data.output.embeddings;
+        }
+        // Format 4: {"output":{"embeddings":[...]}}
+        else if (data.output && Array.isArray(data.output.embeddings)) {
+          embeddingsArray = data.output.embeddings;
+        }
+        else {
+          console.error('Unexpected response format:', JSON.stringify(data).substring(0, 500));
+          throw new Error('Unexpected response format from Alibaba API');
         }
 
         // Map results back to input order
         const results = new Array(texts.length).fill(null);
-        for (const embedding of data.data.embeddings) {
+        for (const embedding of embeddingsArray) {
           results[embedding.index] = embedding.embedding;
         }
 

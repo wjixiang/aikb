@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { AgentFactoryOptions } from "../../../agent/AgentFactory";
+import { AgentFactoryOptions } from "../../agent/AgentFactory";
 import { BibliographySearchComponent } from "../../../components";
 import path from "path";
 

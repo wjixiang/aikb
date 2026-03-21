@@ -89,6 +89,26 @@ export interface Intervention {
   
 }
 
+export interface LiteratureRef {
+  doi: string
+  title: string
+  year?: number | null
+  authors?: string | null
+  journal?: string | null
+  
+}
+
+export interface NarrativeReview {
+  title: string
+  abstract: string
+  keywords: string[]
+  sections: ReviewSection[]
+  conclusions: string
+  all_references: LiteratureRef[]
+  future_directions?: string | null
+  
+}
+
 export interface Outcome {
   primary_outcomes: string[]
   secondary_outcomes: string[]
@@ -150,6 +170,22 @@ export interface QualityAssessment {
   
 }
 
+export interface ReviewSection {
+  section_title: string
+  content: string
+  key_findings: string[]
+  cited_references: LiteratureRef[]
+  
+}
+
+export interface ReviewSectionPlan {
+  section_title: string
+  section_focus: string
+  search_keywords: string[]
+  expected_content: string
+  
+}
+
 export interface RiskOfBias {
   selection_bias: string
   performance_bias: string
@@ -158,6 +194,13 @@ export interface RiskOfBias {
   reporting_bias: string
   overall: string
   concerns: string[]
+  
+}
+
+export interface SearchQuery {
+  primary_query: string
+  alternative_queries: string[]
+  search_aspects: string[]
   
 }
 

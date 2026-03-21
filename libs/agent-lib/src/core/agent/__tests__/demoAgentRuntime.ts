@@ -24,7 +24,7 @@ dotenvConfig({ path: join(__dirname, '..', '..', '..', '..', '.env') });
 
 import { createAgentRuntime } from '../../runtime';
 import type { RuntimeEvent } from '../../runtime/types.js';
-import { createPubmedRetrieveAgentSoul, createBibRetrieveAgentSoul } from '../../agent-soul';
+import { createBibRetrieveAgentSoul } from '../../agent-soul';
 
 // Setup logger
 const logger = pino({
@@ -86,18 +86,18 @@ async function main() {
     // ============================================================
     logger.info('[AgentRuntime Demo] Creating PubMed Retrieve Agent...');
 
-    const pubmedAgentId = await runtime.createAgent(createPubmedRetrieveAgentSoul());
+    const pubmedAgentId = await runtime.createAgent(createBibRetrieveAgentSoul());
 
     logger.info('[AgentRuntime Demo] PubMed agent created with components registered');
 
     // ============================================================
     // Step 4: Create Paper Analysis Agent (with components!)
-    // ============================================================
-    logger.info('[AgentRuntime Demo] Creating Paper Analysis Agent...');
+    // // ============================================================
+    // logger.info('[AgentRuntime Demo] Creating Paper Analysis Agent...');
 
-    const analysisAgentId = await runtime.createAgent(createBibRetrieveAgentSoul());
+    // const analysisAgentId = await runtime.createAgent(createBibRetrieveAgentSoul());
 
-    logger.info('[AgentRuntime Demo] Analysis agent created with components registered');
+    // logger.info('[AgentRuntime Demo] Analysis agent created with components registered');
 
     // ============================================================
     // Step 5: List all agents
@@ -136,13 +136,13 @@ async function main() {
     logger.info({ taskId: task1Id, agentId: pubmedAgentId }, '[AgentRuntime Demo] Task submitted');
 
     // Task 2: Submit to Paper Analysis Agent
-    logger.info('[AgentRuntime Demo] Submitting task to Analysis agent...');
-    const task2Id = await runtime.submitTask({
-        description: '分析并总结最近关于人工智能在医疗诊断中应用的文献，重点关注准确性和临床验证。',
-        priority: 'normal',
-        targetInstanceId: analysisAgentId,
-    });
-    logger.info({ taskId: task2Id, agentId: analysisAgentId }, '[AgentRuntime Demo] Task submitted');
+    // logger.info('[AgentRuntime Demo] Submitting task to Analysis agent...');
+    // const task2Id = await runtime.submitTask({
+    //     description: '分析并总结最近关于人工智能在医疗诊断中应用的文献，重点关注准确性和临床验证。',
+    //     priority: 'normal',
+    //     targetInstanceId: analysisAgentId,
+    // });
+    // logger.info({ taskId: task2Id, agentId: analysisAgentId }, '[AgentRuntime Demo] Task submitted');
 
     // ============================================================
     // Step 8: Monitor task status
@@ -157,11 +157,11 @@ async function main() {
         '[AgentRuntime Demo] Task 1 status',
     );
 
-    const task2Status = await runtime.getTaskStatus(task2Id);
-    logger.info(
-        { taskId: task2Id, status: task2Status?.status, description: task2Status?.description },
-        '[AgentRuntime Demo] Task 2 status',
-    );
+    // const task2Status = await runtime.getTaskStatus(task2Id);
+    // logger.info(
+    //     { taskId: task2Id, status: task2Status?.status, description: task2Status?.description },
+    //     '[AgentRuntime Demo] Task 2 status',
+    // );
 
     // ============================================================
     // Step 9: Get runtime statistics

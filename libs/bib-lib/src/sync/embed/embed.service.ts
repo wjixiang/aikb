@@ -401,6 +401,7 @@ export class EmbedService {
       where: { id: articleId },
       select: {
         articleTitle: true,
+        abstract: true,
         meshHeadings: {
           select: { descriptorName: true, qualifierName: true },
         },
@@ -410,6 +411,7 @@ export class EmbedService {
     if (!article) return null;
 
     const title = article.articleTitle || '';
+    const abstract = article.abstract || '';
 
     switch (textField) {
       case 'title':
@@ -420,13 +422,12 @@ export class EmbedService {
           .map((m) => m.descriptorName)
           .filter(Boolean)
           .slice(0, 10);
-        return `${title} ${meshTerms.join(' ')}`;
+        return abstract ? `${title}\n\n${abstract}\n\n${meshTerms.join(' ')}` : `${title} ${meshTerms.join(' ')}`;
       }
 
       case 'titleAndAbstract':
       default:
-        // For now, just return title (abstract not yet implemented)
-        return title;
+        return abstract ? `${title}\n\n${abstract}`.trim() : title;
     }
   }
 }

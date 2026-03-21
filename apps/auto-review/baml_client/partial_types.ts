@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  ArticleResult,  ClinicalImplications,  Demographics,  EffectMeasures,  Intervention,  Outcome,  PICOExtraction,  PaperMetadata,  PaperSummary,  Population,  QualityAssessment,  RiskOfBias,  SearchResultEvaluation,  SearchStrategy,  SearchStrategyAdjustment,  StatisticalResults,  StudyDesign } from "./types"
+import type {  ArticleResult,  ClinicalImplications,  Demographics,  EffectMeasures,  Intervention,  LiteratureRef,  NarrativeReview,  Outcome,  PICOExtraction,  PaperMetadata,  PaperSummary,  Population,  QualityAssessment,  ReviewSection,  ReviewSectionPlan,  RiskOfBias,  SearchQuery,  SearchResultEvaluation,  SearchStrategy,  SearchStrategyAdjustment,  StatisticalResults,  StudyDesign } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -67,6 +67,22 @@ export namespace partial_types {
       duration?: string | null
       route?: string | null
       comparator?: string | null
+    }
+    export interface LiteratureRef {
+      doi?: string | null
+      title?: string | null
+      year?: number | null
+      authors?: string | null
+      journal?: string | null
+    }
+    export interface NarrativeReview {
+      title?: string | null
+      abstract?: string | null
+      keywords: string[]
+      sections: ReviewSection[]
+      conclusions?: string | null
+      all_references: LiteratureRef[]
+      future_directions?: string | null
     }
     export interface Outcome {
       primary_outcomes: string[]
@@ -117,6 +133,18 @@ export namespace partial_types {
       limitations: string[]
       gaps_in_evidence: string[]
     }
+    export interface ReviewSection {
+      section_title?: string | null
+      content?: string | null
+      key_findings: string[]
+      cited_references: LiteratureRef[]
+    }
+    export interface ReviewSectionPlan {
+      section_title?: string | null
+      section_focus?: string | null
+      search_keywords: string[]
+      expected_content?: string | null
+    }
     export interface RiskOfBias {
       selection_bias?: string | null
       performance_bias?: string | null
@@ -125,6 +153,11 @@ export namespace partial_types {
       reporting_bias?: string | null
       overall?: string | null
       concerns: string[]
+    }
+    export interface SearchQuery {
+      primary_query?: string | null
+      alternative_queries: string[]
+      search_aspects: string[]
     }
     export interface SearchResultEvaluation {
       target_reached?: boolean | null
