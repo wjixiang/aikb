@@ -180,6 +180,7 @@ export type RuntimeEventType =
   | 'agent:stopped'
   | 'agent:destroyed'
   | 'agent:error'
+  | 'agent:idle'       // Agent becomes available for new tasks
   | 'task:submitted'
   | 'task:assigned'
   | 'task:started'

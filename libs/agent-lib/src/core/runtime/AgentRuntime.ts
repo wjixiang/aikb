@@ -84,7 +84,11 @@ export class AgentRuntime implements IAgentRuntime {
   private eventDispatcher: IEventDispatcher;
   private taskQueue: ICentralTaskQueue | null = null;
   private running: boolean = false;
-  private taskPollingInterval?: ReturnType<typeof setInterval>;
+
+  // Event-driven task assignment
+  private eventUnsubscribers: (() => void)[] = [];
+  private pendingAssignments: Array<{ taskId: string; targetInstanceId: string }> = [];
+  private isProcessingAssignments: boolean = false;
 
   constructor(config: AgentRuntimeConfig = {}) {
     this.config = {
@@ -95,6 +99,71 @@ export class AgentRuntime implements IAgentRuntime {
     // Create components that don't need DI container
     this.registry = new AgentRegistry();
     this.eventDispatcher = new EventDispatcher();
+
+    // Setup internal event listeners for event-driven task assignment
+    this.setupEventListeners();
+  }
+
+  /**
+   * Setup internal event listeners for event-driven task assignment
+   */
+  private setupEventListeners(): void {
+    // Listen for task:submitted -> try immediate assignment
+    const unsub1 = this.eventDispatcher.subscribe('task:submitted', (event) => {
+      const payload = event.payload as { taskId: string; targetInstanceId: string };
+      this.pendingAssignments.push(payload);
+      void this.processAssignmentQueue();
+    });
+    this.eventUnsubscribers.push(unsub1);
+
+    // Listen for agent:idle -> check for pending tasks
+    const unsub2 = this.eventDispatcher.subscribe('agent:idle', (event) => {
+      const payload = event.payload as { instanceId: string };
+      void this.handleAgentIdle(payload.instanceId);
+    });
+    this.eventUnsubscribers.push(unsub2);
+  }
+
+  /**
+   * Process queued task assignments sequentially
+   */
+  private async processAssignmentQueue(): Promise<void> {
+    if (this.isProcessingAssignments) return;
+    this.isProcessingAssignments = true;
+
+    try {
+      while (this.pendingAssignments.length > 0 && this.running) {
+        const assignment = this.pendingAssignments.shift()!;
+        await this.tryAssignTaskToAgent(assignment.taskId, assignment.targetInstanceId);
+      }
+    } finally {
+      this.isProcessingAssignments = false;
+    }
+  }
+
+  /**
+   * Handle agent:idle event - check for pending tasks for this agent
+   */
+  private async handleAgentIdle(instanceId: string): Promise<void> {
+    if (!this.taskQueue || !this.running) return;
+
+    const pendingTasks = await this.taskQueue.getForAgent(instanceId);
+    if (pendingTasks.length > 0) {
+      const task = pendingTasks[0];
+      await this.assignTaskToAgent(task.taskId, instanceId);
+    }
+  }
+
+  /**
+   * Try to assign a task to its target agent if idle
+   */
+  private async tryAssignTaskToAgent(taskId: string, targetInstanceId: string): Promise<void> {
+    if (!this.running) return;
+
+    const metadata = this.registry.get(targetInstanceId);
+    if (!metadata || metadata.status !== 'idle') return;
+
+    await this.assignTaskToAgent(taskId, targetInstanceId);
   }
 
   async createAgent(options: AgentFactoryOptions): Promise<string> {
@@ -280,8 +349,12 @@ export class AgentRuntime implements IAgentRuntime {
 
     this.running = true;
 
-    // Start task polling for all idle agents
-    this.startTaskPolling();
+    // Wire up event dispatcher to task queue for event-driven task assignment
+    if (this.taskQueue) {
+      this.taskQueue.setEventDispatcher(this.eventDispatcher);
+    }
+
+    // NO MORE POLLING - event-driven only
 
     // Emit start event
     this.eventDispatcher.emitEvent('agent:started', {
@@ -297,11 +370,9 @@ export class AgentRuntime implements IAgentRuntime {
 
     this.running = false;
 
-    // Stop task polling
-    if (this.taskPollingInterval) {
-      clearInterval(this.taskPollingInterval);
-      this.taskPollingInterval = undefined;
-    }
+    // Unsubscribe all event listeners
+    this.eventUnsubscribers.forEach((unsub) => unsub());
+    this.eventUnsubscribers = [];
 
     // Stop all agents
     for (const instanceId of this.containers.keys()) {
@@ -338,40 +409,6 @@ export class AgentRuntime implements IAgentRuntime {
       totalPendingTasks,
       totalProcessingTasks,
     };
-  }
-
-  /**
-   * Start task polling interval
-   * Agents will pull tasks when idle
-   */
-  private startTaskPolling(): void {
-    this.taskPollingInterval = setInterval(async () => {
-      if (!this.running) return;
-
-      try {
-        await this.processPendingTasks();
-      } catch (error) {
-        console.error('[AgentRuntime] Error processing pending tasks:', error);
-      }
-    }, 1000); // Poll every second
-  }
-
-  /**
-   * Process pending tasks for idle agents
-   */
-  private async processPendingTasks(): Promise<void> {
-    if (!this.taskQueue) return;
-
-    const idleAgents = this.registry.findIdle();
-
-    for (const agentMetadata of idleAgents) {
-      const pendingTasks = await this.taskQueue.getForAgent(agentMetadata.instanceId);
-
-      if (pendingTasks.length > 0) {
-        const task = pendingTasks[0];
-        await this.assignTaskToAgent(task.taskId, agentMetadata.instanceId);
-      }
-    }
   }
 
   /**
@@ -431,6 +468,9 @@ export class AgentRuntime implements IAgentRuntime {
       instanceId,
       results: exportResults,
     });
+
+    // Emit agent:idle to trigger next task assignment (event-driven)
+    this.eventDispatcher.emitEvent('agent:idle', { instanceId });
   }
 
   /**
@@ -450,6 +490,9 @@ export class AgentRuntime implements IAgentRuntime {
       instanceId,
       error,
     });
+
+    // Emit agent:idle to trigger next task assignment (event-driven)
+    this.eventDispatcher.emitEvent('agent:idle', { instanceId });
   }
 }
 

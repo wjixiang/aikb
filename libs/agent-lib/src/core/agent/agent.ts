@@ -21,11 +21,8 @@ import type { IMemoryModule } from '../memory/types.js';
 import type { Tool } from '../../components/core/types.js';
 import { ToolComponent } from '../statefulContext/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
-import {
-  RuntimeTaskComponent,
-  createRuntimeTaskComponent,
-  type ComponentStateBase,
-} from '../../components/index.js';
+import { RuntimeTaskComponent, createRuntimeTaskComponent } from '../../components/runtime-task/runtimeTaskComponent.js';
+import type { ComponentStateBase } from '../../components/core/toolComponent.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import pino from 'pino';
 

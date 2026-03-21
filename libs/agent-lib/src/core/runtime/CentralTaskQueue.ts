@@ -13,6 +13,7 @@ import type {
   ExportResult,
 } from './types.js';
 import { generateTaskId, isTaskExpired, getDefaultPriority } from './types.js';
+import type { IEventDispatcher } from './EventDispatcher.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import { Prisma, type PrismaClient } from '../../generated/prisma/client.js';
 import { TYPES } from '../di/types.js';
@@ -67,6 +68,12 @@ export interface ICentralTaskQueue {
    * Clean up expired tasks
    */
   cleanupExpired(): Promise<number>;
+
+  /**
+   * Set event dispatcher for task events
+   * Enables event-driven task assignment
+   */
+  setEventDispatcher(dispatcher: IEventDispatcher): void;
 }
 
 /**
@@ -77,9 +84,18 @@ export interface ICentralTaskQueue {
 export class CentralTaskQueue implements ICentralTaskQueue {
   private prisma: PrismaClient;
   private cache: Map<string, RuntimeTask> = new Map();
+  private eventDispatcher?: IEventDispatcher;
 
   constructor(container: Container) {
     this.prisma = container.get<PrismaClient>(TYPES.PrismaClient);
+  }
+
+  /**
+   * Set event dispatcher for task events
+   * Enables event-driven task assignment
+   */
+  setEventDispatcher(dispatcher: IEventDispatcher): void {
+    this.eventDispatcher = dispatcher;
   }
 
   async submit(task: TaskSubmission): Promise<string> {
@@ -114,6 +130,16 @@ export class CentralTaskQueue implements ICentralTaskQueue {
     // Update cache
     this.cache.set(taskId, runtimeTask);
 
+    // Emit event for immediate task assignment (event-driven)
+    if (this.eventDispatcher) {
+      this.eventDispatcher.emitEvent('task:submitted', {
+        taskId,
+        targetInstanceId: task.targetInstanceId,
+        priority: runtimeTask.priority,
+        description: task.description,
+      });
+    }
+
     return taskId;
   }
 
@@ -146,10 +172,10 @@ export class CentralTaskQueue implements ICentralTaskQueue {
   }
 
   async getForAgent(instanceId: string): Promise<RuntimeTask[]> {
-    // Try cache first
+    // Try cache first - include both pending and processing tasks
     const cached = Array.from(this.cache.values()).filter(
       (t) =>
-        t.status === 'pending' &&
+        (t.status === 'pending' || t.status === 'processing') &&
         t.targetInstanceId === instanceId &&
         !isTaskExpired(t),
     );
@@ -158,10 +184,10 @@ export class CentralTaskQueue implements ICentralTaskQueue {
       return cached;
     }
 
-    // Fall back to database
+    // Fall back to database - include both pending and processing tasks
     const tasks = await this.prisma.runtimeTask.findMany({
       where: {
-        status: 'pending',
+        status: { in: ['pending', 'processing'] },
         targetInstanceId: instanceId,
         OR: [
           { expiresAt: null },
