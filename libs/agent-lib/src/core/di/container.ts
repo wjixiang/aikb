@@ -9,6 +9,7 @@ import { ToolManager } from '../tools/ToolManager.js';
 import { PostgresPersistenceService } from '../persistence/PostgresPersistenceService.js';
 import { ComponentRegistry } from '../../components/ComponentRegistry.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
+import { HookModule } from '../hooks/HookModule.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
@@ -226,6 +227,12 @@ export class AgentContainer {
       .toDynamicValue(() => new GlobalToolProvider())
       .inSingletonScope();
 
+    // HookModule - bind config first, then module
+    this.container
+      .bind(TYPES.HookConfig)
+      .toConstantValue(this.config.hooks ?? {});
+    this.container.bind(TYPES.HookModule).to(HookModule).inSingletonScope();
+
     // API Client
     this.container
       .bind<ApiClient>(TYPES.ApiClient)
@@ -284,18 +291,6 @@ export class AgentContainer {
         >(TYPES.ToolComponents)
         .toConstantValue(this.config.components);
     }
-
-    // Bind GlobalToolComponents array for DI-managed registration
-    if (
-      this.config.globalComponents &&
-      this.config.globalComponents.length > 0
-    ) {
-      this.container
-        .bind<
-          Array<{ id: string; component: ToolComponent; priority?: number }>
-        >(TYPES.GlobalToolComponents)
-        .toConstantValue(this.config.globalComponents);
-    }
   }
 
   async getAgent(): Promise<Agent> {
@@ -315,6 +310,18 @@ export class AgentContainer {
       if (this.isRestoring) {
         this.agentInstance.restoreComponentStates();
         this.isRestoring = false;
+      }
+
+      // Trigger agent:created hook
+      const hookModule = this.container.get<HookModule>(TYPES.HookModule);
+      if (hookModule) {
+        await hookModule.executeHooks('agent:created', {
+          type: 'agent:created',
+          timestamp: new Date(),
+          instanceId: this.instanceId,
+          name: this.config.agent.name,
+          agentType: this.config.agent.type,
+        });
       }
     }
     return this.agentInstance;

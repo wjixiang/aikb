@@ -4,6 +4,7 @@ import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { PersistenceConfig } from '../persistence/types.js';
 import type { ToolComponent } from '../../components/core/toolComponent.js';
+import type { HookConfig } from '../hooks/types.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
@@ -30,15 +31,15 @@ export interface UnifiedAgentConfig {
 
   /**
    * Components to register with the agent's workspace
-   * These will be automatically registered when the agent is created
+   * These will be automatically registered when the agent is created.
+   * Use priority field to control rendering order (lower = rendered first).
    */
   components?: DIComponentRegistration[];
 
   /**
-   * Global components to register with the agent's workspace
-   * Global components are rendered first and shared across workspace
+   * Hook configuration for lifecycle events
    */
-  globalComponents?: DIComponentRegistration[];
+  hooks?: HookConfig;
 }
 
 export interface AgentCreationOptions {
@@ -58,15 +59,15 @@ export interface AgentCreationOptions {
 
   /**
    * Components to register with the agent's workspace
-   * These will be automatically registered when the agent is created
+   * These will be automatically registered when the agent is created.
+   * Use priority field to control rendering order (lower = rendered first).
    */
   components?: DIComponentRegistration[];
 
   /**
-   * Global components to register with the agent's workspace
-   * Global components are rendered first and shared across workspace
+   * Hook configuration for lifecycle events
    */
-  globalComponents?: DIComponentRegistration[];
+  hooks?: HookConfig;
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {
@@ -127,8 +128,8 @@ export function mergeWithDefaults(
         : defaultUnifiedConfig.persistence,
     // Pass components from top-level options
     components: partial.components,
-    // Pass global components from top-level options
-    globalComponents: partial.globalComponents,
+    // Pass hooks from top-level options
+    hooks: partial.hooks,
   };
   return result;
 }

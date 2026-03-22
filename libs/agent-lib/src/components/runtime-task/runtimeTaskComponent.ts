@@ -18,12 +18,14 @@ import {
 } from './schemas.js';
 import { type ITaskStorage, InMemoryTaskStorage } from './storage.js';
 import type { ICentralTaskQueue } from '../../core/runtime/index.js';
+import type { HookModule } from '../../core/hooks/HookModule.js';
 
 export interface RuntimeTaskComponentConfig {
   instanceId: string;
   storage?: ITaskStorage;
   maxQueueSize?: number;
   centralTaskQueue?: ICentralTaskQueue; // 可选的中心任务队列
+  hookModule?: HookModule; // 可选的 HookModule 用于触发任务钩子
 }
 
 export class RuntimeTaskComponent extends ToolComponent {
@@ -35,6 +37,7 @@ export class RuntimeTaskComponent extends ToolComponent {
   private config: RuntimeTaskComponentConfig;
   private storage: ITaskStorage;
   private _centralTaskQueue?: ICentralTaskQueue;
+  private _hookModule?: HookModule;
   private listeners: Set<TaskListener> = new Set();
 
   constructor(config: RuntimeTaskComponentConfig) {
@@ -45,6 +48,7 @@ export class RuntimeTaskComponent extends ToolComponent {
     };
     this.storage = config.storage ?? new InMemoryTaskStorage();
     this._centralTaskQueue = config.centralTaskQueue;
+    this._hookModule = config.hookModule;
     this.toolSet = this.initializeToolSet();
   }
 
@@ -221,21 +225,48 @@ export class RuntimeTaskComponent extends ToolComponent {
       // Check if this is a central task (taskId format: task_xxx)
       const isCentralTask = params.taskId.startsWith('task_');
 
+      // Get task before updating (for hook context)
+      const task = await this.storage.get(params.taskId);
+
       if (isCentralTask && this.centralTaskQueue) {
         // Report to central task queue
         if (params.success) {
-          await this.centralTaskQueue.complete(params.taskId, {
+          const result = {
             taskId: params.taskId,
             success: true,
             output: params.output as Record<string, ExportResult> | undefined,
             completedAt: new Date(),
-          });
+          };
+          await this.centralTaskQueue.complete(params.taskId, result);
+
+          // Trigger task:completed hook
+          if (this._hookModule) {
+            await this._hookModule.executeHooks('task:completed', {
+              type: 'task:completed',
+              timestamp: new Date(),
+              instanceId: this.config.instanceId,
+              taskId: params.taskId,
+              result,
+            });
+          }
         } else {
+          const error = new Error(params.error ?? 'Task failed');
           await this.centralTaskQueue.fail(params.taskId, params.error ?? 'Task failed');
+
+          // Trigger task:failed hook
+          if (this._hookModule && task) {
+            await this._hookModule.executeHooks('task:failed', {
+              type: 'task:failed',
+              timestamp: new Date(),
+              instanceId: this.config.instanceId,
+              taskId: params.taskId,
+              task,
+              error,
+            });
+          }
         }
       } else {
         // Report to local storage
-        const task = await this.storage.get(params.taskId);
         if (!task) {
           return {
             success: false,
@@ -257,6 +288,28 @@ export class RuntimeTaskComponent extends ToolComponent {
         };
 
         await this.storage.saveResult(result);
+
+        // Trigger hooks
+        if (this._hookModule) {
+          if (params.success) {
+            await this._hookModule.executeHooks('task:completed', {
+              type: 'task:completed',
+              timestamp: new Date(),
+              instanceId: this.config.instanceId,
+              taskId: params.taskId,
+              result,
+            });
+          } else {
+            await this._hookModule.executeHooks('task:failed', {
+              type: 'task:failed',
+              timestamp: new Date(),
+              instanceId: this.config.instanceId,
+              taskId: params.taskId,
+              task,
+              error: new Error(params.error ?? 'Task failed'),
+            });
+          }
+        }
       }
 
       return {
@@ -354,6 +407,19 @@ export class RuntimeTaskComponent extends ToolComponent {
 
     await this.storage.add(newTask);
 
+    // Trigger task:submitted hook
+    if (this._hookModule) {
+      await this._hookModule.executeHooks('task:submitted', {
+        type: 'task:submitted',
+        timestamp: new Date(),
+        instanceId: this.config.instanceId,
+        taskId,
+        task: newTask,
+        source: 'local',
+      });
+    }
+
+    // Call listeners for backward compatibility
     this.listeners.forEach((listener) => {
       void listener(newTask);
     });

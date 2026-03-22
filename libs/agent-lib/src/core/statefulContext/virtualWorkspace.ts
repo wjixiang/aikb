@@ -15,7 +15,6 @@ import {
   renderToolSection,
   ExportOptions,
   ExportResult,
-  GlobalComponentDefinition,
 } from '../../components/index.js';
 import { ToolSource } from '../tools/IToolProvider.js';
 import { TYPES } from '../di/types.js';
@@ -60,7 +59,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   private toolCallLog: ToolCallSummary[] = [];
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
     new Map();
-  private globalComponentIds: Set<string> = new Set();
   private globalToolProvider: GlobalToolProvider;
 
   constructor(
@@ -73,9 +71,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     @inject(TYPES.ToolComponents)
     @optional()
     diComponents?: DIComponentRegistration[],
-    @inject(TYPES.GlobalToolComponents)
-    @optional()
-    diGlobalComponents?: DIComponentRegistration[],
   ) {
     this.config = {
       ...DefaultVirtualWorkspaceConfig,
@@ -89,12 +84,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     if (diComponents && diComponents.length > 0) {
       for (const { id, component, priority } of diComponents) {
         this.componentRegistry.register(id, component, priority);
-      }
-    }
-
-    if (diGlobalComponents && diGlobalComponents.length > 0) {
-      for (const { id, component, priority } of diGlobalComponents) {
-        this.registerGlobalComponent(id, component, priority);
       }
     }
   }
@@ -134,29 +123,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   }
 
   getComponentKeys(): string[] {
-    return this.componentRegistry.getIds();
-  }
-
-  registerGlobalComponent(
-    id: string,
-    component: ToolComponent,
-    priority?: number,
-  ): void {
-    this.componentRegistry.register(id, component, priority);
-    this._registerToolProvider(id, component);
-    this.globalComponentIds.add(id);
-    console.log(`[VirtualWorkspace] Registered global component: ${id}`);
-  }
-
-  getGlobalComponent(id: string): ToolComponent | undefined {
-    return this.componentRegistry.get(id);
-  }
-
-  hasGlobalComponent(id: string): boolean {
-    return this.componentRegistry.has(id);
-  }
-
-  getGlobalComponentIds(): string[] {
     return this.componentRegistry.getIds();
   }
 
@@ -432,17 +398,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
-    const globalRegistrations = sortedRegistrations.filter((r) =>
-      this.globalComponentIds.has(r.id),
-    );
-    const nonGlobalRegistrations = sortedRegistrations.filter(
-      (r) => !this.globalComponentIds.has(r.id),
-    );
-
-    for (const registration of [
-      ...globalRegistrations,
-      ...nonGlobalRegistrations,
-    ]) {
+    for (const registration of sortedRegistrations) {
       const componentContainer = new MdDiv(
         { content: `## ${registration.id}`, styles: { showBorder: true } },
         [],
@@ -504,17 +460,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
-    const globalRegistrations = sortedRegistrations.filter((r) =>
-      this.globalComponentIds.has(r.id),
-    );
-    const nonGlobalRegistrations = sortedRegistrations.filter(
-      (r) => !this.globalComponentIds.has(r.id),
-    );
-
-    for (const registration of [
-      ...globalRegistrations,
-      ...nonGlobalRegistrations,
-    ]) {
+    for (const registration of sortedRegistrations) {
       const componentContainer = new tdiv({
         content: registration.id,
         styles: { showBorder: true },

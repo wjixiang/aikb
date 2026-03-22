@@ -286,13 +286,6 @@ export const TYPES = {
    */
   ToolComponents: Symbol('ToolComponents'),
 
-  /**
-   * GlobalToolComponents - Array of global component registrations managed by DI
-   * Global components are rendered first and shared across workspace
-   * @scope Singleton - Bound at container creation
-   */
-  GlobalToolComponents: Symbol('GlobalToolComponents'),
-
   // ==================== Internal Services ====================
 
   /**
@@ -300,6 +293,20 @@ export const TYPES = {
    * @scope Singleton - Shared across VirtualWorkspace instances
    */
   ComponentRegistry: Symbol('ComponentRegistry'),
+
+  // ==================== Hook System ====================
+
+  /**
+   * HookModule - Centralized hook management for lifecycle events
+   * @scope Singleton - Shared within an agent container
+   */
+  HookModule: Symbol('HookModule'),
+
+  /**
+   * HookConfig - Configuration for hooks
+   * @scope Singleton - Bound at container creation
+   */
+  HookConfig: Symbol('HookConfig'),
 } as const;
 
 export type TestOverrides = {
