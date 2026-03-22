@@ -22,16 +22,12 @@ export interface ComponentRegistration {
 @injectable()
 export class ComponentRegistry {
   private components: Map<string, ComponentRegistration> = new Map();
-  private hookModule?: HookModule;
+  private hookModule: HookModule;
   private instanceId?: string;
 
   constructor(
-    @inject(TYPES.HookModule)
-    @optional()
-    hookModule?: HookModule,
-    @inject(TYPES.AgentInstanceId)
-    @optional()
-    instanceId?: string,
+    @inject(TYPES.HookModule) hookModule: HookModule,
+    @inject(TYPES.AgentInstanceId) @optional() instanceId?: string,
   ) {
     this.hookModule = hookModule;
     this.instanceId = instanceId;
@@ -58,7 +54,7 @@ export class ComponentRegistry {
     priority?: number,
   ): Promise<void> {
     // Before hook
-    if (this.hookModule && this.instanceId) {
+    if (this.instanceId) {
       await this.hookModule.executeHooks('component:beforeRegister', {
         type: 'component:beforeRegister',
         timestamp: new Date(),
@@ -72,7 +68,7 @@ export class ComponentRegistry {
     this.components.set(id, { id, component, priority });
 
     // After hook
-    if (this.hookModule && this.instanceId) {
+    if (this.instanceId) {
       const tools = Array.from(component.toolSet.values());
       await this.hookModule.executeHooks('component:afterRegister', {
         type: 'component:afterRegister',
@@ -150,7 +146,7 @@ export class ComponentRegistry {
     if (!registration) return false;
 
     // Before hook
-    if (this.hookModule && this.instanceId) {
+    if (this.instanceId) {
       await this.hookModule.executeHooks('component:beforeUnregister', {
         type: 'component:beforeUnregister',
         timestamp: new Date(),
@@ -163,7 +159,7 @@ export class ComponentRegistry {
     const deleted = this.components.delete(id);
 
     // After hook
-    if (deleted && this.hookModule && this.instanceId) {
+    if (deleted && this.instanceId) {
       await this.hookModule.executeHooks('component:afterUnregister', {
         type: 'component:afterUnregister',
         timestamp: new Date(),

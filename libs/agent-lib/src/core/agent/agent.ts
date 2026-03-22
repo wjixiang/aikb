@@ -21,7 +21,10 @@ import type { IMemoryModule } from '../memory/types.js';
 import type { Tool } from '../../components/core/types.js';
 import { ToolComponent } from '../statefulContext/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
-import { RuntimeTaskComponent, createRuntimeTaskComponent } from '../../components/runtime-task/runtimeTaskComponent.js';
+import {
+  RuntimeTaskComponent,
+  createRuntimeTaskComponent,
+} from '../../components/runtime-task/runtimeTaskComponent.js';
 import type { ComponentStateBase } from '../../components/core/toolComponent.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import type { HookModule } from '../hooks/HookModule.js';
@@ -157,8 +160,8 @@ export class Agent {
   // Persistence service (optional)
   private persistenceService?: IPersistenceService;
 
-  // Hook module (optional)
-  private hookModule?: HookModule;
+  // Hook module (required)
+  private hookModule: HookModule;
 
   private agentSop: SOP;
   private logger: pino.Logger;
@@ -173,13 +176,11 @@ export class Agent {
     @inject(TYPES.IMemoryModule) memoryModule: IMemoryModule,
     @inject(TYPES.ApiClient) apiClient: ApiClient,
     @inject(TYPES.IToolManager) toolManager: IToolManager,
+    @inject(TYPES.HookModule) hookModule: HookModule,
     @inject(TYPES.TaskId) @optional() taskId?: string,
     @inject(TYPES.IPersistenceService)
     @optional()
     persistenceService?: IPersistenceService,
-    @inject(TYPES.HookModule)
-    @optional()
-    hookModule?: HookModule,
   ) {
     this.instanceId = instanceId;
     // Instantiate pino logger directly
@@ -268,9 +269,15 @@ export class Agent {
       // Export and persist component results
       const exportResults = await this.workspace.exportResult();
       if (Object.keys(exportResults).length > 0) {
-        await this.persistenceService.saveExportResult(this.instanceId, exportResults as Record<string, unknown>);
+        await this.persistenceService.saveExportResult(
+          this.instanceId,
+          exportResults as Record<string, unknown>,
+        );
         this.logger.info(
-          { instanceId: this.instanceId, resultCount: Object.keys(exportResults).length },
+          {
+            instanceId: this.instanceId,
+            resultCount: Object.keys(exportResults).length,
+          },
           '[Agent] Export results saved',
         );
       }
@@ -403,7 +410,10 @@ export class Agent {
           workspaceContexts: memory.workspaceContexts,
         });
         this.logger.info(
-          { instanceId: this.instanceId, messageCount: (memory.messages as unknown[]).length },
+          {
+            instanceId: this.instanceId,
+            messageCount: (memory.messages as unknown[]).length,
+          },
           '[Agent] Memory loaded from persistence',
         );
         return true;
@@ -443,21 +453,19 @@ export class Agent {
     });
 
     // Register hook for new tasks to wake up the agent
-    if (this.hookModule) {
-      this.hookModule.on(
-        'task:submitted',
-        async (ctx) => {
-          // Only process tasks destined for this agent
-          if (ctx.instanceId === this.instanceId) {
-            this.logger.info(
-              `[Agent] Received new task ${ctx.taskId}, waking up agent`,
-            );
-            await this.wakeUpForTask(ctx.task);
-          }
-        },
-        { id: `agent-${this.instanceId}-task-wake` },
-      );
-    }
+    this.hookModule.on(
+      'task:submitted',
+      async (ctx) => {
+        // Only process tasks destined for this agent
+        if (ctx.instanceId === this.instanceId) {
+          this.logger.info(
+            `[Agent] Received new task ${ctx.taskId}, waking up agent`,
+          );
+          await this.wakeUpForTask(ctx.task);
+        }
+      },
+      { id: `agent-${this.instanceId}-task-wake` },
+    );
   }
 
   // ==================== Public API ====================
@@ -537,13 +545,11 @@ export class Agent {
    */
   async start(): Promise<Agent> {
     // Trigger agent:starting hook
-    if (this.hookModule) {
-      await this.hookModule.executeHooks('agent:starting', {
-        type: 'agent:starting',
-        timestamp: new Date(),
-        instanceId: this.instanceId,
-      });
-    }
+    await this.hookModule.executeHooks('agent:starting', {
+      type: 'agent:starting',
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+    });
 
     this._status = 'running';
     void this.persistState(); // 持久化状态变更
@@ -555,13 +561,11 @@ export class Agent {
     await this.requestLoop();
 
     // Trigger agent:started hook
-    if (this.hookModule) {
-      await this.hookModule.executeHooks('agent:started', {
-        type: 'agent:started',
-        timestamp: new Date(),
-        instanceId: this.instanceId,
-      });
-    }
+    await this.hookModule.executeHooks('agent:started', {
+      type: 'agent:started',
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+    });
 
     return this;
   }
@@ -571,26 +575,22 @@ export class Agent {
    */
   complete(): void {
     // Trigger agent:completing hook
-    if (this.hookModule) {
-      void this.hookModule.executeHooks('agent:completing', {
-        type: 'agent:completing',
-        timestamp: new Date(),
-        instanceId: this.instanceId,
-      });
-    }
+    void this.hookModule.executeHooks('agent:completing', {
+      type: 'agent:completing',
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+    });
 
     this._status = 'completed';
     void this.persistState();
     void this.endSession(); // 结束 session
 
     // Trigger agent:completed hook
-    if (this.hookModule) {
-      void this.hookModule.executeHooks('agent:completed', {
-        type: 'agent:completed',
-        timestamp: new Date(),
-        instanceId: this.instanceId,
-      });
-    }
+    void this.hookModule.executeHooks('agent:completed', {
+      type: 'agent:completed',
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+    });
   }
 
   /**
@@ -605,15 +605,13 @@ export class Agent {
     details?: Record<string, unknown>,
   ): void {
     // Trigger agent:aborting hook
-    if (this.hookModule) {
-      void this.hookModule.executeHooks('agent:aborting', {
-        type: 'agent:aborting',
-        timestamp: new Date(),
-        instanceId: this.instanceId,
-        reason: abortReason,
-        source,
-      });
-    }
+    void this.hookModule.executeHooks('agent:aborting', {
+      type: 'agent:aborting',
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+      reason: abortReason,
+      source,
+    });
 
     this._status = 'aborted';
     this._abortInfo = {
@@ -626,15 +624,13 @@ export class Agent {
     void this.endSession('aborted'); // 结束 session
 
     // Trigger agent:aborted hook
-    if (this.hookModule) {
-      void this.hookModule.executeHooks('agent:aborted', {
-        type: 'agent:aborted',
-        timestamp: new Date(),
-        instanceId: this.instanceId,
-        reason: abortReason,
-        source,
-      });
-    }
+    void this.hookModule.executeHooks('agent:aborted', {
+      type: 'agent:aborted',
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+      reason: abortReason,
+      source,
+    });
   }
 
   /**
