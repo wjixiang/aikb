@@ -8,19 +8,21 @@
  *
  * @example
  * ```typescript
+ * import { HookType } from './types.js';
+ *
  * const hookModule = container.get<HookModule>(TYPES.HookModule);
  *
  * // Register a hook with fluent API
  * hookModule
- *   .on('agent:created', async (ctx) => {
+ *   .on(HookType.AGENT_CREATED, async (ctx) => {
  *     console.log(`Agent ${ctx.instanceId} created`);
  *   }, { priority: 10 })
- *   .on('tool:afterExecute', (ctx) => {
+ *   .on(HookType.TOOL_AFTER_EXECUTE, (ctx) => {
  *     console.log(`Tool ${ctx.toolName} executed in ${ctx.duration}ms`);
  *   });
  *
  * // Trigger hooks
- * await hookModule.executeHooks('agent:created', context);
+ * await hookModule.executeHooks(HookType.AGENT_CREATED, context);
  * ```
  */
 

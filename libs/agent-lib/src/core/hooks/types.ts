@@ -7,58 +7,38 @@
 
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { Tool } from '../../components/core/types.js';
-import type { RuntimeTask, RuntimeTaskResult } from '../../components/runtime-task/types.js';
+import type {
+  RuntimeTask,
+  RuntimeTaskResult,
+} from '../../components/runtime-task/types.js';
 
 // =============================================================================
-// Hook Categories
+// Hook Categories (Enum)
 // =============================================================================
 
 /**
- * Runtime hook types - Agent lifecycle events
+ * Hook types enum - Agent lifecycle events
  */
-export type RuntimeHookType =
-  | 'agent:created' // After AgentContainer is created
-  | 'agent:starting' // Before agent.start() is called
-  | 'agent:started' // After agent.start() completes
-  | 'agent:completing' // Before agent.complete() is called
-  | 'agent:completed' // After agent.complete() is called
-  | 'agent:aborting' // Before agent.abort() is called
-  | 'agent:aborted' // After agent.abort() is called
-  | 'agent:error'; // When an error occurs
-
-/**
- * Component hook types - Registration lifecycle
- */
-export type ComponentHookType =
-  | 'component:beforeRegister' // Before component is registered
-  | 'component:afterRegister' // After component is registered
-  | 'component:beforeUnregister' // Before component is unregistered
-  | 'component:afterUnregister'; // After component is unregistered
-
-/**
- * Tool hook types - Tool execution lifecycle
- */
-export type ToolHookType =
-  | 'tool:beforeExecute' // Before tool is executed
-  | 'tool:afterExecute'; // After tool is executed (success or failure)
-
-/**
- * Task hook types - RuntimeTask lifecycle
- */
-export type TaskHookType =
-  | 'task:submitted' // When a new task is submitted
-  | 'task:received' // When component receives a task
-  | 'task:completed' // When task processing completes
-  | 'task:failed'; // When task processing fails
-
-/**
- * All hook types
- */
-export type HookType =
-  | RuntimeHookType
-  | ComponentHookType
-  | ToolHookType
-  | TaskHookType;
+export enum HookType {
+  AGENT_CREATED = 'agent:created',
+  AGENT_STARTING = 'agent:starting',
+  AGENT_STARTED = 'agent:started',
+  AGENT_COMPLETING = 'agent:completing',
+  AGENT_COMPLETED = 'agent:completed',
+  AGENT_ABORTING = 'agent:aborting',
+  AGENT_ABORTED = 'agent:aborted',
+  AGENT_ERROR = 'agent:error',
+  COMPONENT_BEFORE_REGISTER = 'component:beforeRegister',
+  COMPONENT_AFTER_REGISTER = 'component:afterRegister',
+  COMPONENT_BEFORE_UNREGISTER = 'component:beforeUnregister',
+  COMPONENT_AFTER_UNREGISTER = 'component:afterUnregister',
+  TOOL_BEFORE_EXECUTE = 'tool:beforeExecute',
+  TOOL_AFTER_EXECUTE = 'tool:afterExecute',
+  TASK_SUBMITTED = 'task:submitted',
+  TASK_RECEIVED = 'task:received',
+  TASK_COMPLETED = 'task:completed',
+  TASK_FAILED = 'task:failed',
+}
 
 // =============================================================================
 // Hook Contexts (Payloads)
@@ -78,7 +58,7 @@ export interface HookContextBase {
  * Agent created context
  */
 export interface AgentCreatedContext extends HookContextBase {
-  type: 'agent:created';
+  type: HookType.AGENT_CREATED;
   /** Agent name if configured */
   name?: string;
   /** Agent type if configured */
@@ -89,7 +69,7 @@ export interface AgentCreatedContext extends HookContextBase {
  * Agent starting context
  */
 export interface AgentStartingContext extends HookContextBase {
-  type: 'agent:starting';
+  type: HookType.AGENT_STARTING;
   /** Initial message/task */
   initialMessage?: string;
 }
@@ -98,7 +78,7 @@ export interface AgentStartingContext extends HookContextBase {
  * Agent started context
  */
 export interface AgentStartedContext extends HookContextBase {
-  type: 'agent:started';
+  type: HookType.AGENT_STARTED;
   /** Initial message/task */
   initialMessage?: string;
 }
@@ -107,21 +87,21 @@ export interface AgentStartedContext extends HookContextBase {
  * Agent completing context
  */
 export interface AgentCompletingContext extends HookContextBase {
-  type: 'agent:completing';
+  type: HookType.AGENT_COMPLETING;
 }
 
 /**
  * Agent completed context
  */
 export interface AgentCompletedContext extends HookContextBase {
-  type: 'agent:completed';
+  type: HookType.AGENT_COMPLETED;
 }
 
 /**
  * Agent aborting context
  */
 export interface AgentAbortingContext extends HookContextBase {
-  type: 'agent:aborting';
+  type: HookType.AGENT_ABORTING;
   /** Abort reason */
   reason: string;
   /** Abort source */
@@ -132,7 +112,7 @@ export interface AgentAbortingContext extends HookContextBase {
  * Agent aborted context
  */
 export interface AgentAbortedContext extends HookContextBase {
-  type: 'agent:aborted';
+  type: HookType.AGENT_ABORTED;
   /** Abort reason */
   reason: string;
   /** Abort source */
@@ -143,7 +123,7 @@ export interface AgentAbortedContext extends HookContextBase {
  * Agent error context
  */
 export interface AgentErrorContext extends HookContextBase {
-  type: 'agent:error';
+  type: HookType.AGENT_ERROR;
   /** The error that occurred */
   error: Error;
   /** Phase where error occurred */
@@ -154,7 +134,7 @@ export interface AgentErrorContext extends HookContextBase {
  * Component before register context
  */
 export interface ComponentBeforeRegisterContext extends HookContextBase {
-  type: 'component:beforeRegister';
+  type: HookType.COMPONENT_BEFORE_REGISTER;
   /** Component ID */
   componentId: string;
   /** Component instance */
@@ -167,7 +147,7 @@ export interface ComponentBeforeRegisterContext extends HookContextBase {
  * Component after register context
  */
 export interface ComponentAfterRegisterContext extends HookContextBase {
-  type: 'component:afterRegister';
+  type: HookType.COMPONENT_AFTER_REGISTER;
   /** Component ID */
   componentId: string;
   /** Component instance */
@@ -182,7 +162,7 @@ export interface ComponentAfterRegisterContext extends HookContextBase {
  * Component before unregister context
  */
 export interface ComponentBeforeUnregisterContext extends HookContextBase {
-  type: 'component:beforeUnregister';
+  type: HookType.COMPONENT_BEFORE_UNREGISTER;
   /** Component ID */
   componentId: string;
   /** Component instance */
@@ -193,7 +173,7 @@ export interface ComponentBeforeUnregisterContext extends HookContextBase {
  * Component after unregister context
  */
 export interface ComponentAfterUnregisterContext extends HookContextBase {
-  type: 'component:afterUnregister';
+  type: HookType.COMPONENT_AFTER_UNREGISTER;
   /** Component ID */
   componentId: string;
 }
@@ -202,7 +182,7 @@ export interface ComponentAfterUnregisterContext extends HookContextBase {
  * Tool before execute context
  */
 export interface ToolBeforeExecuteContext extends HookContextBase {
-  type: 'tool:beforeExecute';
+  type: HookType.TOOL_BEFORE_EXECUTE;
   /** Tool name */
   toolName: string;
   /** Tool parameters */
@@ -215,7 +195,7 @@ export interface ToolBeforeExecuteContext extends HookContextBase {
  * Tool after execute context
  */
 export interface ToolAfterExecuteContext extends HookContextBase {
-  type: 'tool:afterExecute';
+  type: HookType.TOOL_AFTER_EXECUTE;
   /** Tool name */
   toolName: string;
   /** Tool parameters */
@@ -240,7 +220,7 @@ export interface ToolAfterExecuteContext extends HookContextBase {
  * Task submitted context
  */
 export interface TaskSubmittedContext extends HookContextBase {
-  type: 'task:submitted';
+  type: HookType.TASK_SUBMITTED;
   /** Task ID */
   taskId: string;
   /** The submitted task */
@@ -253,7 +233,7 @@ export interface TaskSubmittedContext extends HookContextBase {
  * Task received context
  */
 export interface TaskReceivedContext extends HookContextBase {
-  type: 'task:received';
+  type: HookType.TASK_RECEIVED;
   /** Task ID */
   taskId: string;
   /** The received task */
@@ -264,7 +244,7 @@ export interface TaskReceivedContext extends HookContextBase {
  * Task completed context
  */
 export interface TaskCompletedContext extends HookContextBase {
-  type: 'task:completed';
+  type: HookType.TASK_COMPLETED;
   /** Task ID */
   taskId: string;
   /** Task result */
@@ -275,7 +255,7 @@ export interface TaskCompletedContext extends HookContextBase {
  * Task failed context
  */
 export interface TaskFailedContext extends HookContextBase {
-  type: 'task:failed';
+  type: HookType.TASK_FAILED;
   /** Task ID */
   taskId: string;
   /** The original task */

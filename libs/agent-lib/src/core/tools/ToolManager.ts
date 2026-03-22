@@ -15,6 +15,7 @@ import {
   ProviderNotFoundError,
 } from './tool.errors.js';
 import { TYPES } from '../di/types.js';
+import { HookType } from '../hooks/types.js';
 import type { HookModule } from '../hooks/HookModule.js';
 
 /**
@@ -191,8 +192,8 @@ export class ToolManager implements IToolManager {
 
     // Before hook
     if (this.instanceId) {
-      await this.hookModule.executeHooks('tool:beforeExecute', {
-        type: 'tool:beforeExecute',
+      await this.hookModule.executeHooks(HookType.TOOL_BEFORE_EXECUTE, {
+        type: HookType.TOOL_BEFORE_EXECUTE,
         timestamp: new Date(),
         instanceId: this.instanceId,
         toolName: name,
@@ -211,8 +212,8 @@ export class ToolManager implements IToolManager {
     } finally {
       // After hook
       if (this.instanceId) {
-        await this.hookModule.executeHooks('tool:afterExecute', {
-          type: 'tool:afterExecute',
+        await this.hookModule.executeHooks(HookType.TOOL_AFTER_EXECUTE, {
+          type: HookType.TOOL_AFTER_EXECUTE,
           timestamp: new Date(),
           instanceId: this.instanceId,
           toolName: name,

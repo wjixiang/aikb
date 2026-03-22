@@ -26,14 +26,9 @@
  */
 
 export { HookModule } from './HookModule.js';
+export { HookType } from './types.js';
 
 export type {
-  // Hook Types
-  HookType,
-  RuntimeHookType,
-  ComponentHookType,
-  ToolHookType,
-  TaskHookType,
   // Hook Contexts
   HookContext,
   HookContextBase,

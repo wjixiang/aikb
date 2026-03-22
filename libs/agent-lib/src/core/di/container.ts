@@ -10,6 +10,7 @@ import { PostgresPersistenceService } from '../persistence/PostgresPersistenceSe
 import { ComponentRegistry } from '../../components/ComponentRegistry.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import { HookModule } from '../hooks/HookModule.js';
+import { HookType } from '../hooks/types.js';
 import { AgentSessionManager } from '../session/AgentSessionManager.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
@@ -322,8 +323,8 @@ export class AgentContainer {
       // Trigger agent:created hook
       const hookModule = this.container.get<HookModule>(TYPES.HookModule);
       if (hookModule) {
-        await hookModule.executeHooks('agent:created', {
-          type: 'agent:created',
+        await hookModule.executeHooks(HookType.AGENT_CREATED, {
+          type: HookType.AGENT_CREATED,
           timestamp: new Date(),
           instanceId: this.instanceId,
           name: this.config.agent.name,

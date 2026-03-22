@@ -18,30 +18,30 @@
  * ```
  */
 
-import type {
+import {
   HookType,
-  HookHandler,
-  HookRegistrationOptions,
-  HookConfig,
-  HookEntry,
-  AgentCreatedContext,
-  AgentStartingContext,
-  AgentStartedContext,
-  AgentCompletingContext,
-  AgentCompletedContext,
-  AgentAbortingContext,
-  AgentAbortedContext,
-  AgentErrorContext,
-  ComponentBeforeRegisterContext,
-  ComponentAfterRegisterContext,
-  ComponentBeforeUnregisterContext,
-  ComponentAfterUnregisterContext,
-  ToolBeforeExecuteContext,
-  ToolAfterExecuteContext,
-  TaskSubmittedContext,
-  TaskReceivedContext,
-  TaskCompletedContext,
-  TaskFailedContext,
+  type HookHandler,
+  type HookRegistrationOptions,
+  type HookConfig,
+  type HookEntry,
+  type AgentCreatedContext,
+  type AgentStartingContext,
+  type AgentStartedContext,
+  type AgentCompletingContext,
+  type AgentCompletedContext,
+  type AgentAbortingContext,
+  type AgentAbortedContext,
+  type AgentErrorContext,
+  type ComponentBeforeRegisterContext,
+  type ComponentAfterRegisterContext,
+  type ComponentBeforeUnregisterContext,
+  type ComponentAfterUnregisterContext,
+  type ToolBeforeExecuteContext,
+  type ToolAfterExecuteContext,
+  type TaskSubmittedContext,
+  type TaskReceivedContext,
+  type TaskCompletedContext,
+  type TaskFailedContext,
 } from './types.js';
 
 // =============================================================================
@@ -55,7 +55,11 @@ export function onAgentCreated(
   handler: HookHandler<AgentCreatedContext>,
   options?: HookRegistrationOptions,
 ): HookEntry {
-  return { type: 'agent:created', handler: handler as HookHandler, options };
+  return {
+    type: HookType.AGENT_CREATED,
+    handler: handler as HookHandler,
+    options,
+  };
 }
 
 /**
@@ -65,7 +69,11 @@ export function onAgentStarting(
   handler: HookHandler<AgentStartingContext>,
   options?: HookRegistrationOptions,
 ): HookEntry {
-  return { type: 'agent:starting', handler: handler as HookHandler, options };
+  return {
+    type: HookType.AGENT_STARTING,
+    handler: handler as HookHandler,
+    options,
+  };
 }
 
 /**
@@ -75,7 +83,11 @@ export function onAgentStarted(
   handler: HookHandler<AgentStartedContext>,
   options?: HookRegistrationOptions,
 ): HookEntry {
-  return { type: 'agent:started', handler: handler as HookHandler, options };
+  return {
+    type: HookType.AGENT_STARTED,
+    handler: handler as HookHandler,
+    options,
+  };
 }
 
 /**
@@ -86,7 +98,7 @@ export function onAgentCompleting(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'agent:completing',
+    type: HookType.AGENT_COMPLETING,
     handler: handler as HookHandler,
     options,
   };
@@ -99,7 +111,11 @@ export function onAgentCompleted(
   handler: HookHandler<AgentCompletedContext>,
   options?: HookRegistrationOptions,
 ): HookEntry {
-  return { type: 'agent:completed', handler: handler as HookHandler, options };
+  return {
+    type: HookType.AGENT_COMPLETED,
+    handler: handler as HookHandler,
+    options,
+  };
 }
 
 /**
@@ -109,7 +125,11 @@ export function onAgentAborting(
   handler: HookHandler<AgentAbortingContext>,
   options?: HookRegistrationOptions,
 ): HookEntry {
-  return { type: 'agent:aborting', handler: handler as HookHandler, options };
+  return {
+    type: HookType.AGENT_ABORTING,
+    handler: handler as HookHandler,
+    options,
+  };
 }
 
 /**
@@ -119,7 +139,11 @@ export function onAgentAborted(
   handler: HookHandler<AgentAbortedContext>,
   options?: HookRegistrationOptions,
 ): HookEntry {
-  return { type: 'agent:aborted', handler: handler as HookHandler, options };
+  return {
+    type: HookType.AGENT_ABORTED,
+    handler: handler as HookHandler,
+    options,
+  };
 }
 
 /**
@@ -129,7 +153,11 @@ export function onAgentError(
   handler: HookHandler<AgentErrorContext>,
   options?: HookRegistrationOptions,
 ): HookEntry {
-  return { type: 'agent:error', handler: handler as HookHandler, options };
+  return {
+    type: HookType.AGENT_ERROR,
+    handler: handler as HookHandler,
+    options,
+  };
 }
 
 // =============================================================================
@@ -144,7 +172,7 @@ export function onComponentBeforeRegister(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'component:beforeRegister',
+    type: HookType.COMPONENT_BEFORE_REGISTER,
     handler: handler as HookHandler,
     options,
   };
@@ -158,7 +186,7 @@ export function onComponentAfterRegister(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'component:afterRegister',
+    type: HookType.COMPONENT_AFTER_REGISTER,
     handler: handler as HookHandler,
     options,
   };
@@ -172,7 +200,7 @@ export function onComponentBeforeUnregister(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'component:beforeUnregister',
+    type: HookType.COMPONENT_BEFORE_UNREGISTER,
     handler: handler as HookHandler,
     options,
   };
@@ -186,7 +214,7 @@ export function onComponentAfterUnregister(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'component:afterUnregister',
+    type: HookType.COMPONENT_AFTER_UNREGISTER,
     handler: handler as HookHandler,
     options,
   };
@@ -204,7 +232,7 @@ export function onToolBeforeExecute(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'tool:beforeExecute',
+    type: HookType.TOOL_BEFORE_EXECUTE,
     handler: handler as HookHandler,
     options,
   };
@@ -218,7 +246,7 @@ export function onToolAfterExecute(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'tool:afterExecute',
+    type: HookType.TOOL_AFTER_EXECUTE,
     handler: handler as HookHandler,
     options,
   };
@@ -236,7 +264,7 @@ export function onTaskSubmitted(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'task:submitted',
+    type: HookType.TASK_SUBMITTED,
     handler: handler as HookHandler,
     options,
   };
@@ -250,7 +278,7 @@ export function onTaskReceived(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'task:received',
+    type: HookType.TASK_RECEIVED,
     handler: handler as HookHandler,
     options,
   };
@@ -264,7 +292,7 @@ export function onTaskCompleted(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'task:completed',
+    type: HookType.TASK_COMPLETED,
     handler: handler as HookHandler,
     options,
   };
@@ -278,7 +306,7 @@ export function onTaskFailed(
   options?: HookRegistrationOptions,
 ): HookEntry {
   return {
-    type: 'task:failed',
+    type: HookType.TASK_FAILED,
     handler: handler as HookHandler,
     options,
   };
@@ -364,7 +392,8 @@ export class HookConfigBuilder {
   build(): HookConfig {
     const config: HookConfig = { hooks: this.hooks };
     if (this.enabledHooks) config.enabledHooks = this.enabledHooks;
-    if (this.disabledHooks.length > 0) config.disabledHooks = this.disabledHooks;
+    if (this.disabledHooks.length > 0)
+      config.disabledHooks = this.disabledHooks;
     if (this.globalHandler) config.globalHandler = this.globalHandler;
     return config;
   }

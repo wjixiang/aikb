@@ -12,6 +12,7 @@ import { TYPES } from '../core/di/types.js';
 import { ToolComponent } from './core/toolComponent.js';
 import type { Tool } from './core/types.js';
 import type { HookModule } from '../core/hooks/HookModule.js';
+import { HookType } from '../core/hooks/types.js';
 
 export interface ComponentRegistration {
   id: string;
@@ -55,8 +56,8 @@ export class ComponentRegistry {
   ): Promise<void> {
     // Before hook
     if (this.instanceId) {
-      await this.hookModule.executeHooks('component:beforeRegister', {
-        type: 'component:beforeRegister',
+      await this.hookModule.executeHooks(HookType.COMPONENT_BEFORE_REGISTER, {
+        type: HookType.COMPONENT_BEFORE_REGISTER,
         timestamp: new Date(),
         instanceId: this.instanceId,
         componentId: id,
@@ -70,8 +71,8 @@ export class ComponentRegistry {
     // After hook
     if (this.instanceId) {
       const tools = Array.from(component.toolSet.values());
-      await this.hookModule.executeHooks('component:afterRegister', {
-        type: 'component:afterRegister',
+      await this.hookModule.executeHooks(HookType.COMPONENT_AFTER_REGISTER, {
+        type: HookType.COMPONENT_AFTER_REGISTER,
         timestamp: new Date(),
         instanceId: this.instanceId,
         componentId: id,
@@ -147,8 +148,8 @@ export class ComponentRegistry {
 
     // Before hook
     if (this.instanceId) {
-      await this.hookModule.executeHooks('component:beforeUnregister', {
-        type: 'component:beforeUnregister',
+      await this.hookModule.executeHooks(HookType.COMPONENT_BEFORE_UNREGISTER, {
+        type: HookType.COMPONENT_BEFORE_UNREGISTER,
         timestamp: new Date(),
         instanceId: this.instanceId,
         componentId: id,
@@ -160,8 +161,8 @@ export class ComponentRegistry {
 
     // After hook
     if (deleted && this.instanceId) {
-      await this.hookModule.executeHooks('component:afterUnregister', {
-        type: 'component:afterUnregister',
+      await this.hookModule.executeHooks(HookType.COMPONENT_AFTER_UNREGISTER, {
+        type: HookType.COMPONENT_AFTER_UNREGISTER,
         timestamp: new Date(),
         instanceId: this.instanceId,
         componentId: id,

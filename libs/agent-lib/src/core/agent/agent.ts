@@ -26,6 +26,7 @@ import {
   createRuntimeTaskComponent,
 } from '../../components/runtime-task/runtimeTaskComponent.js';
 import type { HookModule } from '../hooks/HookModule.js';
+import { HookType } from '../hooks/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import type { ISessionManager } from '../session/ISessionManager.js';
 import type { SessionState } from '../session/types.js';
@@ -309,7 +310,7 @@ export class Agent {
 
     // Register hook for new tasks to wake up the agent
     this.hookModule.on(
-      'task:submitted',
+      HookType.TASK_SUBMITTED,
       async (ctx) => {
         // Only process tasks destined for this agent
         if (ctx.instanceId === this.instanceId) {
@@ -400,8 +401,8 @@ export class Agent {
    */
   async start(): Promise<Agent> {
     // Trigger agent:starting hook
-    await this.hookModule.executeHooks('agent:starting', {
-      type: 'agent:starting',
+    await this.hookModule.executeHooks(HookType.AGENT_STARTING, {
+      type: HookType.AGENT_STARTING,
       timestamp: new Date(),
       instanceId: this.instanceId,
     });
@@ -416,8 +417,8 @@ export class Agent {
     await this.requestLoop();
 
     // Trigger agent:started hook
-    await this.hookModule.executeHooks('agent:started', {
-      type: 'agent:started',
+    await this.hookModule.executeHooks(HookType.AGENT_STARTED, {
+      type: HookType.AGENT_STARTED,
       timestamp: new Date(),
       instanceId: this.instanceId,
     });
@@ -430,8 +431,8 @@ export class Agent {
    */
   complete(): void {
     // Trigger agent:completing hook
-    void this.hookModule.executeHooks('agent:completing', {
-      type: 'agent:completing',
+    void this.hookModule.executeHooks(HookType.AGENT_COMPLETING, {
+      type: HookType.AGENT_COMPLETING,
       timestamp: new Date(),
       instanceId: this.instanceId,
     });
@@ -441,8 +442,8 @@ export class Agent {
     void this.endSession();
 
     // Trigger agent:completed hook
-    void this.hookModule.executeHooks('agent:completed', {
-      type: 'agent:completed',
+    void this.hookModule.executeHooks(HookType.AGENT_COMPLETED, {
+      type: HookType.AGENT_COMPLETED,
       timestamp: new Date(),
       instanceId: this.instanceId,
     });
@@ -460,8 +461,8 @@ export class Agent {
     details?: Record<string, unknown>,
   ): void {
     // Trigger agent:aborting hook
-    void this.hookModule.executeHooks('agent:aborting', {
-      type: 'agent:aborting',
+    void this.hookModule.executeHooks(HookType.AGENT_ABORTING, {
+      type: HookType.AGENT_ABORTING,
       timestamp: new Date(),
       instanceId: this.instanceId,
       reason: abortReason,
@@ -479,8 +480,8 @@ export class Agent {
     void this.endSession('aborted');
 
     // Trigger agent:aborted hook
-    void this.hookModule.executeHooks('agent:aborted', {
-      type: 'agent:aborted',
+    void this.hookModule.executeHooks(HookType.AGENT_ABORTED, {
+      type: HookType.AGENT_ABORTED,
       timestamp: new Date(),
       instanceId: this.instanceId,
       reason: abortReason,

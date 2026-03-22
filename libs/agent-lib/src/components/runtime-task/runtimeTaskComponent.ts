@@ -1,10 +1,10 @@
-import { ToolComponent, ExportOptions, type ExportResult } from '../core/toolComponent.js';
+import {
+  ToolComponent,
+  ExportOptions,
+  type ExportResult,
+} from '../core/toolComponent.js';
 import { Tool, ToolCallResult, TUIElement, tdiv, th, tp } from '../ui/index.js';
-import type {
-  RuntimeTask,
-  RuntimeTaskResult,
-  TaskPriority,
-} from './types.js';
+import type { RuntimeTask, RuntimeTaskResult, TaskPriority } from './types.js';
 import {
   runtimeTaskToolSchemas,
   type RuntimeTaskToolName,
@@ -18,6 +18,7 @@ import {
 import { type ITaskStorage, InMemoryTaskStorage } from './storage.js';
 import type { ICentralTaskQueue } from '../../core/runtime/index.js';
 import type { HookModule } from '../../core/hooks/HookModule.js';
+import { HookType } from '../../core/hooks/types.js';
 
 export interface RuntimeTaskComponentConfig {
   instanceId: string;
@@ -167,7 +168,7 @@ export class RuntimeTaskComponent extends ToolComponent {
       const mergedTasks = Array.from(allTasks.values()).sort(
         (a, b) =>
           (b.priority === 'urgent' ? 1 : 0) -
-          (a.priority === 'urgent' ? 1 : 0) ||
+            (a.priority === 'urgent' ? 1 : 0) ||
           b.createdAt.getTime() - a.createdAt.getTime(),
       );
 
@@ -239,8 +240,8 @@ export class RuntimeTaskComponent extends ToolComponent {
 
           // Trigger task:completed hook
           if (this._hookModule) {
-            await this._hookModule.executeHooks('task:completed', {
-              type: 'task:completed',
+            await this._hookModule.executeHooks(HookType.TASK_COMPLETED, {
+              type: HookType.TASK_COMPLETED,
               timestamp: new Date(),
               instanceId: this.config.instanceId,
               taskId: params.taskId,
@@ -249,12 +250,15 @@ export class RuntimeTaskComponent extends ToolComponent {
           }
         } else {
           const error = new Error(params.error ?? 'Task failed');
-          await this.centralTaskQueue.fail(params.taskId, params.error ?? 'Task failed');
+          await this.centralTaskQueue.fail(
+            params.taskId,
+            params.error ?? 'Task failed',
+          );
 
           // Trigger task:failed hook
           if (this._hookModule && task) {
-            await this._hookModule.executeHooks('task:failed', {
-              type: 'task:failed',
+            await this._hookModule.executeHooks(HookType.TASK_FAILED, {
+              type: HookType.TASK_FAILED,
               timestamp: new Date(),
               instanceId: this.config.instanceId,
               taskId: params.taskId,
@@ -290,16 +294,16 @@ export class RuntimeTaskComponent extends ToolComponent {
         // Trigger hooks
         if (this._hookModule) {
           if (params.success) {
-            await this._hookModule.executeHooks('task:completed', {
-              type: 'task:completed',
+            await this._hookModule.executeHooks(HookType.TASK_COMPLETED, {
+              type: HookType.TASK_COMPLETED,
               timestamp: new Date(),
               instanceId: this.config.instanceId,
               taskId: params.taskId,
               result,
             });
           } else {
-            await this._hookModule.executeHooks('task:failed', {
-              type: 'task:failed',
+            await this._hookModule.executeHooks(HookType.TASK_FAILED, {
+              type: HookType.TASK_FAILED,
               timestamp: new Date(),
               instanceId: this.config.instanceId,
               taskId: params.taskId,
@@ -407,8 +411,8 @@ export class RuntimeTaskComponent extends ToolComponent {
 
     // Trigger task:submitted hook
     if (this._hookModule) {
-      await this._hookModule.executeHooks('task:submitted', {
-        type: 'task:submitted',
+      await this._hookModule.executeHooks(HookType.TASK_SUBMITTED, {
+        type: HookType.TASK_SUBMITTED,
         timestamp: new Date(),
         instanceId: this.config.instanceId,
         taskId,
@@ -453,7 +457,9 @@ export class RuntimeTaskComponent extends ToolComponent {
 
     try {
       // Get tasks from local storage
-      const localActiveTasks = await this.storage.getActive(this.config.instanceId);
+      const localActiveTasks = await this.storage.getActive(
+        this.config.instanceId,
+      );
 
       // Get tasks from central queue (if available)
       let centralActiveTasks: RuntimeTask[] = [];
