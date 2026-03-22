@@ -558,7 +558,7 @@ export class AgentRuntime implements IAgentRuntime {
     const mergedApi = {
       ...this.defaultApiConfig,
       ...overrides?.api,
-    };
+    } as Partial<ProviderSettings>;
 
     // Build final options: soul.agent + soul.components + merged config
     const options: AgentFactoryOptions = {
