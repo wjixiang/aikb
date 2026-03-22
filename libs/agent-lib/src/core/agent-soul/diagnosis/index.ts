@@ -22,7 +22,7 @@ export function createDiagnosisAgentSoul(): AgentFactoryOptions {
             zaiApiLine: 'china_coding',
         },
         components: [
-            { id: 'bibliography-search', component: new BibliographySearchComponent() },
+            { id: 'bibliography-search', component: new BibliographySearchComponent() }
         ],
     };
 }
