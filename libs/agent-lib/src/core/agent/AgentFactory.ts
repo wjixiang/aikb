@@ -34,19 +34,22 @@ export interface AgentSoul {
 }
 
 /**
+ * Minimal Agent Soul configuration for factory functions
+ * This is the lightweight interface returned by createAgentSoul() functions
+ * API configuration is managed by Runtime
+ */
+export interface AgentSoulConfig {
+  agent?: AgentSoul;
+  components?: ComponentRegistration[];
+}
+
+/**
  * Configuration options for creating an Agent
  */
-export interface AgentFactoryOptions {
-  agent?: AgentSoul
+export interface AgentFactoryOptions extends AgentSoulConfig {
   api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;
-
-  /**
-   * Components to register with the agent's workspace
-   * These will be automatically registered when the agent is created
-   */
-  components?: ComponentRegistration[];
 }
 
 /**

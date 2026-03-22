@@ -1,7 +1,8 @@
 /**
  * ComponentRegistry Tests
  *
- * Tests for the ComponentRegistry class
+ * Tests for the ComponentRegistry class including registration,
+ * priority sorting, and tool management.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -13,6 +14,12 @@ describe('ComponentRegistry', () => {
 
     beforeEach(() => {
         registry = new ComponentRegistry();
+    });
+
+    describe('constructor', () => {
+        it('should create ComponentRegistry instance', () => {
+            expect(registry).toBeDefined();
+        });
     });
 
     describe('Registration', () => {
@@ -144,6 +151,86 @@ describe('ComponentRegistry', () => {
 
             expect(registry.size).toBe(0);
             expect(registry.getAllTools().length).toBe(0);
+        });
+    });
+
+    describe('Error Cases', () => {
+        it('should handle get of non-existent component', () => {
+            const result = registry.get('non-existent');
+            expect(result).toBeUndefined();
+        });
+
+        it('should handle getRegistration of non-existent component', () => {
+            const result = registry.getRegistration('non-existent');
+            expect(result).toBeUndefined();
+        });
+
+        it('should handle unregister of non-existent component (sync)', () => {
+            const result = registry.unregister('non-existent');
+            expect(result).toBe(false);
+        });
+
+        it('should get all registrations sorted by priority', () => {
+            const comp1 = new TestComponent();
+            const comp2 = new AnotherComponent();
+
+            registry.register('comp1', comp1, 20);
+            registry.register('comp2', comp2, 10);
+            registry.register('comp3', new TestComponent(), 30);
+
+            const registrations = registry.getAllRegistrations();
+
+            expect(registrations.length).toBe(3);
+            expect(registrations[0].id).toBe('comp2'); // priority 10
+            expect(registrations[1].id).toBe('comp1'); // priority 20
+            expect(registrations[2].id).toBe('comp3'); // priority 30
+        });
+
+        it('should handle empty registry for getAllTools', () => {
+            const tools = registry.getAllTools();
+            expect(tools).toEqual([]);
+        });
+
+        it('should handle empty registry for getToolCount', () => {
+            const count = registry.getToolCount();
+            expect(count).toBe(0);
+        });
+
+        it('should handle empty registry for getIds', () => {
+            const ids = registry.getIds();
+            expect(ids).toEqual([]);
+        });
+
+        it('should handle empty registry for getAll', () => {
+            const components = registry.getAll();
+            expect(components).toEqual([]);
+        });
+    });
+
+    describe('Priority Edge Cases', () => {
+        it('should handle components with same priority', () => {
+            const comp1 = new TestComponent();
+            const comp2 = new AnotherComponent();
+            const comp3 = new TestComponent();
+
+            registry.register('comp1', comp1, 5);
+            registry.register('comp2', comp2, 5);
+            registry.register('comp3', comp3, 5);
+
+            const all = registry.getAll();
+            expect(all.length).toBe(3);
+        });
+
+        it('should handle components with no priority (defaults to 0)', () => {
+            const comp1 = new TestComponent();
+            const comp2 = new AnotherComponent();
+
+            registry.register('comp1', comp1); // no priority
+            registry.register('comp2', comp2, 10);
+
+            const all = registry.getAll();
+            expect(all[0]).toBe(comp1); // undefined priority treated as 0
+            expect(all[1]).toBe(comp2);
         });
     });
 });

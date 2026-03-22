@@ -72,9 +72,11 @@
 
 import type { Agent } from '../agent/agent.js';
 import type { AgentContainer, AgentCreationOptions } from '../di/container.js';
+import type { ProviderSettings } from '../types/provider-settings.js';
 import {
   AgentFactory,
   type AgentFactoryOptions,
+  type AgentSoulConfig,
 } from '../agent/AgentFactory.js';
 import type {
   AgentMetadata,
@@ -89,6 +91,7 @@ import type {
   IRuntimeControlClient,
   RuntimeControlAgentOptions,
   RuntimeStats,
+  RuntimeControlProviderSettings,
 } from './types.js';
 import type { IAgentRegistry } from './AgentRegistry.js';
 import { AgentRegistry } from './AgentRegistry.js';
@@ -166,10 +169,14 @@ export interface IAgentRuntime {
 
   /**
    * Create a new agent instance with the specified configuration.
-   * @param options Agent factory options including config and container settings
+   * @param soul Agent soul configuration (agent config + components)
+   * @param overrides Optional overrides for api, workspace, observers
    * @returns Promise resolving to the new agent's instance ID
    */
-  createAgent(options: AgentFactoryOptions): Promise<string>;
+  createAgent(
+    soul: AgentSoulConfig,
+    overrides?: Partial<AgentFactoryOptions>,
+  ): Promise<string>;
 
   /**
    * Start an idle agent, transitioning it to running state.
@@ -312,6 +319,9 @@ export class AgentRuntime implements IAgentRuntime {
   /** Runtime configuration options */
   private config: AgentRuntimeConfig;
 
+  /** Default API configuration for all agents */
+  private defaultApiConfig: Partial<ProviderSettings> | undefined;
+
   /**
    * Map of agent instance IDs to their DI containers.
    * Each container provides isolated dependency resolution for its agent.
@@ -383,6 +393,8 @@ export class AgentRuntime implements IAgentRuntime {
       maxAgents: 10,
       ...config,
     };
+
+    this.defaultApiConfig = config.defaultApiConfig;
 
     // Initialize core components that don't require DI container
     // These are shared across all agents managed by this runtime

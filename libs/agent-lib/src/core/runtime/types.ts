@@ -435,6 +435,9 @@ export interface AgentRuntimeConfig {
   /** Maximum number of agents (default: 10) */
   maxAgents?: number;
 
+  /** Default API configuration for all agents created by this runtime */
+  defaultApiConfig?: Partial<RuntimeControlProviderSettings>;
+
   /** Persistence configuration */
   persistence?: PersistenceConfig;
 
