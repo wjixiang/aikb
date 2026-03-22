@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { SecurityConfig, ValidationResult, DEFAULT_SECURITY_CONFIG } from '../../components/index.js';
+import { SecurityConfig, ScriptValidationResult, DEFAULT_SECURITY_CONFIG } from '../../components/index.js';
 
 /**
  * Script execution context with security constraints
@@ -24,7 +24,7 @@ export class SecureExecutionContext {
     /**
      * Validate a script before execution
      */
-    async validateScript(script: string): Promise<ValidationResult> {
+    async validateScript(script: string): Promise<ScriptValidationResult> {
         const errors: string[] = [];
         const warnings: string[] = [];
 
