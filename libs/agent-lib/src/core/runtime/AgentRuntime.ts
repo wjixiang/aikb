@@ -545,18 +545,37 @@ export class AgentRuntime implements IAgentRuntime {
    *   }
    * });
    */
-  async createAgent(options: AgentFactoryOptions): Promise<string> {
+  async createAgent(
+    soul: AgentSoulConfig,
+    overrides?: Partial<AgentFactoryOptions>,
+  ): Promise<string> {
     if (this.containers.size >= (this.config.maxAgents ?? 10)) {
       throw new Error(`Maximum agent limit reached: ${this.config.maxAgents}`);
     }
 
+    // Merge API config: runtime default + overrides
+    // overrides take precedence over runtime defaults
+    const mergedApi = {
+      ...this.defaultApiConfig,
+      ...overrides?.api,
+    };
+
+    // Build final options: soul.agent + soul.components + merged config
+    const options: AgentFactoryOptions = {
+      agent: soul.agent,
+      components: soul.components,
+      api: mergedApi,
+      workspace: overrides?.workspace,
+      observers: overrides?.observers,
+    };
+
     // Extract runtimePermissions if provided (for backward compatibility)
     const runtimePermissions = (
-      options as unknown as { runtimePermissions?: RuntimeControlPermissions }
-    ).runtimePermissions;
+      overrides as unknown as { runtimePermissions?: RuntimeControlPermissions }
+    )?.runtimePermissions;
     const parentInstanceId = (
-      options as unknown as { parentInstanceId?: string }
-    ).parentInstanceId;
+      overrides as unknown as { parentInstanceId?: string }
+    )?.parentInstanceId;
 
     // Create agent container using AgentFactory
     const container = AgentFactory.create(options);
