@@ -7,7 +7,6 @@
  * - Memory
  * - Tools
  * - Expert system
- * - Thinking
  * - Types
  */
 
@@ -43,9 +42,9 @@ export type { IMemoryModule, MemoryModuleConfig } from './memory/index.js';
 export type {
   ApiMessage,
   MessageBuilder,
-  ThinkingBlock,
-  ExtendedContentBlock,
   MessageAddedCallback,
+  ExtendedContentBlock,
+  ThinkingBlock,
 } from './memory/index.js';
 
 // Prompts
@@ -53,9 +52,6 @@ export * from './prompts/index.js';
 
 // Stateful Context
 export * from './statefulContext/index.js';
-
-// Thinking
-export * from './thinking/index.js';
 
 // Tools
 export * from './tools/index.js';

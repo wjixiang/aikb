@@ -13,7 +13,7 @@ export {
 } from './MemoryModule.js';
 
 // Type exports (IMemoryModule interface and related types)
-export type { IMemoryModule, MemoryModuleConfig, ThinkingPhaseResult } from './types.js';
+export type { IMemoryModule, MemoryModuleConfig } from './types.js';
 
 // Message types (migrated from task/task.type.ts)
-export type { ApiMessage, MessageBuilder, ThinkingBlock, ExtendedContentBlock, MessageAddedCallback } from './types.js';
+export type { ApiMessage, MessageBuilder, MessageAddedCallback, ExtendedContentBlock, ThinkingBlock } from './types.js';

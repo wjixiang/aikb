@@ -17,7 +17,8 @@ export interface ThinkingBlock {
 }
 
 /**
- * Extended content block type that includes custom thinking blocks
+ * Extended content block type for conversation messages.
+ * Includes Anthropic.ContentBlockParam and custom block types like ThinkingBlock.
  */
 export type ExtendedContentBlock = Anthropic.ContentBlockParam | ThinkingBlock;
 
@@ -111,12 +112,6 @@ export interface MemoryModuleConfig {
   /** Model to use for summarization */
   summaryModel?: string;
 }
-
-/**
- * Result from thinking phase
- * Re-exported from thinking module for convenience
- */
-export type ThinkingPhaseResult = import('../thinking/types.js').ThinkingPhaseResult;
 
 /**
  * Represents a changed section in workspace context diff

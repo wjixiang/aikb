@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ApiMessage, ThinkingBlock } from '../memory/types.js';
+import type { ApiMessage, ThinkingBlock } from '../memory/types.js';
 import { MessageFormatter } from './MessageFormatter.js';
 
 /**
@@ -156,8 +156,7 @@ export class PromptBuilder {
      *
      * This method:
      * - Filters out messages with non-relevant roles (only keeps user, assistant, system)
-     * - Removes ThinkingBlock content from messages that have content blocks
-     * - Returns a cleaned array of ApiMessage objects
+     * - Removes ThinkingBlock content from messages
      *
      * @param history - The raw conversation history to clean
      * @returns A cleaned array of ApiMessage objects
@@ -170,7 +169,7 @@ export class PromptBuilder {
                 msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system'
             )
             .map((msg) => {
-                // Filter out custom ThinkingBlock and keep only Anthropic.ContentBlockParam
+                // Filter out ThinkingBlock and keep only Anthropic.ContentBlockParam
                 const content = msg.content.filter(
                     (block): block is Anthropic.ContentBlockParam => block.type !== 'thinking'
                 );
