@@ -498,7 +498,6 @@ export class RuntimeTaskComponent extends ToolComponent {
         new tp({
           content: `Active: ${allTasks.length} (Pending: ${pendingTasks.length} | Processing: ${processingTasks.length})`,
           indent: 1,
-          textStyle: { bold: true },
         }),
       );
 
@@ -515,9 +514,6 @@ export class RuntimeTaskComponent extends ToolComponent {
             new tp({
               content: `${index + 1}. ${prefix}${pinPrefix}[${task.priority}] ${task.description.substring(0, 55)}${task.description.length > 55 ? '...' : ''}`,
               indent: 1,
-              textStyle: {
-                bold: task.priority === 'urgent' || task.priority === 'high',
-              },
             }),
           );
           elements.push(
@@ -533,7 +529,6 @@ export class RuntimeTaskComponent extends ToolComponent {
             new tp({
               content: `... and ${allTasks.length - 10} more task(s)`,
               indent: 1,
-              textStyle: { italic: true },
             }),
           );
         }

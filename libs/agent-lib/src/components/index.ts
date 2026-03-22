@@ -278,58 +278,47 @@ export {
  */
 export { KnowledgeManageComponent } from './knowledgeManageComponent.js';
 
-// ==================== FileSystem Component ====================
+// ==================== FileSystem Module ====================
 
 /**
  * FileSystem Module
  *
- * Cloud file storage component for agent file management.
- * Provides file CRUD, markdown editing, and format conversion via file-renderer service.
+ * File management components for agents.
+ * Provides Markdown file editing via file-renderer service.
  */
-export {
-  FileSystemComponent,
-  createFileSystemComponent,
-  type FileSystemComponentConfig,
-  type FileSystemComponentState,
-  type FileSystemHooks,
-} from './fileSystem/fileSystem.component.js';
 
 export {
-  fileSystemToolSchemas,
-  listFilesParamsSchema,
-  readFileParamsSchema,
-  createFileParamsSchema,
-  updateFileParamsSchema,
-  deleteFileParamsSchema,
-  moveFileParamsSchema,
-  copyFileParamsSchema,
-  fileExistsParamsSchema,
-  getFileMetadataParamsSchema,
-  readMarkdownByPageParamsSchema,
-  editMarkdownReplaceParamsSchema,
-  editMarkdownInsertParamsSchema,
-  editMarkdownDeleteParamsSchema,
-  convertToMarkdownParamsSchema,
-  convertToTextParamsSchema,
-} from './fileSystem/fileSystemSchemas.js';
+  MarkdownComponent,
+  createMarkdownComponent,
+  type MarkdownComponentConfig,
+  type MarkdownComponentState,
+  type MarkdownHooks,
+  type MarkdownToolName,
+} from './fileSystem/markdown/index.js';
 
 export type {
-  FileSystemToolName,
-  FileSystemToolReturnTypes,
-  FileListItem,
-  FileListResponse,
-  FileReadResponse,
+  CreateFileParams,
+  UpdateFileParams,
+  DeleteFileParams,
+  CopyFileParams,
+  FileExistsParams,
+  GetFileMetadataParams,
+  ReadMarkdownByPageParams,
+  EditMarkdownReplaceParams,
+  EditMarkdownInsertParams,
+  EditMarkdownDeleteParams,
+} from './fileSystem/markdown/markdownSchemas.js';
+
+export type {
   FileCreateResponse,
   FileUpdateResponse,
   FileDeleteResponse,
-  FileMoveResponse,
   FileCopyResponse,
   FileExistsResponse,
   FileMetadataResponse,
   MarkdownPageResponse,
   MarkdownEditResponse,
-  ConversionResponse,
-} from './fileSystem/index.js';
+} from './fileSystem/markdown/markdown.types.js';
 
 // Test Components - Re-export for convenience in tests
 // Located in: core/statefulContext/__tests__/testComponents.ts

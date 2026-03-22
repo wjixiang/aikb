@@ -26,6 +26,9 @@ export type { thMetadata } from './text/th.js';
 export { tp } from './text/tp.js';
 export type { tpMetadata } from './text/tp.js';
 
+export { tbr } from './text/tbr.js';
+export type { tbrMetadata } from './text/tbr.js';
+
 export { ttext } from './text/ttext.js';
 export type { ttextMetadata } from './text/ttext.js';
 

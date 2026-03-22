@@ -1,65 +1,53 @@
 /**
  * VirtualWorkspace Tests
  *
- * Tests for the new component-based architecture (without Skill system)
+ * Tests for the component-based architecture using AgentContainer DI
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import 'reflect-metadata';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { AgentContainer } from '../../di/container.js';
 import { VirtualWorkspace } from '../virtualWorkspace.js';
-import type { DIComponentRegistration } from '../virtualWorkspace.js';
+import type { DIComponentRegistration } from '../../di/UnifiedAgentConfig.js';
 import { TestComponent, TestComponent2 } from './testComponents.js';
-import { ToolManager } from '../../tools/ToolManager.js';
-import { ComponentRegistry } from '../../components/ComponentRegistry.js';
-import { GlobalToolProvider } from '../../tools/providers/GlobalToolProvider.js';
 
 function createTestWorkspace(
   config: Partial<{ id: string; name: string }> = {},
   diComponents?: DIComponentRegistration[],
-): VirtualWorkspace {
-  const toolManager = new ToolManager();
-  const componentRegistry = new ComponentRegistry();
-  const globalToolProvider = new GlobalToolProvider();
+): Promise<{ workspace: VirtualWorkspace; container: AgentContainer }> {
+  const container = new AgentContainer({
+    api: { apiKey: 'test-key' },
+    workspace: {
+      id: config.id ?? 'test-workspace',
+      name: config.name ?? 'Test Workspace',
+    },
+    components: diComponents,
+  });
 
-  const workspace = new VirtualWorkspace(
-    toolManager,
-    componentRegistry,
-    globalToolProvider,
-    config,
-    diComponents,
-  );
-  (workspace as any).init();
-  return workspace;
+  return container.getAgent().then((agent) => ({
+    workspace: agent.workspace as VirtualWorkspace,
+    container,
+  }));
 }
 
 describe('VirtualWorkspace (Component-based)', () => {
-  let workspace: VirtualWorkspace;
-
-  beforeEach(() => {
-    workspace = createTestWorkspace({
-      id: 'test-workspace',
-      name: 'Test Workspace',
-    });
-  });
-
   describe('Component Registration', () => {
-    it('should register a component via DI', () => {
+    it('should register a component via DI', async () => {
       const component = new TestComponent();
       const diComponents: DIComponentRegistration[] = [
         { id: 'test-component', component },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'di-test',
-          name: 'DI Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'di-test', name: 'DI Test' },
         diComponents,
       );
 
-      const retrieved = ws.getComponent('test-component');
+      const retrieved = workspace.getComponent('test-component');
       expect(retrieved).toBe(component);
     });
 
-    it('should register multiple components via DI', () => {
+    it('should register multiple components via DI', async () => {
       const component1 = new TestComponent();
       const component2 = new TestComponent2();
 
@@ -67,19 +55,17 @@ describe('VirtualWorkspace (Component-based)', () => {
         { id: 'comp1', component: component1 },
         { id: 'comp2', component: component2 },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'multi-test',
-          name: 'Multi Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'multi-test', name: 'Multi Test' },
         diComponents,
       );
 
-      expect(ws.getComponent('comp1')).toBe(component1);
-      expect(ws.getComponent('comp2')).toBe(component2);
+      expect(workspace.getComponent('comp1')).toBe(component1);
+      expect(workspace.getComponent('comp2')).toBe(component2);
     });
 
-    it('should get all component keys', () => {
+    it('should get all component keys', async () => {
       const component1 = new TestComponent();
       const component2 = new TestComponent2();
 
@@ -87,15 +73,13 @@ describe('VirtualWorkspace (Component-based)', () => {
         { id: 'comp1', component: component1 },
         { id: 'comp2', component: component2 },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'keys-test',
-          name: 'Keys Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'keys-test', name: 'Keys Test' },
         diComponents,
       );
 
-      const keys = ws.getComponentKeys();
+      const keys = workspace.getComponentKeys();
       expect(keys).toContain('comp1');
       expect(keys).toContain('comp2');
     });
@@ -107,15 +91,13 @@ describe('VirtualWorkspace (Component-based)', () => {
       const diComponents: DIComponentRegistration[] = [
         { id: 'test-component', component },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'render-test',
-          name: 'Render Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'render-test', name: 'Render Test' },
         diComponents,
       );
 
-      const rendered = await ws.render();
+      const rendered = await workspace.render();
       expect(rendered).toContain('VIRTUAL WORKSPACE: Render Test');
       expect(rendered).toContain('test-component');
     });
@@ -125,103 +107,117 @@ describe('VirtualWorkspace (Component-based)', () => {
       const diComponents: DIComponentRegistration[] = [
         { id: 'test-component', component },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'section-test',
-          name: 'Section Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'section-test', name: 'Section Test' },
         diComponents,
       );
 
-      const rendered = await ws.renderComponentToolsSection();
-      expect(rendered?.render()).toContain('COMPONENTS');
-      expect(rendered?.render()).toContain('test-component');
+      const rendered = await workspace.renderComponentToolsSection();
+      expect(rendered?.render()).toContain('COMPONENT TOOLS');
+      expect(rendered?.render()).toContain('test_tool');
     });
   });
 
   describe('Tool Management', () => {
-    it('should get available tools from components', () => {
+    it('should get available tools from components', async () => {
       const component = new TestComponent();
       const diComponents: DIComponentRegistration[] = [
         { id: 'test-component', component },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'tool-test',
-          name: 'Tool Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'tool-test', name: 'Tool Test' },
         diComponents,
       );
 
-      const tools = ws.getAvailableTools();
+      const tools = workspace.getAvailableTools();
       expect(tools.length).toBeGreaterThan(0);
       expect(tools.find((t) => t.toolName === 'test_tool')).toBeDefined();
     });
 
-    it('should check if tool is available', () => {
+    it('should check if tool is available', async () => {
       const component = new TestComponent();
       const diComponents: DIComponentRegistration[] = [
         { id: 'test-component', component },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'avail-test',
-          name: 'Avail Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'avail-test', name: 'Avail Test' },
         diComponents,
       );
 
-      expect(ws.isToolAvailable('test_tool')).toBe(true);
-      expect(ws.isToolAvailable('nonexistent_tool')).toBe(false);
+      expect(workspace.isToolAvailable('test_tool')).toBe(true);
+      expect(workspace.isToolAvailable('nonexistent_tool')).toBe(false);
     });
 
     it('should execute tool call', async () => {
       const component = new TestComponent();
-      const handleToolCallSpy = vi.spyOn(component, 'handleToolCall');
       const diComponents: DIComponentRegistration[] = [
         { id: 'test-component', component },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'exec-test',
-          name: 'Exec Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'exec-test', name: 'Exec Test' },
         diComponents,
       );
 
-      await ws.handleToolCall('test_tool', {});
-
-      expect(handleToolCallSpy).toHaveBeenCalledWith('test_tool', {});
+      const result = await workspace.handleToolCall('test_tool', {});
+      expect(result.success).toBe(true);
     });
   });
 
   describe('Configuration', () => {
-    it('should get workspace config', () => {
+    it('should get workspace config', async () => {
+      const { workspace } = await createTestWorkspace({
+        id: 'test-workspace',
+        name: 'Test Workspace',
+      });
+
       const config = workspace.getConfig();
       expect(config.id).toBe('test-workspace');
       expect(config.name).toBe('Test Workspace');
     });
 
-    it('should get workspace stats', () => {
+    it('should get workspace stats', async () => {
       const component = new TestComponent();
       const diComponents: DIComponentRegistration[] = [
         { id: 'test-component', component },
       ];
-      const ws = createTestWorkspace(
-        {
-          id: 'stats-test',
-          name: 'Stats Test',
-        },
+
+      const { workspace } = await createTestWorkspace(
+        { id: 'stats-test', name: 'Stats Test' },
         diComponents,
       );
 
-      const stats = ws.getStats();
+      const stats = workspace.getStats();
       expect(stats.componentCount).toBe(1);
       expect(stats.componentKeys).toContain('test-component');
     });
   });
 
   describe('render component according to render mode', () => {
-    it('should render in markdown', async () => {});
+    it('should render in markdown', async () => {
+      const component = new TestComponent();
+      const diComponents: DIComponentRegistration[] = [
+        { id: 'test-component', component },
+      ];
+
+      const container = new AgentContainer({
+        api: { apiKey: 'test-key' },
+        workspace: {
+          id: 'markdown-test',
+          name: 'Markdown Test',
+          renderMode: 'markdown',
+        },
+        components: diComponents,
+      });
+
+      const agent = await container.getAgent();
+      const workspace = agent.workspace as VirtualWorkspace;
+
+      const rendered = await workspace.render();
+      expect(rendered).toContain('VIRTUAL WORKSPACE: Markdown Test');
+    });
   });
 });

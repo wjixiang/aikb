@@ -3,206 +3,238 @@
  */
 
 import { TUIElement } from '../TUIElement.js';
-import { ElementMetadata, HeadingLevel, TextStyle } from '../../core/types.js';
+import { ElementMetadata, HeadingLevel } from '../../core/types.js';
 
 /**
  * Metadata for th (heading) element
  */
 export interface thMetadata extends ElementMetadata {
-    /** Heading level (1-6) */
-    level?: HeadingLevel;
-    /** Whether to underline the heading */
-    underline?: boolean;
-    /** Text styling options */
-    textStyle?: TextStyle;
+  /** Heading level (1-6) */
+  level?: HeadingLevel;
+  /** Whether to underline the heading */
+  underline?: boolean;
 }
 
 /**
  * th (heading) element - displays text as a heading
  */
 export class th extends TUIElement {
-    constructor(metadata: thMetadata) {
-        super(metadata);
+  constructor(metadata: thMetadata) {
+    super(metadata);
+  }
+
+  /**
+   * Render heading element
+   * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
+   */
+  render(renderMode?: 'tui' | 'markdown'): string {
+    return this.renderWithWidth(undefined, renderMode);
+  }
+
+  /**
+   * Render heading element with a specified available width
+   * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
+   */
+  override renderWithWidth(
+    availableWidth: number | undefined,
+    renderMode?: 'tui' | 'markdown',
+  ): string {
+    const styles = this.computeStyles(availableWidth, renderMode);
+    const content = this.metadata.content;
+    const thMetadata = this.metadata as thMetadata;
+    const level = thMetadata.level ?? 1;
+    const underline = thMetadata.underline ?? false;
+
+    const finalContent = content ?? '';
+
+    // Calculate inner content area dimensions
+    const innerWidth =
+      styles.width -
+      styles.padding[1] -
+      styles.padding[3] -
+      (styles.border ? 2 : 0);
+    const innerHeight =
+      styles.height -
+      styles.padding[0] -
+      styles.padding[2] -
+      (styles.border ? 2 : 0);
+
+    let result = '';
+
+    // Top margin
+    for (let i = 0; i < styles.margin[0]; i++) {
+      result += ' '.repeat(styles.margin[3]) + '\n';
     }
 
-    /**
-     * Render heading element
-     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
-     */
-    render(renderMode?: 'tui' | 'markdown'): string {
-        return this.renderWithWidth(undefined, renderMode);
+    // Top border
+    if (styles.border) {
+      result += ' '.repeat(styles.margin[3]);
+      const borderChars = this.getBorderChars(styles.border);
+      result +=
+        borderChars.topLeft +
+        borderChars.horizontal.repeat(styles.width - 2) +
+        borderChars.topRight +
+        '\n';
     }
 
-    /**
-     * Render heading element with a specified available width
-     * @param renderMode - Rendering mode: 'tui' for terminal UI with borders, 'markdown' for markdown format
-     */
-    override renderWithWidth(availableWidth: number | undefined, renderMode?: 'tui' | 'markdown'): string {
-        const styles = this.computeStyles(availableWidth, renderMode);
-        const content = this.metadata.content;
-        const thMetadata = this.metadata as thMetadata;
-        const level = thMetadata.level ?? 1;
-        const underline = thMetadata.underline ?? false;
-        const textStyle = thMetadata.textStyle ?? {};
+    // Top padding
+    for (let i = 0; i < styles.padding[0]; i++) {
+      result += ' '.repeat(styles.margin[3]);
+      if (styles.border) {
+        const borderChars = this.getBorderChars(styles.border);
+        result +=
+          borderChars.vertical +
+          ' '.repeat(styles.width - 2) +
+          borderChars.vertical;
+      } else {
+        result += ' '.repeat(styles.width);
+      }
+      result += '\n';
+    }
 
-        const finalContent = content ?? '';
-        const styledContent = this.applyTextStyle(finalContent, textStyle);
-
-        // Calculate inner content area dimensions
-        const innerWidth = styles.width - styles.padding[1] - styles.padding[3] - (styles.border ? 2 : 0);
-        const innerHeight = styles.height - styles.padding[0] - styles.padding[2] - (styles.border ? 2 : 0);
-
-        let result = '';
-
-        // Top margin
-        for (let i = 0; i < styles.margin[0]; i++) {
-            result += ' '.repeat(styles.margin[3]) + '\n';
+    // Wrap content to fit inner width
+    let contentLines: string[] = [];
+    const rawLines = finalContent.split('\n');
+    for (let index = 0; index < rawLines.length; index++) {
+      let currentLine = rawLines[index];
+      if (innerWidth > 0) {
+        while (currentLine.length > innerWidth) {
+          contentLines.push(currentLine.slice(0, innerWidth));
+          currentLine = currentLine.slice(innerWidth);
         }
+      }
+      contentLines.push(currentLine);
+    }
 
-        // Top border
+    // Render content area
+    const contentHeight = Math.max(
+      innerHeight,
+      contentLines.length + (underline ? contentLines.length : 0),
+    );
+    for (let i = 0; i < contentLines.length; i++) {
+      const line = contentLines[i];
+      result += ' '.repeat(styles.margin[3]);
+      if (styles.border) {
+        const borderChars = this.getBorderChars(styles.border);
+        result +=
+          borderChars.vertical +
+          this.padLine(line, styles.width - 2, styles.align) +
+          borderChars.vertical;
+      } else {
+        result += this.padLine(
+          line,
+          styles.width - styles.padding[1] - styles.padding[3],
+          styles.align,
+        );
+      }
+      result += '\n';
+
+      // Add underline after each line if specified
+      if (underline) {
+        const underlineLine = '─'.repeat(
+          Math.min(
+            line.length,
+            styles.width -
+              styles.padding[1] -
+              styles.padding[3] -
+              (styles.border ? 2 : 0),
+          ),
+        );
+        result += ' '.repeat(styles.margin[3]);
         if (styles.border) {
-            result += ' '.repeat(styles.margin[3]);
-            const borderChars = this.getBorderChars(styles.border);
-            result += borderChars.topLeft + borderChars.horizontal.repeat(styles.width - 2) + borderChars.topRight + '\n';
+          const borderChars = this.getBorderChars(styles.border);
+          result +=
+            borderChars.vertical +
+            this.padLine(underlineLine, styles.width - 2, styles.align) +
+            borderChars.vertical;
+        } else {
+          result += this.padLine(
+            underlineLine,
+            styles.width - styles.padding[1] - styles.padding[3],
+            styles.align,
+          );
         }
-
-        // Top padding
-        for (let i = 0; i < styles.padding[0]; i++) {
-            result += ' '.repeat(styles.margin[3]);
-            if (styles.border) {
-                const borderChars = this.getBorderChars(styles.border);
-                result += borderChars.vertical + ' '.repeat(styles.width - 2) + borderChars.vertical;
-            } else {
-                result += ' '.repeat(styles.width);
-            }
-            result += '\n';
-        }
-
-        // Wrap content to fit inner width
-        let contentLines: string[] = [];
-        const rawLines = styledContent.split('\n');
-        for (let index = 0; index < rawLines.length; index++) {
-            let currentLine = rawLines[index];
-            // If innerWidth is available, wrap the content
-            if (innerWidth > 0) {
-                while (currentLine.length > innerWidth) {
-                    contentLines.push(currentLine.slice(0, innerWidth));
-                    currentLine = currentLine.slice(innerWidth);
-                }
-            }
-            contentLines.push(currentLine);
-        }
-
-        // Render content area
-        const contentHeight = Math.max(innerHeight, contentLines.length + (underline ? contentLines.length : 0));
-        for (let i = 0; i < contentLines.length; i++) {
-            const line = contentLines[i];
-            result += ' '.repeat(styles.margin[3]);
-            if (styles.border) {
-                const borderChars = this.getBorderChars(styles.border);
-                result += borderChars.vertical + this.padLine(line, styles.width - 2, styles.align) + borderChars.vertical;
-            } else {
-                result += this.padLine(line, styles.width - styles.padding[1] - styles.padding[3], styles.align);
-            }
-            result += '\n';
-
-            // Add underline after each line if specified
-            if (underline) {
-                const underlineLine = '─'.repeat(Math.min(line.length, styles.width - styles.padding[1] - styles.padding[3] - (styles.border ? 2 : 0)));
-                result += ' '.repeat(styles.margin[3]);
-                if (styles.border) {
-                    const borderChars = this.getBorderChars(styles.border);
-                    result += borderChars.vertical + this.padLine(underlineLine, styles.width - 2, styles.align) + borderChars.vertical;
-                } else {
-                    result += this.padLine(underlineLine, styles.width - styles.padding[1] - styles.padding[3], styles.align);
-                }
-                result += '\n';
-            }
-        }
-
-        // Fill remaining content height with empty lines
-        const remainingHeight = contentHeight - contentLines.length - (underline ? contentLines.length : 0);
-        for (let i = 0; i < remainingHeight; i++) {
-            result += ' '.repeat(styles.margin[3]);
-            if (styles.border) {
-                const borderChars = this.getBorderChars(styles.border);
-                result += borderChars.vertical + ' '.repeat(styles.width - 2) + borderChars.vertical;
-            } else {
-                result += ' '.repeat(styles.width);
-            }
-            result += '\n';
-        }
-
-        // Bottom padding
-        for (let i = 0; i < styles.padding[2]; i++) {
-            result += ' '.repeat(styles.margin[3]);
-            if (styles.border) {
-                const borderChars = this.getBorderChars(styles.border);
-                result += borderChars.vertical + ' '.repeat(styles.width - 2) + borderChars.vertical;
-            } else {
-                result += ' '.repeat(styles.width);
-            }
-            result += '\n';
-        }
-
-        // Bottom border
-        if (styles.border) {
-            result += ' '.repeat(styles.margin[3]);
-            const borderChars = this.getBorderChars(styles.border);
-            result += borderChars.bottomLeft + borderChars.horizontal.repeat(styles.width - 2) + borderChars.bottomRight + '\n';
-        }
-
-        // Bottom margin
-        for (let i = 0; i < styles.margin[2]; i++) {
-            result += ' '.repeat(styles.margin[3]) + '\n';
-        }
-
-        // Trim trailing newlines only if no bottom margin
-        if (styles.margin[2] === 0) {
-            result = result.trimEnd();
-        }
-
-        return result;
+        result += '\n';
+      }
     }
 
-    /**
-     * Apply text styling to content
-     */
-    private applyTextStyle(content: string, style: TextStyle): string {
-        let result = content;
-
-        if (style.bold) {
-            // Terminal doesn't support bold, but we can use uppercase for emphasis
-            // result = result.toUpperCase();
-        }
-
-        if (style.italic) {
-            // Terminal doesn't support italic, skip
-        }
-
-        if (style.strikethrough) {
-            // Terminal doesn't support strikethrough, skip
-        }
-
-        return result;
+    // Fill remaining content height with empty lines
+    const remainingHeight =
+      contentHeight -
+      contentLines.length -
+      (underline ? contentLines.length : 0);
+    for (let i = 0; i < remainingHeight; i++) {
+      result += ' '.repeat(styles.margin[3]);
+      if (styles.border) {
+        const borderChars = this.getBorderChars(styles.border);
+        result +=
+          borderChars.vertical +
+          ' '.repeat(styles.width - 2) +
+          borderChars.vertical;
+      } else {
+        result += ' '.repeat(styles.width);
+      }
+      result += '\n';
     }
 
-    /**
-     * Calculate content dimensions
-     */
-    protected override calculateContentDimensions(availableWidth?: number, renderMode?: 'tui' | 'markdown'): { width: number; height: number } {
-        const content = this.metadata.content;
-        const finalContent = content ?? '';
-        const thMetadata = this.metadata as thMetadata;
-        const underline = thMetadata.underline ?? false;
-
-        const lines = finalContent.split('\n');
-        const maxWidth = Math.max(...lines.map((line: string) => line.length));
-        const height = lines.length + (underline ? lines.length : 0);
-
-        return {
-            width: maxWidth,
-            height
-        };
+    // Bottom padding
+    for (let i = 0; i < styles.padding[2]; i++) {
+      result += ' '.repeat(styles.margin[3]);
+      if (styles.border) {
+        const borderChars = this.getBorderChars(styles.border);
+        result +=
+          borderChars.vertical +
+          ' '.repeat(styles.width - 2) +
+          borderChars.vertical;
+      } else {
+        result += ' '.repeat(styles.width);
+      }
+      result += '\n';
     }
+
+    // Bottom border
+    if (styles.border) {
+      result += ' '.repeat(styles.margin[3]);
+      const borderChars = this.getBorderChars(styles.border);
+      result +=
+        borderChars.bottomLeft +
+        borderChars.horizontal.repeat(styles.width - 2) +
+        borderChars.bottomRight +
+        '\n';
+    }
+
+    // Bottom margin
+    for (let i = 0; i < styles.margin[2]; i++) {
+      result += ' '.repeat(styles.margin[3]) + '\n';
+    }
+
+    // Trim trailing newlines only if no bottom margin
+    if (styles.margin[2] === 0) {
+      result = result.trimEnd();
+    }
+
+    return result;
+  }
+
+  /**
+   * Calculate content dimensions
+   */
+  protected override calculateContentDimensions(
+    availableWidth?: number,
+    renderMode?: 'tui' | 'markdown',
+  ): { width: number; height: number } {
+    const content = this.metadata.content;
+    const finalContent = content ?? '';
+    const thMetadata = this.metadata as thMetadata;
+    const underline = thMetadata.underline ?? false;
+
+    const lines = finalContent.split('\n');
+    const maxWidth = Math.max(...lines.map((line: string) => line.length));
+    const height = lines.length + (underline ? lines.length : 0);
+
+    return {
+      width: maxWidth,
+      height,
+    };
+  }
 }

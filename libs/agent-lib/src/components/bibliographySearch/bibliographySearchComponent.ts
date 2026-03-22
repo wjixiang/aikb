@@ -111,7 +111,6 @@ export class BibliographySearchComponent extends ToolComponent {
         new tp({
           content: 'Retrieval Strategy:',
           indent: 1,
-          textStyle: { bold: true },
         }),
       );
       strategyDiv.addChild(
@@ -132,7 +131,6 @@ export class BibliographySearchComponent extends ToolComponent {
         new tp({
           content: 'Search Parameters:',
           indent: 1,
-          textStyle: { bold: true },
         }),
       );
 
@@ -258,7 +256,6 @@ export class BibliographySearchComponent extends ToolComponent {
       new tp({
         content: `${this.savedArticles.size} article(s) saved`,
         indent: 1,
-        textStyle: { bold: true },
       }),
     );
 
@@ -272,7 +269,6 @@ export class BibliographySearchComponent extends ToolComponent {
         new tp({
           content: `PMID: ${pmid}`,
           indent: 1,
-          textStyle: { bold: true },
         }),
       );
 
@@ -306,7 +302,6 @@ export class BibliographySearchComponent extends ToolComponent {
           new tp({
             content: `  Note: ${article.note}`,
             indent: 1,
-            textStyle: { italic: true },
           }),
         );
       }

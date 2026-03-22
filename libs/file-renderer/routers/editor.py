@@ -39,10 +39,6 @@ from models.edit import (
     FileEditResponse,
     FileExistsRequest,
     FileExistsResponse,
-    FileListFilter,
-    FileListItem,
-    FileListRequest,
-    FileListResponse,
     FileMetadata,
     FileMetadataResponse,
     FileMetadataUpdateRequest,
@@ -60,18 +56,7 @@ from models.edit import (
     RestoreVersionResponse,
     UpdateMode,
 )
-from models.pagination import (
-    CursorPaginationRequest,
-    OffsetPaginationRequest,
-    PaginatedResponse,
-    PaginationStrategy,
-    S3ListParams,
-)
 from services.docling_service import ConversionStatus, docling_service
-from services.pagination_service import (
-    PaginationService,
-    apply_pagination,
-)
 from services.storage_service import storage_service
 
 router = APIRouter(prefix="/editor", tags=["editor"])
@@ -79,6 +64,7 @@ logger = get_logger(__name__)
 
 
 # ==================== RESTful CRUD 接口 ====================
+
 
 @router.post(
     "/files",
@@ -94,7 +80,9 @@ logger = get_logger(__name__)
     },
 )
 async def create_file(
-    s3_key: str = Query(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Query(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
     request: FileCreateRESTRequest = ...,
 ):
     """
@@ -130,7 +118,9 @@ async def create_file(
             custom_metadata=request.custom_metadata,
         )
 
-        logger.info(f"File created: {s3_key}", extra={"s3_key": s3_key, "size": file_size})
+        logger.info(
+            f"File created: {s3_key}", extra={"s3_key": s3_key, "size": file_size}
+        )
 
         return FileRESTResponse(
             success=True,
@@ -143,7 +133,9 @@ async def create_file(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to create file: {e}", extra={"s3_key": s3_key}, exc_info=True)
+        logger.error(
+            f"Failed to create file: {e}", extra={"s3_key": s3_key}, exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create file: {str(e)}",
@@ -162,7 +154,9 @@ async def create_file(
     },
 )
 async def read_file(
-    s3_key: str = Path(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Path(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
     encoding: str = Query(default="utf-8", description="编码格式"),
     include_content: bool = Query(default=True, description="是否包含文件内容"),
 ):
@@ -205,7 +199,9 @@ async def read_file(
             detail=f"Failed to decode file with encoding: {encoding}",
         )
     except Exception as e:
-        logger.error(f"Failed to read file: {e}", extra={"s3_key": s3_key}, exc_info=True)
+        logger.error(
+            f"Failed to read file: {e}", extra={"s3_key": s3_key}, exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to read file: {str(e)}",
@@ -225,7 +221,9 @@ async def read_file(
     },
 )
 async def update_file(
-    s3_key: str = Path(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Path(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
     request: FileUpdateRESTRequest = ...,
 ):
     """
@@ -297,7 +295,11 @@ async def update_file(
 
         logger.info(
             f"File updated: {s3_key}",
-            extra={"s3_key": s3_key, "mode": request.mode.value, "version_id": version_id},
+            extra={
+                "s3_key": s3_key,
+                "mode": request.mode.value,
+                "version_id": version_id,
+            },
         )
 
         return FileRESTResponse(
@@ -317,7 +319,9 @@ async def update_file(
             detail=f"Failed to decode file with encoding: {request.encoding}",
         )
     except Exception as e:
-        logger.error(f"Failed to update file: {e}", extra={"s3_key": s3_key}, exc_info=True)
+        logger.error(
+            f"Failed to update file: {e}", extra={"s3_key": s3_key}, exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update file: {str(e)}",
@@ -336,7 +340,9 @@ async def update_file(
     },
 )
 async def delete_file(
-    s3_key: str = Path(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Path(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
     create_backup: bool = Query(default=False, description="删除前是否创建备份版本"),
 ):
     """
@@ -370,139 +376,17 @@ async def delete_file(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete file: {e}", extra={"s3_key": s3_key}, exc_info=True)
+        logger.error(
+            f"Failed to delete file: {e}", extra={"s3_key": s3_key}, exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete file: {str(e)}",
         )
 
 
-@router.get(
-    "/files",
-    response_model=FileListResponse,
-    summary="列出文件",
-    description="列出指定前缀的文件，支持分页和过滤",
-    responses={
-        200: {"description": "文件列表获取成功"},
-        500: HTTP_500_RESPONSE,
-    },
-)
-async def list_files(
-    prefix: str = Query(default="", description="文件路径前缀", examples=["notes/"]),
-    filter_type: FileListFilter = Query(default=FileListFilter.ALL, description="文件类型过滤"),
-    limit: int = Query(default=20, ge=1, le=100, description="每页数量"),
-    offset: int = Query(default=0, ge=0, description="偏移量"),
-    include_metadata: bool = Query(default=False, description="是否包含完整元数据"),
-):
-    """
-    列出文件
-
-    - **prefix**: 文件路径前缀过滤
-    - **filter_type**: 文件类型过滤 (all/text/markdown/json/pdf/image)
-    - **limit**: 每页数量 (1-100)
-    - **offset**: 偏移量
-    - **include_metadata**: 是否包含完整元数据
-    """
-    try:
-        # 列出文件
-        keys = storage_service.list_objects(prefix)
-
-        # 根据类型过滤
-        if filter_type != FileListFilter.ALL:
-            type_extensions = {
-                FileListFilter.TEXT: [".txt"],
-                FileListFilter.MARKDOWN: [".md", ".markdown"],
-                FileListFilter.JSON: [".json"],
-                FileListFilter.PDF: [".pdf"],
-                FileListFilter.IMAGE: [".png", ".jpg", ".jpeg", ".gif", ".bmp"],
-            }
-            extensions = type_extensions.get(filter_type, [])
-            if extensions:
-                keys = [k for k in keys if any(k.lower().endswith(ext) for ext in extensions)]
-
-        total = len(keys)
-
-        # 分页
-        paginated_keys = keys[offset : offset + limit]
-
-        # 构建文件列表
-        files = []
-        for key in paginated_keys:
-            try:
-                file_name = key.split("/")[-1] if "/" in key else key
-                file_size = storage_service.get_file_size(key)
-
-                # 获取内容类型
-                content_type = _guess_content_type(key)
-
-                if include_metadata:
-                    try:
-                        from config import settings
-
-                        head_response = storage_service.client.head_object(
-                            Bucket=settings.s3.bucket,
-                            Key=key.lstrip("/"),
-                        )
-                        modified_at = head_response.get("LastModified")
-                        etag = head_response.get("ETag")
-
-                        files.append(
-                            FileMetadata(
-                                s3_key=key,
-                                file_name=file_name,
-                                content_type=content_type,
-                                file_size=file_size,
-                                modified_at=modified_at,
-                                etag=etag,
-                            )
-                        )
-                    except Exception:
-                        files.append(
-                            FileListItem(
-                                s3_key=key,
-                                file_name=file_name,
-                                content_type=content_type,
-                                file_size=file_size,
-                            )
-                        )
-                else:
-                    files.append(
-                        FileListItem(
-                            s3_key=key,
-                            file_name=file_name,
-                            content_type=content_type,
-                            file_size=file_size,
-                        )
-                    )
-            except Exception as e:
-                logger.warning(f"Failed to get metadata for {key}: {e}")
-                files.append(
-                    FileListItem(
-                        s3_key=key,
-                        file_name=key.split("/")[-1] if "/" in key else key,
-                        content_type="unknown",
-                        file_size=0,
-                    )
-                )
-
-        return FileListResponse(
-            success=True,
-            message="Files retrieved successfully",
-            files=files,
-            total=total,
-            limit=limit,
-            offset=offset,
-            has_more=offset + len(files) < total,
-        )
-    except Exception as e:
-        logger.error(f"Failed to list files: {e}", extra={"prefix": prefix}, exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list files: {str(e)}",
-        )
-
-
 # ==================== 文件转换接口 ====================
+
 
 @router.post(
     "/files/{s3_key:path}/convert",
@@ -518,7 +402,9 @@ async def list_files(
     },
 )
 async def convert_file(
-    s3_key: str = Path(..., description="源文件S3路径", examples=["input/document.pdf"]),
+    s3_key: str = Path(
+        ..., description="源文件S3路径", examples=["input/document.pdf"]
+    ),
     request: FileConvertRequest = ...,
 ):
     """
@@ -625,6 +511,7 @@ async def convert_file(
 
 # ==================== 版本控制接口 ====================
 
+
 @router.get(
     "/files/{s3_key:path}/versions",
     response_model=FileVersionHistoryResponse,
@@ -637,7 +524,9 @@ async def convert_file(
     },
 )
 async def get_file_versions(
-    s3_key: str = Path(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Path(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
 ):
     """
     获取文件版本历史
@@ -705,7 +594,9 @@ async def get_file_versions(
     },
 )
 async def create_version(
-    s3_key: str = Path(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Path(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
     request: CreateVersionRequest = ...,
 ):
     """
@@ -760,7 +651,9 @@ async def create_version(
     },
 )
 async def restore_version(
-    s3_key: str = Path(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Path(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
     request: RestoreVersionRequest = ...,
 ):
     """
@@ -785,7 +678,9 @@ async def restore_version(
             )
 
         # 先创建当前版本的备份
-        new_version_id = await _create_version_internal(s3_key, f"Auto backup before restoring {request.version_id}")
+        new_version_id = await _create_version_internal(
+            s3_key, f"Auto backup before restoring {request.version_id}"
+        )
 
         # 恢复版本
         from config import settings
@@ -826,6 +721,7 @@ async def restore_version(
 
 
 # ==================== 批量操作接口 ====================
+
 
 @router.post(
     "/batch",
@@ -902,7 +798,9 @@ async def batch_operation(request: BatchOperationRequest):
                 break
 
     overall_success = failed == 0
-    status_code = status.HTTP_200_OK if overall_success else status.HTTP_207_MULTI_STATUS
+    status_code = (
+        status.HTTP_200_OK if overall_success else status.HTTP_207_MULTI_STATUS
+    )
 
     return BatchOperationResponse(
         success=overall_success,
@@ -917,6 +815,7 @@ async def batch_operation(request: BatchOperationRequest):
 
 # ==================== 元数据管理接口 ====================
 
+
 @router.get(
     "/files/{s3_key:path}/metadata",
     response_model=FileMetadataResponse,
@@ -929,7 +828,9 @@ async def batch_operation(request: BatchOperationRequest):
     },
 )
 async def get_file_metadata(
-    s3_key: str = Path(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Path(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
 ):
     """
     获取文件元数据
@@ -1004,7 +905,9 @@ async def get_file_metadata(
     },
 )
 async def update_file_metadata(
-    s3_key: str = Path(..., description="S3存储路径(key)", examples=["notes/my-note.md"]),
+    s3_key: str = Path(
+        ..., description="S3存储路径(key)", examples=["notes/my-note.md"]
+    ),
     request: FileMetadataUpdateRequest = ...,
 ):
     """
@@ -1057,6 +960,7 @@ async def update_file_metadata(
 
 
 # ==================== 统一操作接口（保留原有功能） ====================
+
 
 @router.post(
     "/unified",
@@ -1115,6 +1019,7 @@ async def editor_unified(request: EditorUnifiedRequest):
 
 
 # ==================== 独立操作接口（保留原有功能） ====================
+
 
 @router.post(
     "/create",
@@ -1463,156 +1368,8 @@ async def editor_exists(
         )
 
 
-# ==================== 文件列表分页接口（保留原有功能） ====================
-
-@router.get(
-    "/list",
-    response_model=PaginatedResponse[dict],
-    summary="列出S3文件（分页）",
-    description="""
-    分页列出S3存储中的文件。
-
-    - 支持 Offset 和 Cursor 两种分页策略
-    - Offset 分页: 使用 page 和 page_size 参数
-    - Cursor 分页: 使用 continuation_token 参数（S3原生分页）
-    - 支持前缀过滤
-    """,
-    responses={
-        200: {"description": "成功获取文件列表"},
-        **COMMON_RESPONSES,
-    },
-)
-async def editor_list(
-    strategy: PaginationStrategy = Query(
-        default=PaginationStrategy.OFFSET,
-        description="分页策略",
-        examples=["offset"],
-    ),
-    prefix: str = Query(
-        default="",
-        description="文件前缀过滤",
-        examples=["documents/", "markdown/"],
-    ),
-    page: int = Query(
-        default=1,
-        description="页码（Offset分页，从1开始）",
-        ge=1,
-        examples=[1, 2, 3],
-    ),
-    page_size: int = Query(
-        default=50,
-        description="每页数量",
-        ge=1,
-        le=1000,
-        examples=[20, 50, 100],
-    ),
-    continuation_token: str | None = Query(
-        default=None,
-        description="继续令牌（Cursor分页，S3原生）",
-        examples=["1ueGcxLPRx1Tr/XYExHnhb0gV95BUjmas81J"],
-    ),
-    start_after: str | None = Query(
-        default=None,
-        description="从此key之后开始列出",
-        examples=["documents/file1.txt"],
-    ),
-) -> PaginatedResponse[dict]:
-    """
-    列出S3文件
-
-    Args:
-        strategy: 分页策略
-        prefix: 文件前缀
-        page: 页码（Offset分页）
-        page_size: 每页数量
-        continuation_token: 继续令牌（Cursor分页）
-        start_after: 起始位置
-
-    Returns:
-        PaginatedResponse: 分页文件列表
-    """
-    try:
-        if strategy == PaginationStrategy.CURSOR:
-            # 使用S3原生分页
-            return _list_s3_with_cursor(
-                prefix=prefix,
-                max_keys=page_size,
-                continuation_token=continuation_token,
-                start_after=start_after,
-            )
-        else:
-            # 使用Offset分页
-            return await _list_s3_with_offset(
-                prefix=prefix,
-                page=page,
-                page_size=page_size,
-            )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list files: {str(e)}",
-        )
-
-
-def _list_s3_with_cursor(
-    prefix: str,
-    max_keys: int,
-    continuation_token: str | None,
-    start_after: str | None,
-) -> PaginatedResponse[dict]:
-    """使用S3原生游标分页列出文件"""
-    pagination_service = PaginationService()
-
-    result = pagination_service.paginate_s3_objects(
-        storage_service=storage_service,
-        prefix=prefix,
-        max_keys=max_keys,
-        continuation_token=continuation_token,
-        start_after=start_after,
-    )
-
-    return result
-
-
-async def _list_s3_with_offset(
-    prefix: str,
-    page: int,
-    page_size: int,
-) -> PaginatedResponse[dict]:
-    """使用Offset分页列出文件"""
-    # 获取所有文件（实际项目中应该使用数据库或缓存）
-    all_keys = storage_service.list_objects(prefix)
-
-    # 转换为文件信息列表
-    files = []
-    for key in all_keys:
-        try:
-            size = storage_service.get_file_size(key)
-            modified = storage_service.get_modified_time(key)
-            files.append({
-                "key": key,
-                "size": size,
-                "last_modified": modified,
-            })
-        except Exception:
-            # 如果获取元数据失败，仍然包含key
-            files.append({
-                "key": key,
-                "size": None,
-                "last_modified": None,
-            })
-
-    # 应用Offset分页
-    params = OffsetPaginationRequest(
-        page=page,
-        page_size=page_size,
-    ).to_params()
-
-    result = apply_pagination(files, params)
-    return result
-
-
 # ==================== 内部辅助函数 ====================
+
 
 async def _handle_create(request: EditorUnifiedRequest) -> FileEditResponse:
     """处理创建操作"""

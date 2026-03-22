@@ -1,9 +1,3 @@
-/**
- * FileSystem Module
- *
- * Provides file management components for agents.
- */
-
 export {
   MarkdownComponent,
   createMarkdownComponent,
@@ -11,7 +5,7 @@ export {
   type MarkdownComponentState,
   type MarkdownHooks,
   type MarkdownToolName,
-} from './markdown/index.js';
+} from './markdown.component.js';
 
 export type {
   CreateFileParams,
@@ -24,7 +18,7 @@ export type {
   EditMarkdownReplaceParams,
   EditMarkdownInsertParams,
   EditMarkdownDeleteParams,
-} from './markdown/markdownSchemas.js';
+} from './markdownSchemas.js';
 
 export type {
   FileCreateResponse,
@@ -35,4 +29,4 @@ export type {
   FileMetadataResponse,
   MarkdownPageResponse,
   MarkdownEditResponse,
-} from './markdown/markdown.types.js';
+} from './markdown.types.js';
