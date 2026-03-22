@@ -1,0 +1,11 @@
+[project]
+name = "monorepo"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.uv.sources]
+mr-lib = { workspace = true }
+
+[tool.uv.workspace]
+members = ["python-libs/*", "python-apps/*"]
+exclude = ["packages/seeds"]

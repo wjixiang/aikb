@@ -3,7 +3,6 @@ import { Tool, ToolCallResult, TUIElement, tdiv, th, tp } from '../ui/index.js';
 import type {
   RuntimeTask,
   RuntimeTaskResult,
-  TaskListener,
   TaskPriority,
 } from './types.js';
 import {
@@ -38,7 +37,6 @@ export class RuntimeTaskComponent extends ToolComponent {
   private storage: ITaskStorage;
   private _centralTaskQueue?: ICentralTaskQueue;
   private _hookModule?: HookModule;
-  private listeners: Set<TaskListener> = new Set();
 
   constructor(config: RuntimeTaskComponentConfig) {
     super();
@@ -419,23 +417,11 @@ export class RuntimeTaskComponent extends ToolComponent {
       });
     }
 
-    // Call listeners for backward compatibility
-    this.listeners.forEach((listener) => {
-      void listener(newTask);
-    });
-
     return taskId;
   }
 
   async getTaskResult(taskId: string): Promise<RuntimeTaskResult | undefined> {
     return this.storage.getResult(taskId);
-  }
-
-  onNewTask(listener: TaskListener): () => void {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
   }
 
   async sendToExpert(

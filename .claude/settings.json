@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /mnt/disk1/project/project/aikb/apps -name *.controller.ts -o -name *controller*.ts)",
+      "Bash(psql postgresql://localhost:5432/biblib -c \"CREATE EXTENSION IF NOT EXISTS vector;\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Read(//tmp/claude-1000/-mnt-disk1-project/project-aikb/3937aa89-4f59-418c-9ca5-e604749067ac/tasks/**)",
+      "Bash(node -e \":*)",
+      "Bash(do echo:*)",
+      "Read(//tmp/claude-1000/-mnt-disk1-project/project/aikb/3937aa89-4f59-418c-9ca5-e604749067ac/tasks/**)",
+      "Read(//mnt/disk1/project/project/aikb/**)",
+      "Bash(find /mnt/disk1/project/project/aikb/libs/agent-lib/src/core/agent-soul -type f \\\\\\( -name \"*.ts\" -o -name \"*.md\" })",
+      "Bash(find /mnt/disk1/project/project/aikb/libs/agent-lib/src/core/agent-soul -type f \\\\\\(-name *.ts -o -name *.md \\\\\\))",
+      "Bash(find /mnt/disk1/project/project/aikb/libs/medDatabasePortal -name *.test.ts -o -name *.spec.ts)",
+      "Bash(find /mnt/disk1/project/project/aikb -name *.ts -path */bibliography-search/*)",
+      "Bash(find /mnt/disk1/project/project/aikb/apps/ebm-agent -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\))",
+      "Bash(find /mnt/disk1/project/project/aikb/apps/auto-review -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\))",
+      "Read(//mnt/disk1/project/project/**)",
+      "Read(//mnt/disk1/project/**)"
+    ]
+  }
+}

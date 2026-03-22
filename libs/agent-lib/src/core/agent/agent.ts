@@ -24,6 +24,7 @@ import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.
 import { RuntimeTaskComponent, createRuntimeTaskComponent } from '../../components/runtime-task/runtimeTaskComponent.js';
 import type { ComponentStateBase } from '../../components/core/toolComponent.js';
 import type { IPersistenceService } from '../persistence/types.js';
+import type { HookModule } from '../hooks/HookModule.js';
 import pino from 'pino';
 
 export interface AgentConfig {
@@ -156,6 +157,9 @@ export class Agent {
   // Persistence service (optional)
   private persistenceService?: IPersistenceService;
 
+  // Hook module (optional)
+  private hookModule?: HookModule;
+
   private agentSop: SOP;
   private logger: pino.Logger;
   public instanceId: string;
@@ -173,6 +177,9 @@ export class Agent {
     @inject(TYPES.IPersistenceService)
     @optional()
     persistenceService?: IPersistenceService,
+    @inject(TYPES.HookModule)
+    @optional()
+    hookModule?: HookModule,
   ) {
     this.instanceId = instanceId;
     // Instantiate pino logger directly
@@ -187,6 +194,7 @@ export class Agent {
     this.apiClient = apiClient;
     this.toolManager = toolManager;
     this.persistenceService = persistenceService;
+    this.hookModule = hookModule;
 
     // Create session on initialization if persistence is enabled
     if (this.persistenceService) {
@@ -418,6 +426,7 @@ export class Agent {
     this.taskModule = createRuntimeTaskComponent({
       instanceId: this.instanceId,
       maxQueueSize: 100,
+      hookModule: this.hookModule,
     });
 
     // Register TaskModule tools to ToolManager via ComponentToolProvider
@@ -433,13 +442,22 @@ export class Agent {
       return this.taskModule!.renderImply();
     });
 
-    // Register listener for new tasks to wake up the agent
-    this.taskModule.onNewTask(async (task: any) => {
-      this.logger.info(
-        `[Agent] Received new task ${task.taskId}, waking up agent`,
+    // Register hook for new tasks to wake up the agent
+    if (this.hookModule) {
+      this.hookModule.on(
+        'task:submitted',
+        async (ctx) => {
+          // Only process tasks destined for this agent
+          if (ctx.instanceId === this.instanceId) {
+            this.logger.info(
+              `[Agent] Received new task ${ctx.taskId}, waking up agent`,
+            );
+            await this.wakeUpForTask(ctx.task);
+          }
+        },
+        { id: `agent-${this.instanceId}-task-wake` },
       );
-      await this.wakeUpForTask(task);
-    });
+    }
   }
 
   // ==================== Public API ====================
@@ -518,6 +536,15 @@ export class Agent {
    * Start agent with a user query
    */
   async start(): Promise<Agent> {
+    // Trigger agent:starting hook
+    if (this.hookModule) {
+      await this.hookModule.executeHooks('agent:starting', {
+        type: 'agent:starting',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+      });
+    }
+
     this._status = 'running';
     void this.persistState(); // 持久化状态变更
 
@@ -526,6 +553,16 @@ export class Agent {
 
     // Start request loop
     await this.requestLoop();
+
+    // Trigger agent:started hook
+    if (this.hookModule) {
+      await this.hookModule.executeHooks('agent:started', {
+        type: 'agent:started',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+      });
+    }
+
     return this;
   }
 
@@ -533,9 +570,27 @@ export class Agent {
    * Complete agent task
    */
   complete(): void {
+    // Trigger agent:completing hook
+    if (this.hookModule) {
+      void this.hookModule.executeHooks('agent:completing', {
+        type: 'agent:completing',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+      });
+    }
+
     this._status = 'completed';
     void this.persistState();
     void this.endSession(); // 结束 session
+
+    // Trigger agent:completed hook
+    if (this.hookModule) {
+      void this.hookModule.executeHooks('agent:completed', {
+        type: 'agent:completed',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+      });
+    }
   }
 
   /**
@@ -549,6 +604,17 @@ export class Agent {
     source: AbortSource = 'manual',
     details?: Record<string, unknown>,
   ): void {
+    // Trigger agent:aborting hook
+    if (this.hookModule) {
+      void this.hookModule.executeHooks('agent:aborting', {
+        type: 'agent:aborting',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+        reason: abortReason,
+        source,
+      });
+    }
+
     this._status = 'aborted';
     this._abortInfo = {
       reason: abortReason,
@@ -558,6 +624,17 @@ export class Agent {
     };
     void this.persistState();
     void this.endSession('aborted'); // 结束 session
+
+    // Trigger agent:aborted hook
+    if (this.hookModule) {
+      void this.hookModule.executeHooks('agent:aborted', {
+        type: 'agent:aborted',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+        reason: abortReason,
+        source,
+      });
+    }
   }
 
   /**

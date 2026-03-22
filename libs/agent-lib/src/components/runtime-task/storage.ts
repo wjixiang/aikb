@@ -1,7 +1,6 @@
 import type {
   RuntimeTask,
   RuntimeTaskResult,
-  TaskListener,
   TaskQueryFilter,
   RuntimeTaskStatus,
 } from './types.js';

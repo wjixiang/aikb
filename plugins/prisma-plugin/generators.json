@@ -1,9 +1,0 @@
-{
-  "generators": {
-    "gen-db": {
-      "factory": "./src/generators/db-generator/db-generator",
-      "schema": "./src/generators/db-generator/schema.json",
-      "description": "db-generator generator"
-    }
-  }
-}

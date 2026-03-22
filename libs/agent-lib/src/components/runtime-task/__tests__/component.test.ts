@@ -32,21 +32,6 @@ describe('RuntimeTaskComponent', () => {
 
       expect(taskId).toMatch(/^task_/);
     });
-
-    it('should notify listeners on new task', async () => {
-      let receivedTask: any;
-      component.onNewTask((task) => {
-        receivedTask = task;
-      });
-
-      const taskId = await component.submitTask({
-        description: 'Listener test',
-        priority: 'high',
-      });
-
-      expect(receivedTask.description).toBe('Listener test');
-      expect(receivedTask.taskId).toBe(taskId);
-    });
   });
 
   describe('getPendingTasks tool', () => {
@@ -163,15 +148,6 @@ describe('RuntimeTaskComponent', () => {
         taskId,
       });
       expect(taskResult.data.status).toBe('processing');
-    });
-  });
-
-  describe('onNewTask listener', () => {
-    it('should return unsubscribe function', () => {
-      const unsubscribe = component.onNewTask(() => {});
-      expect(typeof unsubscribe).toBe('function');
-
-      unsubscribe();
     });
   });
 

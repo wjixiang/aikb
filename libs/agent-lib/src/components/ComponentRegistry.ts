@@ -3,11 +3,15 @@
  *
  * Simple registry that allows external packages to register components
  * and provides access to component tools.
+ *
+ * Supports hooks for registration lifecycle events.
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject, optional } from 'inversify';
+import { TYPES } from '../core/di/types.js';
 import { ToolComponent } from './core/toolComponent.js';
 import type { Tool } from './core/types.js';
+import type { HookModule } from '../core/hooks/HookModule.js';
 
 export interface ComponentRegistration {
   id: string;
@@ -18,9 +22,24 @@ export interface ComponentRegistration {
 @injectable()
 export class ComponentRegistry {
   private components: Map<string, ComponentRegistration> = new Map();
+  private hookModule?: HookModule;
+  private instanceId?: string;
+
+  constructor(
+    @inject(TYPES.HookModule)
+    @optional()
+    hookModule?: HookModule,
+    @inject(TYPES.AgentInstanceId)
+    @optional()
+    instanceId?: string,
+  ) {
+    this.hookModule = hookModule;
+    this.instanceId = instanceId;
+  }
 
   /**
-   * Register a component with an ID
+   * Register a component with an ID (sync version - no hooks)
+   * Use registerAsync() for hook-enabled registration
    */
   register(id: string, component: ToolComponent, priority?: number): void {
     this.components.set(id, {
@@ -28,6 +47,43 @@ export class ComponentRegistry {
       component,
       priority,
     });
+  }
+
+  /**
+   * Register a component with hooks triggered
+   */
+  async registerAsync(
+    id: string,
+    component: ToolComponent,
+    priority?: number,
+  ): Promise<void> {
+    // Before hook
+    if (this.hookModule && this.instanceId) {
+      await this.hookModule.executeHooks('component:beforeRegister', {
+        type: 'component:beforeRegister',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+        componentId: id,
+        component,
+        priority,
+      });
+    }
+
+    this.components.set(id, { id, component, priority });
+
+    // After hook
+    if (this.hookModule && this.instanceId) {
+      const tools = Array.from(component.toolSet.values());
+      await this.hookModule.executeHooks('component:afterRegister', {
+        type: 'component:afterRegister',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+        componentId: id,
+        component,
+        priority,
+        tools,
+      });
+    }
   }
 
   /**
@@ -79,10 +135,44 @@ export class ComponentRegistry {
   }
 
   /**
-   * Unregister a component
+   * Unregister a component (sync version - no hooks)
+   * Use unregisterAsync() for hook-enabled unregistration
    */
   unregister(id: string): boolean {
     return this.components.delete(id);
+  }
+
+  /**
+   * Unregister a component with hooks triggered
+   */
+  async unregisterAsync(id: string): Promise<boolean> {
+    const registration = this.components.get(id);
+    if (!registration) return false;
+
+    // Before hook
+    if (this.hookModule && this.instanceId) {
+      await this.hookModule.executeHooks('component:beforeUnregister', {
+        type: 'component:beforeUnregister',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+        componentId: id,
+        component: registration.component,
+      });
+    }
+
+    const deleted = this.components.delete(id);
+
+    // After hook
+    if (deleted && this.hookModule && this.instanceId) {
+      await this.hookModule.executeHooks('component:afterUnregister', {
+        type: 'component:afterUnregister',
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+        componentId: id,
+      });
+    }
+
+    return deleted;
   }
 
   /**

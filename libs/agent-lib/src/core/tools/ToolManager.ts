@@ -15,6 +15,7 @@ import {
     ProviderNotFoundError,
 } from './tool.errors.js';
 import { TYPES } from '../di/types.js';
+import type { HookModule } from '../hooks/HookModule.js';
 
 /**
  * Central tool manager implementation
@@ -30,11 +31,22 @@ export class ToolManager implements IToolManager {
     private providers: Map<string, IToolProvider>;
     private toolRegistry: Map<string, ToolRegistration>;
     private availabilityCallbacks: Set<ToolAvailabilityCallback>;
+    private hookModule?: HookModule;
+    private instanceId?: string;
 
-    constructor() {
+    constructor(
+        @inject(TYPES.HookModule)
+        @optional()
+        hookModule?: HookModule,
+        @inject(TYPES.AgentInstanceId)
+        @optional()
+        instanceId?: string,
+    ) {
         this.providers = new Map();
         this.toolRegistry = new Map();
         this.availabilityCallbacks = new Set();
+        this.hookModule = hookModule;
+        this.instanceId = instanceId;
     }
 
     /**
@@ -163,7 +175,48 @@ export class ToolManager implements IToolManager {
             throw new ProviderNotFoundError(registration.providerId);
         }
 
-        return await provider.executeTool(name, params);
+        const componentId = registration.componentKey;
+        const startTime = Date.now();
+        let result: any;
+        let success = true;
+        let error: Error | undefined;
+
+        // Before hook
+        if (this.hookModule && this.instanceId) {
+            await this.hookModule.executeHooks('tool:beforeExecute', {
+                type: 'tool:beforeExecute',
+                timestamp: new Date(),
+                instanceId: this.instanceId,
+                toolName: name,
+                params,
+                componentId,
+            });
+        }
+
+        try {
+            result = await provider.executeTool(name, params);
+            return result;
+        } catch (e) {
+            success = false;
+            error = e instanceof Error ? e : new Error(String(e));
+            throw e;
+        } finally {
+            // After hook
+            if (this.hookModule && this.instanceId) {
+                await this.hookModule.executeHooks('tool:afterExecute', {
+                    type: 'tool:afterExecute',
+                    timestamp: new Date(),
+                    instanceId: this.instanceId,
+                    toolName: name,
+                    params,
+                    result,
+                    success,
+                    error,
+                    componentId,
+                    duration: Date.now() - startTime,
+                });
+            }
+        }
     }
 
     /**

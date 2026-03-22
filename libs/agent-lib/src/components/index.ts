@@ -77,7 +77,6 @@ export type {
   TaskPriority,
   RuntimeTaskStatus,
   TaskQueueStats,
-  TaskListener,
   TaskQueryFilter,
 } from './runtime-task/types.js';
 

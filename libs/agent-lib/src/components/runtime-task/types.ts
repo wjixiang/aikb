@@ -35,8 +35,6 @@ export interface TaskQueueStats {
   failed: number;
 }
 
-export type TaskListener = (task: RuntimeTask) => void | Promise<void>;
-
 export interface TaskQueryFilter {
   status?: RuntimeTaskStatus;
   receiver?: string;
