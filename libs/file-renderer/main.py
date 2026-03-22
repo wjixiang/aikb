@@ -397,10 +397,23 @@ def read_root():
 if __name__ == "__main__":
     import uvicorn
 
-    # 配置 uvicorn 日志使用我们的配置
-    log_config = uvicorn.config.LOGGING_CONFIG
-    log_config["formatters"]["default"]["fmt"] = "%(asctime)s | %(levelname)-8s | %(message)s"
-    log_config["formatters"]["access"]["fmt"] = "%(asctime)s | %(levelname)-8s | %(message)s"
+    log_config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "default": {"fmt": "%(asctime)s | %(levelname)-8s | %(message)s"},
+            "access": {"fmt": "%(asctime)s | %(levelname)-8s | %(message)s"},
+        },
+        "handlers": {
+            "default": {"formatter": "default", "class": "logging.StreamHandler"},
+            "access": {"formatter": "access", "class": "logging.StreamHandler"},
+        },
+        "loggers": {
+            "uvicorn": {"handlers": ["default"], "level": "INFO"},
+            "uvicorn.error": {"level": "INFO"},
+            "uvicorn.access": {"handlers": ["access"], "level": "INFO"},
+        },
+    }
 
     uvicorn.run(
         "main:app",

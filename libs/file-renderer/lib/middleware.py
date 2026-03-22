@@ -10,9 +10,10 @@ import time
 import uuid
 from typing import Awaitable, Callable, Optional
 
-from fastapi import FastAPI, Request, Response
+from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
 
 from lib.exceptions import FileRendererException, RateLimitException
 from lib.logging_config import get_logger, log_access
@@ -67,7 +68,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         exclude_paths: Optional[list[str]] = None,
         log_request_body: bool = False,
         log_response_body: bool = False,
@@ -195,7 +196,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         include_traceback: bool = False,
     ):
         super().__init__(app)
@@ -267,7 +268,7 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         slow_request_threshold_ms: float = 1000.0,
         exclude_paths: Optional[list[str]] = None,
     ):
@@ -313,28 +314,6 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
         return response
 
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """
-    安全响应头中间件
-
-    添加常见的安全响应头。
-    """
-
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
-        response = await call_next(request)
-
-        # 安全响应头
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-
-        return response
-
-
 class CORSMiddlewareConfig:
     """
     CORS 中间件配置
@@ -364,7 +343,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         header_name: str = "X-Request-ID",
         generator: Optional[Callable[[], str]] = None,
     ):
@@ -402,7 +381,7 @@ class TimingMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         header_name: str = "X-Response-Time",
         precision: int = 3,
     ):
@@ -439,7 +418,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         requests_per_minute: int = 60,
         burst_size: int = 10,
         exclude_paths: Optional[list[str]] = None,
@@ -533,7 +512,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # 添加速率限制信息到响应头
         response = await call_next(request)
 
-        remaining = max(0, self.requests_per_minute - len(self._requests.get(client_key, [])))
+        remaining = max(
+            0, self.requests_per_minute - len(self._requests.get(client_key, []))
+        )
         response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
 
@@ -550,7 +531,7 @@ class GzipMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         minimum_size: int = 1024,
         compress_level: int = 6,
         exclude_paths: Optional[list[str]] = None,
@@ -647,7 +628,7 @@ class CORSMiddlewareOptimized(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         allow_origins: list[str] | str = "*",
         allow_credentials: bool = True,
         allow_methods: list[str] | str = "*",
@@ -657,10 +638,16 @@ class CORSMiddlewareOptimized(BaseHTTPMiddleware):
         allow_origin_regex: Optional[str] = None,
     ):
         super().__init__(app)
-        self.allow_origins = allow_origins if isinstance(allow_origins, list) else [allow_origins]
+        self.allow_origins = (
+            allow_origins if isinstance(allow_origins, list) else [allow_origins]
+        )
         self.allow_all_origins = "*" in self.allow_origins
         self.allow_credentials = allow_credentials
-        self.allow_methods = allow_methods if isinstance(allow_methods, list) else ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+        self.allow_methods = (
+            allow_methods
+            if isinstance(allow_methods, list)
+            else ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+        )
         self.allow_all_methods = allow_methods == "*"
         self.allow_headers = allow_headers if isinstance(allow_headers, list) else []
         self.allow_all_headers = allow_headers == "*"
@@ -670,6 +657,7 @@ class CORSMiddlewareOptimized(BaseHTTPMiddleware):
 
         if self.allow_origin_regex:
             import re
+
             self._origin_regex = re.compile(self.allow_origin_regex)
         else:
             self._origin_regex = None
@@ -706,19 +694,31 @@ class CORSMiddlewareOptimized(BaseHTTPMiddleware):
                     response.headers["Access-Control-Allow-Credentials"] = "true"
 
                 if self.allow_all_methods:
-                    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+                    response.headers["Access-Control-Allow-Methods"] = (
+                        "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+                    )
                 else:
-                    response.headers["Access-Control-Allow-Methods"] = ", ".join(self.allow_methods)
+                    response.headers["Access-Control-Allow-Methods"] = ", ".join(
+                        self.allow_methods
+                    )
 
-                requested_headers = request.headers.get("Access-Control-Request-Headers")
+                requested_headers = request.headers.get(
+                    "Access-Control-Request-Headers"
+                )
                 if requested_headers:
                     if self.allow_all_headers:
-                        response.headers["Access-Control-Allow-Headers"] = requested_headers
+                        response.headers["Access-Control-Allow-Headers"] = (
+                            requested_headers
+                        )
                     else:
-                        response.headers["Access-Control-Allow-Headers"] = ", ".join(self.allow_headers)
+                        response.headers["Access-Control-Allow-Headers"] = ", ".join(
+                            self.allow_headers
+                        )
 
                 if self.expose_headers:
-                    response.headers["Access-Control-Expose-Headers"] = ", ".join(self.expose_headers)
+                    response.headers["Access-Control-Expose-Headers"] = ", ".join(
+                        self.expose_headers
+                    )
 
                 response.headers["Access-Control-Max-Age"] = str(self.max_age)
 
@@ -738,7 +738,9 @@ class CORSMiddlewareOptimized(BaseHTTPMiddleware):
                 response.headers["Access-Control-Allow-Credentials"] = "true"
 
             if self.expose_headers:
-                response.headers["Access-Control-Expose-Headers"] = ", ".join(self.expose_headers)
+                response.headers["Access-Control-Expose-Headers"] = ", ".join(
+                    self.expose_headers
+                )
 
         return response
 
@@ -752,7 +754,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         content_security_policy: Optional[str] = None,
         strict_transport_security: str = "max-age=31536000; includeSubDomains",
         x_frame_options: str = "DENY",
@@ -761,12 +763,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         permissions_policy: Optional[str] = None,
     ):
         super().__init__(app)
-        self.content_security_policy = content_security_policy or "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'"
+        self.content_security_policy = (
+            content_security_policy
+            or "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'"
+        )
         self.strict_transport_security = strict_transport_security
         self.x_frame_options = x_frame_options
         self.x_content_type_options = x_content_type_options
         self.referrer_policy = referrer_policy
-        self.permissions_policy = permissions_policy or "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+        self.permissions_policy = (
+            permissions_policy
+            or "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+        )
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
@@ -798,7 +806,7 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: FastAPI,
+        app: ASGIApp,
         max_body_size: int = 100 * 1024 * 1024,  # 100MB
     ):
         super().__init__(app)
@@ -813,6 +821,7 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
             size = int(content_length)
             if size > self.max_body_size:
                 from lib.exceptions import PayloadTooLargeException
+
                 raise PayloadTooLargeException(
                     max_size=self.max_body_size,
                     actual_size=size,

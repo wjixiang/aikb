@@ -71,6 +71,3 @@ export * from './hooks/index.js';
 
 // Prisma
 export * from './prisma/index.js';
-
-// Workspaces
-export * from './workspaces/index.js';
