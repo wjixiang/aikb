@@ -25,9 +25,10 @@ import {
   RuntimeTaskComponent,
   createRuntimeTaskComponent,
 } from '../../components/runtime-task/runtimeTaskComponent.js';
-import type { ComponentStateBase } from '../../components/core/toolComponent.js';
-import type { IPersistenceService } from '../persistence/types.js';
 import type { HookModule } from '../hooks/HookModule.js';
+import type { IPersistenceService } from '../persistence/types.js';
+import type { ISessionManager } from '../session/ISessionManager.js';
+import type { SessionState } from '../session/types.js';
 import pino from 'pino';
 
 export interface AgentConfig {
@@ -157,8 +158,11 @@ export class Agent {
   // @deprecated - Will be removed in future versions. Use persistence service instead.
   private taskModule?: RuntimeTaskComponent;
 
-  // Persistence service (optional)
+  // Persistence service (for component states - instance-level)
   private persistenceService?: IPersistenceService;
+
+  // Session manager (handles session lifecycle)
+  private sessionManager: ISessionManager;
 
   // Hook module (required)
   private hookModule: HookModule;
@@ -177,77 +181,39 @@ export class Agent {
     @inject(TYPES.ApiClient) apiClient: ApiClient,
     @inject(TYPES.IToolManager) toolManager: IToolManager,
     @inject(TYPES.HookModule) hookModule: HookModule,
-    @inject(TYPES.TaskId) @optional() taskId?: string,
+    @inject(TYPES.ISessionManager) sessionManager: ISessionManager,
     @inject(TYPES.IPersistenceService)
     @optional()
     persistenceService?: IPersistenceService,
+    @inject(TYPES.TaskId) @optional() taskId?: string,
   ) {
     this.instanceId = instanceId;
-    // Instantiate pino logger directly
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'debug' });
     this.workspace = workspace as unknown as VirtualWorkspace;
     this._taskId = taskId || crypto.randomUUID();
     this.agentSop = agentSop;
     this._currentPollInterval = 30000;
 
-    // Use injected dependencies
     this.memoryModule = memoryModule as MemoryModule;
     this.apiClient = apiClient;
     this.toolManager = toolManager;
-    this.persistenceService = persistenceService;
     this.hookModule = hookModule;
+    this.sessionManager = sessionManager;
+    this.persistenceService = persistenceService;
 
-    // Create session on initialization if persistence is enabled
-    if (this.persistenceService) {
-      void this.createSession();
-    }
+    void this.sessionManager.createSession(this.getSessionState());
   }
 
-  /**
-   * Create persistence session
-   */
-  private async createSession(): Promise<void> {
-    if (!this.persistenceService) return;
-
-    try {
-      await this.persistenceService.createSession({
-        instanceId: this.instanceId,
-        status: this._status,
-        totalTokensIn: this._tokenUsage.totalTokensIn,
-        totalTokensOut: this._tokenUsage.totalTokensOut,
-        totalCost: this._tokenUsage.totalCost,
-        consecutiveMistakeCount: this._consecutiveMistakeCount,
-        collectedErrors: this._collectedErrors,
-      });
-    } catch (error) {
-      this.logger.error({ error }, '[Agent] Failed to create session');
-    }
-  }
-
-  /**
-   * Persist current agent state
-   */
-  private async persistState(): Promise<void> {
-    if (!this.persistenceService) return;
-
-    try {
-      await this.persistenceService.updateSession(this.instanceId, {
-        status: this._status,
-        abortReason: this._abortInfo?.reason,
-        abortSource: this._abortInfo?.source,
-        totalTokensIn: this._tokenUsage.totalTokensIn,
-        totalTokensOut: this._tokenUsage.totalTokensOut,
-        totalCost: this._tokenUsage.totalCost,
-        toolUsage: this._toolUsage,
-        consecutiveMistakeCount: this._consecutiveMistakeCount,
-        collectedErrors: this._collectedErrors,
-      });
-    } catch (error) {
-      this.logger.error(
-        { error, instanceId: this.instanceId },
-        '[Agent] Failed to persist state',
-      );
-    }
+  private getSessionState(): SessionState {
+    return {
+      instanceId: this.instanceId,
+      status: this._status,
+      tokenUsage: this._tokenUsage,
+      toolUsage: this._toolUsage,
+      consecutiveMistakeCount: this._consecutiveMistakeCount,
+      collectedErrors: this._collectedErrors,
+      abortInfo: this._abortInfo,
+    };
   }
 
   /**
@@ -255,65 +221,11 @@ export class Agent {
    * Updates both Session and Instance status to 'completed' or 'aborted'
    */
   public async endSession(reason?: string): Promise<void> {
-    if (!this.persistenceService) {
-      this.logger.warn('[Agent] No persistence service, skipping endSession');
-      return;
-    }
-
-    const finalStatus = reason === 'aborted' ? 'aborted' : 'completed';
-
-    try {
-      // Save component states first
-      await this.saveComponentStates();
-
-      // Export and persist component results
-      const exportResults = await this.workspace.exportResult();
-      if (Object.keys(exportResults).length > 0) {
-        await this.persistenceService.saveExportResult(
-          this.instanceId,
-          exportResults as Record<string, unknown>,
-        );
-        this.logger.info(
-          {
-            instanceId: this.instanceId,
-            resultCount: Object.keys(exportResults).length,
-          },
-          '[Agent] Export results saved',
-        );
-      }
-
-      // Update session status
-      await this.persistenceService.updateSession(this.instanceId, {
-        status: finalStatus,
-        abortReason: reason,
-        abortSource: 'system',
-        totalTokensIn: this._tokenUsage.totalTokensIn,
-        totalTokensOut: this._tokenUsage.totalTokensOut,
-        totalCost: this._tokenUsage.totalCost,
-        toolUsage: this._toolUsage,
-        consecutiveMistakeCount: this._consecutiveMistakeCount,
-        collectedErrors: this._collectedErrors,
-      });
-
-      // Update instance metadata status
-      await this.persistenceService.updateInstanceMetadata(this.instanceId, {
-        status: finalStatus,
-      });
-
-      this.logger.info(
-        { instanceId: this.instanceId, status: finalStatus },
-        '[Agent] Session ended',
-      );
-    } catch (error) {
-      this.logger.error(
-        { error, instanceId: this.instanceId },
-        '[Agent] Failed to end session',
-      );
-    }
+    await this.sessionManager.endSession(this.getSessionState(), reason);
   }
 
   /**
-   * Save all component states to persistence
+   * Save all component states to persistence (instance-level)
    */
   public async saveComponentStates(): Promise<void> {
     if (!this.persistenceService) return;
@@ -340,7 +252,7 @@ export class Agent {
   }
 
   /**
-   * Restore all component states from persistence
+   * Restore all component states from persistence (instance-level)
    */
   public async restoreComponentStates(): Promise<void> {
     if (!this.persistenceService) return;
@@ -350,8 +262,8 @@ export class Agent {
         this.instanceId,
       );
       if (Object.keys(states).length > 0) {
-        const stateMap = new Map<string, ComponentStateBase>(
-          Object.entries(states) as [string, ComponentStateBase][],
+        const stateMap = new Map<string, any>(
+          Object.entries(states) as [string, any][],
         );
         this.workspace.importComponentStates(stateMap);
         this.logger.info(
@@ -365,63 +277,6 @@ export class Agent {
         '[Agent] Failed to restore component states',
       );
     }
-  }
-
-  /**
-   * Save memory state to persistence
-   */
-  private async saveMemory(): Promise<void> {
-    if (!this.persistenceService) return;
-
-    // Check if persistence service supports memory persistence
-    if (typeof this.persistenceService.saveMemory !== 'function') {
-      return;
-    }
-
-    try {
-      await this.persistenceService.saveMemory(this.instanceId, {
-        messages: this.memoryModule.getAllMessages(),
-        workspaceContexts: this.memoryModule.getWorkspaceContexts(),
-        config: this.memoryModule.getConfig(),
-      });
-      this.logger.debug('[Agent] Memory saved to persistence');
-    } catch (error) {
-      this.logger.warn({ error }, '[Agent] Failed to save memory');
-    }
-  }
-
-  /**
-   * Load memory state from persistence
-   */
-  public async loadMemory(): Promise<boolean> {
-    if (!this.persistenceService) return false;
-
-    // Check if persistence service supports memory loading
-    if (typeof this.persistenceService.loadMemory !== 'function') {
-      return false;
-    }
-
-    try {
-      const memory = await this.persistenceService.loadMemory(this.instanceId);
-      if (memory) {
-        // Import memory state into memory module
-        this.memoryModule.import({
-          messages: memory.messages,
-          workspaceContexts: memory.workspaceContexts,
-        });
-        this.logger.info(
-          {
-            instanceId: this.instanceId,
-            messageCount: (memory.messages as unknown[]).length,
-          },
-          '[Agent] Memory loaded from persistence',
-        );
-        return true;
-      }
-    } catch (error) {
-      this.logger.warn({ error }, '[Agent] Failed to load memory');
-    }
-    return false;
   }
 
   /**
@@ -552,7 +407,7 @@ export class Agent {
     });
 
     this._status = 'running';
-    void this.persistState(); // 持久化状态变更
+    void this.sessionManager.persistState(this.getSessionState());
 
     // Note: Initial user message will be added in requestLoop after startTurn()
     // This ensures the message is properly associated with a Turn
@@ -582,8 +437,8 @@ export class Agent {
     });
 
     this._status = 'completed';
-    void this.persistState();
-    void this.endSession(); // 结束 session
+    void this.sessionManager.persistState(this.getSessionState());
+    void this.endSession();
 
     // Trigger agent:completed hook
     void this.hookModule.executeHooks('agent:completed', {
@@ -620,8 +475,8 @@ export class Agent {
       source,
       details,
     };
-    void this.persistState();
-    void this.endSession('aborted'); // 结束 session
+    void this.sessionManager.persistState(this.getSessionState());
+    void this.endSession('aborted');
 
     // Trigger agent:aborted hook
     void this.hookModule.executeHooks('agent:aborted', {
@@ -981,9 +836,6 @@ export class Agent {
         }
         // Reset consecutive error count on successful loop iteration
         this.resetConsecutiveErrorCount();
-
-        // Save memory to persistence after each iteration
-        await this.saveMemory();
       } catch (error) {
         // Properly serialize error to extract message, name, and stack
         const errorMessage =

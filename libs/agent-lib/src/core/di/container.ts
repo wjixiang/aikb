@@ -10,6 +10,7 @@ import { PostgresPersistenceService } from '../persistence/PostgresPersistenceSe
 import { ComponentRegistry } from '../../components/ComponentRegistry.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import { HookModule } from '../hooks/HookModule.js';
+import { AgentSessionManager } from '../session/AgentSessionManager.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
@@ -272,6 +273,12 @@ export class AgentContainer {
       this.container
         .bind<IPersistenceService>(TYPES.IPersistenceService)
         .to(PostgresPersistenceService)
+        .inSingletonScope();
+
+      // Session Manager
+      this.container
+        .bind(TYPES.ISessionManager)
+        .to(AgentSessionManager)
         .inSingletonScope();
     } else {
       throw new Error('binding persistenceService error: no databaseurl found');
