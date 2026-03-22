@@ -63,8 +63,31 @@ export { EventDispatcher, createEventDispatcher } from './EventDispatcher.js';
 
 // Central Task Queue
 export type { ICentralTaskQueue } from './CentralTaskQueue.js';
-export { CentralTaskQueue, createCentralTaskQueue } from './CentralTaskQueue.js';
+export {
+  CentralTaskQueue,
+  createCentralTaskQueue,
+} from './CentralTaskQueue.js';
 
 // Agent Runtime
-export type { IAgentRuntime, AgentFilter, RuntimeStats } from './AgentRuntime.js';
+export type { IAgentRuntime, AgentFilter } from './AgentRuntime.js';
 export { AgentRuntime, createAgentRuntime } from './AgentRuntime.js';
+
+// Runtime Control
+export type {
+  IRuntimeControlClient,
+  RuntimeControlPermissions,
+  RuntimeControlAgentOptions,
+  AgentSoul,
+  ComponentRegistration,
+  ObservableAgentCallbacks,
+  HookConfig,
+  RuntimeControlProviderSettings,
+  RuntimeControlVirtualWorkspaceConfig,
+} from './types.js';
+
+export {
+  DEFAULT_RUNTIME_PERMISSIONS,
+  FULL_RUNTIME_PERMISSIONS,
+} from './types.js';
+
+export { RuntimeControlClientImpl } from './RuntimeControlClient.js';

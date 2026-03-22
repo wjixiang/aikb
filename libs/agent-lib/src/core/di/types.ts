@@ -313,6 +313,20 @@ export const TYPES = {
    * @scope Singleton - Bound at container creation
    */
   HookConfig: Symbol('HookConfig'),
+
+  // ==================== Runtime Control ====================
+
+  /**
+   * RuntimeControlClient - Runtime control interface for Agents
+   * @scope Singleton - Bound at container creation
+   */
+  RuntimeControlClient: Symbol('RuntimeControlClient'),
+
+  /**
+   * RuntimeControlPermissions - Runtime control permissions for Agents
+   * @scope Singleton - Bound at container creation
+   */
+  RuntimeControlPermissions: Symbol('RuntimeControlPermissions'),
 } as const;
 
 export type TestOverrides = {

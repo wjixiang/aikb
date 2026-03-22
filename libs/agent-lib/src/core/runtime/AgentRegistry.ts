@@ -64,6 +64,38 @@ export interface IAgentRegistry {
    */
   get size(): number;
 
+  // ============================================
+  // Hierarchy Query Methods
+  // ============================================
+
+  /**
+   * Get direct child agents of a parent agent
+   */
+  getChildren(parentInstanceId: string): AgentMetadata[];
+
+  /**
+   * Get all descendant agents (children, grandchildren, etc.)
+   */
+  getDescendants(instanceId: string): AgentMetadata[];
+
+  /**
+   * Check if one agent is an ancestor of another
+   * @param ancestorId Potential ancestor instance ID
+   * @param descendantId Potential descendant instance ID
+   * @returns true if ancestorId is an ancestor of descendantId
+   */
+  isAncestorOf(ancestorId: string, descendantId: string): boolean;
+
+  /**
+   * Add a child relation between two agents
+   */
+  addChildRelation(parentInstanceId: string, childInstanceId: string): void;
+
+  /**
+   * Remove a child relation between two agents
+   */
+  removeChildRelation(parentInstanceId: string, childInstanceId: string): void;
+
   /**
    * Sync registry from database
    */
@@ -161,6 +193,74 @@ export class AgentRegistry implements IAgentRegistry {
     return this.agents.size;
   }
 
+  // ============================================
+  // Hierarchy Query Methods Implementation
+  // ============================================
+
+  /**
+   * @inheritDoc
+   */
+  getChildren(parentInstanceId: string): AgentMetadata[] {
+    return this.getAll().filter(
+      (agent) => agent.parentInstanceId === parentInstanceId,
+    );
+  }
+
+  /**
+   * @inheritDoc
+   */
+  getDescendants(instanceId: string): AgentMetadata[] {
+    const children = this.getChildren(instanceId);
+    const descendants: AgentMetadata[] = [...children];
+
+    for (const child of children) {
+      descendants.push(...this.getDescendants(child.instanceId));
+    }
+
+    return descendants;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  isAncestorOf(ancestorId: string, descendantId: string): boolean {
+    const descendant = this.get(descendantId);
+    if (!descendant || !descendant.parentInstanceId) {
+      return false;
+    }
+    if (descendant.parentInstanceId === ancestorId) {
+      return true;
+    }
+    return this.isAncestorOf(ancestorId, descendant.parentInstanceId);
+  }
+
+  /**
+   * @inheritDoc
+   */
+  addChildRelation(parentInstanceId: string, childInstanceId: string): void {
+    const parent = this.get(parentInstanceId);
+    if (parent) {
+      const childIds = parent.childInstanceIds ?? [];
+      if (!childIds.includes(childInstanceId)) {
+        childIds.push(childInstanceId);
+        this.update(parentInstanceId, { childInstanceIds: childIds });
+      }
+    }
+  }
+
+  /**
+   * @inheritDoc
+   */
+  removeChildRelation(parentInstanceId: string, childInstanceId: string): void {
+    const parent = this.get(parentInstanceId);
+    if (parent?.childInstanceIds) {
+      const childIds = parent.childInstanceIds.filter(
+        (id) => id !== childInstanceId,
+      );
+      this.update(parentInstanceId, { childInstanceIds: childIds });
+    }
+  }
+
   async syncFromDatabase(): Promise<void> {
     if (!this.persistenceService || !this.container) {
       return;
@@ -169,9 +269,9 @@ export class AgentRegistry implements IAgentRegistry {
     try {
       // Access Prisma client directly to query AgentInstance table
       const { TYPES } = await import('../di/types.js');
-      const prisma = this.container.get<import('../../generated/prisma/client.js').PrismaClient>(
-        TYPES.PrismaClient,
-      );
+      const prisma = this.container.get<
+        import('../../generated/prisma/client.js').PrismaClient
+      >(TYPES.PrismaClient);
 
       const instances = await prisma.agentInstance.findMany({
         take: 1000,
