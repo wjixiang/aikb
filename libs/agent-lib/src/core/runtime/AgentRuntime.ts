@@ -320,7 +320,7 @@ export class AgentRuntime implements IAgentRuntime {
   private config: AgentRuntimeConfig;
 
   /** Default API configuration for all agents */
-  private defaultApiConfig: Partial<ProviderSettings> | undefined;
+  private defaultApiConfig: Partial<RuntimeControlProviderSettings> | undefined;
 
   /**
    * Map of agent instance IDs to their DI containers.
