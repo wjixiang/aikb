@@ -9,9 +9,12 @@ import { ToolManager } from '../ToolManager.js';
 import type { IToolProvider } from '../IToolProvider.js';
 import type { Tool } from '../../statefulContext/types.js';
 import { z } from 'zod';
+import { HookType } from '../../hooks/types.js';
+import type { HookModule } from '../../hooks/HookModule.js';
 
 describe('ToolManager (Simplified)', () => {
     let toolManager: ToolManager;
+    let mockHookModule: HookModule;
 
     // Mock tool provider
     const createMockToolProvider = (id: string, tools: Tool[]): IToolProvider => ({
@@ -25,7 +28,15 @@ describe('ToolManager (Simplified)', () => {
     });
 
     beforeEach(() => {
-        toolManager = new ToolManager();
+        // Create mock HookModule
+        mockHookModule = {
+            executeHooks: vi.fn().mockResolvedValue(undefined),
+            registerHook: vi.fn(),
+            unregisterHook: vi.fn(),
+            getRegisteredHooks: vi.fn().mockReturnValue([]),
+        } as unknown as HookModule;
+
+        toolManager = new ToolManager(mockHookModule, 'test-instance-id');
     });
 
     describe('Provider Registration', () => {

@@ -1,4 +1,4 @@
-import { injectable, inject, optional } from 'inversify';
+import { injectable, inject } from 'inversify';
 import type { Tool } from '../../components/core/types.js';
 import type { IToolProvider } from './IToolProvider.js';
 import { ToolSource } from './IToolProvider.js';
@@ -33,11 +33,11 @@ export class ToolManager implements IToolManager {
   private toolRegistry: Map<string, ToolRegistration>;
   private availabilityCallbacks: Set<ToolAvailabilityCallback>;
   private hookModule: HookModule;
-  private instanceId?: string;
+  private instanceId: string;
 
   constructor(
     @inject(TYPES.HookModule) hookModule: HookModule,
-    @inject(TYPES.AgentInstanceId) @optional() instanceId?: string,
+    @inject(TYPES.AgentInstanceId) instanceId: string,
   ) {
     this.providers = new Map();
     this.toolRegistry = new Map();
@@ -191,16 +191,14 @@ export class ToolManager implements IToolManager {
     let error: Error | undefined;
 
     // Before hook
-    if (this.instanceId) {
-      await this.hookModule.executeHooks(HookType.TOOL_BEFORE_EXECUTE, {
-        type: HookType.TOOL_BEFORE_EXECUTE,
-        timestamp: new Date(),
-        instanceId: this.instanceId,
-        toolName: name,
-        params,
-        componentId,
-      });
-    }
+    await this.hookModule.executeHooks(HookType.TOOL_BEFORE_EXECUTE, {
+      type: HookType.TOOL_BEFORE_EXECUTE,
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+      toolName: name,
+      params,
+      componentId,
+    });
 
     try {
       result = await provider.executeTool(name, params);
@@ -211,20 +209,18 @@ export class ToolManager implements IToolManager {
       throw e;
     } finally {
       // After hook
-      if (this.instanceId) {
-        await this.hookModule.executeHooks(HookType.TOOL_AFTER_EXECUTE, {
-          type: HookType.TOOL_AFTER_EXECUTE,
-          timestamp: new Date(),
-          instanceId: this.instanceId,
-          toolName: name,
-          params,
-          result,
-          success,
-          error,
-          componentId,
-          duration: Date.now() - startTime,
-        });
-      }
+      await this.hookModule.executeHooks(HookType.TOOL_AFTER_EXECUTE, {
+        type: HookType.TOOL_AFTER_EXECUTE,
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+        toolName: name,
+        params,
+        result,
+        success,
+        error,
+        componentId,
+        duration: Date.now() - startTime,
+      });
     }
   }
 
