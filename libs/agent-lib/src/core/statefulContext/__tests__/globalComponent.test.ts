@@ -8,13 +8,34 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VirtualWorkspace } from '../virtualWorkspace.js';
 import type { DIComponentRegistration } from '../virtualWorkspace.js';
 import { TestComponent, TestComponent2 } from './testComponents.js';
-import type { ToolComponent } from '../../../components/index.js';
+import { ToolManager } from '../../tools/ToolManager.js';
+import { ComponentRegistry } from '../../components/ComponentRegistry.js';
+import { GlobalToolProvider } from '../../tools/providers/GlobalToolProvider.js';
+
+function createTestWorkspace(
+  config: Partial<{ id: string; name: string }> = {},
+  diComponents?: DIComponentRegistration[],
+): VirtualWorkspace {
+  const toolManager = new ToolManager();
+  const componentRegistry = new ComponentRegistry();
+  const globalToolProvider = new GlobalToolProvider();
+
+  const workspace = new VirtualWorkspace(
+    toolManager,
+    componentRegistry,
+    globalToolProvider,
+    config,
+    diComponents,
+  );
+  (workspace as any).init();
+  return workspace;
+}
 
 describe('VirtualWorkspace Global Component Management', () => {
   let workspace: VirtualWorkspace;
 
   beforeEach(() => {
-    workspace = new VirtualWorkspace({
+    workspace = createTestWorkspace({
       id: 'test-workspace',
       name: 'Test Workspace',
     });
@@ -41,7 +62,6 @@ describe('VirtualWorkspace Global Component Management', () => {
       const component = new TestComponent();
       workspace.registerGlobalComponent('dual-reg', component);
 
-      // Should be accessible via both APIs
       expect(workspace.getGlobalComponent('dual-reg')).toBe(component);
       expect(workspace.getComponent('dual-reg')).toBe(component);
     });
@@ -50,7 +70,6 @@ describe('VirtualWorkspace Global Component Management', () => {
       const component = new TestComponent();
       workspace.registerGlobalComponent('tool-reg', component);
 
-      // Tool should be available via workspace
       expect(workspace.isToolAvailable('test_tool')).toBe(true);
     });
 
@@ -115,64 +134,23 @@ describe('VirtualWorkspace Global Component Management', () => {
     });
   });
 
-  describe('globalComponents config initialization', () => {
-    it('should initialize global components from config (sync factory)', () => {
-      const component = new TestComponent();
-      const ws = new VirtualWorkspace({
-        id: 'config-init-workspace',
-        name: 'Config Init Workspace',
-        globalComponents: [
-          {
-            componentId: 'config-global',
-            factory: () => component,
-            priority: -1,
-          },
-        ],
-      });
-
-      expect(ws.hasGlobalComponent('config-global')).toBe(true);
-      expect(ws.getGlobalComponent('config-global')).toBe(component);
-    });
-
-    it('should handle async factory with warning (sync initialization)', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const asyncFactory = async () => new TestComponent();
-
-      const ws = new VirtualWorkspace({
-        id: 'async-factory-workspace',
-        name: 'Async Factory Workspace',
-        globalComponents: [
-          {
-            componentId: 'async-global',
-            factory: asyncFactory as () => ToolComponent,
-          },
-        ],
-      });
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Async global component factory'),
-      );
-      consoleSpy.mockRestore();
-    });
-  });
-
   describe('interaction with regular components', () => {
     it('should use unified storage for all components', () => {
       const globalComp = new TestComponent();
       const regularComp = new TestComponent2();
 
-      workspace.registerGlobalComponent('global-only', globalComp);
-      // Use DI registration for regular component
       const diComponents: DIComponentRegistration[] = [
-        { id: 'regular-only', component: regularComp }
+        { id: 'regular-only', component: regularComp },
       ];
-      const ws = new VirtualWorkspace({
-        id: 'unified-test',
-        name: 'Unified Test',
-      }, undefined, diComponents);
+      const ws = createTestWorkspace(
+        {
+          id: 'unified-test',
+          name: 'Unified Test',
+        },
+        diComponents,
+      );
       ws.registerGlobalComponent('global-only', globalComp);
 
-      // Both global and regular components are stored in the same registry
       expect(ws.getGlobalComponentIds()).toContain('global-only');
       expect(ws.getGlobalComponentIds()).toContain('regular-only');
       expect(ws.getComponentKeys()).toContain('global-only');
@@ -182,12 +160,9 @@ describe('VirtualWorkspace Global Component Management', () => {
     it('should allow same component registered via both APIs', () => {
       const component = new TestComponent();
 
-      // Register via both methods
       workspace.registerGlobalComponent('shared', component);
-      // Re-registering same component with same ID is idempotent
       workspace.registerGlobalComponent('shared', component);
 
-      // Both should return the same component
       expect(workspace.getGlobalComponent('shared')).toBe(component);
       expect(workspace.getComponent('shared')).toBe(component);
     });
@@ -201,7 +176,6 @@ describe('VirtualWorkspace Global Component Management', () => {
       workspace.registerGlobalComponent('low-priority', component1, 10);
       workspace.registerGlobalComponent('high-priority', component2, -1);
 
-      // High priority should be accessible
       expect(workspace.getGlobalComponent('high-priority')).toBe(component2);
       expect(workspace.getGlobalComponent('low-priority')).toBe(component1);
     });
@@ -210,12 +184,11 @@ describe('VirtualWorkspace Global Component Management', () => {
 
 describe('IVirtualWorkspace Interface - Global Component API', () => {
   it('should expose all required global component methods', () => {
-    const workspace = new VirtualWorkspace({
+    const workspace = createTestWorkspace({
       id: 'interface-test',
       name: 'Interface Test',
     });
 
-    // Verify methods exist
     expect(typeof workspace.registerGlobalComponent).toBe('function');
     expect(typeof workspace.getGlobalComponent).toBe('function');
     expect(typeof workspace.hasGlobalComponent).toBe('function');

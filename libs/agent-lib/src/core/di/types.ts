@@ -292,6 +292,14 @@ export const TYPES = {
    * @scope Singleton - Bound at container creation
    */
   GlobalToolComponents: Symbol('GlobalToolComponents'),
+
+  // ==================== Internal Services ====================
+
+  /**
+   * ComponentRegistry - Registry for managing tool components
+   * @scope Singleton - Shared across VirtualWorkspace instances
+   */
+  ComponentRegistry: Symbol('ComponentRegistry'),
 } as const;
 
 export type TestOverrides = {

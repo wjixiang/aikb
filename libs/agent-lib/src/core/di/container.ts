@@ -7,6 +7,8 @@ import { MemoryModule } from '../memory/MemoryModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
 import { PostgresPersistenceService } from '../persistence/PostgresPersistenceService.js';
+import { ComponentRegistry } from '../../components/ComponentRegistry.js';
+import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import type { ApiClient } from '../api-client/index.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
@@ -17,10 +19,10 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import pino from 'pino';
 import {
-    type UnifiedAgentConfig,
-    type AgentCreationOptions,
-    defaultUnifiedConfig,
-    mergeWithDefaults,
+  type UnifiedAgentConfig,
+  type AgentCreationOptions,
+  defaultUnifiedConfig,
+  mergeWithDefaults,
 } from './UnifiedAgentConfig.js';
 import type { TestOverrides } from './types.js';
 import { ToolComponent } from '../../components/core/toolComponent.js';
@@ -43,272 +45,296 @@ type Logger = ReturnType<typeof pino>;
  * ```
  */
 export class AgentContainer {
-    private container: Container;
-    public instanceId: string;
-    private config: UnifiedAgentConfig;
-    private agentInstance: Agent | null = null;
-    private isRestoring = false;
-    private initPromise: Promise<void> | null = null;
+  private container: Container;
+  public instanceId: string;
+  private config: UnifiedAgentConfig;
+  private agentInstance: Agent | null = null;
+  private isRestoring = false;
+  private initPromise: Promise<void> | null = null;
 
-    constructor(options: AgentCreationOptions = {}, instanceId?: string) {
-        this.container = new Container({
-            defaultScope: 'Singleton',
-        });
+  constructor(options: AgentCreationOptions = {}, instanceId?: string) {
+    this.container = new Container({
+      defaultScope: 'Singleton',
+    });
 
-        if (instanceId) {
-            // Restore agent: setup bindings first to get persistence service
-            this.instanceId = instanceId;
-            this.config = mergeWithDefaults(options); // Use provided options as base
-            this.isRestoring = true;
-            this.setupBindings();
-            this.initPromise = this.restoreInstanceMetadata();
-        } else {
-            // Create new agent
-            this.config = mergeWithDefaults(options);
-            this.instanceId = crypto.randomUUID();
-            this.setupBindings();
-            this.initPromise = this.persistInstanceMetadata();
-        }
+    if (instanceId) {
+      // Restore agent: setup bindings first to get persistence service
+      this.instanceId = instanceId;
+      this.config = mergeWithDefaults(options); // Use provided options as base
+      this.isRestoring = true;
+      this.setupBindings();
+      this.initPromise = this.restoreInstanceMetadata();
+    } else {
+      // Create new agent
+      this.config = mergeWithDefaults(options);
+      this.instanceId = crypto.randomUUID();
+      this.setupBindings();
+      this.initPromise = this.persistInstanceMetadata();
     }
+  }
 
-    private async restoreInstanceMetadata(): Promise<void> {
-        // if (this.config.persistence?.enabled === false) {
-        //     return;
-        // }
+  private async restoreInstanceMetadata(): Promise<void> {
+    // if (this.config.persistence?.enabled === false) {
+    //     return;
+    // }
 
-        try {
-            const persistenceService = this.container.get<IPersistenceService>(
-                TYPES.IPersistenceService,
-            );
-            const metadata = await persistenceService.getInstanceMetadata(
-                this.instanceId,
-            );
-            if (metadata) {
-                // Restore config from stored metadata (merge with current options to preserve components)
-                if (metadata.config) {
-                    // Deep merge to ensure all required fields are present
-                    const storedConfig = metadata.config as Partial<UnifiedAgentConfig>;
-                    this.config = {
-                        agent: { ...this.config.agent, ...storedConfig.agent },
-                        api: { ...this.config.api, ...storedConfig.api },
-                        workspace: { ...this.config.workspace, ...storedConfig.workspace },
-                        memory: { ...this.config.memory, ...storedConfig.memory },
-                        persistence: storedConfig.persistence ?? this.config.persistence,
-                        components: this.config.components,
-                    };
-                }
-                this.logger?.info(
-                    { instanceId: this.instanceId, status: metadata.status },
-                    '[AgentContainer] Instance metadata restored',
-                );
-            } else {
-                this.logger?.warn(
-                    { instanceId: this.instanceId },
-                    '[AgentContainer] Instance not found, will create new',
-                );
-                // Instance doesn't exist, persist it
-                await this.persistInstanceMetadata();
-            }
-        } catch (error) {
-            const logger = pino({ level: 'warn' });
-            logger.warn(
-                { error: error instanceof Error ? { message: error.message, stack: error.stack } : error, instanceId: this.instanceId },
-                '[AgentContainer] Failed to restore instance metadata',
-            );
+    try {
+      const persistenceService = this.container.get<IPersistenceService>(
+        TYPES.IPersistenceService,
+      );
+      const metadata = await persistenceService.getInstanceMetadata(
+        this.instanceId,
+      );
+      if (metadata) {
+        // Restore config from stored metadata (merge with current options to preserve components)
+        if (metadata.config) {
+          // Deep merge to ensure all required fields are present
+          const storedConfig = metadata.config as Partial<UnifiedAgentConfig>;
+          this.config = {
+            agent: { ...this.config.agent, ...storedConfig.agent },
+            api: { ...this.config.api, ...storedConfig.api },
+            workspace: { ...this.config.workspace, ...storedConfig.workspace },
+            memory: { ...this.config.memory, ...storedConfig.memory },
+            persistence: storedConfig.persistence ?? this.config.persistence,
+            components: this.config.components,
+          };
         }
-    }
-
-    private async persistInstanceMetadata(): Promise<void> {
-        // if (this.config.persistence?.enabled === false) {
-        //     return;
-        // }
-
-        try {
-            const persistenceService = this.container.get<IPersistenceService>(
-                TYPES.IPersistenceService,
-            );
-            // Exclude non-serializable components from config
-            const { components, ...serializableConfig } = this.config;
-            await persistenceService.saveInstanceMetadata(this.instanceId, {
-                status: 'idle',
-                config: serializableConfig,
-                name: this.config.agent.name,
-                agentType: this.config.agent.type,
-            });
-        } catch (error) {
-            const logger = pino({ level: 'warn' });
-            logger.warn(
-                { error: error instanceof Error ? { message: error.message, stack: error.stack } : error, instanceId: this.instanceId },
-                '[AgentContainer] Failed to persist instance metadata',
-            );
-            throw error; // Re-throw to see full error in demo
-        }
-    }
-
-    private get logger(): pino.Logger | undefined {
-        try {
-            return this.container.get<pino.Logger>(TYPES.Logger);
-        } catch {
-            return undefined;
-        }
-    }
-
-    private setupBindings(): void {
-        this.container.bind(TYPES.AgentInstanceId).toConstantValue(this.instanceId);
-
-        // Logger
-        this.container.bind<Logger>(TYPES.Logger).toDynamicValue(() =>
-            pino({
-                level: process.env['LOG_LEVEL'] || 'debug',
-                formatters: {
-                    level: (label) => ({ level: label }),
-                },
-                timestamp: pino.stdTimeFunctions.isoTime,
-            }),
+        this.logger?.info(
+          { instanceId: this.instanceId, status: metadata.status },
+          '[AgentContainer] Instance metadata restored',
         );
+      } else {
+        this.logger?.warn(
+          { instanceId: this.instanceId },
+          '[AgentContainer] Instance not found, will create new',
+        );
+        // Instance doesn't exist, persist it
+        await this.persistInstanceMetadata();
+      }
+    } catch (error) {
+      const logger = pino({ level: 'warn' });
+      logger.warn(
+        {
+          error:
+            error instanceof Error
+              ? { message: error.message, stack: error.stack }
+              : error,
+          instanceId: this.instanceId,
+        },
+        '[AgentContainer] Failed to restore instance metadata',
+      );
+    }
+  }
 
-        // Agent configuration
-        this.container
-            .bind(TYPES.AgentConfig)
-            .toConstantValue(this.config.agent.config);
-        this.container
-            .bind(TYPES.ProviderSettings)
-            .toConstantValue(this.config.api);
-        this.container
-            .bind(TYPES.AgentPrompt)
-            .toConstantValue(this.config.agent.sop);
-        this.container
-            .bind(TYPES.VirtualWorkspaceConfig)
-            .toConstantValue(this.config.workspace);
-        this.container
-            .bind(TYPES.MemoryModuleConfig)
-            .toConstantValue(this.config.memory);
+  private async persistInstanceMetadata(): Promise<void> {
+    // if (this.config.persistence?.enabled === false) {
+    //     return;
+    // }
 
-        if (this.config.agent.taskId) {
-            this.container
-                .bind<string>(TYPES.TaskId)
-                .toConstantValue(this.config.agent.taskId);
-        }
+    try {
+      const persistenceService = this.container.get<IPersistenceService>(
+        TYPES.IPersistenceService,
+      );
+      // Exclude non-serializable components from config
+      const { components, ...serializableConfig } = this.config;
+      await persistenceService.saveInstanceMetadata(this.instanceId, {
+        status: 'idle',
+        config: serializableConfig,
+        name: this.config.agent.name,
+        agentType: this.config.agent.type,
+      });
+    } catch (error) {
+      const logger = pino({ level: 'warn' });
+      logger.warn(
+        {
+          error:
+            error instanceof Error
+              ? { message: error.message, stack: error.stack }
+              : error,
+          instanceId: this.instanceId,
+        },
+        '[AgentContainer] Failed to persist instance metadata',
+      );
+      throw error; // Re-throw to see full error in demo
+    }
+  }
 
-        // Memory instance ID for persistence
-        this.container
-            .bind<string>(TYPES.MemoryInstanceId)
-            .toConstantValue(this.instanceId);
+  private get logger(): pino.Logger | undefined {
+    try {
+      return this.container.get<pino.Logger>(TYPES.Logger);
+    } catch {
+      return undefined;
+    }
+  }
 
-        // Services (all singleton within this container)
-        this.container.bind(TYPES.Agent).to(Agent).inSingletonScope();
-        this.container
-            .bind(TYPES.IVirtualWorkspace)
-            .to(VirtualWorkspace)
-            .inSingletonScope();
-        this.container
-            .bind(TYPES.IMemoryModule)
-            .to(MemoryModule)
-            .inSingletonScope();
-        this.container.bind(TYPES.IToolManager).to(ToolManager).inSingletonScope();
+  private setupBindings(): void {
+    this.container.bind(TYPES.AgentInstanceId).toConstantValue(this.instanceId);
 
-        // API Client
-        this.container
-            .bind<ApiClient>(TYPES.ApiClient)
-            .toDynamicValue(() => {
-                return ApiClientFactory.create(this.config.api);
-            })
-            .inSingletonScope();
+    // Logger
+    this.container.bind<Logger>(TYPES.Logger).toDynamicValue(() =>
+      pino({
+        level: process.env['LOG_LEVEL'] || 'debug',
+        formatters: {
+          level: (label) => ({ level: label }),
+        },
+        timestamp: pino.stdTimeFunctions.isoTime,
+      }),
+    );
 
-        // // Persistence Service (if enabled)
-        // if (this.config.persistence?.enabled !== false) {
-        const databaseUrl =
-            this.config.persistence?.databaseUrl || process.env['DATABASE_URL'];
+    // Agent configuration
+    this.container
+      .bind(TYPES.AgentConfig)
+      .toConstantValue(this.config.agent.config);
+    this.container
+      .bind(TYPES.ProviderSettings)
+      .toConstantValue(this.config.api);
+    this.container
+      .bind(TYPES.AgentPrompt)
+      .toConstantValue(this.config.agent.sop);
+    this.container
+      .bind(TYPES.VirtualWorkspaceConfig)
+      .toConstantValue(this.config.workspace);
+    this.container
+      .bind(TYPES.MemoryModuleConfig)
+      .toConstantValue(this.config.memory);
 
-        if (databaseUrl) {
-            // Prisma Client
-            this.container
-                .bind<PrismaClient>(TYPES.PrismaClient)
-                .toDynamicValue(() => {
-                    const connectionString = databaseUrl || process.env['DATABASE_URL'];
-                    if (!connectionString) {
-                        throw new Error('Database URL not configured');
-                    }
-                    const pool = new pg.Pool({ connectionString });
-                    const adapter = new PrismaPg(pool);
-                    return new PrismaClient({ adapter });
-                })
-                .inSingletonScope();
-
-            // Persistence Config
-            this.container.bind(TYPES.PersistenceConfig).toConstantValue({
-                enabled: true,
-                databaseUrl,
-                autoCommit: this.config.persistence?.autoCommit ?? true,
-            });
-
-            // Persistence Service
-            this.container
-                .bind<IPersistenceService>(TYPES.IPersistenceService)
-                .to(PostgresPersistenceService)
-                .inSingletonScope();
-        } else {
-            throw new Error('binding persistenceService error: no databaseurl found')
-        }
-        // }
-
-        // Container reference
-        this.container
-            .bind<Container>(TYPES.Container)
-            .toConstantValue(this.container);
-
-        // Bind ToolComponents array for DI-managed registration
-        if (this.config.components && this.config.components.length > 0) {
-            this.container
-                .bind<Array<{ id: string; component: ToolComponent; priority?: number }>>(TYPES.ToolComponents)
-                .toConstantValue(this.config.components);
-        }
-
-        // Bind GlobalToolComponents array for DI-managed registration
-        if (this.config.globalComponents && this.config.globalComponents.length > 0) {
-            this.container
-                .bind<Array<{ id: string; component: ToolComponent; priority?: number }>>(TYPES.GlobalToolComponents)
-                .toConstantValue(this.config.globalComponents);
-        }
+    if (this.config.agent.taskId) {
+      this.container
+        .bind<string>(TYPES.TaskId)
+        .toConstantValue(this.config.agent.taskId);
     }
 
-    async getAgent(): Promise<Agent> {
-        // Wait for initialization (AgentInstance creation) to complete
-        if (this.initPromise) {
-            await this.initPromise;
-            this.initPromise = null;
-        }
+    // Memory instance ID for persistence
+    this.container
+      .bind<string>(TYPES.MemoryInstanceId)
+      .toConstantValue(this.instanceId);
 
-        if (!this.agentInstance) {
-            this.agentInstance = this.container.get<Agent>(TYPES.Agent);
+    // Services (all singleton within this container)
+    this.container.bind(TYPES.Agent).to(Agent).inSingletonScope();
+    this.container
+      .bind(TYPES.IVirtualWorkspace)
+      .to(VirtualWorkspace)
+      .inSingletonScope();
+    this.container
+      .bind(TYPES.IMemoryModule)
+      .to(MemoryModule)
+      .inSingletonScope();
+    this.container.bind(TYPES.IToolManager).to(ToolManager).inSingletonScope();
+    this.container.bind(ComponentRegistry).toSelf().inSingletonScope();
+    this.container
+      .bind(GlobalToolProvider)
+      .toDynamicValue(() => new GlobalToolProvider())
+      .inSingletonScope();
 
-            // Note: Components are now injected via DI constructor
-            // No need to manually register here
+    // API Client
+    this.container
+      .bind<ApiClient>(TYPES.ApiClient)
+      .toDynamicValue(() => {
+        return ApiClientFactory.create(this.config.api);
+      })
+      .inSingletonScope();
 
-            // Restore component states if this is a restored instance
-            if (this.isRestoring) {
-                this.agentInstance.restoreComponentStates();
-                this.isRestoring = false;
-            }
-        }
-        return this.agentInstance;
+    // // Persistence Service (if enabled)
+    // if (this.config.persistence?.enabled !== false) {
+    const databaseUrl =
+      this.config.persistence?.databaseUrl || process.env['DATABASE_URL'];
+
+    if (databaseUrl) {
+      // Prisma Client
+      this.container
+        .bind<PrismaClient>(TYPES.PrismaClient)
+        .toDynamicValue(() => {
+          const connectionString = databaseUrl || process.env['DATABASE_URL'];
+          if (!connectionString) {
+            throw new Error('Database URL not configured');
+          }
+          const pool = new pg.Pool({ connectionString });
+          const adapter = new PrismaPg(pool);
+          return new PrismaClient({ adapter });
+        })
+        .inSingletonScope();
+
+      // Persistence Config
+      this.container.bind(TYPES.PersistenceConfig).toConstantValue({
+        enabled: true,
+        databaseUrl,
+        autoCommit: this.config.persistence?.autoCommit ?? true,
+      });
+
+      // Persistence Service
+      this.container
+        .bind<IPersistenceService>(TYPES.IPersistenceService)
+        .to(PostgresPersistenceService)
+        .inSingletonScope();
+    } else {
+      throw new Error('binding persistenceService error: no databaseurl found');
+    }
+    // }
+
+    // Container reference
+    this.container
+      .bind<Container>(TYPES.Container)
+      .toConstantValue(this.container);
+
+    // Bind ToolComponents array for DI-managed registration
+    if (this.config.components && this.config.components.length > 0) {
+      this.container
+        .bind<
+          Array<{ id: string; component: ToolComponent; priority?: number }>
+        >(TYPES.ToolComponents)
+        .toConstantValue(this.config.components);
     }
 
-    getConfig(): UnifiedAgentConfig {
-        return this.config;
+    // Bind GlobalToolComponents array for DI-managed registration
+    if (
+      this.config.globalComponents &&
+      this.config.globalComponents.length > 0
+    ) {
+      this.container
+        .bind<
+          Array<{ id: string; component: ToolComponent; priority?: number }>
+        >(TYPES.GlobalToolComponents)
+        .toConstantValue(this.config.globalComponents);
+    }
+  }
+
+  async getAgent(): Promise<Agent> {
+    // Wait for initialization (AgentInstance creation) to complete
+    if (this.initPromise) {
+      await this.initPromise;
+      this.initPromise = null;
     }
 
-    getContainer(): Container {
-        return this.container;
+    if (!this.agentInstance) {
+      this.agentInstance = this.container.get<Agent>(TYPES.Agent);
+
+      // Note: Components are now injected via DI constructor
+      // No need to manually register here
+
+      // Restore component states if this is a restored instance
+      if (this.isRestoring) {
+        this.agentInstance.restoreComponentStates();
+        this.isRestoring = false;
+      }
     }
+    return this.agentInstance;
+  }
+
+  getConfig(): UnifiedAgentConfig {
+    return this.config;
+  }
+
+  getContainer(): Container {
+    return this.container;
+  }
 }
 
 // Re-export types from UnifiedAgentConfig
 export type {
-    AgentCreationOptions,
-    UnifiedAgentConfig,
+  AgentCreationOptions,
+  UnifiedAgentConfig,
 } from './UnifiedAgentConfig.js';
 export {
-    defaultUnifiedConfig,
-    mergeWithDefaults,
+  defaultUnifiedConfig,
+  mergeWithDefaults,
 } from './UnifiedAgentConfig.js';

@@ -9,7 +9,9 @@
  */
 
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
-import { ToolManager } from '../tools/index.js';
+import { ToolManager } from '../tools/ToolManager.js';
+import { ComponentRegistry } from '../../components/ComponentRegistry.js';
+import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 
 /**
  * Meta-Analysis Workspace
@@ -19,17 +21,16 @@ import { ToolManager } from '../tools/index.js';
  * for manual component registration in the workspace constructor.
  */
 export class MetaAnalysisWorkspace extends VirtualWorkspace {
-    constructor() {
-        const toolManager = new ToolManager();
-        super({
-            id: 'meta-analysis-workspace',
-            name: 'Meta-Analysis Workspace',
-            description: 'Workspace for conducting systematic reviews and meta-analyses. Components are dynamically registered through skills.'
-        }, toolManager);
+  constructor() {
+    const toolManager = new ToolManager();
+    const componentRegistry = new ComponentRegistry();
+    const globalToolProvider = new GlobalToolProvider();
 
-        // No manual component registration needed!
-        // Components will be automatically registered when skills with components are activated.
-        // For example, activating 'meta-analysis-with-components' skill will automatically
-        // register: Pubmed Search Engine, PICO Templater, Prisma Check List, Prisma Workflow
-    }
+    super(toolManager, componentRegistry, globalToolProvider, {
+      id: 'meta-analysis-workspace',
+      name: 'Meta-Analysis Workspace',
+      description:
+        'Workspace for conducting systematic reviews and meta-analyses. Components are dynamically registered through skills.',
+    });
+  }
 }

@@ -1,4 +1,4 @@
-import { injectable, inject, optional } from 'inversify';
+import { injectable, inject, optional, postConstruct } from 'inversify';
 import {
   ToolComponent,
   type VirtualWorkspaceConfig,
@@ -61,71 +61,48 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
     new Map();
   private globalComponentIds: Set<string> = new Set();
+  private globalToolProvider: GlobalToolProvider;
 
   constructor(
+    @inject(TYPES.IToolManager) toolManager: IToolManager,
+    @inject(ComponentRegistry) componentRegistry: ComponentRegistry,
+    @inject(GlobalToolProvider) globalToolProvider: GlobalToolProvider,
     @inject(TYPES.VirtualWorkspaceConfig)
     @optional()
     config: Partial<VirtualWorkspaceConfig> = {},
-    @inject(TYPES.IToolManager) @optional() toolManager?: IToolManager,
-    @inject(TYPES.ToolComponents) @optional() diComponents?: DIComponentRegistration[],
-    @inject(TYPES.GlobalToolComponents) @optional() diGlobalComponents?: DIComponentRegistration[],
+    @inject(TYPES.ToolComponents)
+    @optional()
+    diComponents?: DIComponentRegistration[],
+    @inject(TYPES.GlobalToolComponents)
+    @optional()
+    diGlobalComponents?: DIComponentRegistration[],
   ) {
     this.config = {
       ...DefaultVirtualWorkspaceConfig,
       ...config,
     };
 
-    this.componentRegistry = new ComponentRegistry();
+    this.componentRegistry = componentRegistry;
+    this.toolManager = toolManager;
+    this.globalToolProvider = globalToolProvider;
 
-    // Register components from config (legacy support)
-    if (config.components) {
-      for (const comp of config.components) {
-        this.componentRegistry.register(
-          comp.componentId || comp.constructor.name,
-          comp,
-        );
-      }
-    }
-
-    // Register components from DI container (preferred)
     if (diComponents && diComponents.length > 0) {
       for (const { id, component, priority } of diComponents) {
         this.componentRegistry.register(id, component, priority);
       }
     }
 
-    this.toolManager = toolManager ?? new ToolManager();
-    this.registerComponentTools();
-
-    const globalToolProvider = new GlobalToolProvider();
-    this.toolManager.registerProvider(globalToolProvider);
-
-    // Register global components from DI container (preferred)
     if (diGlobalComponents && diGlobalComponents.length > 0) {
       for (const { id, component, priority } of diGlobalComponents) {
         this.registerGlobalComponent(id, component, priority);
       }
-    } else if (config.globalComponents) {
-      // Legacy support: initialize from config
-      this.initializeGlobalComponents(config.globalComponents);
     }
   }
 
-  private initializeGlobalComponents(
-    definitions: GlobalComponentDefinition[],
-  ): void {
-    for (const def of definitions) {
-      if (def.factory) {
-        const instance = def.factory();
-        if (instance instanceof Promise) {
-          console.warn(
-            `[VirtualWorkspace] Async global component factory for "${def.componentId}" should be initialized via registerGlobalComponent()`,
-          );
-        } else if (instance instanceof ToolComponent) {
-          this.registerGlobalComponent(def.componentId, instance, def.priority);
-        }
-      }
-    }
+  @postConstruct()
+  private init(): void {
+    this.registerComponentTools();
+    this.toolManager.registerProvider(this.globalToolProvider);
   }
 
   protected _registerToolProvider(id: string, component: ToolComponent): void {
@@ -301,83 +278,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return [...this.toolCallLog];
   }
 
-  private _getComponentInfoText(id: string): string {
-    const component = this.componentRegistry.get(id);
-    if (!component) return '';
-    const displayName = component.displayName || id;
-    const description = component.description || '';
-    return `**Component ID:** \`${id}\`\n**Display Name:** ${displayName}\n**Description:** ${description}`;
-  }
-
-  renderComponentsSection(): TUIElement {
-    const container = new tdiv({
-      styles: { showBorder: true },
-    });
-
-    container.addChild(
-      new tdiv({
-        content: 'COMPONENTS',
-        styles: { align: 'center' },
-      }),
-    );
-
-    const componentIds = this.componentRegistry.getIds();
-
-    if (componentIds.length === 0) {
-      container.addChild(
-        new tdiv({
-          content: 'No components registered',
-          styles: { showBorder: false },
-        }),
-      );
-      return container;
-    }
-
-    for (const id of componentIds) {
-      const text = this._getComponentInfoText(id);
-      if (text) {
-        container.addChild(
-          new tdiv({
-            content: `${text}\n`,
-            styles: { showBorder: false },
-          }),
-        );
-        container.addChild(
-          new tdiv({
-            content: `\n\n---\n\n`,
-            styles: { showBorder: false },
-          }),
-        );
-      }
-    }
-
-    return container;
-  }
-
-  renderComponentsSectionMarkdown(): MdElement {
-    const container = new MdDiv({ styles: { showBorder: true } }, [], 0);
-
-    container.addChild(new MdHeading({ content: 'COMPONENTS' }, [], 0));
-
-    const componentIds = this.componentRegistry.getIds();
-
-    if (componentIds.length === 0) {
-      container.addChild(
-        new MdParagraph({ content: 'No components registered' }, [], 1),
-      );
-      return container;
-    }
-
-    for (const id of componentIds) {
-      const text = this._getComponentInfoText(id);
-      if (text) {
-        container.addChild(new MdParagraph({ content: text }, [], 1));
-      }
-    }
-
-    return container;
-  }
-
   renderToolCallLogSectionMarkdown(): MdElement {
     const maxCount = this.config.toolCallLogCount ?? 3;
     const container = new MdDiv({ styles: { showBorder: false } }, [], 0);
@@ -530,8 +430,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       );
     }
 
-    container.addChild(this.renderComponentsSectionMarkdown());
-
     const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
     const globalRegistrations = sortedRegistrations.filter((r) =>
@@ -603,8 +501,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         }),
       );
     }
-
-    container.addChild(this.renderComponentsSection());
 
     const sortedRegistrations = this.componentRegistry.getAllRegistrations();
 
@@ -772,11 +668,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     this.externalRenderers.delete(id);
   }
 
-  // ==================== Component State Export/Import (Phase 3) ====================
-
-  /**
-   * Export all component states for persistence
-   */
   exportComponentStates(): Map<string, ComponentStateBase> {
     const states = new Map<string, ComponentStateBase>();
     const registrations = this.componentRegistry.getAllRegistrations();
@@ -797,9 +688,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return states;
   }
 
-  /**
-   * Import component states from persistence
-   */
   importComponentStates(states: Map<string, ComponentStateBase>): void {
     for (const [componentId, state] of states) {
       try {

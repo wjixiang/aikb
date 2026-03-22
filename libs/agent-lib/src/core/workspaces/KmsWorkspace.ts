@@ -11,7 +11,13 @@
  * Or extend this class to add your own components.
  */
 
-import { VirtualWorkspace, type DIComponentRegistration } from '../statefulContext/virtualWorkspace.js';
+import {
+  VirtualWorkspace,
+  type DIComponentRegistration,
+} from '../statefulContext/virtualWorkspace.js';
+import { ToolManager } from '../tools/ToolManager.js';
+import { ComponentRegistry } from '../../components/ComponentRegistry.js';
+import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 
 /**
  * Knowledge Management Workspace
@@ -20,22 +26,22 @@ import { VirtualWorkspace, type DIComponentRegistration } from '../statefulConte
  * Users should extend this class and add their own components.
  */
 export class KmsWorkspace extends VirtualWorkspace {
-    constructor(components?: DIComponentRegistration[]) {
-        super({
-            id: 'bookshelf-workspace',
-            name: 'Bookshelf Workspace',
-            description: 'Workspace for viewing and searching through bookshelf content. Provides tools to select books, view content, and perform semantic search across book materials.',
-            // Components are passed via config, which gets registered in constructor
-        });
+  constructor(components?: DIComponentRegistration[]) {
+    const toolManager = new ToolManager();
+    const componentRegistry = new ComponentRegistry();
+    const globalToolProvider = new GlobalToolProvider();
 
-        // Note: Components should be passed via DI container (AgentContainer.components)
-        // or through config.components in the constructor
-        // This constructor signature is kept for backward compatibility
-        if (components && components.length > 0) {
-            for (const { id, component, priority } of components) {
-                this.componentRegistry.register(id, component, priority);
-                this._registerToolProvider(id, component);
-            }
-        }
-    }
+    super(
+      toolManager,
+      componentRegistry,
+      globalToolProvider,
+      {
+        id: 'bookshelf-workspace',
+        name: 'Bookshelf Workspace',
+        description:
+          'Workspace for viewing and searching through bookshelf content. Provides tools to select books, view content, and perform semantic search across book materials.',
+      },
+      components,
+    );
+  }
 }
