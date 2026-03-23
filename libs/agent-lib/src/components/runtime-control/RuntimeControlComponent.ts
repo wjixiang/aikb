@@ -43,11 +43,20 @@ import {
   type ListAgentsParams,
   type GetAgentParams,
   type SubmitTaskParams,
+  type RegisterInTopologyParams,
+  type UnregisterFromTopologyParams,
+  type ConnectAgentsParams,
+  type DisconnectAgentsParams,
+  type GetTopologyInfoParams,
+  type GetNeighborsParams,
 } from './schemas.js';
 import type {
   IRuntimeControlClient,
   RuntimeStats,
   AgentMetadata,
+  TopologyNode,
+  TopologyEdge,
+  RoutingStats,
 } from '../../core/runtime/types.js';
 
 /**
@@ -97,6 +106,16 @@ export class RuntimeControlComponent extends ToolComponent {
       ['getStats', runtimeControlToolSchemas.getStats],
       ['listChildAgents', runtimeControlToolSchemas.listChildAgents],
       ['getMyInfo', runtimeControlToolSchemas.getMyInfo],
+      // Topology tools
+      ['registerInTopology', runtimeControlToolSchemas.registerInTopology],
+      [
+        'unregisterFromTopology',
+        runtimeControlToolSchemas.unregisterFromTopology,
+      ],
+      ['connectAgents', runtimeControlToolSchemas.connectAgents],
+      ['disconnectAgents', runtimeControlToolSchemas.disconnectAgents],
+      ['getTopologyInfo', runtimeControlToolSchemas.getTopologyInfo],
+      ['getNeighbors', runtimeControlToolSchemas.getNeighbors],
     ];
 
     toolEntries.forEach(([name, toolDef]) => {
@@ -145,6 +164,25 @@ export class RuntimeControlComponent extends ToolComponent {
           return await this.handleListChildAgents();
         case 'getMyInfo':
           return await this.handleGetMyInfo();
+        // Topology tools
+        case 'registerInTopology':
+          return await this.handleRegisterInTopology(
+            params as RegisterInTopologyParams,
+          );
+        case 'unregisterFromTopology':
+          return await this.handleUnregisterFromTopology(
+            params as UnregisterFromTopologyParams,
+          );
+        case 'connectAgents':
+          return await this.handleConnectAgents(params as ConnectAgentsParams);
+        case 'disconnectAgents':
+          return await this.handleDisconnectAgents(
+            params as DisconnectAgentsParams,
+          );
+        case 'getTopologyInfo':
+          return await this.handleGetTopologyInfo();
+        case 'getNeighbors':
+          return await this.handleGetNeighbors(params as GetNeighborsParams);
         default:
           return {
             success: false,
@@ -185,6 +223,73 @@ export class RuntimeControlComponent extends ToolComponent {
     elements.push(
       new tdiv({ content: `Instance: ${client.getSelfInstanceId()}` }),
     );
+
+    // Render Topology Info
+    try {
+      const graph = client.getTopologyGraph();
+      const stats = client.getTopologyStats();
+      const nodes = graph.getAllNodes();
+      const edges = graph.getAllEdges();
+
+      elements.push(
+        new th({
+          content: 'Topology Network',
+          styles: { align: 'left' },
+        }),
+      );
+
+      elements.push(
+        new tdiv({
+          content: `Nodes: ${nodes.length} | Edges: ${edges.length}`,
+        }),
+      );
+
+      elements.push(
+        new tdiv({
+          content: `Messages: ${stats.totalMessages} | Active: ${stats.activeConversations}`,
+        }),
+      );
+
+      if (nodes.length > 0) {
+        elements.push(
+          new th({
+            content: 'Agents in Topology',
+            styles: { align: 'left' },
+          }),
+        );
+
+        for (const node of nodes) {
+          const capabilities = node.capabilities?.length
+            ? ` [${node.capabilities.join(', ')}]`
+            : '';
+          elements.push(
+            new tdiv({
+              content: `  • ${node.instanceId} (${node.nodeType})${capabilities}`,
+            }),
+          );
+        }
+      }
+
+      if (edges.length > 0) {
+        elements.push(
+          new th({
+            content: 'Connections',
+            styles: { align: 'left' },
+          }),
+        );
+
+        for (const edge of edges) {
+          const arrow = edge.bidirectional ? '<->' : '->';
+          elements.push(
+            new tdiv({
+              content: `  ${edge.from} ${arrow} ${edge.to} (${edge.edgeType})`,
+            }),
+          );
+        }
+      }
+    } catch {
+      elements.push(new tdiv({ content: 'Topology info not available' }));
+    }
 
     return elements;
   };
@@ -609,5 +714,242 @@ export class RuntimeControlComponent extends ToolComponent {
       },
       summary: `[RuntimeControl] Got agent info for: ${client.getSelfInstanceId()}`,
     };
+  }
+
+  // ============================================
+  // Topology Tool Handlers
+  // ============================================
+
+  private async handleRegisterInTopology(
+    params: RegisterInTopologyParams,
+  ): Promise<ToolCallResult<{ success: boolean; instanceId: string }>> {
+    const client = this.getRuntimeClient();
+    if (!client) {
+      return {
+        success: false,
+        data: { error: 'Runtime control not available' } as unknown as {
+          success: boolean;
+          instanceId: string;
+        },
+        summary: '[RuntimeControl] Runtime control not available',
+      };
+    }
+
+    try {
+      client.registerInTopology(
+        params.instanceId,
+        params.nodeType,
+        params.capabilities,
+      );
+      return {
+        success: true,
+        data: { success: true, instanceId: params.instanceId },
+        summary: `[RuntimeControl] Registered ${params.instanceId} as ${params.nodeType}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: (error as Error).message,
+          success: false,
+          instanceId: params.instanceId,
+        } as unknown as { success: boolean; instanceId: string },
+        summary: `[RuntimeControl] Failed to register in topology: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  private async handleUnregisterFromTopology(
+    params: UnregisterFromTopologyParams,
+  ): Promise<ToolCallResult<{ success: boolean; instanceId: string }>> {
+    const client = this.getRuntimeClient();
+    if (!client) {
+      return {
+        success: false,
+        data: { error: 'Runtime control not available' } as unknown as {
+          success: boolean;
+          instanceId: string;
+        },
+        summary: '[RuntimeControl] Runtime control not available',
+      };
+    }
+
+    try {
+      client.unregisterFromTopology(params.instanceId);
+      return {
+        success: true,
+        data: { success: true, instanceId: params.instanceId },
+        summary: `[RuntimeControl] Unregistered ${params.instanceId} from topology`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: (error as Error).message,
+          success: false,
+          instanceId: params.instanceId,
+        } as unknown as { success: boolean; instanceId: string },
+        summary: `[RuntimeControl] Failed to unregister from topology: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  private async handleConnectAgents(
+    params: ConnectAgentsParams,
+  ): Promise<ToolCallResult<{ success: boolean; from: string; to: string }>> {
+    const client = this.getRuntimeClient();
+    if (!client) {
+      return {
+        success: false,
+        data: { error: 'Runtime control not available' } as unknown as {
+          success: boolean;
+          from: string;
+          to: string;
+        },
+        summary: '[RuntimeControl] Runtime control not available',
+      };
+    }
+
+    try {
+      client.connectAgents(params.from, params.to, params.edgeType);
+      return {
+        success: true,
+        data: { success: true, from: params.from, to: params.to },
+        summary: `[RuntimeControl] Connected ${params.from} -> ${params.to}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: (error as Error).message,
+          success: false,
+          from: params.from,
+          to: params.to,
+        } as unknown as { success: boolean; from: string; to: string },
+        summary: `[RuntimeControl] Failed to connect agents: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  private async handleDisconnectAgents(
+    params: DisconnectAgentsParams,
+  ): Promise<ToolCallResult<{ success: boolean; from: string; to: string }>> {
+    const client = this.getRuntimeClient();
+    if (!client) {
+      return {
+        success: false,
+        data: { error: 'Runtime control not available' } as unknown as {
+          success: boolean;
+          from: string;
+          to: string;
+        },
+        summary: '[RuntimeControl] Runtime control not available',
+      };
+    }
+
+    try {
+      client.disconnectAgents(params.from, params.to);
+      return {
+        success: true,
+        data: { success: true, from: params.from, to: params.to },
+        summary: `[RuntimeControl] Disconnected ${params.from} -> ${params.to}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: (error as Error).message,
+          success: false,
+          from: params.from,
+          to: params.to,
+        } as unknown as { success: boolean; from: string; to: string },
+        summary: `[RuntimeControl] Failed to disconnect agents: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  private async handleGetTopologyInfo(): Promise<
+    ToolCallResult<{
+      nodes: TopologyNode[];
+      edges: TopologyEdge[];
+      stats: RoutingStats;
+      size: { nodes: number; edges: number };
+    }>
+  > {
+    const client = this.getRuntimeClient();
+    if (!client) {
+      return {
+        success: false,
+        data: { error: 'Runtime control not available' } as unknown as {
+          nodes: TopologyNode[];
+          edges: TopologyEdge[];
+          stats: RoutingStats;
+          size: { nodes: number; edges: number };
+        },
+        summary: '[RuntimeControl] Runtime control not available',
+      };
+    }
+
+    try {
+      const graph = client.getTopologyGraph();
+      const stats = client.getTopologyStats();
+      const nodes = graph.getAllNodes();
+      const edges = graph.getAllEdges();
+      const size = graph.size;
+
+      return {
+        success: true,
+        data: { nodes, edges, stats, size },
+        summary: `[RuntimeControl] Topology: ${size.nodes} nodes, ${size.edges} edges`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: (error as Error).message,
+        } as unknown as {
+          nodes: TopologyNode[];
+          edges: TopologyEdge[];
+          stats: RoutingStats;
+          size: { nodes: number; edges: number };
+        },
+        summary: `[RuntimeControl] Failed to get topology info: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  private async handleGetNeighbors(
+    params: GetNeighborsParams,
+  ): Promise<ToolCallResult<{ neighbors: TopologyNode[] }>> {
+    const client = this.getRuntimeClient();
+    if (!client) {
+      return {
+        success: false,
+        data: { error: 'Runtime control not available' } as unknown as {
+          neighbors: TopologyNode[];
+        },
+        summary: '[RuntimeControl] Runtime control not available',
+      };
+    }
+
+    try {
+      const graph = client.getTopologyGraph();
+      const neighbors = graph.getNeighbors(params.instanceId);
+
+      return {
+        success: true,
+        data: { neighbors },
+        summary: `[RuntimeControl] Found ${neighbors.length} neighbors for ${params.instanceId}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: (error as Error).message,
+          neighbors: [],
+        } as unknown as { neighbors: TopologyNode[] },
+        summary: `[RuntimeControl] Failed to get neighbors: ${(error as Error).message}`,
+      };
+    }
   }
 }

@@ -10,6 +10,33 @@ describe('RuntimeControlComponent', () => {
   let mockRuntimeClient: IRuntimeControlClient;
 
   const createMockClient = (): IRuntimeControlClient => {
+    const mockGraph = {
+      addNode: vi.fn(),
+      removeNode: vi.fn(),
+      getNode: vi.fn(),
+      hasNode: vi.fn(() => true),
+      getAllNodes: vi.fn(() => [
+        {
+          instanceId: 'parent-agent-id',
+          nodeType: 'router' as const,
+          capabilities: [],
+        },
+      ]),
+      addEdge: vi.fn(),
+      removeEdge: vi.fn(),
+      hasEdge: vi.fn(() => false),
+      getEdge: vi.fn(),
+      getAllEdges: vi.fn(() => []),
+      getNeighbors: vi.fn(() => []),
+      getChildren: vi.fn(() => []),
+      getParent: vi.fn(),
+      getParents: vi.fn(() => []),
+      findPath: vi.fn(() => null),
+      isReachable: vi.fn(() => false),
+      clear: vi.fn(),
+      size: { nodes: 1, edges: 0 },
+    };
+
     return {
       createAgent: vi.fn(() => Promise.resolve('child-agent-id-' + Date.now())),
       destroyAgent: vi.fn(() => Promise.resolve()),
@@ -37,8 +64,15 @@ describe('RuntimeControlComponent', () => {
       unregisterFromTopology: vi.fn(),
       connectAgents: vi.fn(),
       disconnectAgents: vi.fn(),
-      getTopologyGraph: vi.fn(),
-      getTopologyStats: vi.fn(),
+      getTopologyGraph: vi.fn(() => mockGraph),
+      getTopologyStats: vi.fn(() => ({
+        totalMessages: 0,
+        totalConversations: 0,
+        activeConversations: 0,
+        completedConversations: 0,
+        failedConversations: 0,
+        timedOutConversations: 0,
+      })),
     };
   };
 
@@ -65,7 +99,7 @@ describe('RuntimeControlComponent', () => {
     });
 
     it('should have all required tools', () => {
-      expect(component.toolSet.size).toBe(10);
+      expect(component.toolSet.size).toBe(16);
       expect(component.toolSet.has('createAgent')).toBe(true);
       expect(component.toolSet.has('destroyAgent')).toBe(true);
       expect(component.toolSet.has('startAgent')).toBe(true);
@@ -76,6 +110,13 @@ describe('RuntimeControlComponent', () => {
       expect(component.toolSet.has('getStats')).toBe(true);
       expect(component.toolSet.has('listChildAgents')).toBe(true);
       expect(component.toolSet.has('getMyInfo')).toBe(true);
+      // Topology tools
+      expect(component.toolSet.has('registerInTopology')).toBe(true);
+      expect(component.toolSet.has('unregisterFromTopology')).toBe(true);
+      expect(component.toolSet.has('connectAgents')).toBe(true);
+      expect(component.toolSet.has('disconnectAgents')).toBe(true);
+      expect(component.toolSet.has('getTopologyInfo')).toBe(true);
+      expect(component.toolSet.has('getNeighbors')).toBe(true);
     });
   });
 
