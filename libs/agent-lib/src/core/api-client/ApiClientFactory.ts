@@ -67,6 +67,9 @@ export class ApiClientFactory {
         const baseURL =
           config.openAiBaseUrl ||
           config.openAiNativeBaseUrl ||
+          ((config as Record<string, unknown>)['apiBaseUrl'] as
+            | string
+            | undefined) ||
           'https://api.openai.com/v1';
         console.log(
           '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
