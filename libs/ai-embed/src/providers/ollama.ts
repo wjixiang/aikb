@@ -1,4 +1,4 @@
-import type { EmbeddingConfig, IEmbeddingProvider } from './types.js';
+import type { EmbeddingConfig, IEmbeddingProvider } from '../types.js';
 
 interface OllamaEmbeddingRequest {
   model: string;
@@ -48,7 +48,7 @@ export class OllamaEmbeddingProvider implements IEmbeddingProvider {
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
-        const data: OllamaEmbeddingResponse = await response.json();
+        const data = (await response.json()) as OllamaEmbeddingResponse;
 
         if (!data.embeddings || !Array.isArray(data.embeddings)) {
           throw new Error('Invalid Ollama response: missing embeddings array');

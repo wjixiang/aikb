@@ -1,4 +1,4 @@
-import type { EmbeddingConfig, IEmbeddingProvider } from './types.js';
+import type { EmbeddingConfig, IEmbeddingProvider } from '../types.js';
 
 interface AlibabaEmbeddingRequest {
   input: string[];

@@ -65,6 +65,19 @@ export class OpenaiCompatibleApiClient implements ApiClient {
   private lastError: ApiClientError | null = null;
   private logger: pino.Logger;
 
+  private getMaskedConfig() {
+    return {
+      baseURL: this.config.baseURL ?? 'https://api.openai.com/v1',
+      apiKey: this.config.apiKey
+        ? `${this.config.apiKey.substring(0, 8)}...`
+        : undefined,
+      model: this.config.model,
+      temperature: this.config.temperature,
+      maxTokens: this.config.maxTokens,
+      timeout: this.config.maxRetries,
+    };
+  }
+
   constructor(config: OpenAICompatibleConfig) {
     this.validateConfig(config);
     this.config = {
@@ -224,6 +237,7 @@ export class OpenaiCompatibleApiClient implements ApiClient {
             error: apiError.toJSON(),
             isRetryable: apiError.retryable,
             remainingAttempts: maxRetries - attempt,
+            config: this.getMaskedConfig(),
           },
           'Request failed on attempt',
         );
@@ -250,6 +264,7 @@ export class OpenaiCompatibleApiClient implements ApiClient {
         requestId,
         attempts: maxRetries + 1,
         finalError: lastError?.toJSON(),
+        config: this.getMaskedConfig(),
       },
       'Request failed after all retry attempts',
     );
@@ -327,6 +342,26 @@ export class OpenaiCompatibleApiClient implements ApiClient {
       if (error instanceof ApiClientError) {
         throw error;
       }
+
+      // Log raw error details before parsing
+      this.logger.error(
+        {
+          requestId,
+          rawError:
+            error instanceof Error
+              ? {
+                  name: error.name,
+                  message: error.message,
+                  stack: error.stack,
+                  cause: error.cause,
+                }
+              : String(error),
+          errorProps:
+            error instanceof Error ? Object.getOwnPropertyNames(error) : [],
+          config: this.getMaskedConfig(),
+        },
+        'Raw error before parsing',
+      );
 
       // Parse and throw as appropriate error type
       throw parseError(error, { timeout });
@@ -591,4 +626,3 @@ export class OpenaiCompatibleApiClient implements ApiClient {
     }
   }
 }
-

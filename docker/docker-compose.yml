@@ -21,7 +21,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_DB: biblib
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -88,8 +88,8 @@ services:
     image: rustfs/rustfs:latest
     restart: always
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     volumes:
       - rustfs_data:/data
       - rustfs_logs:/logs
@@ -100,7 +100,7 @@ services:
     image: docker.litellm.ai/berriai/litellm:main-latest
     restart: always
     ports:
-      - "4000:4000"
+      - '4000:4000'
     volumes:
       - ./litellm_config.yaml:/app/config.yaml
     environment:
@@ -113,6 +113,23 @@ services:
     command: --config /app/config.yaml --detailed_debug
     networks:
       - bib-network
+
+  # mineru:
+  #   image: mineru:latest
+  #   container_name: mineru
+  #   restart: always
+  #   ports:
+  #     - '40000:30000'
+  #     - '7860:7860'
+  #     - '8000:8000'
+  #   environment:
+  #     - NVIDIA_VISIBLE_DEVICES=all
+  #   volumes:
+  #     - mineru_data:/data
+  #   ipc: host
+  #   shm_size: '32g'
+  #   networks:
+  #     - bib-network
 
 networks:
   bib-network:
@@ -128,3 +145,4 @@ volumes:
   postgres_shard_3:
   rustfs_data:
   rustfs_logs:
+  mineru_data:

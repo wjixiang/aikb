@@ -3,6 +3,7 @@ dist
 node_modules
 build
 .pnpm-store
+target
 
 # Logs
 logs
