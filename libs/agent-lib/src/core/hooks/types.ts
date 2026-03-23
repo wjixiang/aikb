@@ -7,10 +7,6 @@
 
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { Tool } from '../../components/core/types.js';
-import type {
-  RuntimeTask,
-  RuntimeTaskResult,
-} from '../../components/runtime-task/types.js';
 
 // =============================================================================
 // Hook Categories (Enum)
@@ -34,10 +30,6 @@ export enum HookType {
   COMPONENT_AFTER_UNREGISTER = 'component:afterUnregister',
   TOOL_BEFORE_EXECUTE = 'tool:beforeExecute',
   TOOL_AFTER_EXECUTE = 'tool:afterExecute',
-  TASK_SUBMITTED = 'task:submitted',
-  TASK_RECEIVED = 'task:received',
-  TASK_COMPLETED = 'task:completed',
-  TASK_FAILED = 'task:failed',
 }
 
 // =============================================================================
@@ -212,58 +204,6 @@ export interface ToolAfterExecuteContext extends HookContextBase {
   duration: number;
 }
 
-// =============================================================================
-// Task Hook Contexts
-// =============================================================================
-
-/**
- * Task submitted context
- */
-export interface TaskSubmittedContext extends HookContextBase {
-  type: HookType.TASK_SUBMITTED;
-  /** Task ID */
-  taskId: string;
-  /** The submitted task */
-  task: RuntimeTask;
-  /** Source of the task (e.g., 'mail', 'api', 'runtime') */
-  source?: string;
-}
-
-/**
- * Task received context
- */
-export interface TaskReceivedContext extends HookContextBase {
-  type: HookType.TASK_RECEIVED;
-  /** Task ID */
-  taskId: string;
-  /** The received task */
-  task: RuntimeTask;
-}
-
-/**
- * Task completed context
- */
-export interface TaskCompletedContext extends HookContextBase {
-  type: HookType.TASK_COMPLETED;
-  /** Task ID */
-  taskId: string;
-  /** Task result */
-  result: RuntimeTaskResult;
-}
-
-/**
- * Task failed context
- */
-export interface TaskFailedContext extends HookContextBase {
-  type: HookType.TASK_FAILED;
-  /** Task ID */
-  taskId: string;
-  /** The original task */
-  task: RuntimeTask;
-  /** Error that caused failure */
-  error: Error;
-}
-
 /**
  * Union type of all hook contexts
  */
@@ -282,11 +222,6 @@ export type HookContext =
   | ComponentAfterUnregisterContext
   | ToolBeforeExecuteContext
   | ToolAfterExecuteContext
-  | TaskSubmittedContext
-  | TaskReceivedContext
-  | TaskCompletedContext
-  | TaskFailedContext;
-
 // =============================================================================
 // Hook Handler Types
 // =============================================================================

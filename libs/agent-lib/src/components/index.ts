@@ -42,44 +42,6 @@ export type { ComponentRegistration } from './ComponentRegistry.js';
  */
 export * from './core/index.js';
 
-// ==================== Runtime Task Component ====================
-
-/**
- * Runtime Task Module
- *
- * In-memory task queue for agent communication.
- * Replaces the external mail service dependency with a simple event-driven system.
- */
-export {
-  RuntimeTaskComponent,
-  createRuntimeTaskComponent,
-  type RuntimeTaskComponentConfig,
-} from './runtime-task/index.js';
-
-export {
-  runtimeTaskToolSchemas,
-  getPendingTasksParamsSchema,
-  getTaskByIdParamsSchema,
-  reportTaskResultParamsSchema,
-  sendTaskToExpertParamsSchema,
-  markTaskProcessingParamsSchema,
-} from './runtime-task/schemas.js';
-
-export type {
-  RuntimeTaskToolName,
-  RuntimeTaskToolReturnTypes,
-  ToolReturnType,
-} from './runtime-task/schemas.js';
-
-export type {
-  RuntimeTask,
-  RuntimeTaskResult,
-  TaskPriority,
-  RuntimeTaskStatus,
-  TaskQueueStats,
-  TaskQueryFilter,
-} from './runtime-task/types.js';
-
 // ==================== Bibliography Search Component ====================
 
 /**

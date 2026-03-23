@@ -2,14 +2,13 @@
  * Agent Runtime System - Core Type Definitions
  *
  * This module defines the core types for the Agent Runtime system,
- * which manages multiple Agent instances and provides a central task queue.
- *
+ * which manages multiple Agent instances.
+
  * Simplified architecture:
  * - No permission system - all agents have equal capabilities
  * - Topology management integrated for agent communication
  */
 
-import type { ExportResult } from '../../components/core/toolComponent.js';
 import type { AgentStatus } from '../common/types.js';
 
 // =============================================================================
@@ -42,8 +41,6 @@ export interface AgentMetadata {
 export interface RuntimeStats {
   totalAgents: number;
   agentsByStatus: Record<AgentStatus, number>;
-  totalPendingTasks?: number;
-  totalProcessingTasks?: number;
 }
 
 // =============================================================================
@@ -56,7 +53,6 @@ export interface RuntimeStats {
  * All agents have equal capabilities to:
  * - Create/destroy/start/stop agents
  * - Manage topology (register, connect agents)
- * - Submit and manage tasks
  * - Query runtime state
  */
 export interface IRuntimeControlClient {
@@ -81,14 +77,6 @@ export interface IRuntimeControlClient {
   getSelfInstanceId(): string;
   getParentInstanceId(): string | undefined;
   listChildAgents(): Promise<AgentMetadata[]>;
-
-  // ============================================
-  // Task Management
-  // ============================================
-
-  submitTask(task: TaskSubmission): Promise<string>;
-  getTaskStatus(taskId: string): Promise<RuntimeTask | undefined>;
-  getPendingTasks(instanceId?: string): Promise<RuntimeTask[]>;
 
   // ============================================
   // Statistics
@@ -238,52 +226,12 @@ export interface AgentRuntimeConfig {
   maxAgents?: number;
   defaultApiConfig?: Partial<RuntimeControlProviderSettings>;
   persistence?: PersistenceConfig;
-  taskQueue?: TaskQueueConfig;
 }
 
 export interface AgentFilter {
   status?: AgentStatus;
   agentType?: string;
   name?: string;
-}
-
-// =============================================================================
-// Task Types
-// =============================================================================
-
-export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
-
-export interface TaskSubmission {
-  description: string;
-  input?: Record<string, unknown>;
-  priority?: TaskPriority;
-  targetInstanceId: string;
-  expiresAt?: Date;
-}
-
-export interface RuntimeTask {
-  taskId: string;
-  description: string;
-  input?: Record<string, unknown>;
-  priority: TaskPriority;
-  status: TaskStatus;
-  targetInstanceId: string;
-  processingInstanceId?: string;
-  output?: Record<string, ExportResult>;
-  error?: string;
-  createdAt: Date;
-  startedAt?: Date;
-  completedAt?: Date;
-  expiresAt?: Date;
-}
-
-export interface RuntimeTaskResult {
-  taskId: string;
-  success: boolean;
-  output?: Record<string, ExportResult>;
-  error?: string;
-  completedAt: Date;
 }
 
 // =============================================================================
@@ -296,12 +244,7 @@ export type RuntimeEventType =
   | 'agent:stopped'
   | 'agent:destroyed'
   | 'agent:error'
-  | 'agent:idle'
-  | 'task:submitted'
-  | 'task:assigned'
-  | 'task:started'
-  | 'task:completed'
-  | 'task:failed';
+  | 'agent:idle';
 
 export interface RuntimeEvent {
   id: string;
@@ -321,33 +264,13 @@ export interface PersistenceConfig {
   autoCommit?: boolean;
 }
 
-export interface TaskQueueConfig {
-  maxPendingTasks?: number;
-  taskTimeout?: number;
-  enableExpiration?: boolean;
-}
-
 // =============================================================================
 // Helper Functions
 // =============================================================================
-
-export function generateTaskId(): string {
-  return `task_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-}
 
 export function generateEventId(): string {
   return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
-export function isTaskExpired(task: RuntimeTask): boolean {
-  if (!task.expiresAt) return false;
-  return new Date() > task.expiresAt;
-}
-
-export function getDefaultPriority(): TaskPriority {
-  return 'normal';
-}
-
 // Re-export
-export type { ExportResult } from '../../components/core/toolComponent.js';
 export type { AgentStatus } from '../common/types.js';

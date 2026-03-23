@@ -20,11 +20,9 @@ import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { Tool } from '../../components/core/types.js';
 import { ToolComponent } from '../statefulContext/index.js';
-import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
-import {
-  RuntimeTaskComponent,
-  createRuntimeTaskComponent,
-} from '../../components/runtime-task/runtimeTaskComponent.js';
+import type { A2AHandler, A2AMessage, A2APayload, A2ATaskResult } from '../a2a/index.js';
+import { createA2AHandler } from '../a2a/index.js';
+import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import type { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
@@ -156,9 +154,10 @@ export class Agent {
   // Tool manager for executing tools
   private toolManager: IToolManager;
 
-  // Task module (sub-module for runtime task handling)
-  // @deprecated - Will be removed in future versions. Use persistence service instead.
-  private taskModule?: RuntimeTaskComponent;
+  // A2A Handler for agent-to-agent communication
+  private _a2aHandler?: A2AHandler;
+  private _messageBus?: IMessageBus;
+  private _pendingA2AMessages: A2AMessage[] = [];
 
   // Persistence service (for component states - instance-level)
   private persistenceService?: IPersistenceService;
@@ -286,47 +285,60 @@ export class Agent {
   }
 
   /**
-   * Initialize TaskModule after expert identity is set
-   * Called internally when setExpertIdentity is invoked
+   * Initialize A2A Handler for agent-to-agent communication
    */
-  private initializeTaskModule(): void {
-    if (this.taskModule) {
-      return; // Already initialized
+  private initializeA2A(): void {
+    if (this._a2aHandler || !this._messageBus) {
+      return; // Already initialized or no message bus
     }
 
-    this.taskModule = createRuntimeTaskComponent({
+    this._a2aHandler = createA2AHandler(this._messageBus, {
       instanceId: this.instanceId,
-      maxQueueSize: 100,
-      hookModule: this.hookModule,
+      supportedTypes: ['task', 'query', 'event'],
+      handlerTimeout: 60000,
     });
 
-    // Register TaskModule tools to ToolManager via ComponentToolProvider
-    const taskProvider = new ComponentToolProvider(
-      'runtime-task',
-      this.taskModule,
-      this.workspace.notifyToolExecuted.bind(this.workspace),
-    );
-    this.toolManager.registerProvider(taskProvider);
+    // Register task handler - when a task is received, trigger agent processing
+    this._a2aHandler.onTask(async (payload, ctx) => {
+      this.logger.info(
+        { messageId: ctx.message.messageId, from: ctx.message.from },
+        '[Agent] Received A2A task, processing',
+      );
 
-    // Register external renderer to Workspace for task content rendering
-    this.workspace.registerExternalRenderer('runtime-task', async () => {
-      return this.taskModule!.renderImply();
+      // Store message for processing in requestLoop
+      this._pendingA2AMessages.push(ctx.message);
+
+      // Wake up agent if idle
+      if (this._status === 'idle' || this._status === 'completed') {
+        this._status = 'running';
+        await this.requestLoop();
+      }
+
+      return {
+        taskId: payload.taskId || '',
+        status: 'processing',
+      };
     });
 
-    // Register hook for new tasks to wake up the agent
-    this.hookModule.on(
-      HookType.TASK_SUBMITTED,
-      async (ctx) => {
-        // Only process tasks destined for this agent
-        if (ctx.instanceId === this.instanceId) {
-          this.logger.info(
-            `[Agent] Received new task ${ctx.taskId}, waking up agent`,
-          );
-          await this.wakeUpForTask(ctx.task);
-        }
-      },
-      { id: `agent-${this.instanceId}-task-wake` },
-    );
+    // Register event handler
+    this._a2aHandler.onEvent(async (payload, ctx) => {
+      this.logger.info(
+        { from: ctx.message.from },
+        '[Agent] Received A2A event',
+      );
+    });
+
+    // Start listening for messages
+    this._a2aHandler.startListening();
+
+    this.logger.info('[Agent] A2A Handler initialized');
+  }
+
+  /**
+   * Set the message bus for A2A communication
+   */
+  public setMessageBus(messageBus: IMessageBus): void {
+    this._messageBus = messageBus;
   }
 
   // ==================== Public API ====================
@@ -388,14 +400,24 @@ export class Agent {
   }
 
   /**
-   * Get task module (sub-module for runtime task handling)
-   * Initializes on first access if expert identity is set
+   * Get A2A handler for agent-to-agent communication
    */
-  public getTaskModule(): RuntimeTaskComponent {
-    if (!this.taskModule) {
-      this.initializeTaskModule();
-    }
-    return this.taskModule!;
+  public getA2AHandler(): A2AHandler | undefined {
+    return this._a2aHandler;
+  }
+
+  /**
+   * Get pending A2A messages
+   */
+  public getPendingA2AMessages(): A2AMessage[] {
+    return this._pendingA2AMessages;
+  }
+
+  /**
+   * Clear pending A2A messages
+   */
+  public clearPendingA2AMessages(): void {
+    this._pendingA2AMessages = [];
   }
 
   // ==================== Lifecycle Methods ====================
@@ -517,17 +539,11 @@ export class Agent {
   }
 
   /**
-   * Wake up agent to process a runtime task
-   * Called by ExpertInstance when a new task is received via RuntimeTaskComponent
-   * Triggers the agent to check task queue and process pending tasks
+   * Wake up agent for A2A task processing
+   * @deprecated Use A2A Handler instead
    */
   async wakeUpForTask(task: any): Promise<void> {
     this.logger.info(`Waking up agent for task processing: ${task.taskId}`);
-
-    // Ensure task module is initialized (registers external renderer)
-    if (!this.taskModule) {
-      this.initializeTaskModule();
-    }
 
     // Reset status to running if it was completed
     if (this._status === 'completed' || this._status === 'idle') {
@@ -535,24 +551,7 @@ export class Agent {
     }
 
     // Trigger agent to process the task
-    // The LLM will check task queue, process tasks, and report results
     await this.requestLoop();
-  }
-
-  /**
-   * Set the central task queue for the agent's task module
-   * This allows the agent to access runtime-managed tasks
-   */
-  setCentralTaskQueue(centralTaskQueue: any): void {
-    // Ensure task module is initialized
-    if (!this.taskModule) {
-      this.initializeTaskModule();
-    }
-    // Update the task module's central queue reference
-    if (this.taskModule) {
-      this.taskModule.centralTaskQueue = centralTaskQueue;
-      this.logger.info('[Agent] Central task queue set for task module');
-    }
   }
 
   /**

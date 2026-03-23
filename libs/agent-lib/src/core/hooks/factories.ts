@@ -38,10 +38,6 @@ import {
   type ComponentAfterUnregisterContext,
   type ToolBeforeExecuteContext,
   type ToolAfterExecuteContext,
-  type TaskSubmittedContext,
-  type TaskReceivedContext,
-  type TaskCompletedContext,
-  type TaskFailedContext,
 } from './types.js';
 
 // =============================================================================
@@ -247,66 +243,6 @@ export function onToolAfterExecute(
 ): HookEntry {
   return {
     type: HookType.TOOL_AFTER_EXECUTE,
-    handler: handler as HookHandler,
-    options,
-  };
-}
-
-// =============================================================================
-// Task Hook Factories
-// =============================================================================
-
-/**
- * Create a hook for when a task is submitted
- */
-export function onTaskSubmitted(
-  handler: HookHandler<TaskSubmittedContext>,
-  options?: HookRegistrationOptions,
-): HookEntry {
-  return {
-    type: HookType.TASK_SUBMITTED,
-    handler: handler as HookHandler,
-    options,
-  };
-}
-
-/**
- * Create a hook for when a task is received
- */
-export function onTaskReceived(
-  handler: HookHandler<TaskReceivedContext>,
-  options?: HookRegistrationOptions,
-): HookEntry {
-  return {
-    type: HookType.TASK_RECEIVED,
-    handler: handler as HookHandler,
-    options,
-  };
-}
-
-/**
- * Create a hook for when a task completes successfully
- */
-export function onTaskCompleted(
-  handler: HookHandler<TaskCompletedContext>,
-  options?: HookRegistrationOptions,
-): HookEntry {
-  return {
-    type: HookType.TASK_COMPLETED,
-    handler: handler as HookHandler,
-    options,
-  };
-}
-
-/**
- * Create a hook for when a task fails
- */
-export function onTaskFailed(
-  handler: HookHandler<TaskFailedContext>,
-  options?: HookRegistrationOptions,
-): HookEntry {
-  return {
-    type: HookType.TASK_FAILED,
     handler: handler as HookHandler,
     options,
   };

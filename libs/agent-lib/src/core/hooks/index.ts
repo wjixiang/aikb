@@ -46,10 +46,6 @@ export type {
   ComponentAfterUnregisterContext,
   ToolBeforeExecuteContext,
   ToolAfterExecuteContext,
-  TaskSubmittedContext,
-  TaskReceivedContext,
-  TaskCompletedContext,
-  TaskFailedContext,
   // Handler Types
   HookHandler,
   HookRegistrationOptions,
@@ -77,11 +73,6 @@ export {
   // Tool hooks
   onToolBeforeExecute,
   onToolAfterExecute,
-  // Task hooks
-  onTaskSubmitted,
-  onTaskReceived,
-  onTaskCompleted,
-  onTaskFailed,
   // Builder
   createHookConfig,
   HookConfigBuilder,
