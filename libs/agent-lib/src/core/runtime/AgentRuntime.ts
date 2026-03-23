@@ -2,7 +2,7 @@
  * AgentRuntime - Main class for managing multiple Agent instances
  *
  * This is the central orchestration layer for the agent system. It manages the complete
- * lifecycle of agents and provides a unified interface for task distribution.
+ * lifecycle of agents and provides agent communication via topology network.
  *
  * ## Architecture Overview
  *
@@ -11,8 +11,8 @@
  * │                      AgentRuntime                           │
  * ├─────────────────────────────────────────────────────────────┤
  * │  ┌─────────────┐  ┌──────────────────┐  ┌───────────────┐  │
- * │  │  Registry   │  │ EventDispatcher  │  │ TaskQueue     │  │
- * │  │ (metadata)  │  │  (pub/sub)       │  │ (distribution)│  │
+ * │  │  Registry   │  │ EventDispatcher  │  │   Topology    │  │
+ * │  │ (metadata)  │  │  (pub/sub)       │  │   Network     │  │
  * │  └─────────────┘  └──────────────────┘  └───────────────┘  │
  * ├─────────────────────────────────────────────────────────────┤
  * │  ┌─────────────────────────────────────────────────────┐   │
@@ -32,40 +32,13 @@
  *    - stopAgent: Gracefully stop agent execution
  *    - destroyAgent: Remove agent and cleanup resources
  *
- * 2. **Task Distribution** (Event-Driven)
- *    - submitTask: Queue tasks for specific agents
- *    - Automatic task assignment when agents become idle
- *    - No polling - pure event-driven architecture
+ * 2. **Agent Communication** (via Topology Network)
+ *    - A2A (Agent-to-Agent) messaging through topology network
+ *    - Request/response patterns for agent coordination
  *
  * 3. **Event System**
  *    - agent:created, agent:started, agent:stopped, agent:destroyed
- *    - task:submitted, task:assigned, task:completed, task:failed
- *    - agent:idle - triggers next task assignment
- *
- * ## Event-Driven Task Assignment Flow
- *
- * ```
- * submitTask() ──► task:submitted ──► tryAssignTaskToAgent()
- *                                            │
- *                         ┌──────────────────┴──────────────────┐
- *                         ▼                                     ▼
- *                    Agent idle?                           Queue task
- *                         │                                     │
- *                         ▼                                     │
- *                  assignTaskToAgent()                         │
- *                         │                                     │
- *                         ▼                                     │
- *                  agent:wakeUpForTask()                       │
- *                         │                                     │
- *                         ▼                                     │
- *                  task:completed/failed                       │
- *                         │                                     │
- *                         ▼                                     │
- *                  agent:idle ◄─────────────────────────────────┘
- *                         │
- *                         ▼
- *                  handleAgentIdle() ──► get next pending task
- * ```
+ *    - agent:idle - agent became idle and is ready for work
  *
  * @module AgentRuntime
  */
@@ -82,8 +55,6 @@ import type {
   AgentMetadata,
   AgentRuntimeConfig,
   AgentStatus,
-  RuntimeTask,
-  TaskSubmission,
   RuntimeEvent,
   RuntimeEventType,
   IRuntimeControlClient,
@@ -95,8 +66,6 @@ import type { IAgentRegistry } from './AgentRegistry.js';
 import { AgentRegistry } from './AgentRegistry.js';
 import type { IEventDispatcher } from './EventDispatcher.js';
 import { EventDispatcher } from './EventDispatcher.js';
-import type { ICentralTaskQueue } from './CentralTaskQueue.js';
-import { CentralTaskQueue } from './CentralTaskQueue.js';
 import { RuntimeControlClientImpl } from './RuntimeControlClient.js';
 
 // Topology Network
@@ -152,16 +121,9 @@ export interface AgentFilter {
  * const agentId = await runtime.createAgent({ ... });
  * await runtime.startAgent(agentId);
  *
- * // Submit tasks
- * const taskId = await runtime.submitTask({
- *   targetInstanceId: agentId,
- *   description: 'Process document',
- *   input: { documentId: '123' }
- * });
- *
  * // Monitor events
- * const unsubscribe = runtime.on('task:completed', (event) => {
- *   console.log('Task completed:', event.payload);
+ * const unsubscribe = runtime.on('agent:created', (event) => {
+ *   console.log('Agent created:', event.payload);
  * });
  *
  * // Cleanup
@@ -192,7 +154,7 @@ export interface IAgentRuntime {
   startAgent(instanceId: string): Promise<void>;
 
   /**
-   * Stop a running agent, aborting any current task.
+   * Stop a running agent.
    * @param instanceId The agent's unique instance identifier
    */
   stopAgent(instanceId: string): Promise<void>;
@@ -230,31 +192,6 @@ export interface IAgentRuntime {
   listAgents(filter?: AgentFilter): Promise<AgentMetadata[]>;
 
   // ============================================
-  // Task Management Methods
-  // ============================================
-
-  /**
-   * Submit a new task to be processed by a specific agent.
-   * @param task Task submission details including target agent and input
-   * @returns Promise resolving to the new task's ID
-   */
-  submitTask(task: TaskSubmission): Promise<string>;
-
-  /**
-   * Get the current status of a task.
-   * @param taskId The task's unique identifier
-   * @returns Promise resolving to the task or undefined if not found
-   */
-  getTaskStatus(taskId: string): Promise<RuntimeTask | undefined>;
-
-  /**
-   * Get all pending tasks, optionally filtered by target agent.
-   * @param instanceId Optional agent ID to filter by
-   * @returns Promise resolving to array of pending tasks
-   */
-  getPendingTasks(instanceId?: string): Promise<RuntimeTask[]>;
-
-  // ============================================
   // Event System
   // ============================================
 
@@ -274,7 +211,7 @@ export interface IAgentRuntime {
   // ============================================
 
   /**
-   * Start the runtime, enabling event processing and task assignment.
+   * Start the runtime, enabling event processing.
    */
   start(): Promise<void>;
 
@@ -395,12 +332,11 @@ export interface IAgentRuntime {
  * 1. **Agent Containers** - Each agent runs in its own DI container for isolation
  * 2. **Agent Registry** - Tracks metadata and status of all agents
  * 3. **Event Dispatcher** - Pub/sub system for runtime events
- * 4. **Central Task Queue** - Distributes tasks to appropriate agents
+ * 4. **Topology Network** - Agent-to-agent communication via A2A
  *
  * ## Thread Safety & Concurrency
  *
- * - Task assignment is serialized via `isProcessingAssignments` flag
- * - Event handlers run asynchronously but assignments are queued
+ * - Event handlers run asynchronously
  * - Agent state transitions are protected by status checks
  *
  * ## Memory Management
@@ -445,13 +381,6 @@ export class AgentRuntime implements IAgentRuntime {
    */
   private eventDispatcher: IEventDispatcher;
 
-  /**
-   * Central task queue for task distribution.
-   * Lazily initialized when first agent is created.
-   * Shared across all agents for coordinated task management.
-   */
-  private taskQueue: ICentralTaskQueue | null = null;
-
   /** Flag indicating if runtime is actively running */
   private running: boolean = false;
 
@@ -469,7 +398,7 @@ export class AgentRuntime implements IAgentRuntime {
   private messageRouter: IMessageRouter;
 
   // ============================================
-  // Event-Driven Task Assignment State
+  // Event Subscription Cleanup
   // ============================================
 
   /**
@@ -477,21 +406,6 @@ export class AgentRuntime implements IAgentRuntime {
    * Used for cleanup during runtime.stop().
    */
   private eventUnsubscribers: (() => void)[] = [];
-
-  /**
-   * Queue of pending task assignments waiting to be processed.
-   * Tasks are added on 'task:submitted' and processed sequentially.
-   */
-  private pendingAssignments: Array<{
-    taskId: string;
-    targetInstanceId: string;
-  }> = [];
-
-  /**
-   * Flag to prevent concurrent processing of assignment queue.
-   * Ensures task assignments are processed sequentially.
-   */
-  private isProcessingAssignments: boolean = false;
 
   // ============================================
   // Constructor
@@ -535,122 +449,19 @@ export class AgentRuntime implements IAgentRuntime {
       this.handleTopologyMessage(message);
     });
 
-    // Setup internal event listeners for event-driven task assignment
-    // This creates the reactive pipeline for automatic task distribution
+    // Setup internal event listeners
     this.setupEventListeners();
   }
 
   // ============================================
-  // Private: Event-Driven Task Assignment
+  // Private: Event Setup
   // ============================================
 
   /**
-   * Setup internal event listeners for event-driven task assignment.
-   *
-   * This method establishes the reactive pipeline that automatically
-   * assigns tasks to agents without polling:
-   *
-   * 1. `task:submitted` → Queue assignment for processing
-   * 2. `agent:idle` → Check for pending tasks and assign
-   *
-   * The event-driven approach ensures:
-   * - Immediate task assignment when possible
-   * - No wasted CPU cycles on polling
-   * - Responsive to agent state changes
+   * Setup internal event listeners.
    */
   private setupEventListeners(): void {
-    // Listen for task:submitted -> try immediate assignment
-    // When a task is submitted, we queue it for assignment processing
-    const unsub1 = this.eventDispatcher.subscribe('task:submitted', (event) => {
-      const payload = event.payload as {
-        taskId: string;
-        targetInstanceId: string;
-      };
-      this.pendingAssignments.push(payload);
-      void this.processAssignmentQueue();
-    });
-    this.eventUnsubscribers.push(unsub1);
-
-    // Listen for agent:idle -> check for pending tasks
-    // When an agent becomes idle, check if there are tasks waiting for it
-    const unsub2 = this.eventDispatcher.subscribe('agent:idle', (event) => {
-      const payload = event.payload as { instanceId: string };
-      void this.handleAgentIdle(payload.instanceId);
-    });
-    this.eventUnsubscribers.push(unsub2);
-  }
-
-  /**
-   * Process queued task assignments sequentially.
-   *
-   * This method ensures that task assignments are processed one at a time
-   * to prevent race conditions. Uses a simple mutex pattern with the
-   * `isProcessingAssignments` flag.
-   *
-   * The loop continues until all pending assignments are processed
-   * or the runtime is stopped.
-   */
-  private async processAssignmentQueue(): Promise<void> {
-    // Mutex check - prevent concurrent processing
-    if (this.isProcessingAssignments) return;
-    this.isProcessingAssignments = true;
-
-    try {
-      // Process all queued assignments
-      while (this.pendingAssignments.length > 0 && this.running) {
-        const assignment = this.pendingAssignments.shift()!;
-        await this.tryAssignTaskToAgent(
-          assignment.taskId,
-          assignment.targetInstanceId,
-        );
-      }
-    } finally {
-      // Always release the mutex
-      this.isProcessingAssignments = false;
-    }
-  }
-
-  /**
-   * Handle agent:idle event - check for pending tasks for this agent.
-   *
-   * When an agent completes a task and becomes idle, this handler
-   * checks if there are more tasks waiting for that specific agent
-   * and assigns the next one if available.
-   *
-   * @param instanceId The agent that just became idle
-   */
-  private async handleAgentIdle(instanceId: string): Promise<void> {
-    if (!this.taskQueue || !this.running) return;
-
-    // Get tasks specifically queued for this agent
-    const pendingTasks = await this.taskQueue.getForAgent(instanceId);
-    if (pendingTasks.length > 0) {
-      const task = pendingTasks[0];
-      await this.assignTaskToAgent(task.taskId, instanceId);
-    }
-  }
-
-  /**
-   * Try to assign a task to its target agent if the agent is idle.
-   *
-   * This method performs a conditional assignment - it only proceeds
-   * if the target agent exists and is currently idle. If the agent
-   * is busy, the task remains in the queue for later processing.
-   *
-   * @param taskId The task to assign
-   * @param targetInstanceId The target agent's instance ID
-   */
-  private async tryAssignTaskToAgent(
-    taskId: string,
-    targetInstanceId: string,
-  ): Promise<void> {
-    if (!this.running) return;
-
-    // Only assign if agent exists and is idle
-    const metadata = this.registry.get(targetInstanceId);
-    if (!metadata || metadata.status !== 'idle') return;
-
-    await this.assignTaskToAgent(taskId, targetInstanceId);
+    // Agent events are routed through topology network
   }
 
   // ============================================
@@ -662,10 +473,8 @@ export class AgentRuntime implements IAgentRuntime {
    *
    * This method:
    * 1. Creates a new DI container for the agent via AgentFactory
-   * 2. Initializes the central task queue (if first agent)
-   * 3. Connects the agent to the task queue
-   * 4. Registers the agent in the registry
-   * 5. Emits agent:created event
+   * 2. Registers the agent in the registry
+   * 3. Emits agent:created event
    *
    * @param options Agent factory options including configuration
    * @returns Promise resolving to the new agent's instance ID
@@ -711,16 +520,8 @@ export class AgentRuntime implements IAgentRuntime {
     const container = AgentFactory.create(options);
     const instanceId = container.instanceId;
 
-    // Initialize task queue with first agent's container
-    if (!this.taskQueue) {
-      this.taskQueue = new CentralTaskQueue(container.getContainer());
-    }
-
     // Wait for agent initialization
     const agent = await container.getAgent();
-
-    // Pass central task queue to agent's task module
-    agent.setCentralTaskQueue(this.taskQueue);
 
     // Always inject RuntimeControlClient (no permission checks)
     const controlClient = this.createControlClient(instanceId);
@@ -779,7 +580,7 @@ export class AgentRuntime implements IAgentRuntime {
    * Start an idle agent, transitioning it to running state.
    *
    * This method validates that the agent exists and is in 'idle' status
-   * before transitioning it to 'running'. The agent can then accept tasks.
+   * before transitioning it to 'running'.
    *
    * @param instanceId The agent's unique instance identifier
    * @throws Error if agent not found or not in idle state
@@ -807,7 +608,6 @@ export class AgentRuntime implements IAgentRuntime {
   /**
    * Stop a running agent.
    *
-   * If the agent is currently running a task, it will be aborted.
    * The agent transitions back to 'idle' state and can be restarted.
    *
    * @param instanceId The agent's unique instance identifier
@@ -821,7 +621,7 @@ export class AgentRuntime implements IAgentRuntime {
 
     const agent = await container.getAgent();
 
-    // Abort current task if any
+    // Abort running agent if any
     if (agent.status === 'running') {
       agent.abort('Runtime stop', 'manual');
     }
@@ -925,75 +725,6 @@ export class AgentRuntime implements IAgentRuntime {
   }
 
   // ============================================
-  // Public: Task Management Methods
-  // ============================================
-
-  /**
-   * Submit a new task to be processed by a specific agent.
-   *
-   * The task is queued in the central task queue and will be
-   * assigned to the target agent when it becomes idle.
-   *
-   * @param task Task submission details
-   * @param task.targetInstanceId ID of the agent to process this task
-   * @param task.description Human-readable task description
-   * @param task.input Task input data (any JSON-serializable object)
-   * @returns Promise resolving to the new task's ID
-   * @throws Error if runtime not initialized or target agent not found
-   */
-  async submitTask(task: TaskSubmission): Promise<string> {
-    if (!this.taskQueue) {
-      throw new Error('Runtime not initialized. Create an agent first.');
-    }
-
-    // Validate target agent exists
-    if (!this.registry.has(task.targetInstanceId)) {
-      throw new Error(`Target agent not found: ${task.targetInstanceId}`);
-    }
-
-    // Submit to task queue
-    const taskId = await this.taskQueue.submit(task);
-
-    // Emit event
-    this.eventDispatcher.emitEvent('task:submitted', {
-      taskId,
-      targetInstanceId: task.targetInstanceId,
-      description: task.description,
-    });
-
-    return taskId;
-  }
-
-  /**
-   * Get the current status of a task.
-   *
-   * @param taskId The task's unique identifier
-   * @returns Promise resolving to the task or undefined if not found
-   */
-  async getTaskStatus(taskId: string): Promise<RuntimeTask | undefined> {
-    if (!this.taskQueue) {
-      return undefined;
-    }
-    return this.taskQueue.getById(taskId);
-  }
-
-  /**
-   * Get all pending tasks, optionally filtered by target agent.
-   *
-   * @param instanceId Optional agent ID to filter by
-   * @returns Promise resolving to array of pending tasks
-   */
-  async getPendingTasks(instanceId?: string): Promise<RuntimeTask[]> {
-    if (!this.taskQueue) {
-      return [];
-    }
-    if (instanceId) {
-      return this.taskQueue.getForAgent(instanceId);
-    }
-    return this.taskQueue.getPending();
-  }
-
-  // ============================================
   // Public: Event System
   // ============================================
 
@@ -1006,18 +737,14 @@ export class AgentRuntime implements IAgentRuntime {
    * - `agent:stopped` - Agent stopped
    * - `agent:destroyed` - Agent destroyed
    * - `agent:idle` - Agent became idle
-   * - `task:submitted` - Task submitted to queue
-   * - `task:assigned` - Task assigned to agent
-   * - `task:completed` - Task completed successfully
-   * - `task:failed` - Task failed with error
    *
    * @param eventType The type of event to subscribe to
    * @param handler Callback function for the event
    * @returns Unsubscribe function - call to remove the subscription
    *
    * @example
-   * const unsub = runtime.on('task:completed', (event) => {
-   *   console.log('Task done:', event.payload.taskId);
+   * const unsub = runtime.on('agent:created', (event) => {
+   *   console.log('Agent created:', event.payload.instanceId);
    *   unsub(); // Unsubscribe after first event
    * });
    */
@@ -1035,11 +762,8 @@ export class AgentRuntime implements IAgentRuntime {
   /**
    * Start the runtime.
    *
-   * Enables event processing and task assignment. Must be called
-   * after creating agents and before submitting tasks for the
-   * event-driven task assignment to work.
+   * Enables event processing. Must be called after creating agents.
    *
-   * - Wires the event dispatcher to the task queue
    * - Emits agent:started event with runtime info
    *
    * Idempotent - safe to call multiple times.
@@ -1050,13 +774,6 @@ export class AgentRuntime implements IAgentRuntime {
     }
 
     this.running = true;
-
-    // Wire up event dispatcher to task queue for event-driven task assignment
-    if (this.taskQueue) {
-      this.taskQueue.setEventDispatcher(this.eventDispatcher);
-    }
-
-    // NO MORE POLLING - event-driven only
 
     // Emit start event
     this.eventDispatcher.emitEvent('agent:started', {
@@ -1096,7 +813,6 @@ export class AgentRuntime implements IAgentRuntime {
    * Returns a snapshot of:
    * - Total agent count
    * - Agent counts by status (idle, running, completed, aborted)
-   * - Task queue metrics (pending and processing counts)
    *
    * @returns Promise resolving to runtime statistics
    */
@@ -1113,21 +829,9 @@ export class AgentRuntime implements IAgentRuntime {
       agentsByStatus[agent.status]++;
     }
 
-    let totalPendingTasks = 0;
-    let totalProcessingTasks = 0;
-
-    if (this.taskQueue) {
-      const pendingCount = await this.taskQueue.getTaskCount('pending');
-      const processingCount = await this.taskQueue.getTaskCount('processing');
-      totalPendingTasks = pendingCount;
-      totalProcessingTasks = processingCount;
-    }
-
     return {
       totalAgents: allAgents.length,
       agentsByStatus,
-      totalPendingTasks,
-      totalProcessingTasks,
     };
   }
 
@@ -1323,14 +1027,8 @@ export class AgentRuntime implements IAgentRuntime {
 
     const instanceId = container.instanceId;
 
-    // Initialize task queue with first agent's container
-    if (!this.taskQueue) {
-      this.taskQueue = new CentralTaskQueue(container.getContainer());
-    }
-
     // Get agent and inject dependencies
     const agent = await container.getAgent();
-    agent.setCentralTaskQueue(this.taskQueue);
 
     // Create and inject RuntimeControlClient for the child
     const controlClient = this.createControlClient(instanceId);
@@ -1443,139 +1141,6 @@ export class AgentRuntime implements IAgentRuntime {
    */
   _getChildren(parentInstanceId: string): AgentMetadata[] {
     return this.registry.getChildren(parentInstanceId);
-  }
-
-  // ============================================
-  // Private: Task Assignment
-  // ============================================
-
-  /**
-   * Assign a task to an agent and wake it up.
-   *
-   * This method:
-   * 1. Marks the task as 'processing' in the queue
-   * 2. Updates the agent's status to 'running'
-   * 3. Emits task:assigned event
-   * 4. Calls agent.wakeUpForTask() to begin processing
-   *
-   * @param taskId The task to assign
-   * @param instanceId The agent to assign the task to
-   */
-  private async assignTaskToAgent(
-    taskId: string,
-    instanceId: string,
-  ): Promise<void> {
-    if (!this.taskQueue) return;
-
-    const container = this.containers.get(instanceId);
-    if (!container) return;
-
-    const task = await this.taskQueue.getById(taskId);
-    if (!task) return;
-
-    // Mark task as processing
-    await this.taskQueue.markProcessing(taskId, instanceId);
-
-    // Update registry
-    this.registry.update(instanceId, { status: 'running' });
-
-    // Emit event
-    this.eventDispatcher.emitEvent('task:assigned', {
-      taskId,
-      instanceId,
-    });
-
-    // Wake up the agent to process the task
-    const agent = await container.getAgent();
-    await agent.wakeUpForTask(task);
-  }
-
-  // ============================================
-  // Public: Task Completion Callbacks
-  // ============================================
-
-  /**
-   * Called when an agent completes a task successfully.
-   *
-   * This method handles the post-task completion workflow:
-   * 1. Exports results from the agent's workspace
-   * 2. Marks the task as completed in the queue
-   * 3. Updates agent status to 'idle'
-   * 4. Emits task:completed event with results
-   * 5. Emits agent:idle to trigger next task assignment
-   *
-   * This method is typically called by the agent itself after
-   * successfully processing a task.
-   *
-   * @param instanceId The agent that completed the task
-   * @param taskId The completed task's ID
-   */
-  async onAgentTaskComplete(instanceId: string, taskId: string): Promise<void> {
-    if (!this.taskQueue) return;
-
-    const container = this.containers.get(instanceId);
-    if (!container) return;
-
-    const agent = await container.getAgent();
-    const exportResults = await agent.workspace.exportResult();
-
-    await this.taskQueue.complete(taskId, {
-      taskId,
-      success: true,
-      output: exportResults,
-      completedAt: new Date(),
-    });
-
-    // Update registry
-    this.registry.update(instanceId, { status: 'idle' });
-
-    // Emit event
-    this.eventDispatcher.emitEvent('task:completed', {
-      taskId,
-      instanceId,
-      results: exportResults,
-    });
-
-    // Emit agent:idle to trigger next task assignment (event-driven)
-    this.eventDispatcher.emitEvent('agent:idle', { instanceId });
-  }
-
-  /**
-   * Called when an agent fails to complete a task.
-   *
-   * This method handles the task failure workflow:
-   * 1. Marks the task as failed in the queue with error details
-   * 2. Updates agent status to 'idle'
-   * 3. Emits task:failed event with error
-   * 4. Emits agent:idle to trigger next task assignment
-   *
-   * After failure, the agent is ready to accept new tasks.
-   *
-   * @param instanceId The agent that failed the task
-   * @param taskId The failed task's ID
-   * @param error Error message describing the failure
-   */
-  async onAgentTaskFailed(
-    instanceId: string,
-    taskId: string,
-    error: string,
-  ): Promise<void> {
-    if (!this.taskQueue) return;
-
-    await this.taskQueue.fail(taskId, error);
-
-    // Update registry
-    this.registry.update(instanceId, { status: 'idle' });
-
-    // Emit event
-    this.eventDispatcher.emitEvent('task:failed', {
-      taskId,
-      instanceId,
-      error,
-    });
-
-    // Emit agent:idle to trigger next task assignment (event-driven)
-    this.eventDispatcher.emitEvent('agent:idle', { instanceId });
   }
 }
 
