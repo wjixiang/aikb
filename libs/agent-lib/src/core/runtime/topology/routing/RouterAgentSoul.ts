@@ -5,7 +5,7 @@
  * routing decisions using LLM and routing tools.
  */
 
-import type { AgentSoulConfig } from '../../agent/AgentFactory.js';
+import type { AgentSoulConfig } from '../../../agent/AgentFactory.js';
 
 export interface RouterAgentSoulConfig {
   name?: string;

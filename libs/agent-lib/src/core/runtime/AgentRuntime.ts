@@ -86,8 +86,6 @@ import type {
   TaskSubmission,
   RuntimeEvent,
   RuntimeEventType,
-  RuntimeControlPermissions,
-  DEFAULT_RUNTIME_PERMISSIONS,
   IRuntimeControlClient,
   RuntimeControlAgentOptions,
   RuntimeStats,
@@ -705,10 +703,6 @@ export class AgentRuntime implements IAgentRuntime {
       observers: overrides?.observers,
     };
 
-    // Extract runtimePermissions if provided (for backward compatibility)
-    const runtimePermissions = (
-      overrides as unknown as { runtimePermissions?: RuntimeControlPermissions }
-    )?.runtimePermissions;
     const parentInstanceId = (
       overrides as unknown as { parentInstanceId?: string }
     )?.parentInstanceId;
@@ -728,15 +722,9 @@ export class AgentRuntime implements IAgentRuntime {
     // Pass central task queue to agent's task module
     agent.setCentralTaskQueue(this.taskQueue);
 
-    // If runtimePermissions provided, inject RuntimeControlClient
-    if (runtimePermissions) {
-      const controlClient = this.createControlClient(
-        instanceId,
-        runtimePermissions,
-      );
-      agent.setRuntimeClient(controlClient);
-      agent.setRuntimePermissions(runtimePermissions);
-    }
+    // Always inject RuntimeControlClient (no permission checks)
+    const controlClient = this.createControlClient(instanceId);
+    agent.setRuntimeClient(controlClient);
 
     // Store container
     this.containers.set(instanceId, container);
@@ -752,7 +740,6 @@ export class AgentRuntime implements IAgentRuntime {
       config: unifiedConfig as unknown as Record<string, unknown>,
       createdAt: new Date(),
       updatedAt: new Date(),
-      runtimePermissions,
       parentInstanceId,
     };
     this.registry.register(metadata);
@@ -1303,14 +1290,10 @@ export class AgentRuntime implements IAgentRuntime {
    * Create a RuntimeControlClient for a specific Agent
    *
    * @param callerInstanceId The Agent's instanceId that will receive the client
-   * @param permissions The permissions to grant
    * @returns IRuntimeControlClient instance
    */
-  createControlClient(
-    callerInstanceId: string,
-    permissions: RuntimeControlPermissions,
-  ): IRuntimeControlClient {
-    return new RuntimeControlClientImpl(this, callerInstanceId, permissions);
+  createControlClient(callerInstanceId: string): IRuntimeControlClient {
+    return new RuntimeControlClientImpl(this, callerInstanceId);
   }
 
   // ============================================
@@ -1330,36 +1313,13 @@ export class AgentRuntime implements IAgentRuntime {
   async _createChildAgent(
     parentInstanceId: string,
     options: RuntimeControlAgentOptions,
-    parentPermissions: RuntimeControlPermissions,
   ): Promise<string> {
-    const currentChildren = this.registry.getChildren(parentInstanceId);
-    if (
-      parentPermissions.maxChildAgents > 0 &&
-      currentChildren.length >= parentPermissions.maxChildAgents
-    ) {
-      throw new Error(
-        `Maximum child agents limit reached: ${parentPermissions.maxChildAgents}`,
-      );
-    }
-
     if (this.containers.size >= (this.config.maxAgents ?? 10)) {
       throw new Error(`Maximum agent limit reached: ${this.config.maxAgents}`);
     }
 
-    // Compute child permissions (inherit with restrictions)
-    const childPermissions = this.computeChildPermissions(parentPermissions);
-
-    // Merge provided permissions with computed defaults
-    const runtimePermissions: RuntimeControlPermissions = {
-      ...childPermissions,
-      ...options.runtimePermissions,
-    };
-
     // Create the agent with parent info
-    const container = AgentFactory.create({
-      ...options,
-      runtimePermissions,
-    } as AgentFactoryOptions);
+    const container = AgentFactory.create(options as AgentFactoryOptions);
 
     const instanceId = container.instanceId;
 
@@ -1373,12 +1333,8 @@ export class AgentRuntime implements IAgentRuntime {
     agent.setCentralTaskQueue(this.taskQueue);
 
     // Create and inject RuntimeControlClient for the child
-    const controlClient = this.createControlClient(
-      instanceId,
-      runtimePermissions,
-    );
+    const controlClient = this.createControlClient(instanceId);
     agent.setRuntimeClient(controlClient);
-    agent.setRuntimePermissions(runtimePermissions);
 
     // Store container
     this.containers.set(instanceId, container);
@@ -1397,7 +1353,6 @@ export class AgentRuntime implements IAgentRuntime {
       config: unifiedConfig as unknown as Record<string, unknown>,
       createdAt: new Date(),
       updatedAt: new Date(),
-      runtimePermissions,
       parentInstanceId,
       createdBy: {
         instanceId: parentInstanceId,
@@ -1410,6 +1365,13 @@ export class AgentRuntime implements IAgentRuntime {
     // Update parent's child list
     this.registry.addChildRelation(parentInstanceId, instanceId);
 
+    // Auto-register in topology
+    this.topologyGraph.addNode({
+      instanceId,
+      nodeType: 'worker',
+      capabilities: [],
+    });
+
     // Emit event
     this.eventDispatcher.emitEvent('agent:created', {
       instanceId,
@@ -1418,26 +1380,6 @@ export class AgentRuntime implements IAgentRuntime {
     });
 
     return instanceId;
-  }
-
-  /**
-   * Compute child permissions based on parent permissions
-   *
-   * Child permissions inherit from parent but with restrictions to prevent
-   * unlimited nesting and ensure proper hierarchy.
-   */
-  private computeChildPermissions(
-    parentPermissions: RuntimeControlPermissions,
-  ): RuntimeControlPermissions {
-    return {
-      canCreateAgent: parentPermissions.canCreateAgent,
-      canDestroyAgent: false, // Children cannot destroy agents
-      canManageAgentLifecycle: parentPermissions.canManageAgentLifecycle,
-      canSubmitTask: parentPermissions.canSubmitTask,
-      canListAllAgents: false, // Children can only see their own children
-      canGetStats: parentPermissions.canGetStats,
-      maxChildAgents: Math.max(0, parentPermissions.maxChildAgents - 1),
-    };
   }
 
   /**

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RuntimeControlClientImpl } from '../RuntimeControlClient.js';
 import type {
-  RuntimeControlPermissions,
   AgentFilter,
   AgentMetadata,
   TaskSubmission,
@@ -9,34 +8,13 @@ import type {
   RuntimeStats,
   RuntimeControlAgentOptions,
 } from '../types.js';
-import type { Agent } from '../agent/agent.js';
+import type { Agent } from '../../agent/agent.js';
 import type { AgentRuntime } from '../AgentRuntime.js';
 
 describe('RuntimeControlClientImpl', () => {
   let mockRuntime: AgentRuntime;
-  let permissions: RuntimeControlPermissions;
   let client: RuntimeControlClientImpl;
   const callerInstanceId = 'parent-agent';
-
-  const fullPermissions: RuntimeControlPermissions = {
-    canCreateAgent: true,
-    canDestroyAgent: true,
-    canManageAgentLifecycle: true,
-    canSubmitTask: true,
-    canListAllAgents: true,
-    canGetStats: true,
-    maxChildAgents: 5,
-  };
-
-  const limitedPermissions: RuntimeControlPermissions = {
-    canCreateAgent: false,
-    canDestroyAgent: false,
-    canManageAgentLifecycle: false,
-    canSubmitTask: false,
-    canListAllAgents: false,
-    canGetStats: false,
-    maxChildAgents: 0,
-  };
 
   beforeEach(() => {
     mockRuntime = {
@@ -58,46 +36,19 @@ describe('RuntimeControlClientImpl', () => {
         totalAgents: 1,
         agentsByStatus: { idle: 1, running: 0, completed: 0, aborted: 0 },
       }),
-      _isDescendantOf: vi.fn(),
+      registerInTopology: vi.fn(),
+      unregisterFromTopology: vi.fn(),
+      connectAgents: vi.fn(),
+      disconnectAgents: vi.fn(),
+      getTopologyGraph: vi.fn(),
+      getTopologyStats: vi.fn(),
     } as unknown as AgentRuntime;
 
-    permissions = { ...fullPermissions };
-    client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, permissions);
-  });
-
-  describe('getPermissions', () => {
-    it('should return a copy of permissions', () => {
-      const result = client.getPermissions();
-
-      expect(result).toEqual(permissions);
-      expect(result).not.toBe(permissions);
-    });
-
-    it('should not allow mutation of original permissions', () => {
-      const originalCanCreate = permissions.canCreateAgent;
-      client.getPermissions().canCreateAgent = false;
-
-      expect(permissions.canCreateAgent).toBe(originalCanCreate);
-    });
-  });
-
-  describe('hasPermission', () => {
-    it('should return true for granted permission', () => {
-      expect(client.hasPermission('canCreateAgent')).toBe(true);
-      expect(client.hasPermission('canDestroyAgent')).toBe(true);
-      expect(client.hasPermission('canManageAgentLifecycle')).toBe(true);
-    });
-
-    it('should return false for denied permission', () => {
-      permissions.canCreateAgent = false;
-      client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, permissions);
-
-      expect(client.hasPermission('canCreateAgent')).toBe(false);
-    });
+    client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId);
   });
 
   describe('createAgent', () => {
-    it('should create agent when permission is granted', async () => {
+    it('should create agent and return instanceId', async () => {
       const options: RuntimeControlAgentOptions = {
         agent: { name: 'child', type: 'worker' },
       };
@@ -108,44 +59,15 @@ describe('RuntimeControlClientImpl', () => {
       expect(mockRuntime._createChildAgent).toHaveBeenCalledWith(
         callerInstanceId,
         options,
-        permissions,
       );
-    });
-
-    it('should throw error when permission is denied', async () => {
-      permissions.canCreateAgent = false;
-      client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, permissions);
-
-      await expect(
-        client.createAgent({ agent: { name: 'child' } }),
-      ).rejects.toThrow('Permission denied: cannot create agent');
     });
   });
 
   describe('startAgent', () => {
-    it('should start agent when permission is granted and is descendant', async () => {
-      vi.mocked(mockRuntime._isDescendantOf).mockReturnValue(true);
-
+    it('should start agent', async () => {
       await client.startAgent('child-agent');
 
       expect(mockRuntime.startAgent).toHaveBeenCalledWith('child-agent');
-    });
-
-    it('should throw error when permission is denied', async () => {
-      permissions.canManageAgentLifecycle = false;
-      client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, permissions);
-
-      await expect(client.startAgent('child-agent')).rejects.toThrow(
-        'Permission denied: cannot manage agent lifecycle',
-      );
-    });
-
-    it('should throw error when target is not descendant', async () => {
-      vi.mocked(mockRuntime._isDescendantOf).mockReturnValue(false);
-
-      await expect(client.startAgent('other-agent')).rejects.toThrow(
-        'Permission denied: cannot start agent other-agent (not owned by you)',
-      );
     });
 
     it('should allow starting self', async () => {
@@ -156,61 +78,35 @@ describe('RuntimeControlClientImpl', () => {
   });
 
   describe('stopAgent', () => {
-    it('should stop agent when permission is granted and is descendant', async () => {
-      vi.mocked(mockRuntime._isDescendantOf).mockReturnValue(true);
-
+    it('should stop agent', async () => {
       await client.stopAgent('child-agent');
 
       expect(mockRuntime.stopAgent).toHaveBeenCalledWith('child-agent');
     });
-
-    it('should throw error when permission is denied', async () => {
-      permissions.canManageAgentLifecycle = false;
-      client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, permissions);
-
-      await expect(client.stopAgent('child-agent')).rejects.toThrow(
-        'Permission denied: cannot manage agent lifecycle',
-      );
-    });
   });
 
   describe('destroyAgent', () => {
-    it('should destroy agent when permission is granted', async () => {
-      vi.mocked(mockRuntime._isDescendantOf).mockReturnValue(true);
-
+    it('should destroy agent with cascade by default', async () => {
       await client.destroyAgent('child-agent');
 
-      expect(mockRuntime._destroyAgentWithCascade).toHaveBeenCalledWith('child-agent', true);
-    });
-
-    it('should destroy agent with cascade false when specified', async () => {
-      vi.mocked(mockRuntime._isDescendantOf).mockReturnValue(true);
-
-      await client.destroyAgent('child-agent', { cascade: false });
-
-      expect(mockRuntime._destroyAgentWithCascade).toHaveBeenCalledWith('child-agent', false);
-    });
-
-    it('should throw error when permission is denied', async () => {
-      permissions.canDestroyAgent = false;
-      client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, permissions);
-
-      await expect(client.destroyAgent('child-agent')).rejects.toThrow(
-        'Permission denied: cannot destroy agent',
+      expect(mockRuntime._destroyAgentWithCascade).toHaveBeenCalledWith(
+        'child-agent',
+        true,
       );
     });
 
-    it('should throw error when target is not descendant', async () => {
-      vi.mocked(mockRuntime._isDescendantOf).mockReturnValue(false);
+    it('should destroy agent with cascade false when specified', async () => {
+      await client.destroyAgent('child-agent', { cascade: false });
 
-      await expect(client.destroyAgent('other-agent')).rejects.toThrow(
-        'Permission denied: cannot destroy agent other-agent (not owned by you)',
+      expect(mockRuntime._destroyAgentWithCascade).toHaveBeenCalledWith(
+        'child-agent',
+        false,
       );
     });
   });
 
   describe('getAgent', () => {
-    it('should return agent when canListAllAgents is true', async () => {
+    it('should return agent', async () => {
       const mockAgent = {} as Agent;
       vi.mocked(mockRuntime.getAgent).mockResolvedValue(mockAgent);
 
@@ -218,36 +114,23 @@ describe('RuntimeControlClientImpl', () => {
 
       expect(result).toBe(mockAgent);
     });
-
-    it('should return agent when is descendant', async () => {
-      const mockAgent = {} as Agent;
-      vi.mocked(mockRuntime._isDescendantOf).mockReturnValue(true);
-      vi.mocked(mockRuntime.getAgent).mockResolvedValue(mockAgent);
-
-      const result = await client.getAgent('child-agent');
-
-      expect(result).toBe(mockAgent);
-    });
-
-    it('should return undefined when not descendant and not canListAllAgents', async () => {
-      // Create a client with limited permissions (canListAllAgents: false)
-      const limitedClient = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, {
-        ...limitedPermissions,
-        canListAllAgents: false,
-      });
-      vi.mocked(mockRuntime._isDescendantOf).mockReturnValue(false);
-
-      const result = await limitedClient.getAgent('other-agent');
-
-      expect(result).toBeUndefined();
-    });
   });
 
   describe('listAgents', () => {
-    it('should list all agents when canListAllAgents is true', async () => {
+    it('should list all agents', async () => {
       const agents: AgentMetadata[] = [
-        { instanceId: 'agent-1', status: 'idle', createdAt: new Date(), updatedAt: new Date() },
-        { instanceId: 'agent-2', status: 'running', createdAt: new Date(), updatedAt: new Date() },
+        {
+          instanceId: 'agent-1',
+          status: 'idle',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          instanceId: 'agent-2',
+          status: 'running',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       ];
       vi.mocked(mockRuntime.listAgents).mockResolvedValue(agents);
 
@@ -257,26 +140,7 @@ describe('RuntimeControlClientImpl', () => {
       expect(mockRuntime.listAgents).toHaveBeenCalled();
     });
 
-    it('should filter and return only child agents when canListAllAgents is false', async () => {
-      // Create a client with limited permissions (canListAllAgents: false)
-      const limitedClient = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, {
-        ...limitedPermissions,
-        canListAllAgents: false,
-      });
-      const allAgents: AgentMetadata[] = [
-        { instanceId: 'parent', status: 'idle', createdAt: new Date(), updatedAt: new Date() },
-        { instanceId: 'child-1', status: 'idle', parentInstanceId: callerInstanceId, createdAt: new Date(), updatedAt: new Date() },
-        { instanceId: 'child-2', status: 'idle', parentInstanceId: callerInstanceId, createdAt: new Date(), updatedAt: new Date() },
-      ];
-      vi.mocked(mockRuntime.listAgents).mockResolvedValue(allAgents);
-
-      const result = await limitedClient.listAgents();
-
-      expect(result).toHaveLength(2);
-      expect(result.every((a) => a.parentInstanceId === callerInstanceId)).toBe(true);
-    });
-
-    it('should pass filter to runtime when canListAllAgents is true', async () => {
+    it('should pass filter to runtime', async () => {
       const filter: AgentFilter = { status: 'idle' };
       vi.mocked(mockRuntime.listAgents).mockResolvedValue([]);
 
@@ -320,7 +184,12 @@ describe('RuntimeControlClientImpl', () => {
   describe('listChildAgents', () => {
     it('should return children from runtime', async () => {
       const children: AgentMetadata[] = [
-        { instanceId: 'child-1', status: 'idle', createdAt: new Date(), updatedAt: new Date() },
+        {
+          instanceId: 'child-1',
+          status: 'idle',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       ];
       vi.mocked(mockRuntime._getChildren).mockReturnValue(children);
 
@@ -332,7 +201,7 @@ describe('RuntimeControlClientImpl', () => {
   });
 
   describe('submitTask', () => {
-    it('should submit task when permission is granted', async () => {
+    it('should submit task', async () => {
       const task: TaskSubmission = {
         description: 'Test task',
         targetInstanceId: 'agent-1',
@@ -342,15 +211,6 @@ describe('RuntimeControlClientImpl', () => {
 
       expect(result).toBe('task-id');
       expect(mockRuntime.submitTask).toHaveBeenCalledWith(task);
-    });
-
-    it('should throw error when permission is denied', async () => {
-      permissions.canSubmitTask = false;
-      client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, permissions);
-
-      await expect(
-        client.submitTask({ description: 'Test', targetInstanceId: 'agent-1' }),
-      ).rejects.toThrow('Permission denied: cannot submit task');
     });
   });
 
@@ -394,7 +254,7 @@ describe('RuntimeControlClientImpl', () => {
   });
 
   describe('getStats', () => {
-    it('should return stats when permission is granted', async () => {
+    it('should return stats', async () => {
       const stats: RuntimeStats = {
         totalAgents: 5,
         agentsByStatus: { idle: 3, running: 2, completed: 0, aborted: 0 },
@@ -407,14 +267,50 @@ describe('RuntimeControlClientImpl', () => {
 
       expect(result).toEqual(stats);
     });
+  });
 
-    it('should throw error when permission is denied', async () => {
-      permissions.canGetStats = false;
-      client = new RuntimeControlClientImpl(mockRuntime, callerInstanceId, permissions);
-
-      await expect(client.getStats()).rejects.toThrow(
-        'Permission denied: cannot get stats',
+  describe('topology methods', () => {
+    it('should call registerInTopology', () => {
+      client.registerInTopology('agent-1', 'worker', ['task1']);
+      expect(mockRuntime.registerInTopology).toHaveBeenCalledWith(
+        'agent-1',
+        'worker',
+        ['task1'],
       );
+    });
+
+    it('should call unregisterFromTopology', () => {
+      client.unregisterFromTopology('agent-1');
+      expect(mockRuntime.unregisterFromTopology).toHaveBeenCalledWith(
+        'agent-1',
+      );
+    });
+
+    it('should call connectAgents', () => {
+      client.connectAgents('agent-1', 'agent-2', 'peer');
+      expect(mockRuntime.connectAgents).toHaveBeenCalledWith(
+        'agent-1',
+        'agent-2',
+        'peer',
+      );
+    });
+
+    it('should call disconnectAgents', () => {
+      client.disconnectAgents('agent-1', 'agent-2');
+      expect(mockRuntime.disconnectAgents).toHaveBeenCalledWith(
+        'agent-1',
+        'agent-2',
+      );
+    });
+
+    it('should call getTopologyGraph', () => {
+      client.getTopologyGraph();
+      expect(mockRuntime.getTopologyGraph).toHaveBeenCalled();
+    });
+
+    it('should call getTopologyStats', () => {
+      client.getTopologyStats();
+      expect(mockRuntime.getTopologyStats).toHaveBeenCalled();
     });
   });
 });

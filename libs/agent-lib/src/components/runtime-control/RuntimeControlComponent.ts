@@ -46,7 +46,6 @@ import {
 } from './schemas.js';
 import type {
   IRuntimeControlClient,
-  RuntimeControlPermissions,
   RuntimeStats,
   AgentMetadata,
 } from '../../core/runtime/types.js';
@@ -183,15 +182,8 @@ export class RuntimeControlComponent extends ToolComponent {
       return elements;
     }
 
-    const permissions = client.getPermissions();
-
     elements.push(
       new tdiv({ content: `Instance: ${client.getSelfInstanceId()}` }),
-      new tdiv({ content: `Can Create Agent: ${permissions.canCreateAgent}` }),
-      new tdiv({
-        content: `Can Destroy Agent: ${permissions.canDestroyAgent}`,
-      }),
-      new tdiv({ content: `Max Child Agents: ${permissions.maxChildAgents}` }),
     );
 
     return elements;
@@ -213,7 +205,6 @@ export class RuntimeControlComponent extends ToolComponent {
     return {
       data: {
         myInstanceId: client.getSelfInstanceId(),
-        permissions: client.getPermissions(),
         childAgents: agents,
       },
       format: 'json',
@@ -241,16 +232,6 @@ export class RuntimeControlComponent extends ToolComponent {
       };
     }
 
-    if (!client.hasPermission('canCreateAgent')) {
-      return {
-        success: false,
-        data: {
-          error: 'Permission denied: cannot create agents',
-        } as unknown as { instanceId: string; name: string; createdAt: string },
-        summary: '[RuntimeControl] Permission denied: cannot create agents',
-      };
-    }
-
     try {
       const instanceId = await client.createAgent({
         agent: {
@@ -259,10 +240,6 @@ export class RuntimeControlComponent extends ToolComponent {
           description: params.description,
           sop: params.sop,
         },
-        runtimePermissions:
-          params.maxChildAgents !== undefined
-            ? { maxChildAgents: params.maxChildAgents }
-            : undefined,
       });
 
       return {
@@ -306,16 +283,6 @@ export class RuntimeControlComponent extends ToolComponent {
       };
     }
 
-    if (!client.hasPermission('canDestroyAgent')) {
-      return {
-        success: false,
-        data: {
-          error: 'Permission denied: cannot destroy agents',
-        } as unknown as { success: boolean; destroyedCount: number },
-        summary: '[RuntimeControl] Permission denied: cannot destroy agents',
-      };
-    }
-
     try {
       await client.destroyAgent(params.instanceId, {
         cascade: params.cascade,
@@ -356,17 +323,6 @@ export class RuntimeControlComponent extends ToolComponent {
       };
     }
 
-    if (!client.hasPermission('canManageAgentLifecycle')) {
-      return {
-        success: false,
-        data: {
-          error: 'Permission denied: cannot manage agent lifecycle',
-        } as unknown as { success: boolean },
-        summary:
-          '[RuntimeControl] Permission denied: cannot manage agent lifecycle',
-      };
-    }
-
     try {
       await client.startAgent(params.instanceId);
       return {
@@ -400,17 +356,6 @@ export class RuntimeControlComponent extends ToolComponent {
           success: boolean;
         },
         summary: '[RuntimeControl] Runtime control not available',
-      };
-    }
-
-    if (!client.hasPermission('canManageAgentLifecycle')) {
-      return {
-        success: false,
-        data: {
-          error: 'Permission denied: cannot manage agent lifecycle',
-        } as unknown as { success: boolean },
-        summary:
-          '[RuntimeControl] Permission denied: cannot manage agent lifecycle',
       };
     }
 
@@ -541,17 +486,6 @@ export class RuntimeControlComponent extends ToolComponent {
       };
     }
 
-    if (!client.hasPermission('canSubmitTask')) {
-      return {
-        success: false,
-        data: {
-          error: 'Permission denied: cannot submit tasks',
-          taskId: '',
-        } as unknown as { taskId: string },
-        summary: '[RuntimeControl] Permission denied: cannot submit tasks',
-      };
-    }
-
     try {
       const taskId = await client.submitTask({
         targetInstanceId: params.targetInstanceId,
@@ -587,16 +521,6 @@ export class RuntimeControlComponent extends ToolComponent {
           error: 'Runtime control not available',
         } as unknown as RuntimeStats,
         summary: '[RuntimeControl] Runtime control not available',
-      };
-    }
-
-    if (!client.hasPermission('canGetStats')) {
-      return {
-        success: false,
-        data: {
-          error: 'Permission denied: cannot get stats',
-        } as unknown as RuntimeStats,
-        summary: '[RuntimeControl] Permission denied: cannot get stats',
       };
     }
 
@@ -660,7 +584,6 @@ export class RuntimeControlComponent extends ToolComponent {
       instanceId: string;
       name?: string;
       agentType?: string;
-      permissions: RuntimeControlPermissions;
       parentInstanceId?: string;
     }>
   > {
@@ -670,21 +593,18 @@ export class RuntimeControlComponent extends ToolComponent {
         success: false,
         data: { error: 'Runtime control not available' } as unknown as {
           instanceId: string;
-          permissions: RuntimeControlPermissions;
           parentInstanceId?: string;
         },
         summary: '[RuntimeControl] Runtime control not available',
       };
     }
 
-    const permissions = client.getPermissions();
     const parentInstanceId = client.getParentInstanceId();
 
     return {
       success: true,
       data: {
         instanceId: client.getSelfInstanceId(),
-        permissions,
         parentInstanceId,
       },
       summary: `[RuntimeControl] Got agent info for: ${client.getSelfInstanceId()}`,

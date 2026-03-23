@@ -75,7 +75,6 @@ export { AgentRuntime, createAgentRuntime } from './AgentRuntime.js';
 // Runtime Control
 export type {
   IRuntimeControlClient,
-  RuntimeControlPermissions,
   RuntimeControlAgentOptions,
   AgentSoul,
   ComponentRegistration,
@@ -83,11 +82,6 @@ export type {
   HookConfig,
   RuntimeControlProviderSettings,
   RuntimeControlVirtualWorkspaceConfig,
-} from './types.js';
-
-export {
-  DEFAULT_RUNTIME_PERMISSIONS,
-  FULL_RUNTIME_PERMISSIONS,
 } from './types.js';
 
 export { RuntimeControlClientImpl } from './RuntimeControlClient.js';

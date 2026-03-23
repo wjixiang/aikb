@@ -31,10 +31,7 @@ import type { IPersistenceService } from '../persistence/types.js';
 import type { ISessionManager } from '../session/ISessionManager.js';
 import type { SessionState } from '../session/types.js';
 import pino from 'pino';
-import type {
-  IRuntimeControlClient,
-  RuntimeControlPermissions,
-} from '../runtime/types.js';
+import type { IRuntimeControlClient } from '../runtime/types.js';
 
 export interface AgentConfig {
   apiRequestTimeout: number;
@@ -176,9 +173,8 @@ export class Agent {
   private logger: pino.Logger;
   public instanceId: string;
 
-  // Runtime control client (optional - set by AgentRuntime when created with permissions)
+  // Runtime control client (set by AgentRuntime)
   private _runtimeClient?: IRuntimeControlClient;
-  private _runtimePermissions?: RuntimeControlPermissions;
 
   constructor(
     @inject(TYPES.AgentInstanceId) instanceId: string,
@@ -561,7 +557,7 @@ export class Agent {
 
   /**
    * Set the Runtime control client for this agent
-   * This is called by AgentRuntime when the agent is created with runtime permissions
+   * This is called by AgentRuntime when the agent is created
    */
   setRuntimeClient(client: IRuntimeControlClient): void {
     this._runtimeClient = client;
@@ -569,37 +565,10 @@ export class Agent {
   }
 
   /**
-   * Set the Runtime control permissions for this agent
-   * This is called by AgentRuntime when the agent is created with runtime permissions
-   */
-  setRuntimePermissions(permissions: RuntimeControlPermissions): void {
-    this._runtimePermissions = permissions;
-    this.logger.info('[Agent] Runtime control permissions set');
-  }
-
-  /**
    * Get the Runtime control client
-   *
-   * Returns the client if the agent is running in AgentRuntime
-   * and was granted runtime control permissions. Otherwise returns undefined.
-   *
-   * @example
-   * const client = this.getRuntimeClient();
-   * if (client?.hasPermission('canCreateAgent')) {
-   *   const childId = await client.createAgent({
-   *     agent: { name: 'worker', type: 'worker' }
-   *   });
-   * }
    */
   getRuntimeClient(): IRuntimeControlClient | undefined {
     return this._runtimeClient;
-  }
-
-  /**
-   * Get the Runtime control permissions
-   */
-  getRuntimePermissions(): RuntimeControlPermissions | undefined {
-    return this._runtimePermissions;
   }
 
   /**
@@ -607,13 +576,6 @@ export class Agent {
    */
   hasRuntimeControl(): boolean {
     return this._runtimeClient !== undefined;
-  }
-
-  /**
-   * Check if this agent has a specific Runtime control permission
-   */
-  hasRuntimePermission(permission: keyof RuntimeControlPermissions): boolean {
-    return this._runtimeClient?.hasPermission(permission) ?? false;
   }
 
   /**

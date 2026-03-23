@@ -1,9 +1,5 @@
 import { z } from 'zod';
-import type {
-  AgentMetadata,
-  RuntimeControlPermissions,
-  RuntimeStats,
-} from '../../core/runtime/types.js';
+import type { AgentMetadata, RuntimeStats } from '../../core/runtime/types.js';
 
 /**
  * Schema for creating an agent via tool call
@@ -171,7 +167,6 @@ export interface RuntimeControlToolReturnTypes {
     instanceId: string;
     name?: string;
     agentType?: string;
-    permissions: RuntimeControlPermissions;
     parentInstanceId?: string;
   };
 }

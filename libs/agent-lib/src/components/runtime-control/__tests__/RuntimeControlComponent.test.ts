@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RuntimeControlComponent } from '../RuntimeControlComponent.js';
 import type {
   IRuntimeControlClient,
-  RuntimeControlPermissions,
   AgentMetadata,
 } from '../../../core/runtime/types.js';
 
@@ -10,37 +9,9 @@ describe('RuntimeControlComponent', () => {
   let component: RuntimeControlComponent;
   let mockRuntimeClient: IRuntimeControlClient;
 
-  const fullPermissions: RuntimeControlPermissions = {
-    canCreateAgent: true,
-    canDestroyAgent: true,
-    canManageAgentLifecycle: true,
-    canSubmitTask: true,
-    canListAllAgents: true,
-    canGetStats: true,
-    maxChildAgents: 10,
-  };
-
-  const noPermissions: RuntimeControlPermissions = {
-    canCreateAgent: false,
-    canDestroyAgent: false,
-    canManageAgentLifecycle: false,
-    canSubmitTask: false,
-    canListAllAgents: false,
-    canGetStats: false,
-    maxChildAgents: 0,
-  };
-
-  const createMockClient = (
-    permissions: RuntimeControlPermissions = fullPermissions,
-  ): IRuntimeControlClient => {
+  const createMockClient = (): IRuntimeControlClient => {
     return {
-      getPermissions: vi.fn(() => permissions),
-      hasPermission: vi.fn((perm: keyof RuntimeControlPermissions) =>
-        Boolean(permissions[perm]),
-      ),
-      createAgent: vi.fn((options) =>
-        Promise.resolve('child-agent-id-' + Date.now()),
-      ),
+      createAgent: vi.fn(() => Promise.resolve('child-agent-id-' + Date.now())),
       destroyAgent: vi.fn(() => Promise.resolve()),
       startAgent: vi.fn(() => Promise.resolve()),
       stopAgent: vi.fn(() => Promise.resolve()),
@@ -48,8 +19,8 @@ describe('RuntimeControlComponent', () => {
         Promise.resolve({ instanceId: id } as AgentMetadata),
       ),
       listAgents: vi.fn(() => Promise.resolve([])),
-      submitTask: vi.fn((task) => Promise.resolve('task-' + Date.now())),
-      getTaskStatus: vi.fn((id) => Promise.resolve(undefined)),
+      submitTask: vi.fn(() => Promise.resolve('task-' + Date.now())),
+      getTaskStatus: vi.fn(() => Promise.resolve(undefined)),
       getPendingTasks: vi.fn(() => Promise.resolve([])),
       getStats: vi.fn(() =>
         Promise.resolve({
@@ -62,6 +33,12 @@ describe('RuntimeControlComponent', () => {
       getSelfInstanceId: vi.fn(() => 'parent-agent-id'),
       getParentInstanceId: vi.fn(() => undefined),
       listChildAgents: vi.fn(() => Promise.resolve([])),
+      registerInTopology: vi.fn(),
+      unregisterFromTopology: vi.fn(),
+      connectAgents: vi.fn(),
+      disconnectAgents: vi.fn(),
+      getTopologyGraph: vi.fn(),
+      getTopologyStats: vi.fn(),
     };
   };
 
@@ -103,7 +80,7 @@ describe('RuntimeControlComponent', () => {
   });
 
   describe('createAgent tool', () => {
-    it('should create agent successfully with full permissions', async () => {
+    it('should create agent successfully', async () => {
       const result = await component.handleToolCall('createAgent', {
         name: 'test-worker',
         agentType: 'worker',
@@ -121,46 +98,12 @@ describe('RuntimeControlComponent', () => {
           description: 'A test worker',
           sop: 'You are a worker',
         },
-        runtimePermissions: undefined,
-      });
-    });
-
-    it('should fail without canCreateAgent permission', async () => {
-      mockRuntimeClient = createMockClient(noPermissions);
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => mockRuntimeClient,
-      });
-
-      const result = await component.handleToolCall('createAgent', {
-        name: 'test-worker',
-        agentType: 'worker',
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.data).toHaveProperty('error');
-    });
-
-    it('should pass maxChildAgents to permissions', async () => {
-      const result = await component.handleToolCall('createAgent', {
-        name: 'test-worker',
-        agentType: 'worker',
-        maxChildAgents: 5,
-      });
-
-      expect(result.success).toBe(true);
-      expect(mockRuntimeClient.createAgent).toHaveBeenCalledWith({
-        agent: {
-          name: 'test-worker',
-          type: 'worker',
-        },
-        runtimePermissions: { maxChildAgents: 5 },
       });
     });
   });
 
   describe('destroyAgent tool', () => {
-    it('should destroy agent successfully with full permissions', async () => {
+    it('should destroy agent successfully', async () => {
       const result = await component.handleToolCall('destroyAgent', {
         instanceId: 'child-agent-id',
         cascade: true,
@@ -172,21 +115,6 @@ describe('RuntimeControlComponent', () => {
         'child-agent-id',
         { cascade: true },
       );
-    });
-
-    it('should fail without canDestroyAgent permission', async () => {
-      mockRuntimeClient = createMockClient(noPermissions);
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => mockRuntimeClient,
-      });
-
-      const result = await component.handleToolCall('destroyAgent', {
-        instanceId: 'child-agent-id',
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.data).toHaveProperty('error');
     });
   });
 
@@ -202,20 +130,6 @@ describe('RuntimeControlComponent', () => {
         'child-agent-id',
       );
     });
-
-    it('should fail without canManageAgentLifecycle permission', async () => {
-      mockRuntimeClient = createMockClient(noPermissions);
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => mockRuntimeClient,
-      });
-
-      const result = await component.handleToolCall('startAgent', {
-        instanceId: 'child-agent-id',
-      });
-
-      expect(result.success).toBe(false);
-    });
   });
 
   describe('stopAgent tool', () => {
@@ -229,20 +143,6 @@ describe('RuntimeControlComponent', () => {
       expect(mockRuntimeClient.stopAgent).toHaveBeenCalledWith(
         'child-agent-id',
       );
-    });
-
-    it('should fail without canManageAgentLifecycle permission', async () => {
-      mockRuntimeClient = createMockClient(noPermissions);
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => mockRuntimeClient,
-      });
-
-      const result = await component.handleToolCall('stopAgent', {
-        instanceId: 'child-agent-id',
-      });
-
-      expect(result.success).toBe(false);
     });
   });
 
@@ -336,21 +236,6 @@ describe('RuntimeControlComponent', () => {
         priority: 'high',
       });
     });
-
-    it('should fail without canSubmitTask permission', async () => {
-      mockRuntimeClient = createMockClient(noPermissions);
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => mockRuntimeClient,
-      });
-
-      const result = await component.handleToolCall('submitTask', {
-        targetInstanceId: 'child-agent-id',
-        description: 'Test task',
-      });
-
-      expect(result.success).toBe(false);
-    });
   });
 
   describe('getStats tool', () => {
@@ -359,18 +244,6 @@ describe('RuntimeControlComponent', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.totalAgents).toBe(1);
-    });
-
-    it('should fail without canGetStats permission', async () => {
-      mockRuntimeClient = createMockClient(noPermissions);
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => mockRuntimeClient,
-      });
-
-      const result = await component.handleToolCall('getStats', {});
-
-      expect(result.success).toBe(false);
     });
   });
 
@@ -403,7 +276,6 @@ describe('RuntimeControlComponent', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.instanceId).toBe('parent-agent-id');
-      expect(result.data.permissions).toEqual(fullPermissions);
     });
   });
 
@@ -474,7 +346,6 @@ describe('RuntimeControlComponent', () => {
 
       expect(result.format).toBe('json');
       expect(result.data).toHaveProperty('myInstanceId');
-      expect(result.data).toHaveProperty('permissions');
     });
 
     it('should handle export when client not available', async () => {
