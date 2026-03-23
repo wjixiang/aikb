@@ -101,6 +101,15 @@ import type { ICentralTaskQueue } from './CentralTaskQueue.js';
 import { CentralTaskQueue } from './CentralTaskQueue.js';
 import { RuntimeControlClientImpl } from './RuntimeControlClient.js';
 
+// Topology Network
+import type { ITopologyGraph } from './topology/graph/TopologyGraph.js';
+import type { TopologyMessage, RoutingStats } from './topology/types.js';
+import { createTopologyGraph } from './topology/graph/TopologyGraph.js';
+import { createMessageBus } from './topology/messaging/MessageBus.js';
+import { createMessageRouter } from './topology/routing/MessageRouter.js';
+import type { IMessageBus } from './topology/messaging/MessageBus.js';
+import type { IMessageRouter } from './topology/routing/MessageRouter.js';
+
 /**
  * AgentFilter - Options for filtering agents in listAgents()
  *
@@ -280,6 +289,104 @@ export interface IAgentRuntime {
    * Get current runtime statistics.
    */
   getStats(): Promise<RuntimeStats>;
+
+  // ============================================
+  // Topology Network (Agent Communication)
+  // ============================================
+
+  /**
+   * Register an agent in the topology network.
+   * @param instanceId The agent's unique instance identifier
+   * @param nodeType Type of node (router, worker, hybrid)
+   * @param capabilities Optional capabilities for routing decisions
+   */
+  registerInTopology(
+    instanceId: string,
+    nodeType: 'router' | 'worker' | 'hybrid',
+    capabilities?: string[],
+  ): void;
+
+  /**
+   * Unregister an agent from the topology network.
+   * @param instanceId The agent's unique instance identifier
+   */
+  unregisterFromTopology(instanceId: string): void;
+
+  /**
+   * Connect two agents in the topology network.
+   * @param from Source agent ID
+   * @param to Target agent ID
+   * @param edgeType Type of connection (parent-child, peer, route)
+   */
+  connectAgents(
+    from: string,
+    to: string,
+    edgeType?: 'parent-child' | 'peer' | 'route',
+  ): void;
+
+  /**
+   * Disconnect two agents in the topology network.
+   * @param from Source agent ID
+   * @param to Target agent ID
+   */
+  disconnectAgents(from: string, to: string): void;
+
+  /**
+   * Send a message to a specific agent via topology network.
+   * @param to Target agent ID
+   * @param content Message content
+   * @param messageType Type of message (request, event, ack, result)
+   */
+  sendToAgent(
+    to: string,
+    content: unknown,
+    messageType?: 'request' | 'event' | 'ack' | 'result' | 'error',
+  ): Promise<import('./topology/types.js').TopologyMessage>;
+
+  /**
+   * Broadcast a message to all children of an agent.
+   * @param from Source agent ID
+   * @param content Message content
+   */
+  broadcastToChildren(
+    from: string,
+    content: unknown,
+  ): Promise<import('./topology/types.js').TopologyMessage[]>;
+
+  /**
+   * Subscribe to messages for a specific agent.
+   * @param instanceId Agent ID to subscribe
+   * @param handler Message handler callback
+   */
+  subscribeToAgent(
+    instanceId: string,
+    handler: (message: import('./topology/types.js').TopologyMessage) => void,
+  ): () => void;
+
+  /**
+   * Request a response from an agent (two-phase protocol).
+   * @param to Target agent ID
+   * @param content Request content
+   * @param from Optional source ID (defaults to 'external')
+   */
+  requestFromAgent(
+    to: string,
+    content: unknown,
+    from?: string,
+  ): Promise<{
+    ack: import('./topology/types.js').TopologyMessage;
+    result: Promise<import('./topology/types.js').TopologyMessage>;
+  }>;
+
+  /**
+   * Get the topology graph.
+   */
+  getTopologyGraph(): import('./topology/graph/TopologyGraph.js').ITopologyGraph;
+
+  /**
+   * Get topology network statistics.
+   */
+  getTopologyStats(): import('./topology/types.js').RoutingStats;
 }
 
 /**
@@ -351,6 +458,19 @@ export class AgentRuntime implements IAgentRuntime {
   private running: boolean = false;
 
   // ============================================
+  // Topology Network (Agent Communication)
+  // ============================================
+
+  /** Topology graph for agent connections */
+  private topologyGraph: ITopologyGraph;
+
+  /** Message bus for agent communication */
+  private messageBus: IMessageBus;
+
+  /** Message router for routing decisions */
+  private messageRouter: IMessageRouter;
+
+  // ============================================
   // Event-Driven Task Assignment State
   // ============================================
 
@@ -400,6 +520,22 @@ export class AgentRuntime implements IAgentRuntime {
     // These are shared across all agents managed by this runtime
     this.registry = new AgentRegistry();
     this.eventDispatcher = new EventDispatcher();
+
+    // Initialize topology network for agent communication
+    this.topologyGraph = createTopologyGraph();
+    this.messageBus = createMessageBus();
+    this.messageRouter = createMessageRouter(this.topologyGraph);
+    this.messageRouter.setMessageBus(this.messageBus);
+
+    // Route topology events through runtime event dispatcher
+    this.messageBus.onEvent((event) => {
+      this.eventDispatcher.emitEvent(event.type as any, event.payload);
+    });
+
+    // Route topology messages through runtime message handler
+    this.messageBus.onMessage((message) => {
+      this.handleTopologyMessage(message);
+    });
 
     // Setup internal event listeners for event-driven task assignment
     // This creates the reactive pipeline for automatic task distribution
@@ -640,6 +776,13 @@ export class AgentRuntime implements IAgentRuntime {
       instanceId,
       metadata,
       parentInstanceId,
+    });
+
+    // Auto-register in topology network as 'worker' by default
+    this.topologyGraph.addNode({
+      instanceId,
+      nodeType: 'worker',
+      capabilities: [],
     });
 
     return instanceId;
@@ -999,6 +1142,157 @@ export class AgentRuntime implements IAgentRuntime {
       totalPendingTasks,
       totalProcessingTasks,
     };
+  }
+
+  // ============================================
+  // Topology Network Implementation
+  // ============================================
+
+  registerInTopology(
+    instanceId: string,
+    nodeType: 'router' | 'worker' | 'hybrid',
+    capabilities?: string[],
+  ): void {
+    const node = this.topologyGraph.getNode(instanceId);
+    if (node) {
+      this.topologyGraph.removeNode(instanceId);
+    }
+    this.topologyGraph.addNode({
+      instanceId,
+      nodeType,
+      capabilities,
+    });
+  }
+
+  unregisterFromTopology(instanceId: string): void {
+    this.topologyGraph.removeNode(instanceId);
+  }
+
+  connectAgents(
+    from: string,
+    to: string,
+    edgeType: 'parent-child' | 'peer' | 'route' = 'peer',
+  ): void {
+    this.topologyGraph.addEdge({
+      from,
+      to,
+      edgeType,
+      bidirectional: edgeType === 'peer',
+    });
+  }
+
+  disconnectAgents(from: string, to: string): void {
+    this.topologyGraph.removeEdge(from, to);
+  }
+
+  async sendToAgent(
+    to: string,
+    content: unknown,
+    messageType: 'request' | 'event' | 'ack' | 'result' | 'error' = 'event',
+  ): Promise<TopologyMessage> {
+    const message = {
+      messageId: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      conversationId: `conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      from: 'runtime',
+      to,
+      content,
+      messageType,
+      ttl: 10,
+      timestamp: Date.now(),
+    };
+    this.messageBus.publish(message);
+    return message;
+  }
+
+  async broadcastToChildren(
+    from: string,
+    content: unknown,
+  ): Promise<TopologyMessage[]> {
+    const children = this.topologyGraph.getChildren(from);
+    const results: TopologyMessage[] = [];
+    for (const child of children) {
+      const msg = await this.sendToAgent(child.instanceId, content, 'event');
+      results.push(msg);
+    }
+    return results;
+  }
+
+  subscribeToAgent(
+    instanceId: string,
+    handler: (message: TopologyMessage) => void,
+  ): () => void {
+    return this.messageBus.onMessage((message) => {
+      if (message.to === instanceId) {
+        handler(message);
+      }
+    });
+  }
+
+  async requestFromAgent(
+    to: string,
+    content: unknown,
+    from: string = 'external',
+  ): Promise<{
+    ack: TopologyMessage;
+    result: Promise<TopologyMessage>;
+  }> {
+    const message = {
+      messageId: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      conversationId: `conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      from,
+      to,
+      content,
+      messageType: 'request' as const,
+      ttl: 10,
+      timestamp: Date.now(),
+    };
+
+    const ack = await this.messageBus.send(message);
+
+    const resultPromise = new Promise<TopologyMessage>((resolve, reject) => {
+      const checkResult = () => {
+        const conversation = this.messageBus.getConversation(
+          message.conversationId,
+        );
+        if (conversation?.status === 'completed' && conversation.result) {
+          resolve(conversation.result);
+        } else if (
+          conversation?.status === 'failed' ||
+          conversation?.status === 'timeout'
+        ) {
+          reject(
+            new Error(
+              `Conversation ${message.conversationId} ${conversation.status}`,
+            ),
+          );
+        } else {
+          setTimeout(checkResult, 100);
+        }
+      };
+      setTimeout(checkResult, 100);
+    });
+
+    return { ack, result: resultPromise };
+  }
+
+  getTopologyGraph(): ITopologyGraph {
+    return this.topologyGraph;
+  }
+
+  getTopologyStats(): RoutingStats {
+    return {
+      totalMessages: 0,
+      totalConversations: 0,
+      activeConversations: 0,
+      completedConversations: 0,
+      failedConversations: 0,
+      timedOutConversations: 0,
+    };
+  }
+
+  private handleTopologyMessage(message: TopologyMessage): void {
+    // Handle topology messages routed through the system
+    // This is called by the message bus when messages are delivered
   }
 
   // ============================================
