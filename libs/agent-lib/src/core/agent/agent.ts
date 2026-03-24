@@ -1337,19 +1337,6 @@ ${desc}${examplesStr}`;
       );
     }
 
-    // 4. Mail component (if available)
-    const componentKeys = this.workspace.getComponentKeys();
-    if (componentKeys.includes('mail')) {
-      parts.push(`# Mail System
-The mail system provides task instructions from other agents. Check your inbox regularly for new tasks.
-
-## Available Operations
-- Use getInbox to check your mailbox for new tasks/instructions
-- Use markAsRead after processing a message
-
-Note: The mail component is for receiving task instructions only. Do not send replies through the mail system.`);
-    }
-
     // Note: Errors are prepended to messages in getHistoryForPrompt(), not in system prompt
 
     return parts.join('\n\n');

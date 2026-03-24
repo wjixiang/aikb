@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { AgentSoulConfig } from '../../agent/AgentFactory';
-import { BibliographySearchComponent } from '../../../components';
+import { A2ATaskComponent, BibliographySearchComponent } from '../../../components';
 import path from 'path';
 
 export function createBibRetrieveAgentSoul(): AgentSoulConfig {
@@ -16,6 +16,9 @@ export function createBibRetrieveAgentSoul(): AgentSoulConfig {
     components: [
       {
         component: new BibliographySearchComponent(),
+      },
+      {
+        component: new A2ATaskComponent(),
       },
     ],
   };

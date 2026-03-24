@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { AgentSoulConfig } from '../../agent/AgentFactory';
-import { BibliographySearchComponent } from '../../../components';
+import { A2ATaskComponent, BibliographySearchComponent } from '../../../components';
 import path from 'path';
 
 /**
@@ -16,6 +16,9 @@ export function createPathophysiologyAgentSoul(): AgentSoulConfig {
         '病理机制与疼痛通路文献检索专家，负责分子机制、炎症反应、疼痛通路等文献的检索与筛选',
     },
     components: [
+      {
+        component: new A2ATaskComponent(),
+      },
       {
         component: new BibliographySearchComponent(),
       },
