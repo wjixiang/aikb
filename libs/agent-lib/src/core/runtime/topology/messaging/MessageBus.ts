@@ -70,7 +70,7 @@ export class MessageBus implements IMessageBus {
     this.conversationManager = createConversationManager();
     this.ackTracker = createAckTracker();
     this.config = {
-      defaultAckTimeout: config?.defaultAckTimeout ?? 5000,
+      defaultAckTimeout: config?.defaultAckTimeout ?? 30000,
       defaultResultTimeout: config?.defaultResultTimeout ?? 60000,
       maxRetries: config?.maxRetries ?? 3,
       defaultTtl: config?.defaultTtl ?? 10,
