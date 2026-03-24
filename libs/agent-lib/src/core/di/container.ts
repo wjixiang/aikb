@@ -32,6 +32,7 @@ import { ToolComponent } from '../../components/core/toolComponent.js';
 import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import { createA2AHandler } from '../a2a/index.js';
 import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
+import { A2ATaskComponent } from '../../components/A2AComponent/A2ATaskComponent.js';
 
 type Logger = ReturnType<typeof pino>;
 
@@ -327,27 +328,44 @@ export class AgentContainer {
       .toConstantValue(this.container);
 
     // Bind ToolComponents array for DI-managed registration
+    // Always include A2ATaskComponent as global component for A2A support
+    const globalComponents: Array<{
+      component: ToolComponent;
+      priority?: number;
+    }> = [{ component: new A2ATaskComponent(), priority: 0 }];
+
+    // Inject dependencies into global components
+    for (const { component } of globalComponents) {
+      component._injectDependencies(this.container);
+    }
+
     if (this.config.components && this.config.components.length > 0) {
+      // Inject dependencies into custom components
+      for (const { component } of this.config.components) {
+        component._injectDependencies(this.container);
+      }
       this.container
         .bind<
           Array<{ component: ToolComponent; priority?: number }>
         >(TYPES.ToolComponents)
-        .toConstantValue(this.config.components);
+        .toConstantValue([...globalComponents, ...this.config.components]);
+    } else {
+      this.container
+        .bind<
+          Array<{ component: ToolComponent; priority?: number }>
+        >(TYPES.ToolComponents)
+        .toConstantValue(globalComponents);
     }
   }
 
   /**
    * Inject dependencies into components
    * Called after container is fully set up
+   * Note: Dependencies are now injected in setupBindings for global components
    */
   private injectComponentDependencies(): void {
-    if (!this.config.components || this.config.components.length === 0) {
-      return;
-    }
-
-    for (const { component } of this.config.components) {
-      component._injectDependencies(this.container);
-    }
+    // Dependencies are injected in setupBindings for global components
+    // Custom components don't need dependency injection here
   }
 
   async getAgent(): Promise<Agent> {

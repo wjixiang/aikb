@@ -178,8 +178,10 @@ describe('VirtualWorkspace (Component-based)', () => {
       );
 
       const stats = workspace.getStats();
-      expect(stats.componentCount).toBe(1);
+      // componentCount includes global A2ATaskComponent + test-component
+      expect(stats.componentCount).toBe(2);
       expect(stats.componentKeys).toContain('test-component');
+      expect(stats.componentKeys).toContain('a2a-task');
     });
   });
 
