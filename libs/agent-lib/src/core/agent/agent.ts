@@ -657,7 +657,7 @@ export class Agent {
       );
       this.logger.warn(
         '[MailDriven] Available components: ' +
-        (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
+          (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
       );
       return;
     }
@@ -1273,6 +1273,13 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
 - Call ONLY ONE tool per response
 - After receiving the tool result, analyze it and decide if more tool calls are needed
 - When all tasks are done, call attempt_completion tool
+
+## A2A Task Acknowledgment
+When you receive a task from another agent (identified by "[A2A Task from ...]" in the user message):
+1. FIRST call getPendingTasks to get the list of pending tasks with their conversationId
+2. Then call acknowledgeTask with the correct conversationId from getPendingTasks result
+3. NEVER guess or make up a conversationId - it must be obtained from getPendingTasks
+4. Only after acknowledging, proceed with task execution
 
 ## Workspace Context
 - The CONTEXT section shows current component states (data, UI, pending actions)

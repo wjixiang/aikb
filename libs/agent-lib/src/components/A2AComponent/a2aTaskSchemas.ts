@@ -6,7 +6,9 @@ import { z } from 'zod';
 export const acknowledgeTaskParamsSchema = z.object({
   conversationId: z
     .string()
-    .describe('Conversation ID of the task to acknowledge'),
+    .describe(
+      'Conversation ID (e.g., "conv_1234567890_abc123") - MUST be obtained from getPendingTasks, NOT guessed',
+    ),
 });
 
 export type AcknowledgeTaskParams = z.infer<typeof acknowledgeTaskParamsSchema>;
@@ -57,7 +59,14 @@ export type SendTaskResultParams = z.infer<typeof sendTaskResultParamsSchema>;
 /**
  * Schema for getting pending tasks
  */
-export const getPendingTasksParamsSchema = z.object({});
+export const getPendingTasksParamsSchema = z
+  .object({
+    _placeholder: z
+      .string()
+      .optional()
+      .describe('Internal parameter, always use empty object {}'),
+  })
+  .passthrough(); // Allow additional properties to be ignored
 
 export type GetPendingTasksParams = z.infer<typeof getPendingTasksParamsSchema>;
 

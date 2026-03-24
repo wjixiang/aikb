@@ -57,15 +57,16 @@ This component handles Agent-to-Agent (A2A) task communication.
 
 **Workflow:**
 1. Receive task requests from other agents via A2A protocol
-2. Use getPendingTasks to view awaiting acknowledgments
-3. Acknowledge tasks when ready to process using acknowledgeTask
+2. MUST call getPendingTasks first to get the list of pending tasks with their conversationId
+3. Use the conversationId from getPendingTasks result to acknowledge via acknowledgeTask
 4. Process the task using appropriate tools
 5. Report results via completeTask or report failures via failTask
 
-**Important:**
-- Always acknowledge tasks before processing
-- Include meaningful output when completing tasks
-- Report errors promptly when task execution fails`;
+**Critical:**
+- The conversationId is a unique ID like "conv_1234567890_abc123", NOT the task description
+- ALWAYS call getPendingTasks first to get the correct conversationId before calling acknowledgeTask
+- NEVER make up or guess a conversationId - use the value from getPendingTasks
+- Always acknowledge tasks before processing to prevent sender timeout`;
 
   static override readonly injectSymbols: InjectSymbolsMap = {
     a2aHandler: TYPES.IA2AHandler,
@@ -103,12 +104,12 @@ This component handles Agent-to-Agent (A2A) task communication.
       string,
       (typeof a2aTaskToolSchemas)[keyof typeof a2aTaskToolSchemas],
     ][] = [
-        ['acknowledgeTask', a2aTaskToolSchemas.acknowledgeTask],
-        ['completeTask', a2aTaskToolSchemas.completeTask],
-        ['failTask', a2aTaskToolSchemas.failTask],
-        ['sendTaskResult', a2aTaskToolSchemas.sendTaskResult],
-        ['getPendingTasks', a2aTaskToolSchemas.getPendingTasks],
-      ];
+      ['acknowledgeTask', a2aTaskToolSchemas.acknowledgeTask],
+      ['completeTask', a2aTaskToolSchemas.completeTask],
+      ['failTask', a2aTaskToolSchemas.failTask],
+      ['sendTaskResult', a2aTaskToolSchemas.sendTaskResult],
+      ['getPendingTasks', a2aTaskToolSchemas.getPendingTasks],
+    ];
 
     toolEntries.forEach(([name, toolDef]) => {
       tools.set(name, {
@@ -134,39 +135,39 @@ This component handles Agent-to-Agent (A2A) task communication.
     toolName: string,
     params: unknown,
   ): Promise<ToolCallResult<unknown>> => {
-      try {
-        switch (toolName) {
-          case 'acknowledgeTask':
-            return await this.handleAcknowledgeTask(
-              params as AcknowledgeTaskParams,
-            );
-          case 'completeTask':
-            return await this.handleCompleteTask(params as CompleteTaskParams);
-          case 'failTask':
-            return await this.handleFailTask(params as FailTaskParams);
-          case 'sendTaskResult':
-            return await this.handleSendTaskResult(
-              params as SendTaskResultParams,
-            );
-          case 'getPendingTasks':
-            return await this.handleGetPendingTasks();
-          default:
-            return {
-              success: false,
-              data: { error: `Unknown tool: ${toolName}` },
-              summary: `[A2A Task] Unknown tool: ${toolName}`,
-            };
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          success: false,
-          data: { error: errorMessage },
-          summary: `[A2A Task] Error: ${errorMessage}`,
-        };
+    try {
+      switch (toolName) {
+        case 'acknowledgeTask':
+          return await this.handleAcknowledgeTask(
+            params as AcknowledgeTaskParams,
+          );
+        case 'completeTask':
+          return await this.handleCompleteTask(params as CompleteTaskParams);
+        case 'failTask':
+          return await this.handleFailTask(params as FailTaskParams);
+        case 'sendTaskResult':
+          return await this.handleSendTaskResult(
+            params as SendTaskResultParams,
+          );
+        case 'getPendingTasks':
+          return await this.handleGetPendingTasks();
+        default:
+          return {
+            success: false,
+            data: { error: `Unknown tool: ${toolName}` },
+            summary: `[A2A Task] Unknown tool: ${toolName}`,
+          };
       }
-    };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        data: { error: errorMessage },
+        summary: `[A2A Task] Error: ${errorMessage}`,
+      };
+    }
+  };
 
   /**
    * Render the tool section UI
@@ -253,8 +254,9 @@ This component handles Agent-to-Agent (A2A) task communication.
           conversationId: params.conversationId,
           error: error instanceof Error ? error.message : String(error),
         } as { success: boolean; conversationId: string; error: string },
-        summary: `[A2A Task] Failed to acknowledge: ${error instanceof Error ? error.message : String(error)
-          }`,
+        summary: `[A2A Task] Failed to acknowledge: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -287,8 +289,9 @@ This component handles Agent-to-Agent (A2A) task communication.
           conversationId: params.conversationId,
           error: error instanceof Error ? error.message : String(error),
         } as { success: boolean; conversationId: string; error: string },
-        summary: `[A2A Task] Failed to complete: ${error instanceof Error ? error.message : String(error)
-          }`,
+        summary: `[A2A Task] Failed to complete: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -320,8 +323,9 @@ This component handles Agent-to-Agent (A2A) task communication.
           conversationId: params.conversationId,
           error: error instanceof Error ? error.message : String(error),
         } as { success: boolean; conversationId: string; error: string },
-        summary: `[A2A Task] Failed to send error: ${error instanceof Error ? error.message : String(error)
-          }`,
+        summary: `[A2A Task] Failed to send error: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -356,8 +360,9 @@ This component handles Agent-to-Agent (A2A) task communication.
           conversationId: params.conversationId,
           error: error instanceof Error ? error.message : String(error),
         } as { success: boolean; conversationId: string; error: string },
-        summary: `[A2A Task] Failed to send result: ${error instanceof Error ? error.message : String(error)
-          }`,
+        summary: `[A2A Task] Failed to send result: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -382,8 +387,9 @@ This component handles Agent-to-Agent (A2A) task communication.
           tasks: [] as PendingTask[],
           error: error instanceof Error ? error.message : String(error),
         } as { tasks: PendingTask[]; error: string },
-        summary: `[A2A Task] Failed to get pending: ${error instanceof Error ? error.message : String(error)
-          }`,
+        summary: `[A2A Task] Failed to get pending: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }

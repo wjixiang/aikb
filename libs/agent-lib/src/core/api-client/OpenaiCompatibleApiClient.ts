@@ -550,17 +550,46 @@ export class OpenaiCompatibleApiClient implements ApiClient {
               continue;
             }
 
-            // Validate function arguments
-            const args = toolCall.function.arguments;
+            // Validate and parse function arguments
+            let args = toolCall.function.arguments;
             if (args) {
-              try {
-                // Validate JSON format
-                JSON.parse(args);
-              } catch (e) {
-                throw new ResponseParsingError(
-                  `Invalid JSON in function arguments for ${toolCall.function.name}`,
-                  { toolCall, parseError: e },
-                );
+              // Trim whitespace which can cause JSON.parse to fail
+              let trimmedArgs = args.trim();
+              if (trimmedArgs) {
+                try {
+                  // Validate JSON format
+                  JSON.parse(trimmedArgs);
+                  args = trimmedArgs; // Use trimmed version
+                } catch (e) {
+                  // Try to repair incomplete JSON (e.g., "{" without closing "}")
+                  const repaired = this.repairJSON(trimmedArgs);
+                  if (repaired !== null) {
+                    this.logger.warn(
+                      {
+                        functionName: toolCall.function.name,
+                        original: trimmedArgs,
+                        repaired,
+                      },
+                      'Repaired incomplete JSON in function arguments',
+                    );
+                    args = repaired;
+                  } else {
+                    this.logger.error(
+                      {
+                        functionName: toolCall.function.name,
+                        args: trimmedArgs,
+                      },
+                      'Invalid JSON in function arguments',
+                    );
+                    throw new ResponseParsingError(
+                      `Invalid JSON in function arguments for ${toolCall.function.name}: ${trimmedArgs.substring(0, 100)}`,
+                      { toolCall, parseError: e },
+                    );
+                  }
+                }
+              } else {
+                // Empty string after trim, treat as empty object
+                args = '{}';
               }
             }
 
@@ -624,5 +653,80 @@ export class OpenaiCompatibleApiClient implements ApiClient {
           : completion,
       );
     }
+  }
+
+  /**
+   * Attempt to repair incomplete JSON strings
+   * Handles cases where model returns truncated JSON like "{" or "{foo"
+   */
+  private repairJSON(str: string): string | null {
+    // If it looks like an incomplete object, try to find the closing brace
+    if (str.startsWith('{')) {
+      let depth = 0;
+      let lastValidPos = 0;
+
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === '{') {
+          depth++;
+        } else if (str[i] === '}') {
+          depth--;
+          if (depth === 0) {
+            // Found a complete object
+            const candidate = str.substring(0, i + 1);
+            try {
+              JSON.parse(candidate);
+              return candidate;
+            } catch {
+              // Continue searching
+            }
+          }
+        }
+      }
+
+      // If we get here, JSON was truncated before complete object
+      // Try completing it minimally
+      const incomplete = str.trim();
+      if (incomplete === '{') {
+        return '{}';
+      }
+
+      // Try adding closing brace(s) to complete the object
+      const needed = depth > 0 ? '}'.repeat(depth) : '';
+      const candidate = incomplete + needed;
+
+      try {
+        JSON.parse(candidate);
+        this.logger.debug(
+          { original: str, repaired: candidate },
+          'Repaired JSON by adding closing braces',
+        );
+        return candidate;
+      } catch {
+        return null;
+      }
+    }
+
+    // If it looks like an incomplete array, similar logic
+    if (str.startsWith('[')) {
+      let depth = 0;
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === '[') {
+          depth++;
+        } else if (str[i] === ']') {
+          depth--;
+          if (depth === 0) {
+            const candidate = str.substring(0, i + 1);
+            try {
+              JSON.parse(candidate);
+              return candidate;
+            } catch {
+              // Continue
+            }
+          }
+        }
+      }
+    }
+
+    return null;
   }
 }

@@ -5,7 +5,13 @@
  * enabling retry logic for lost acknowledgments.
  */
 
+import pino from 'pino';
 import type { TopologyMessage } from '../types.js';
+
+const logger = pino({
+  level: 'debug',
+  timestamp: pino.stdTimeFunctions.isoTime,
+});
 
 export interface AckCallback {
   onTimeout: () => void;
@@ -35,6 +41,11 @@ export class AckTracker implements IAckTracker {
   track(conversationId: string, callback: AckCallback, timeout: number): void {
     this.untrack(conversationId);
 
+    logger.debug(
+      { conversationId, timeoutMs: timeout },
+      '[AckTracker] Waiting for ACK',
+    );
+
     const timeoutId = setTimeout(() => {
       this.handleTimeout(conversationId);
     }, timeout);
@@ -57,6 +68,11 @@ export class AckTracker implements IAckTracker {
   acknowledge(conversationId: string, ack: TopologyMessage): void {
     const tracked = this.tracking.get(conversationId);
     if (tracked) {
+      const elapsed = Date.now() - tracked.startTime;
+      logger.info(
+        { conversationId, ackMessageId: ack.messageId, elapsedMs: elapsed },
+        '[AckTracker] ACK received',
+      );
       clearTimeout(tracked.timeoutId);
       this.tracking.delete(conversationId);
       try {
@@ -74,6 +90,11 @@ export class AckTracker implements IAckTracker {
   private handleTimeout(conversationId: string): void {
     const tracked = this.tracking.get(conversationId);
     if (tracked) {
+      const elapsed = Date.now() - tracked.startTime;
+      logger.warn(
+        { conversationId, elapsedMs: elapsed },
+        '[AckTracker] ACK timeout',
+      );
       this.tracking.delete(conversationId);
       try {
         tracked.callback.onTimeout();

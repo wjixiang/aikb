@@ -465,7 +465,9 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Initialize topology network for agent communication
     this.topologyGraph = createTopologyGraph();
-    this.messageBus = createMessageBus();
+    this.messageBus = createMessageBus({
+      defaultAckTimeout: 120000, // 120 seconds for ACK timeout
+    });
     this.messageRouter = createMessageRouter(this.topologyGraph);
     this.messageRouter.setMessageBus(this.messageBus);
 
