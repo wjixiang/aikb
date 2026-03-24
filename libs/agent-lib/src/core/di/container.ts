@@ -253,8 +253,8 @@ export class AgentContainer {
       instanceId: this.instanceId,
       supportedTypes: ['task', 'query', 'event'],
       handlerTimeout: Math.max(
-        180000,
-        (this.config.agent.config.apiRequestTimeout || 60000) * 3,
+        300000,
+        (this.config.agent.config.apiRequestTimeout || 120000) * 5,
       ),
     };
     this.container
