@@ -20,6 +20,26 @@ interface SavedArticle extends ArticleProfile {
 }
 
 export class BibliographySearchComponent extends ToolComponent {
+  override componentId = 'bibliography-search';
+  override displayName = 'Bibliography Search';
+  override description = 'Search and manage PubMed literature';
+  override componentPrompt = `## Bibliography Search
+
+This component provides access to PubMed literature database for evidence-based medicine research.
+
+**Search Strategies:**
+1. Start with broad searches using key concepts
+2. Use PICO framework to refine search terms
+3. Apply appropriate filters (date, article type, species)
+4. Review abstracts to identify relevant studies
+5. Save promising articles for detailed review
+
+**Best Practices:**
+- Combine Medical Subject Headings (MeSH) with free text
+- Use field tags [tiab] for title/abstract search
+- Check related articles for additional references
+- Export citations in structured format for review`;
+
   toolSet: Map<string, Tool>;
   handleToolCall: (
     toolName: string,

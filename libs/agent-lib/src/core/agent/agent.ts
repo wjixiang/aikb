@@ -1286,7 +1286,21 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
 - When all tasks are complete, call attempt_completion to finish
 - If a tool fails, analyze the error and try an alternative approach`);
 
-    // 3.1 Tool descriptions (grouped by component with examples)
+    // 3. Component prompts (from registered components)
+    const allComponents = this.workspace.getComponentRegistry().getAll();
+    const componentPromptSections: string[] = [];
+    for (const component of allComponents) {
+      if (component.componentPrompt) {
+        componentPromptSections.push(
+          `## ${component.displayName}\n\n${component.componentPrompt}`,
+        );
+      }
+    }
+    if (componentPromptSections.length > 0) {
+      parts.push(`# Component Context\n\n${componentPromptSections.join('\n\n---\n\n')}`);
+    }
+
+    // 4. Tool descriptions (grouped by component with examples)
     const allTools = this.workspace.getAllTools();
     if (allTools.length > 0) {
       // Group tools by component

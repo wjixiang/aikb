@@ -86,6 +86,13 @@ export abstract class ToolComponent {
   readonly description: string = '';
 
   /**
+   * Component-level prompt injected into system prompt (optional)
+   * Use this to provide component-specific context, workflows, or guidelines
+   * that should be included in the agent's system prompt
+   */
+  componentPrompt?: string;
+
+  /**
    * Declare dependencies for DI injection (override in subclass)
    * @example
    * static readonly injectSymbols = {

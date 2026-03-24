@@ -52,6 +52,21 @@ export class A2ATaskComponent extends ToolComponent {
   override componentId = 'a2a-task';
   override displayName = 'A2A Task Manager';
   override description = 'Manage A2A task acknowledgment and responses';
+  override componentPrompt = `## A2A Task Management
+
+This component handles Agent-to-Agent (A2A) task communication.
+
+**Workflow:**
+1. Receive task requests from other agents via A2A protocol
+2. Use getPendingTasks to view awaiting acknowledgments
+3. Acknowledge tasks when ready to process using acknowledgeTask
+4. Process the task using appropriate tools
+5. Report results via completeTask or report failures via failTask
+
+**Important:**
+- Always acknowledge tasks before processing
+- Include meaningful output when completing tasks
+- Report errors promptly when task execution fails`;
 
   static override readonly injectSymbols: InjectSymbolsMap = {
     a2aHandler: TYPES.IA2AHandler,
