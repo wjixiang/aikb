@@ -90,7 +90,7 @@ export abstract class ToolComponent {
    * Use this to provide component-specific context, workflows, or guidelines
    * that should be included in the agent's system prompt
    */
-  componentPrompt?: string;
+  abstract componentPrompt: string;
 
   /**
    * Declare dependencies for DI injection (override in subclass)

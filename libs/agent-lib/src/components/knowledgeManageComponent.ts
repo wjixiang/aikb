@@ -186,6 +186,26 @@ export interface SearchResult {
  * Provides comprehensive knowledge management capabilities similar to Obsidian/Notion
  */
 export class KnowledgeManageComponent extends ToolComponent {
+    override componentId = 'knowledge-manage';
+    override displayName = 'Knowledge Management';
+    override description = 'Manage documents, entities, and knowledge base operations';
+    override componentPrompt = `## Knowledge Management
+
+This component provides comprehensive knowledge management capabilities for document and entity operations.
+
+**Core Operations:**
+- Fetch and browse documents from the knowledge base
+- Create, update, and delete documents with structured metadata
+- Manage entities with semantic linking and backlinking
+- Apply tags for organization and filtering
+- Perform semantic search across the knowledge base
+
+**Best Practices:**
+- Use semantic search for finding related content
+- Link entities to create a knowledge graph
+- Apply consistent tagging for easy retrieval
+- Export data in structured formats for analysis`;
+
     toolSet = new Map<string, Tool>([
         ['fetchDocuments', {
             toolName: 'fetchDocuments',

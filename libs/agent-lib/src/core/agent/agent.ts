@@ -1161,6 +1161,21 @@ export class Agent {
         const toolSourceInfo = this.toolManager.getToolSource(toolCall.name);
         const componentKey = toolSourceInfo?.componentKey;
 
+        // Ensure result is properly formatted for memory
+        let resultContent: string;
+        if (result === null || result === undefined) {
+          resultContent = 'null';
+        } else if (typeof result === 'string') {
+          resultContent = result || '(empty string)';
+        } else {
+          resultContent = this.safeStringify(result);
+        }
+
+        this.logger.debug(
+          { toolName: toolCall.name, resultContent },
+          '[Agent] Tool result content',
+        );
+
         const toolResult: ToolExecutionResult = {
           toolName: toolCall.name,
           success: true,
@@ -1181,7 +1196,7 @@ export class Agent {
             {
               type: 'tool_result' as const,
               tool_use_id: toolCall.id,
-              content: this.safeStringify(result),
+              content: resultContent,
             },
           ],
           ts: Date.now(),
@@ -1297,7 +1312,9 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
       }
     }
     if (componentPromptSections.length > 0) {
-      parts.push(`# Component Context\n\n${componentPromptSections.join('\n\n---\n\n')}`);
+      parts.push(
+        `# Component Context\n\n${componentPromptSections.join('\n\n---\n\n')}`,
+      );
     }
 
     // 4. Tool descriptions (grouped by component with examples)

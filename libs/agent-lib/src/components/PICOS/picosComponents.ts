@@ -13,6 +13,33 @@ import type {
 } from './picosSchemas.js';
 
 export class PicosComponent extends ToolComponent {
+  override componentId = 'picos';
+  override displayName = 'PICOS Builder';
+  override description = 'Build PICOS clinical questions for evidence-based medicine';
+  override componentPrompt = `## PICOS Clinical Question Builder
+
+This component helps construct PICOS clinical questions for systematic reviews and evidence-based medicine.
+
+**PICOS Elements:**
+- **P**opulation: Specific patient population or disease
+- **I**ntervention: Treatment or exposure being studied
+- **C**omparison: Control or comparison group
+- **O**utcome: Primary and secondary outcomes
+- **S**tudy Design: Preferred study designs for the question
+
+**Workflow:**
+1. Define the population with specific characteristics
+2. Specify the intervention of interest
+3. Identify appropriate comparison group
+4. Define measurable outcomes
+5. Select preferred study designs
+6. Generate structured clinical question
+
+**Best Practices:**
+- Be specific in population definition for focused searches
+- Choose clinically relevant outcomes
+- Match study designs to answer type (RCTs for interventions, cohort for prognosis)`;
+
   toolSet: Map<string, Tool>;
   handleToolCall: (
     toolName: string,

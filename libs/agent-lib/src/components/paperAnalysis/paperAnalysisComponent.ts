@@ -12,6 +12,19 @@ export class PaperAnalysisComponent extends ToolComponent {
     override componentId = 'paper-analyzer';
     override displayName = 'Paper Analyzer';
     override description = 'Analyzes academic papers for complexity, citations, and comparisons';
+    override componentPrompt = `## Paper Analysis
+
+This component analyzes academic papers for complexity, citations, and comparisons.
+
+**Analysis Capabilities:**
+- Calculate complexity scores across multiple dimensions (technical, mathematical, conceptual, experimental)
+- Extract and rank key citations based on relevance and impact
+- Compare papers side-by-side to identify similarities and differences
+
+**Best Practices:**
+- Use complexity scores to assess paper difficulty before deep reading
+- Extract key citations to build literature review foundations
+- Compare papers to avoid redundancy in literature survey`;
 
     toolSet = new Map([
         ['calculate_complexity', {

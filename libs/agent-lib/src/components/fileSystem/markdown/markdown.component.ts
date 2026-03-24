@@ -90,6 +90,21 @@ export class MarkdownComponent extends ToolComponent {
   override componentId = 'markdown';
   override displayName = 'Markdown';
   override description = 'Markdown file management with editing capabilities';
+  override componentPrompt = `## Markdown File Management
+
+This component provides comprehensive markdown file editing and management capabilities.
+
+**File Operations:**
+- Create, read, update, and delete markdown files
+- Edit files using replace, insert, or delete operations
+- Check file existence and read metadata
+- Support for paginated content reading
+
+**Best Practices:**
+- Use readByPage for large documents to manage context
+- Use editReplace for targeted content modifications
+- Use editInsert to add new content at specific locations
+- Keep backups before major edits`;
 
   toolSet: Map<string, Tool>;
   private config: {

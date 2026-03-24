@@ -18,6 +18,27 @@ export interface ValidationResult {
 }
 
 export class PrismaFlowComponent extends ToolComponent {
+    override componentId = 'prisma-flow';
+    override displayName = 'PRISMA Flow Diagram';
+    override description = 'Build PRISMA 2020 flow diagrams for systematic reviews';
+    override componentPrompt = `## PRISMA Flow Diagram
+
+This component builds PRISMA 2020 flow diagrams for systematic reviews and meta-analyses.
+
+**Workflow:**
+1. Add identification records from databases (databases, registers)
+2. Add screening records (duplicates removed, screened records)
+3. Add eligibility records (full-text assessed, excluded records)
+4. Add included studies (new studies, ongoing studies)
+5. Validate the diagram for completeness
+6. Export in various formats
+
+**Best Practices:**
+- Follow PRISMA 2020 guidelines for accurate reporting
+- Include both new and ongoing studies
+- Track exclusion reasons at each stage
+- Export final diagram for publication`;
+
     toolSet: Map<string, Tool>;
     handleToolCall: (toolName: string, params: any) => Promise<ToolCallResult<any>>;
 

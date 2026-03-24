@@ -239,7 +239,7 @@ async function main() {
       query: 'lumbar disc herniation pathophysiology',
       limit: 10,
     },
-    { priority: 'high', timeout: 120000 } // 2 minutes timeout
+    { priority: 'high', timeout: 200000 } // 2 minutes timeout
   );
   logger.info({ result }, '[User Context] Task result received');
 
@@ -279,7 +279,7 @@ async function main() {
   logger.info('[AgentRuntime Demo] Demo running... Press Ctrl+C to exit');
   logger.info(
     '[AgentRuntime Demo] Monitoring agents: ' +
-      AGENT_CONFIGS.map((c) => c.type).join(', '),
+    AGENT_CONFIGS.map((c) => c.type).join(', '),
   );
 
   // Wait for a while to observe agents
@@ -314,10 +314,10 @@ main().catch((error) => {
       error:
         error instanceof Error
           ? {
-              message: error.message,
-              stack: error.stack,
-              name: error.name,
-            }
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          }
           : error,
     },
     '[AgentRuntime Demo] Error',

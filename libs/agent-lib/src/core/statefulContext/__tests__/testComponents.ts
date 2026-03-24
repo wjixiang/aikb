@@ -9,6 +9,7 @@ export class TestComponent extends ToolComponent {
     override readonly componentId = 'test-component';
     override readonly displayName = 'Test Component';
     override readonly description = 'A test component';
+    override componentPrompt = 'Test component prompt';
 
     toolSet = new Map<string, Tool>([
         ['test_tool', {
@@ -38,6 +39,7 @@ export class TestComponent2 extends ToolComponent {
     override readonly componentId = 'test-component-2';
     override readonly displayName = 'Test Component 2';
     override readonly description = 'Another test component';
+    override componentPrompt = 'Test component 2 prompt';
 
     toolSet = new Map<string, Tool>([
         ['test_tool', {
@@ -67,6 +69,7 @@ export class AnotherComponent extends ToolComponent {
     override readonly componentId = 'another-component';
     override readonly displayName = 'Another Component';
     override readonly description = 'Another test component';
+    override componentPrompt = 'Another component prompt';
 
     toolSet = new Map<string, Tool>([
         ['another_tool', {
@@ -94,6 +97,8 @@ export class AnotherComponent extends ToolComponent {
  * Provides a search tool that stores query and results
  */
 export class TestToolComponentA extends ToolComponent {
+    override componentPrompt = 'Test tool component A prompt';
+
     toolSet = new Map<string, Tool>([
         ['search', {
             toolName: 'search',
@@ -153,6 +158,8 @@ export class TestToolComponentA extends ToolComponent {
  * Provides an increment tool to increase a counter
  */
 export class TestToolComponentB extends ToolComponent {
+    override componentPrompt = 'Test tool component B prompt';
+
     toolSet = new Map<string, Tool>([
         ['increment', {
             toolName: 'increment',
@@ -203,6 +210,8 @@ export class TestToolComponentB extends ToolComponent {
  * Provides a toggle tool to flip a boolean flag
  */
 export class TestToolComponentC extends ToolComponent {
+    override componentPrompt = 'Test tool component C prompt';
+
     toolSet = new Map<string, Tool>([
         ['toggle', {
             toolName: 'toggle',

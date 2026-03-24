@@ -68,6 +68,20 @@ export class RuntimeControlComponent extends ToolComponent {
   override componentId = 'runtime-control';
   override displayName = 'Runtime Control';
   override description = 'Create and manage child agents';
+  override componentPrompt = `## Runtime Control
+
+This component enables creation and management of child agents for distributed task processing.
+
+**Workflow:**
+1. Create child agents using createAgent when parallel processing is needed
+2. Monitor agent status using listAgents and getAgent
+3. Control agent lifecycle with startAgent and stopAgent
+4. Establish agent connections via registerInTopology and connectAgents
+
+**Best Practices:**
+- Use child agents for independent, parallel tasks
+- Clean up agents when tasks complete via destroyAgent
+- Register agents in topology for coordinated workflows`;
 
   private config: RuntimeControlComponentConfig;
   toolSet: Map<string, Tool>;

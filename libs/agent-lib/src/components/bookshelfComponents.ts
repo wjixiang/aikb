@@ -271,6 +271,24 @@ async function getDefaultChunkEmbedGroup(itemId: string): Promise<string | null>
  * Uses tool-call mechanism for state management
  */
 export class BookViewerComponent extends ToolComponent {
+    override componentId = 'book-viewer';
+    override displayName = 'Book Viewer';
+    override description = 'Browse and search library books';
+    override componentPrompt = `## Book Viewer
+
+This component provides access to the library for browsing and searching books.
+
+**Capabilities:**
+- Browse available books in the library
+- Select books to read and navigate content
+- Perform semantic search across book content
+- Navigate by pages and chunks
+
+**Best Practices:**
+- Use semantic search to find specific content within books
+- Navigate pages sequentially for systematic reading
+- Save relevant sections for later reference`;
+
     toolSet = new Map<string, Tool>([
         ['selectBook', {
             toolName: 'selectBook',
@@ -479,6 +497,17 @@ export class BookViewerComponent extends ToolComponent {
  * Displays workspace information and status
  */
 export class WorkspaceInfoComponent extends ToolComponent {
+    override componentId = 'workspace-info';
+    override displayName = 'Workspace Info';
+    override description = 'Display workspace metadata and timestamps';
+    override componentPrompt = `## Workspace Information
+
+This component displays workspace metadata and timestamps.
+
+**Purpose:**
+- Track workspace last updated timestamp
+- Provide basic workspace status information`;
+
     toolSet = new Map<string, Tool>([
         ['updateTimestamp', {
             toolName: 'updateTimestamp',

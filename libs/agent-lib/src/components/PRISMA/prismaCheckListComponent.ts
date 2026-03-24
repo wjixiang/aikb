@@ -40,6 +40,34 @@ export interface ProgressResult {
 }
 
 export class PrismaCheckListComponent extends ToolComponent {
+  override componentId = 'prisma-checklist';
+  override displayName = 'PRISMA Checklist';
+  override description = 'PRISMA 2020 checklist for systematic review reporting';
+  override componentPrompt = `## PRISMA Checklist
+
+This component provides the PRISMA 2020 checklist for systematic review and meta-analysis reporting.
+
+**Purpose:**
+- Ensure complete reporting of systematic reviews
+- Track progress through 27 checklist items
+- Identify missing information in manuscripts
+- Support transparent and reproducible reporting
+
+**Workflow:**
+1. Initialize checklist with manuscript metadata
+2. Work through items sequentially
+3. Update item status (Yes, No, Not Applicable)
+4. Add notes for items needing attention
+5. Filter items by status or section
+6. Export completed checklist
+
+**Sections:**
+- Title, Abstract, Introduction
+- Methods (Eligibility criteria, Information sources, Study risk of bias assessment, Synthesis methods)
+- Results (Study selection, Study characteristics, Risk of bias in studies, Results of syntheses)
+- Discussion (Discussion, Other information)
+- Funding and registration`;
+
   toolSet: Map<string, Tool>;
   handleToolCall: (
     toolName: string,

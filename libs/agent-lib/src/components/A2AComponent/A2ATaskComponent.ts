@@ -52,8 +52,7 @@ export class A2ATaskComponent extends ToolComponent {
   override componentId = 'a2a-task';
   override displayName = 'A2A Task Manager';
   override description = 'Manage A2A task acknowledgment and responses';
-  override componentPrompt = `## A2A Task Management
-
+  override componentPrompt = `
 This component handles Agent-to-Agent (A2A) task communication.
 
 **Workflow:**
@@ -104,12 +103,12 @@ This component handles Agent-to-Agent (A2A) task communication.
       string,
       (typeof a2aTaskToolSchemas)[keyof typeof a2aTaskToolSchemas],
     ][] = [
-      ['acknowledgeTask', a2aTaskToolSchemas.acknowledgeTask],
-      ['completeTask', a2aTaskToolSchemas.completeTask],
-      ['failTask', a2aTaskToolSchemas.failTask],
-      ['sendTaskResult', a2aTaskToolSchemas.sendTaskResult],
-      ['getPendingTasks', a2aTaskToolSchemas.getPendingTasks],
-    ];
+        ['acknowledgeTask', a2aTaskToolSchemas.acknowledgeTask],
+        ['completeTask', a2aTaskToolSchemas.completeTask],
+        ['failTask', a2aTaskToolSchemas.failTask],
+        ['sendTaskResult', a2aTaskToolSchemas.sendTaskResult],
+        ['getPendingTasks', a2aTaskToolSchemas.getPendingTasks],
+      ];
 
     toolEntries.forEach(([name, toolDef]) => {
       tools.set(name, {
@@ -135,39 +134,39 @@ This component handles Agent-to-Agent (A2A) task communication.
     toolName: string,
     params: unknown,
   ): Promise<ToolCallResult<unknown>> => {
-    try {
-      switch (toolName) {
-        case 'acknowledgeTask':
-          return await this.handleAcknowledgeTask(
-            params as AcknowledgeTaskParams,
-          );
-        case 'completeTask':
-          return await this.handleCompleteTask(params as CompleteTaskParams);
-        case 'failTask':
-          return await this.handleFailTask(params as FailTaskParams);
-        case 'sendTaskResult':
-          return await this.handleSendTaskResult(
-            params as SendTaskResultParams,
-          );
-        case 'getPendingTasks':
-          return await this.handleGetPendingTasks();
-        default:
-          return {
-            success: false,
-            data: { error: `Unknown tool: ${toolName}` },
-            summary: `[A2A Task] Unknown tool: ${toolName}`,
-          };
+      try {
+        switch (toolName) {
+          case 'acknowledgeTask':
+            return await this.handleAcknowledgeTask(
+              params as AcknowledgeTaskParams,
+            );
+          case 'completeTask':
+            return await this.handleCompleteTask(params as CompleteTaskParams);
+          case 'failTask':
+            return await this.handleFailTask(params as FailTaskParams);
+          case 'sendTaskResult':
+            return await this.handleSendTaskResult(
+              params as SendTaskResultParams,
+            );
+          case 'getPendingTasks':
+            return await this.handleGetPendingTasks();
+          default:
+            return {
+              success: false,
+              data: { error: `Unknown tool: ${toolName}` },
+              summary: `[A2A Task] Unknown tool: ${toolName}`,
+            };
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          data: { error: errorMessage },
+          summary: `[A2A Task] Error: ${errorMessage}`,
+        };
       }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        data: { error: errorMessage },
-        summary: `[A2A Task] Error: ${errorMessage}`,
-      };
-    }
-  };
+    };
 
   /**
    * Render the tool section UI
@@ -254,9 +253,8 @@ This component handles Agent-to-Agent (A2A) task communication.
           conversationId: params.conversationId,
           error: error instanceof Error ? error.message : String(error),
         } as { success: boolean; conversationId: string; error: string },
-        summary: `[A2A Task] Failed to acknowledge: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        summary: `[A2A Task] Failed to acknowledge: ${error instanceof Error ? error.message : String(error)
+          }`,
       };
     }
   }
@@ -289,9 +287,8 @@ This component handles Agent-to-Agent (A2A) task communication.
           conversationId: params.conversationId,
           error: error instanceof Error ? error.message : String(error),
         } as { success: boolean; conversationId: string; error: string },
-        summary: `[A2A Task] Failed to complete: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        summary: `[A2A Task] Failed to complete: ${error instanceof Error ? error.message : String(error)
+          }`,
       };
     }
   }
@@ -323,9 +320,8 @@ This component handles Agent-to-Agent (A2A) task communication.
           conversationId: params.conversationId,
           error: error instanceof Error ? error.message : String(error),
         } as { success: boolean; conversationId: string; error: string },
-        summary: `[A2A Task] Failed to send error: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        summary: `[A2A Task] Failed to send error: ${error instanceof Error ? error.message : String(error)
+          }`,
       };
     }
   }
@@ -360,9 +356,8 @@ This component handles Agent-to-Agent (A2A) task communication.
           conversationId: params.conversationId,
           error: error instanceof Error ? error.message : String(error),
         } as { success: boolean; conversationId: string; error: string },
-        summary: `[A2A Task] Failed to send result: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        summary: `[A2A Task] Failed to send result: ${error instanceof Error ? error.message : String(error)
+          }`,
       };
     }
   }
@@ -387,9 +382,8 @@ This component handles Agent-to-Agent (A2A) task communication.
           tasks: [] as PendingTask[],
           error: error instanceof Error ? error.message : String(error),
         } as { tasks: PendingTask[]; error: string },
-        summary: `[A2A Task] Failed to get pending: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        summary: `[A2A Task] Failed to get pending: ${error instanceof Error ? error.message : String(error)
+          }`,
       };
     }
   }
