@@ -23,7 +23,7 @@ import {
   createA2AEventMessage,
   createConversationId,
 } from './types.js';
-import type { AgentCardRegistry } from './AgentCard.js';
+import type { AgentCardRegistry, IAgentCardRegistry } from './AgentCard.js';
 
 export interface IA2AClient {
   /** Send a task to another agent and wait for result */
@@ -70,13 +70,13 @@ export class A2AClient implements IA2AClient {
   private readonly logger: pino.Logger;
   private readonly instanceId: string;
   private readonly messageBus: IMessageBus;
-  private readonly agentRegistry: AgentCardRegistry;
+  private readonly agentRegistry: IAgentCardRegistry;
   private readonly defaultTimeout: number;
   private readonly retryConfig?: { maxAttempts: number; backoffMs: number };
 
   constructor(
     messageBus: IMessageBus,
-    agentRegistry: AgentCardRegistry,
+    agentRegistry: IAgentCardRegistry,
     config: A2AClientConfig,
   ) {
     this.logger = pino({
@@ -118,23 +118,49 @@ export class A2AClient implements IA2AClient {
     // Convert to Topology message and send
     const topologyMessage = this.convertToTopologyMessage(a2aMessage);
 
-    try {
-      // Send via MessageBus and wait for result
-      const ack = await this.messageBus.send(topologyMessage);
+    // Use retry config or defaults
+    const maxAttempts = this.retryConfig?.maxAttempts ?? 3;
+    const backoffMs = this.retryConfig?.backoffMs ?? 1000;
+    let lastError: Error | undefined;
 
-      this.logger.debug({ ack: ack.messageId }, 'Received ACK for task');
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        // Send via MessageBus and wait for result
+        const ack = await this.messageBus.send(topologyMessage);
 
-      // Wait for result
-      const result = await this.waitForResult(a2aMessage.conversationId);
+        this.logger.debug({ ack: ack.messageId }, 'Received ACK for task');
 
-      return this.parseTaskResult(result.content as A2APayload);
-    } catch (error) {
-      this.logger.error(
-        { error, targetAgentId, taskId },
-        'Failed to send task',
-      );
-      throw error;
+        // Wait for result
+        const result = await this.waitForResult(a2aMessage.conversationId);
+
+        return this.parseTaskResult(result.content as A2APayload);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        // Check if it's a timeout error and we have retries left
+        const isTimeout = lastError.message.includes('Timeout');
+        const hasRetries = attempt < maxAttempts;
+
+        if (isTimeout && hasRetries) {
+          this.logger.warn(
+            { attempt, maxAttempts, backoffMs, error: lastError.message },
+            'Task timed out, retrying with backoff',
+          );
+          await this.sleep(backoffMs * attempt); // Exponential backoff
+          continue;
+        }
+
+        // Non-timeout error or no retries left
+        this.logger.error(
+          { error, targetAgentId, taskId, attempt },
+          'Failed to send task',
+        );
+        throw error;
+      }
     }
+
+    // Should not reach here, but just in case
+    throw lastError ?? new Error('Task failed after retries');
   }
 
   /**
@@ -328,7 +354,7 @@ export class A2AClient implements IA2AClient {
  */
 export function createA2AClient(
   messageBus: IMessageBus,
-  agentRegistry: AgentCardRegistry,
+  agentRegistry: IAgentCardRegistry,
   config: A2AClientConfig,
 ): A2AClient {
   return new A2AClient(messageBus, agentRegistry, config);

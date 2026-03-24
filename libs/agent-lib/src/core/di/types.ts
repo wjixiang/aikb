@@ -253,6 +253,18 @@ export const TYPES = {
   IMessageBus: Symbol('IMessageBus'),
 
   /**
+   * IA2AClient - A2A Client for agent-to-agent communication
+   * @scope Singleton - Shared across all agents
+   */
+  IA2AClient: Symbol('IA2AClient'),
+
+  /**
+   * IAgentRegistry - Agent registry for service discovery
+   * @scope Singleton - Shared across all agents
+   */
+  IAgentRegistry: Symbol('IAgentRegistry'),
+
+  /**
    * MessageBusConfig - Configuration for MessageBus
    * @scope Singleton - Shared configuration
    */
@@ -327,6 +339,20 @@ export const TYPES = {
    * @scope Singleton - Bound at container creation
    */
   RuntimeControlPermissions: Symbol('RuntimeControlPermissions'),
+
+  // ==================== A2A Communication ====================
+
+  /**
+   * IA2AHandler - A2A Handler for agent-to-agent communication
+   * @scope Singleton - Shared within agent container
+   */
+  IA2AHandler: Symbol('IA2AHandler'),
+
+  /**
+   * A2AHandlerConfig - Configuration for A2AHandler
+   * @scope Singleton - Bound at container creation
+   */
+  A2AHandlerConfig: Symbol('A2AHandlerConfig'),
 } as const;
 
 export type TestOverrides = {

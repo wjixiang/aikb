@@ -46,9 +46,6 @@ describe('RuntimeControlComponent', () => {
         Promise.resolve({ instanceId: id } as AgentMetadata),
       ),
       listAgents: vi.fn(() => Promise.resolve([])),
-      submitTask: vi.fn(() => Promise.resolve('task-' + Date.now())),
-      getTaskStatus: vi.fn(() => Promise.resolve(undefined)),
-      getPendingTasks: vi.fn(() => Promise.resolve([])),
       getStats: vi.fn(() =>
         Promise.resolve({
           totalAgents: 1,
@@ -99,14 +96,13 @@ describe('RuntimeControlComponent', () => {
     });
 
     it('should have all required tools', () => {
-      expect(component.toolSet.size).toBe(16);
+      expect(component.toolSet.size).toBe(15);
       expect(component.toolSet.has('createAgent')).toBe(true);
       expect(component.toolSet.has('destroyAgent')).toBe(true);
       expect(component.toolSet.has('startAgent')).toBe(true);
       expect(component.toolSet.has('stopAgent')).toBe(true);
       expect(component.toolSet.has('listAgents')).toBe(true);
       expect(component.toolSet.has('getAgent')).toBe(true);
-      expect(component.toolSet.has('submitTask')).toBe(true);
       expect(component.toolSet.has('getStats')).toBe(true);
       expect(component.toolSet.has('listChildAgents')).toBe(true);
       expect(component.toolSet.has('getMyInfo')).toBe(true);
@@ -256,26 +252,6 @@ describe('RuntimeControlComponent', () => {
       });
 
       expect(result.success).toBe(false);
-    });
-  });
-
-  describe('submitTask tool', () => {
-    it('should submit task successfully', async () => {
-      const result = await component.handleToolCall('submitTask', {
-        targetInstanceId: 'child-agent-id',
-        description: 'Process this task',
-        input: { data: 'test' },
-        priority: 'high',
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.data.taskId).toMatch(/^task-/);
-      expect(mockRuntimeClient.submitTask).toHaveBeenCalledWith({
-        targetInstanceId: 'child-agent-id',
-        description: 'Process this task',
-        input: { data: 'test' },
-        priority: 'high',
-      });
     });
   });
 

@@ -1,4 +1,4 @@
-import { injectable } from 'inversify';
+import { injectable, type Container } from 'inversify';
 import { renderToolSection } from '../utils/toolRendering.js';
 import { Tool, ToolCallResult } from './types.js';
 import { tdiv } from '../ui/tdiv.js';
@@ -39,6 +39,12 @@ export interface ExportOptions {
 }
 
 /**
+ * Injection symbols map type
+ * Components can declare dependencies using static injectSymbols
+ */
+export type InjectSymbolsMap = Record<string, symbol>;
+
+/**
  * ToolComponent - Abstract base class for components that provide tools
  *
  * Components can be managed by Skills, which control their lifecycle
@@ -47,6 +53,23 @@ export interface ExportOptions {
  *
  * @note This class is decorated with @injectable() for InversifyJS IoC integration.
  * Components can be resolved via DI container using their TYPE symbols from di/types.ts.
+ *
+ * ## Dependency Injection
+ *
+ * Components can declare dependencies via static `injectSymbols` property:
+ * ```typescript
+ * class MyComponent extends ToolComponent {
+ *   static readonly injectSymbols = {
+ *     a2aHandler: TYPES.IA2AHandler,
+ *   } as const;
+ *
+ *   private _a2aHandler?: A2AHandler;
+ *
+ *   protected injectDependencies(container: Container): void {
+ *     this._a2aHandler = container.get(MyComponent.injectSymbols.a2aHandler);
+ *   }
+ * }
+ * ```
  */
 @injectable()
 export abstract class ToolComponent {
@@ -61,6 +84,16 @@ export abstract class ToolComponent {
 
   /** Description of what this component does (default: empty string) */
   readonly description: string = '';
+
+  /**
+   * Declare dependencies for DI injection (override in subclass)
+   * @example
+   * static readonly injectSymbols = {
+   *   a2aHandler: TYPES.IA2AHandler,
+   *   messageBus: TYPES.IMessageBus,
+   * } as const;
+   */
+  static readonly injectSymbols?: InjectSymbolsMap;
 
   // ==================== Centralized State Management (Phase 3) ====================
 
@@ -104,6 +137,32 @@ export abstract class ToolComponent {
    */
   exportState(): ComponentStateBase {
     return { ...this._state };
+  }
+
+  /**
+   * Inject dependencies from DI container (override in subclass)
+   * Called automatically when component is registered in AgentContainer.
+   *
+   * @param container - The DI container to resolve dependencies from
+   *
+   * @example
+   * protected injectDependencies(container: Container): void {
+   *   const ctor = this.constructor as typeof ToolComponent;
+   *   if (ctor.injectSymbols) {
+   *     this._a2aHandler = container.get(ctor.injectSymbols.a2aHandler);
+   *   }
+   * }
+   */
+  protected injectDependencies(container: Container): void {
+    // Override in subclass to inject dependencies
+  }
+
+  /**
+   * Internal method called by AgentContainer to inject dependencies
+   * @internal
+   */
+  _injectDependencies(container: Container): void {
+    this.injectDependencies(container);
   }
 
   // ==================== Abstract Methods ====================

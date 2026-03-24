@@ -20,7 +20,14 @@ import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { Tool } from '../../components/core/types.js';
 import { ToolComponent } from '../statefulContext/index.js';
-import type { A2AHandler, A2AMessage, A2APayload, A2ATaskResult } from '../a2a/index.js';
+import type {
+  A2AHandler,
+  IA2AHandler,
+  A2AClient,
+  A2AMessage,
+  A2APayload,
+  A2ATaskResult,
+} from '../a2a/index.js';
 import { createA2AHandler } from '../a2a/index.js';
 import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import type { HookModule } from '../hooks/HookModule.js';
@@ -156,6 +163,7 @@ export class Agent {
 
   // A2A Handler for agent-to-agent communication
   private _a2aHandler?: A2AHandler;
+  private _a2aClient?: A2AClient;
   private _messageBus?: IMessageBus;
   private _pendingA2AMessages: A2AMessage[] = [];
 
@@ -191,6 +199,9 @@ export class Agent {
     @optional()
     persistenceService?: IPersistenceService,
     @inject(TYPES.TaskId) @optional() taskId?: string,
+    @inject(TYPES.IA2AHandler)
+    @optional()
+    a2aHandler?: A2AHandler,
   ) {
     this.instanceId = instanceId;
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'debug' });
@@ -207,6 +218,14 @@ export class Agent {
     this.persistenceService = persistenceService;
 
     void this.sessionManager.createSession(this.getSessionState());
+
+    // Initialize A2A Handler if injected via DI
+    if (a2aHandler) {
+      this._a2aHandler = a2aHandler;
+      this.setupA2AHandlers();
+      this._a2aHandler.startListening();
+      this.logger.info('[Agent] A2A Handler initialized via DI');
+    }
   }
 
   private getSessionState(): SessionState {
@@ -286,17 +305,46 @@ export class Agent {
 
   /**
    * Initialize A2A Handler for agent-to-agent communication
+   * Called by AgentRuntime after setting the message bus
+   * @deprecated A2AHandler is now injected via DI. This method is kept for backward compatibility.
    */
-  private initializeA2A(): void {
-    if (this._a2aHandler || !this._messageBus) {
-      return; // Already initialized or no message bus
+  public initializeA2A(): void {
+    // If already initialized via DI, skip
+    if (this._a2aHandler) {
+      this.logger.debug(
+        '[Agent] A2A Handler already initialized via DI, skipping',
+      );
+      return;
     }
 
-    this._a2aHandler = createA2AHandler(this._messageBus, {
-      instanceId: this.instanceId,
-      supportedTypes: ['task', 'query', 'event'],
-      handlerTimeout: 60000,
-    });
+    // Fallback to old initialization if not injected via DI
+    if (this._messageBus) {
+      const handlerTimeout = Math.max(
+        180000,
+        (this.config.apiRequestTimeout || 60000) * 3,
+      );
+
+      this._a2aHandler = createA2AHandler(this._messageBus, {
+        instanceId: this.instanceId,
+        supportedTypes: ['task', 'query', 'event'],
+        handlerTimeout,
+      });
+
+      this.setupA2AHandlers();
+      this._a2aHandler.startListening();
+      this.logger.info('[Agent] A2A Handler initialized (legacy mode)');
+    }
+  }
+
+  /**
+   * Setup A2A message handlers
+   * Called from constructor when A2AHandler is injected via DI,
+   * or from initializeA2A() as fallback
+   */
+  private setupA2AHandlers(): void {
+    if (!this._a2aHandler) {
+      return;
+    }
 
     // Register task handler - when a task is received, trigger agent processing
     this._a2aHandler.onTask(async (payload, ctx) => {
@@ -305,18 +353,38 @@ export class Agent {
         '[Agent] Received A2A task, processing',
       );
 
+      // Inject A2A task as a user message so the LLM can process it
+      const taskDescription = payload.description || 'Task received';
+      const taskInput = payload.input
+        ? this.safeStringify(payload.input, null, 2)
+        : '{}';
+      const userMessage: ApiMessage = {
+        role: 'user',
+        content: [
+          {
+            type: 'text' as const,
+            text: `[A2A Task from ${ctx.message.from}]\n\nTask: ${taskDescription}\n\nInput:\n${taskInput}`,
+          },
+        ],
+        ts: Date.now(),
+      };
+      await this.memoryModule.addMessage(userMessage);
+
       // Store message for processing in requestLoop
       this._pendingA2AMessages.push(ctx.message);
 
-      // Wake up agent if idle
+      // Wake up agent if idle and process the task
+      let taskOutput: unknown = null;
       if (this._status === 'idle' || this._status === 'completed') {
         this._status = 'running';
-        await this.requestLoop();
+        taskOutput = await this.requestLoop();
       }
 
+      // Return the task result
       return {
         taskId: payload.taskId || '',
-        status: 'processing',
+        status: this._status === 'aborted' ? 'failed' : 'completed',
+        output: taskOutput,
       };
     });
 
@@ -327,11 +395,6 @@ export class Agent {
         '[Agent] Received A2A event',
       );
     });
-
-    // Start listening for messages
-    this._a2aHandler.startListening();
-
-    this.logger.info('[Agent] A2A Handler initialized');
   }
 
   /**
@@ -386,10 +449,35 @@ export class Agent {
   }
 
   /**
-   * Setter for consecutive mistake count
+   * Safely stringify an object, handling circular references
    */
-  public set consecutiveMistakeCount(count: number) {
-    this._consecutiveMistakeCount = count;
+  private safeStringify(
+    obj: unknown,
+    replacer?: ((key: string, value: unknown) => unknown) | null | number[],
+    space?: string | number,
+  ): string {
+    const seen = new WeakSet();
+    const jsonStringify = (value: unknown, key?: string): unknown => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      if (replacer && typeof replacer === 'function') {
+        return replacer(key || '', value);
+      }
+      return value;
+    };
+    try {
+      return JSON.stringify(
+        obj,
+        jsonStringify as (key: string, value: unknown) => unknown,
+        space,
+      );
+    } catch (error) {
+      return `[Stringify Error: ${error instanceof Error ? error.message : String(error)}]`;
+    }
   }
 
   /**
@@ -575,6 +663,22 @@ export class Agent {
    */
   hasRuntimeControl(): boolean {
     return this._runtimeClient !== undefined;
+  }
+
+  /**
+   * Set the A2A client for agent-to-agent communication
+   * This is called by AgentRuntime when the agent is created
+   */
+  setA2AClient(client: A2AClient): void {
+    this._a2aClient = client;
+    this.logger.info('[Agent] A2A client set');
+  }
+
+  /**
+   * Get the A2A client
+   */
+  getA2AClient(): A2AClient | undefined {
+    return this._a2aClient;
   }
 
   /**
@@ -836,8 +940,9 @@ export class Agent {
   /**
    * Core method for making recursive API requests to the LLM
    * Simplified architecture: LLM → Tool Execution → LLM → ...
+   * @returns The workspace context after completion (for A2A result)
    */
-  protected async requestLoop(): Promise<void> {
+  protected async requestLoop(): Promise<string> {
     // Reset collected errors for this new operation
     this.resetCollectedErrors();
     // Reset consecutive error count for new operation
@@ -930,7 +1035,29 @@ export class Agent {
       }
     }
 
-    this.complete();
+    // Capture workspace context as result before completion
+    let resultContext: string;
+    try {
+      resultContext = await this.workspace.render();
+      this.complete();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        {
+          errorName: error instanceof Error ? error.name : undefined,
+          errorStack: error instanceof Error ? error.stack : undefined,
+        },
+        `Failed to render workspace or complete agent: ${errorMessage}`,
+      );
+      // Return last workspace state if available, or error message
+      resultContext = `[Agent Error: ${errorMessage}]`;
+      // Still mark as completed to avoid hanging
+      if (this._status !== 'aborted') {
+        this._status = 'completed';
+      }
+    }
+    return resultContext;
   }
 
   /**
@@ -1020,13 +1147,13 @@ export class Agent {
         this.logger.debug(
           {
             count: toolResults.length,
-            toolResults: JSON.stringify(toolResults),
+            toolResults: this.safeStringify(toolResults),
           },
           '[Agent core] toolResults count',
         );
         const toolResultsJson =
           toolResults && toolResults.length > 0
-            ? JSON.stringify(toolResults, null, 2)
+            ? this.safeStringify(toolResults, null, 2)
             : '[]';
         this.logger.info(
           { toolResults: toolResultsJson },
@@ -1067,7 +1194,7 @@ export class Agent {
       try {
         const args = JSON.parse(toolCall.arguments) as Record<string, unknown>;
         this.logger.info(
-          { toolName: toolCall.name, args: JSON.stringify(args) },
+          { toolName: toolCall.name, args: this.safeStringify(args) },
           'Executing tool',
         );
 
@@ -1097,7 +1224,7 @@ export class Agent {
             {
               type: 'tool_result' as const,
               tool_use_id: toolCall.id,
-              content: JSON.stringify(result),
+              content: this.safeStringify(result),
             },
           ],
           ts: Date.now(),

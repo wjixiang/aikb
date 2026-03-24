@@ -29,6 +29,9 @@ import {
 } from './UnifiedAgentConfig.js';
 import type { TestOverrides } from './types.js';
 import { ToolComponent } from '../../components/core/toolComponent.js';
+import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
+import { createA2AHandler } from '../a2a/index.js';
+import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
 
 type Logger = ReturnType<typeof pino>;
 
@@ -54,11 +57,14 @@ export class AgentContainer {
   private agentInstance: Agent | null = null;
   private isRestoring = false;
   private initPromise: Promise<void> | null = null;
+  private messageBus?: IMessageBus;
 
   constructor(options: AgentCreationOptions = {}, instanceId?: string) {
     this.container = new Container({
       defaultScope: 'Singleton',
     });
+
+    this.messageBus = options.messageBus;
 
     if (instanceId) {
       // Restore agent: setup bindings first to get persistence service
@@ -235,6 +241,35 @@ export class AgentContainer {
       .toConstantValue(this.config.hooks ?? {});
     this.container.bind(TYPES.HookModule).to(HookModule).inSingletonScope();
 
+    // MessageBus (provided by AgentRuntime)
+    if (this.messageBus) {
+      this.container
+        .bind<IMessageBus>(TYPES.IMessageBus)
+        .toConstantValue(this.messageBus);
+    }
+
+    // A2A Handler configuration
+    const a2aHandlerConfig: A2AHandlerConfig = {
+      instanceId: this.instanceId,
+      supportedTypes: ['task', 'query', 'event'],
+      handlerTimeout: Math.max(
+        180000,
+        (this.config.agent.config.apiRequestTimeout || 60000) * 3,
+      ),
+    };
+    this.container
+      .bind<A2AHandlerConfig>(TYPES.A2AHandlerConfig)
+      .toConstantValue(a2aHandlerConfig);
+
+    // A2A Handler (singleton within container, depends on IMessageBus)
+    if (this.messageBus) {
+      const a2aHandler = createA2AHandler(this.messageBus, a2aHandlerConfig);
+      this.container
+        .bind<IA2AHandler>(TYPES.IA2AHandler)
+        .to(a2aHandler as unknown as { new (...args: any[]): IA2AHandler })
+        .inSingletonScope();
+    }
+
     // API Client
     this.container
       .bind<ApiClient>(TYPES.ApiClient)
@@ -301,12 +336,29 @@ export class AgentContainer {
     }
   }
 
+  /**
+   * Inject dependencies into components
+   * Called after container is fully set up
+   */
+  private injectComponentDependencies(): void {
+    if (!this.config.components || this.config.components.length === 0) {
+      return;
+    }
+
+    for (const { component } of this.config.components) {
+      component._injectDependencies(this.container);
+    }
+  }
+
   async getAgent(): Promise<Agent> {
     // Wait for initialization (AgentInstance creation) to complete
     if (this.initPromise) {
       await this.initPromise;
       this.initPromise = null;
     }
+
+    // Inject dependencies into components before getting the agent
+    this.injectComponentDependencies();
 
     if (!this.agentInstance) {
       this.agentInstance = this.container.get<Agent>(TYPES.Agent);

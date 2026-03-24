@@ -5,6 +5,7 @@ import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';
 import type { ToolComponent } from '../../components/core/toolComponent.js';
+import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import {
   AgentContainer,
   type AgentCreationOptions,
@@ -50,6 +51,7 @@ export interface AgentFactoryOptions extends AgentSoulConfig {
   api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;
+  messageBus?: IMessageBus;
 }
 
 /**

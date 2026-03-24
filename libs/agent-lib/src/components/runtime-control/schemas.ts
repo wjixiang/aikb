@@ -84,21 +84,6 @@ export const getAgentParamsSchema = z.object({
 export type GetAgentParams = z.infer<typeof getAgentParamsSchema>;
 
 /**
- * Schema for submitting a task via tool call
- */
-export const submitTaskParamsSchema = z.object({
-  targetInstanceId: z.string().describe('Instance ID of the target agent'),
-  description: z.string().describe('Human-readable task description'),
-  input: z.record(z.unknown()).optional().describe('Task input data'),
-  priority: z
-    .enum(['low', 'normal', 'high', 'urgent'])
-    .optional()
-    .default('normal'),
-});
-
-export type SubmitTaskParams = z.infer<typeof submitTaskParamsSchema>;
-
-/**
  * Schema for registering agent in topology
  */
 export const registerInTopologyParamsSchema = z.object({
@@ -203,11 +188,6 @@ export const runtimeControlToolSchemas = {
     desc: 'Get details about a specific child agent',
     paramsSchema: getAgentParamsSchema,
   },
-  submitTask: {
-    toolName: 'submitTask',
-    desc: 'Submit a task to a child agent for processing',
-    paramsSchema: submitTaskParamsSchema,
-  },
   getStats: {
     toolName: 'getStats',
     desc: 'Get runtime statistics',
@@ -268,7 +248,6 @@ export interface RuntimeControlToolReturnTypes {
   stopAgent: { success: boolean };
   listAgents: { agents: AgentMetadata[] };
   getAgent: AgentMetadata | null;
-  submitTask: { taskId: string };
   getStats: RuntimeStats;
   listChildAgents: { agents: AgentMetadata[] };
   getMyInfo: {

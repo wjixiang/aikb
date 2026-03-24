@@ -89,7 +89,11 @@ export class A2AHandler implements IA2AHandler {
     }
 
     this.logger.info(
-      { messageType: message.messageType, from: message.from, messageId: message.messageId },
+      {
+        messageType: message.messageType,
+        from: message.from,
+        messageId: message.messageId,
+      },
       'Handling incoming A2A message',
     );
 
@@ -118,14 +122,29 @@ export class A2AHandler implements IA2AHandler {
           this.logger.warn('Streaming not yet implemented');
           return;
         default:
-          this.logger.warn({ messageType: message.messageType }, 'Unknown message type');
+          this.logger.warn(
+            { messageType: message.messageType },
+            'Unknown message type',
+          );
           return;
       }
     } catch (error) {
-      this.logger.error({ error, messageId: message.messageId }, 'Error handling message');
+      const errorInfo =
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : { error: String(error) };
+
+      this.logger.error(
+        { error: errorInfo, messageId: message.messageId },
+        'Error handling message',
+      );
 
       // Send error response
-      await this.sendErrorResponse(message, String(error));
+      await this.sendErrorResponse(message, errorInfo.message || String(error));
     }
   }
 
@@ -170,21 +189,26 @@ export class A2AHandler implements IA2AHandler {
       return;
     }
 
-    this.unsubscribeMessage = this.messageBus.onMessage(async (topologyMessage) => {
-      // Only process messages addressed to this agent
-      if (topologyMessage.to !== this.instanceId) {
-        return;
-      }
+    this.unsubscribeMessage = this.messageBus.onMessage(
+      async (topologyMessage) => {
+        // Only process messages addressed to this agent
+        if (topologyMessage.to !== this.instanceId) {
+          return;
+        }
 
-      // Check if this is an A2A message (content should be A2AMessage)
-      const content = topologyMessage.content;
-      if (this.isA2AMessage(content)) {
-        await this.handleMessage(content);
-      }
-    });
+        // Check if this is an A2A message (content should be A2AMessage)
+        const content = topologyMessage.content;
+        if (this.isA2AMessage(content)) {
+          await this.handleMessage(content);
+        }
+      },
+    );
 
     this.isListening = true;
-    this.logger.info({ instanceId: this.instanceId }, 'Started listening for A2A messages');
+    this.logger.info(
+      { instanceId: this.instanceId },
+      'Started listening for A2A messages',
+    );
   }
 
   /**
@@ -201,13 +225,19 @@ export class A2AHandler implements IA2AHandler {
     }
 
     this.isListening = false;
-    this.logger.info({ instanceId: this.instanceId }, 'Stopped listening for A2A messages');
+    this.logger.info(
+      { instanceId: this.instanceId },
+      'Stopped listening for A2A messages',
+    );
   }
 
   /**
    * Process a task message
    */
-  private async processTask(message: A2AMessage, context: A2AContext): Promise<A2ATaskResult | void> {
+  private async processTask(
+    message: A2AMessage,
+    context: A2AContext,
+  ): Promise<A2ATaskResult | void> {
     if (!this.taskHandler) {
       this.logger.warn('No task handler registered, sending error response');
       await this.sendErrorResponse(message, 'No task handler registered');
@@ -227,7 +257,12 @@ export class A2AHandler implements IA2AHandler {
 
     if (result) {
       // Send result response
-      await this.sendResult(message, result.output, result.status, result.error);
+      await this.sendResult(
+        message,
+        result.output,
+        result.status,
+        result.error,
+      );
       return result;
     }
 
@@ -237,7 +272,10 @@ export class A2AHandler implements IA2AHandler {
   /**
    * Process a query message
    */
-  private async processQuery(message: A2AMessage, context: A2AContext): Promise<void> {
+  private async processQuery(
+    message: A2AMessage,
+    context: A2AContext,
+  ): Promise<void> {
     if (!this.queryHandler) {
       this.logger.warn('No query handler registered, sending error response');
       await this.sendErrorResponse(message, 'No query handler registered');
@@ -267,7 +305,10 @@ export class A2AHandler implements IA2AHandler {
   /**
    * Process an event message
    */
-  private async processEvent(message: A2AMessage, context: A2AContext): Promise<void> {
+  private async processEvent(
+    message: A2AMessage,
+    context: A2AContext,
+  ): Promise<void> {
     if (!this.eventHandler) {
       this.logger.debug('No event handler registered, ignoring event');
       return;
@@ -285,7 +326,10 @@ export class A2AHandler implements IA2AHandler {
   /**
    * Process a cancel message
    */
-  private async processCancel(message: A2AMessage, context: A2AContext): Promise<void> {
+  private async processCancel(
+    message: A2AMessage,
+    context: A2AContext,
+  ): Promise<void> {
     if (!this.cancelHandler) {
       this.logger.debug('No cancel handler registered, ignoring cancel');
       return;
@@ -314,11 +358,10 @@ export class A2AHandler implements IA2AHandler {
    */
   private async sendAck(message: A2AMessage): Promise<void> {
     try {
-      await this.messageBus.sendAck(
-        message.from,
-        message.conversationId,
-        { messageId: message.messageId, status: 'acknowledged' },
-      );
+      await this.messageBus.sendAck(message.from, message.conversationId, {
+        messageId: message.messageId,
+        status: 'acknowledged',
+      });
       this.logger.debug({ conversationId: message.conversationId }, 'Sent ACK');
     } catch (error) {
       this.logger.error({ error }, 'Failed to send ACK');
@@ -341,7 +384,11 @@ export class A2AHandler implements IA2AHandler {
         error,
       };
 
-      await this.messageBus.sendResult(message.from, message.conversationId, payload);
+      await this.messageBus.sendResult(
+        message.from,
+        message.conversationId,
+        payload,
+      );
       this.logger.debug(
         { conversationId: message.conversationId, status },
         'Sent result',
@@ -354,14 +401,21 @@ export class A2AHandler implements IA2AHandler {
   /**
    * Send error response for a message
    */
-  private async sendErrorResponse(message: A2AMessage, errorMessage: string): Promise<void> {
+  private async sendErrorResponse(
+    message: A2AMessage,
+    errorMessage: string,
+  ): Promise<void> {
     try {
       const payload: A2APayload = {
         status: 'failed',
         error: errorMessage,
       };
 
-      await this.messageBus.sendError(message.from, message.conversationId, errorMessage);
+      await this.messageBus.sendError(
+        message.from,
+        message.conversationId,
+        errorMessage,
+      );
       this.logger.debug(
         { conversationId: message.conversationId },
         'Sent error',
@@ -389,7 +443,10 @@ export class A2AHandler implements IA2AHandler {
   /**
    * Execute a promise with timeout
    */
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+  ): Promise<T> {
     let timeoutId: NodeJS.Timeout;
 
     const timeoutPromise = new Promise<never>((_, reject) => {

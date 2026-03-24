@@ -1,13 +1,12 @@
 /**
- * demoAgentRuntime.ts - Multi-Agent Runtime Demonstration
+ * demoAgentRuntime.ts - Multi-Agent Runtime Demonstration with A2A
  *
  * This demo showcases the AgentRuntime system managing multiple agents:
  * 1. Creates an AgentRuntime instance
  * 2. Creates multiple agents with different types (specialized literature search agents)
  * 3. Starts the runtime
- * 4. Submits tasks to specific agents via targetInstanceId
- * 5. Listens for task completion events
- * 6. Demonstrates workspace.exportResult() result collection
+ * 4. Uses A2A for agent-to-agent communication
+ * 5. Demonstrates sending tasks between agents via A2A
  *
  * Agents:
  * - epidemiology: 流行病学与危险因素检索
@@ -50,7 +49,7 @@ const logger = pino({
 });
 
 /**
- * Agent configuration with task description
+ * Agent configuration
  */
 interface AgentConfig {
   type: AgentSoulType;
@@ -70,40 +69,45 @@ const AGENT_CONFIGS: AgentConfig[] = [
       '检索椎间盘突出的流行病学与危险因素文献，包括发病率、患病率、遗传因素、职业风险等。',
     createSoul: createEpidemiologyAgentSoul,
   },
-  // {
-  //     type: 'pathophysiology',
-  //     name: 'Pathophysiology Agent',
-  //     taskDescription: '检索椎间盘突出的病理机制与疼痛通路文献，包括分子机制、炎症反应、神经敏化等。',
-  //     createSoul: createPathophysiologyAgentSoul,
-  // },
-  // {
-  //     type: 'diagnosis',
-  //     name: 'Diagnosis Agent',
-  //     taskDescription: '检索椎间盘突出的诊断、筛查与预防文献，包括MRI诊断、体格检查、鉴别诊断、预防策略等。',
-  //     createSoul: createDiagnosisAgentSoul,
-  // },
-  // {
-  //     type: 'management',
-  //     name: 'Management Agent',
-  //     taskDescription: '检索椎间盘突出的疾病管理与治疗文献，包括保守治疗、药物治疗、手术治疗、临床指南等。',
-  //     createSoul: createManagementAgentSoul,
-  // },
-  // {
-  //     type: 'quality-of-life',
-  //     name: 'Quality of Life Agent',
-  //     taskDescription: '检索椎间盘突出的生活质量与社会负担文献，包括疾病负担、经济学成本、心理健康等。',
-  //     createSoul: createQualityOfLifeAgentSoul,
-  // },
-  // {
-  //     type: 'emerging-treatments',
-  //     name: 'Emerging Treatments Agent',
-  //     taskDescription: '检索椎间盘突出的展望与新兴疗法文献，包括再生医学、干细胞治疗、组织工程等。',
-  //     createSoul: createEmergingTreatmentsAgentSoul,
-  // },
+  {
+    type: 'pathophysiology',
+    name: 'Pathophysiology Agent',
+    taskDescription:
+      '检索椎间盘突出的病理机制与疼痛通路文献，包括分子机制、炎症反应、神经敏化等。',
+    createSoul: createPathophysiologyAgentSoul,
+  },
+  {
+    type: 'diagnosis',
+    name: 'Diagnosis Agent',
+    taskDescription:
+      '检索椎间盘突出的诊断、筛查与预防文献，包括MRI诊断，体格检查、鉴别诊断、预防策略等。',
+    createSoul: createDiagnosisAgentSoul,
+  },
+  {
+    type: 'management',
+    name: 'Management Agent',
+    taskDescription:
+      '检索椎间盘突出的疾病管理与治疗文献，包括保守治疗、药物治疗、手术治疗、临床指南等。',
+    createSoul: createManagementAgentSoul,
+  },
+  {
+    type: 'quality-of-life',
+    name: 'Quality of Life Agent',
+    taskDescription:
+      '检索椎间盘突出的生活质量与社会负担文献，包括疾病负担、经济学成本、心理健康等。',
+    createSoul: createQualityOfLifeAgentSoul,
+  },
+  {
+    type: 'emerging-treatments',
+    name: 'Emerging Treatments Agent',
+    taskDescription:
+      '检索椎间盘突出的展望与新兴疗法文献，包括再生医学、干细胞治疗、组织工程等。',
+    createSoul: createEmergingTreatmentsAgentSoul,
+  },
 ];
 
 /**
- * Demo: Multi-Agent Runtime with Specialized Literature Search Agents
+ * Demo: Multi-Agent Runtime with A2A Communication
  */
 async function main() {
   logger.info('[AgentRuntime Demo] Starting...');
@@ -133,49 +137,17 @@ async function main() {
     );
   });
 
-  runtime.on('task:submitted', (event: RuntimeEvent) => {
+  runtime.on('agent:started', (event: RuntimeEvent) => {
     logger.info(
       { payload: event.payload },
-      '[AgentRuntime Demo] Task submitted',
+      '[AgentRuntime Demo] Agent started',
     );
   });
 
-  runtime.on('task:assigned', (event: RuntimeEvent) => {
+  runtime.on('agent:idle', (event: RuntimeEvent) => {
     logger.info(
       { payload: event.payload },
-      '[AgentRuntime Demo] Task assigned to agent',
-    );
-  });
-
-  runtime.on('task:completed', (event: RuntimeEvent) => {
-    const payload = event.payload as {
-      taskId: string;
-      instanceId: string;
-      results: unknown;
-    };
-    logger.info(
-      {
-        taskId: payload.taskId,
-        instanceId: payload.instanceId,
-        results: payload.results,
-      },
-      '[AgentRuntime Demo] Task completed',
-    );
-  });
-
-  runtime.on('task:failed', (event: RuntimeEvent) => {
-    const payload = event.payload as {
-      taskId: string;
-      instanceId: string;
-      error: string;
-    };
-    logger.error(
-      {
-        taskId: payload.taskId,
-        instanceId: payload.instanceId,
-        error: payload.error,
-      },
-      '[AgentRuntime Demo] Task failed',
+      '[AgentRuntime Demo] Agent idle',
     );
   });
 
@@ -215,70 +187,94 @@ async function main() {
   );
 
   // ============================================================
-  // Step 5: Start the runtime (enables task polling)
+  // Step 5: Start all agents
   // ============================================================
-  await runtime.start();
-  logger.info('[AgentRuntime Demo] Runtime started - task polling enabled');
-
-  // ============================================================
-  // Step 6: Submit tasks to all agents
-  // ============================================================
-  const taskIds: Record<AgentSoulType, string> = {} as Record<
-    AgentSoulType,
-    string
-  >;
-
+  logger.info('[AgentRuntime Demo] Starting all agents...');
   for (const config of AGENT_CONFIGS) {
-    logger.info(`[AgentRuntime Demo] Submitting task to ${config.name}...`);
-    const taskId = await runtime.submitTask({
-      description: config.taskDescription,
-      priority: 'high',
-      targetInstanceId: agentIds[config.type],
-    });
-    taskIds[config.type] = taskId;
+    const agentId = agentIds[config.type];
+    await runtime.startAgent(agentId);
     logger.info(
-      { taskId, agentId: agentIds[config.type], type: config.type },
-      `[AgentRuntime Demo] Task submitted to ${config.name}`,
+      { agentId },
+      `[AgentRuntime Demo] ${config.name} started`,
     );
   }
 
   // ============================================================
-  // Step 7: Monitor task status
+  // Step 6: User Context - User as Agent
   // ============================================================
-  // Wait a bit for tasks to be assigned
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  // Create a UserContext - treats the external user as an Agent
+  // The user can now use all Agent methods (createAgent, sendA2ATask, etc.)
+  // Note: timeout should be longer than A2AHandler's handlerTimeout (60s) + API processing time
+  const user = runtime.createUserContext({
+    userId: 'demo-user-001',
+    defaultTimeout: 120000, // 2 minutes - longer than handler timeout + API time
+  });
 
-  logger.info('[AgentRuntime Demo] Checking task statuses...');
-  for (const config of AGENT_CONFIGS) {
-    const taskId = taskIds[config.type];
-    const status = await runtime.getTaskStatus(taskId);
-    logger.info(
-      {
-        type: config.type,
-        taskId,
-        status: status?.status,
-        description: status?.description,
-      },
-      `[AgentRuntime Demo] ${config.name} task status`,
-    );
-  }
+  logger.info(
+    { userId: user.instanceId },
+    '[User Context] User context created - user acts as an Agent',
+  );
+
+  // User can manage agents using RuntimeClient
+  const userAgents = await user.getRuntimeClient().listAgents();
+  logger.info(
+    { agentCount: userAgents.length },
+    '[User Context] User can list all agents',
+  );
+
+  // User can send A2A tasks to agents
+  const epidemiologyAgentId = agentIds['epidemiology'];
+  const pathophysiologyAgentId = agentIds['pathophysiology'];
+
+  logger.info(
+    { targetAgentId: pathophysiologyAgentId },
+    '[User Context] User sending task to agent via publishTask',
+  );
+
+  // Use simplified publishTask - wraps as Agent
+  const result = await user.publishTask(
+    pathophysiologyAgentId,     // Target agent
+    '检索椎间盘突出病理机制文献', // Task description
+    {                          // Input data
+      query: 'lumbar disc herniation pathophysiology',
+      limit: 10,
+    },
+    { priority: 'high', timeout: 120000 } // 2 minutes timeout
+  );
+  logger.info({ result }, '[User Context] Task result received');
+
+  // User can also send queries (via A2A client)
+  const response = await user.getA2AClient().sendQuery(
+    pathophysiologyAgentId,
+    'What is your current status?',
+    { expectedFormat: 'json' }
+  );
+  logger.info({ response }, '[User Context] Query response received');
+
+  // Or fire-and-forget events
+  await user.getA2AClient().sendEvent(
+    pathophysiologyAgentId,
+    'user:connected',
+    { userId: user.instanceId, timestamp: Date.now() }
+  );
+
+  logger.info('[User Context] User can send tasks/queries/events to agents');
+  logger.info('[User Context] User context demo complete');
 
   // ============================================================
-  // Step 8: Get runtime statistics
+  // Step 7: Get runtime statistics
   // ============================================================
   const stats = await runtime.getStats();
   logger.info(
     {
       totalAgents: stats.totalAgents,
       agentsByStatus: stats.agentsByStatus,
-      totalPendingTasks: stats.totalPendingTasks,
-      totalProcessingTasks: stats.totalProcessingTasks,
     },
     '[AgentRuntime Demo] Runtime statistics',
   );
 
   // ============================================================
-  // Step 9: Keep the demo running to observe task execution
+  // Step 8: Keep the demo running to observe agent behavior
   // ============================================================
   logger.info('[AgentRuntime Demo] Demo running... Press Ctrl+C to exit');
   logger.info(
@@ -286,8 +282,8 @@ async function main() {
       AGENT_CONFIGS.map((c) => c.type).join(', '),
   );
 
-  // Wait for tasks to complete (or timeout after 10 minutes)
-  const timeout = 10 * 60 * 10000; // 100 minutes
+  // Wait for a while to observe agents
+  const timeout = 5 * 60 * 1000; // 5 minutes
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {
@@ -296,25 +292,14 @@ async function main() {
     const currentStats = await runtime.getStats();
     logger.info(
       {
-        processingTasks: currentStats.totalProcessingTasks,
-        pendingTasks: currentStats.totalPendingTasks,
         agentsByStatus: currentStats.agentsByStatus,
       },
       '[AgentRuntime Demo] Current status',
     );
-
-    // Check if all tasks are done
-    if (
-      currentStats.totalProcessingTasks === 0 &&
-      currentStats.totalPendingTasks === 0
-    ) {
-      logger.info('[AgentRuntime Demo] All tasks completed!');
-      break;
-    }
   }
 
   // ============================================================
-  // Step 10: Cleanup
+  // Step 9: Cleanup
   // ============================================================
   logger.info('[AgentRuntime Demo] Stopping runtime...');
   await runtime.stop();

@@ -77,6 +77,11 @@ import { createMessageRouter } from './topology/routing/MessageRouter.js';
 import type { IMessageBus } from './topology/messaging/MessageBus.js';
 import type { IMessageRouter } from './topology/routing/MessageRouter.js';
 
+// A2A Communication
+import { A2AClient, createA2AClient } from '../a2a/index.js';
+import type { IAgentCardRegistry } from '../a2a/index.js';
+import { createUserContext, type UserContext } from './UserContext.js';
+
 /**
  * AgentFilter - Options for filtering agents in listAgents()
  *
@@ -322,6 +327,31 @@ export interface IAgentRuntime {
    * Get topology network statistics.
    */
   getTopologyStats(): import('./topology/types.js').RoutingStats;
+
+  // ============================================
+  // User Context (User as Agent)
+  // ============================================
+
+  /**
+   * Get the message bus for A2A communication.
+   * Used by UserContext to send messages to agents.
+   */
+  getMessageBus(): IMessageBus;
+
+  /**
+   * Get the agent registry for service discovery.
+   * Used by UserContext for A2A client.
+   */
+  getRegistry(): IAgentCardRegistry;
+
+  /**
+   * Create a user context - treats external user as an Agent.
+   * The user can manage agents and send A2A tasks/queries/events.
+   */
+  createUserContext(options?: {
+    userId?: string;
+    defaultTimeout?: number;
+  }): import('./UserContext.js').UserContext;
 }
 
 /**
@@ -510,6 +540,7 @@ export class AgentRuntime implements IAgentRuntime {
       api: mergedApi,
       workspace: overrides?.workspace,
       observers: overrides?.observers,
+      messageBus: this.messageBus,
     };
 
     const parentInstanceId = (
@@ -527,6 +558,19 @@ export class AgentRuntime implements IAgentRuntime {
     const controlClient = this.createControlClient(instanceId);
     agent.setRuntimeClient(controlClient);
 
+    // Create and inject A2A Client
+    const a2aClient = createA2AClient(
+      this.messageBus,
+      this.registry as unknown as IAgentCardRegistry,
+      {
+        instanceId,
+        defaultTimeout: 60000,
+      },
+    );
+    agent.setA2AClient(a2aClient);
+
+    // A2A Handler is now initialized via DI in Agent constructor
+
     // Store container
     this.containers.set(instanceId, container);
 
@@ -542,6 +586,12 @@ export class AgentRuntime implements IAgentRuntime {
       createdAt: new Date(),
       updatedAt: new Date(),
       parentInstanceId,
+      // A2A service discovery fields from AgentSoul
+      version: unifiedConfig.agent.version,
+      capabilities: unifiedConfig.agent.capabilities,
+      skills: unifiedConfig.agent.skills,
+      endpoint: unifiedConfig.agent.endpoint ?? instanceId,
+      metadata: unifiedConfig.agent.metadata,
     };
     this.registry.register(metadata);
 
@@ -570,7 +620,7 @@ export class AgentRuntime implements IAgentRuntime {
     this.topologyGraph.addNode({
       instanceId,
       nodeType: 'worker',
-      capabilities: [],
+      capabilities: unifiedConfig.agent.capabilities ?? [],
     });
 
     return instanceId;
@@ -981,6 +1031,25 @@ export class AgentRuntime implements IAgentRuntime {
     };
   }
 
+  // ============================================
+  // User Context (User as Agent)
+  // ============================================
+
+  getMessageBus(): IMessageBus {
+    return this.messageBus;
+  }
+
+  getRegistry(): IAgentCardRegistry {
+    return this.registry as unknown as IAgentCardRegistry;
+  }
+
+  createUserContext(options?: {
+    userId?: string;
+    defaultTimeout?: number;
+  }): UserContext {
+    return createUserContext(this, options);
+  }
+
   private handleTopologyMessage(message: TopologyMessage): void {
     // Handle topology messages routed through the system
     // This is called by the message bus when messages are delivered
@@ -1023,7 +1092,10 @@ export class AgentRuntime implements IAgentRuntime {
     }
 
     // Create the agent with parent info
-    const container = AgentFactory.create(options as AgentFactoryOptions);
+    const container = AgentFactory.create({
+      ...options,
+      messageBus: this.messageBus,
+    } as AgentFactoryOptions);
 
     const instanceId = container.instanceId;
 
@@ -1033,6 +1105,19 @@ export class AgentRuntime implements IAgentRuntime {
     // Create and inject RuntimeControlClient for the child
     const controlClient = this.createControlClient(instanceId);
     agent.setRuntimeClient(controlClient);
+
+    // Create and inject A2A Client
+    const a2aClient = createA2AClient(
+      this.messageBus,
+      this.registry as unknown as IAgentCardRegistry,
+      {
+        instanceId,
+        defaultTimeout: 60000,
+      },
+    );
+    agent.setA2AClient(a2aClient);
+
+    // A2A Handler is now initialized via DI in Agent constructor
 
     // Store container
     this.containers.set(instanceId, container);
@@ -1057,6 +1142,12 @@ export class AgentRuntime implements IAgentRuntime {
         name: parentMetadata?.name,
         createdAt: new Date(),
       },
+      // A2A service discovery fields from AgentSoul
+      version: unifiedConfig.agent.version,
+      capabilities: unifiedConfig.agent.capabilities,
+      skills: unifiedConfig.agent.skills,
+      endpoint: unifiedConfig.agent.endpoint ?? instanceId,
+      metadata: unifiedConfig.agent.metadata,
     };
     this.registry.register(metadata);
 
@@ -1067,7 +1158,7 @@ export class AgentRuntime implements IAgentRuntime {
     this.topologyGraph.addNode({
       instanceId,
       nodeType: 'worker',
-      capabilities: [],
+      capabilities: unifiedConfig.agent.capabilities ?? [],
     });
 
     // Emit event

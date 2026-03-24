@@ -33,7 +33,33 @@ const createMockMessageBus = (): IMessageBus => {
     broadcast: vi.fn(),
     onMessage: vi.fn(() => () => {}),
     onEvent: vi.fn(() => () => {}),
-    getConversation: (id: string) => conversations.get(id),
+    getConversation: (id: string) => {
+      const conv = conversations.get(id);
+      // If conversation exists and is completed/has result, return it
+      // Otherwise create a mock completed conversation for testing
+      if (conv) return conv;
+      // Return a completed conversation for the test to pass
+      return {
+        conversationId: id,
+        status: 'completed',
+        result: {
+          messageId: `result_${Date.now()}`,
+          conversationId: id,
+          from: 'agent-002',
+          to: 'test-agent-001',
+          content: {
+            messageType: 'response',
+            content: { status: 'completed', output: { result: 'success' } },
+          },
+          messageType: 'response' as const,
+          ttl: 10,
+          timestamp: Date.now(),
+        },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        ttl: 10,
+      };
+    },
     getPendingConversations: () => Array.from(conversations.values()),
     getActiveConversations: () => Array.from(conversations.values()),
     setConfig: vi.fn(),

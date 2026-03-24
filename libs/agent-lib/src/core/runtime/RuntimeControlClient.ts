@@ -14,8 +14,6 @@ import type {
   IRuntimeControlClient,
   AgentFilter,
   AgentMetadata,
-  TaskSubmission,
-  RuntimeTask,
   RuntimeStats,
   RuntimeControlAgentOptions,
   TopologyNodeType,
@@ -83,22 +81,6 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   }
 
   // ============================================
-  // Task Management
-  // ============================================
-
-  async submitTask(task: TaskSubmission): Promise<string> {
-    return this.runtime.submitTask(task);
-  }
-
-  async getTaskStatus(taskId: string): Promise<RuntimeTask | undefined> {
-    return this.runtime.getTaskStatus(taskId);
-  }
-
-  async getPendingTasks(instanceId?: string): Promise<RuntimeTask[]> {
-    return this.runtime.getPendingTasks(instanceId);
-  }
-
-  // ============================================
   // Runtime Statistics
   // ============================================
 
@@ -136,5 +118,46 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
 
   getTopologyStats(): RoutingStats {
     return this.runtime.getTopologyStats();
+  }
+
+  // ============================================
+  // A2A Communication
+  // ============================================
+
+  async sendA2ATask(
+    targetAgentId: string,
+    taskId: string,
+    description: string,
+    input: Record<string, unknown>,
+    options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
+  ): Promise<import('../a2a/types.js').A2ATaskResult> {
+    const agent = await this.runtime.getAgent(this.callerInstanceId) as Agent;
+    const a2aClient = agent?.getA2AClient();
+    if (!a2aClient) {
+      throw new Error('A2A client not initialized');
+    }
+    return a2aClient.sendTask(targetAgentId, taskId, description, input, options);
+  }
+
+  async sendA2AQuery(
+    targetAgentId: string,
+    query: string,
+    options?: { expectedFormat?: string },
+  ): Promise<unknown> {
+    const agent = await this.runtime.getAgent(this.callerInstanceId) as Agent;
+    const a2aClient = agent?.getA2AClient();
+    if (!a2aClient) {
+      throw new Error('A2A client not initialized');
+    }
+    return a2aClient.sendQuery(targetAgentId, query, options);
+  }
+
+  async sendA2AEvent(targetAgentId: string, eventType: string, data: unknown): Promise<void> {
+    const agent = await this.runtime.getAgent(this.callerInstanceId) as Agent;
+    const a2aClient = agent?.getA2AClient();
+    if (!a2aClient) {
+      throw new Error('A2A client not initialized');
+    }
+    return a2aClient.sendEvent(targetAgentId, eventType, data);
   }
 }

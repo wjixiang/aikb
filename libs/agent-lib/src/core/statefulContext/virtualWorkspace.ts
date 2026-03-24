@@ -26,6 +26,7 @@ import {
 } from '../../components/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
+import type { A2AHandler } from '../a2a/index.js';
 
 /** Component registration for DI-managed components */
 export interface DIComponentRegistration {
@@ -60,6 +61,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
     new Map();
   private globalToolProvider: GlobalToolProvider;
+  private _a2aHandler?: A2AHandler;
 
   constructor(
     @inject(TYPES.IToolManager) toolManager: IToolManager,
@@ -71,6 +73,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     @inject(TYPES.ToolComponents)
     @optional()
     diComponents?: DIComponentRegistration[],
+    @inject(TYPES.IA2AHandler)
+    @optional()
+    a2aHandler?: A2AHandler,
   ) {
     this.config = {
       ...DefaultVirtualWorkspaceConfig,
@@ -80,6 +85,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     this.componentRegistry = componentRegistry;
     this.toolManager = toolManager;
     this.globalToolProvider = globalToolProvider;
+    this._a2aHandler = a2aHandler;
 
     if (diComponents && diComponents.length > 0) {
       for (const { id, component, priority } of diComponents) {
@@ -124,6 +130,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   getComponentKeys(): string[] {
     return this.componentRegistry.getIds();
+  }
+
+  getA2AHandler(): A2AHandler | undefined {
+    return this._a2aHandler;
   }
 
   private onToolAvailabilityChange?: (() => void) | undefined;

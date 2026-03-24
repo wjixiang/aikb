@@ -5,6 +5,7 @@ import type { ProviderSettings } from '../types/provider-settings.js';
 import type { PersistenceConfig } from '../persistence/types.js';
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { HookConfig } from '../hooks/types.js';
+import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
@@ -20,9 +21,15 @@ export interface UnifiedAgentConfig {
     sop: SOP;
     config: AgentConfig;
     taskId?: string;
-    name?: string;       // Agent 友好名称
-    type?: string;       // Agent 类型标识
+    name?: string; // Agent 友好名称
+    type?: string; // Agent 类型标识
     description?: string; // Agent 描述
+    // A2A service discovery fields
+    version?: string;
+    capabilities?: string[];
+    skills?: string[];
+    endpoint?: string;
+    metadata?: Record<string, unknown>;
   };
   api: ProviderSettings;
   workspace: VirtualWorkspaceConfig;
@@ -47,9 +54,15 @@ export interface AgentCreationOptions {
     sop?: SOP;
     config?: Partial<AgentConfig>;
     taskId?: string;
-    name?: string;       // Agent 友好名称
-    type?: string;       // Agent 类型标识
+    name?: string; // Agent 友好名称
+    type?: string; // Agent 类型标识
     description?: string; // Agent 描述
+    // A2A service discovery fields
+    version?: string;
+    capabilities?: string[];
+    skills?: string[];
+    endpoint?: string;
+    metadata?: Record<string, unknown>;
   };
   api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
@@ -68,6 +81,12 @@ export interface AgentCreationOptions {
    * Hook configuration for lifecycle events
    */
   hooks?: HookConfig;
+
+  /**
+   * MessageBus instance (provided by AgentRuntime)
+   * This is passed in when creating the container, not stored in config
+   */
+  messageBus?: IMessageBus;
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {
@@ -109,6 +128,12 @@ export function mergeWithDefaults(
       name: partial.agent?.name,
       type: partial.agent?.type,
       description: partial.agent?.description,
+      // A2A service discovery fields
+      version: partial.agent?.version,
+      capabilities: partial.agent?.capabilities,
+      skills: partial.agent?.skills,
+      endpoint: partial.agent?.endpoint,
+      metadata: partial.agent?.metadata,
     },
     api: {
       ...defaultUnifiedConfig.api,

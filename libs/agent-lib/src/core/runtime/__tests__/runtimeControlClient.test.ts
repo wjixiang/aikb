@@ -3,8 +3,6 @@ import { RuntimeControlClientImpl } from '../RuntimeControlClient.js';
 import type {
   AgentFilter,
   AgentMetadata,
-  TaskSubmission,
-  RuntimeTask,
   RuntimeStats,
   RuntimeControlAgentOptions,
 } from '../types.js';
@@ -29,9 +27,6 @@ describe('RuntimeControlClientImpl', () => {
         parentInstanceId: undefined,
       }),
       _getChildren: vi.fn().mockReturnValue([]),
-      submitTask: vi.fn().mockResolvedValue('task-id'),
-      getTaskStatus: vi.fn().mockResolvedValue({} as RuntimeTask),
-      getPendingTasks: vi.fn().mockResolvedValue([]),
       getStats: vi.fn().mockResolvedValue({
         totalAgents: 1,
         agentsByStatus: { idle: 1, running: 0, completed: 0, aborted: 0 },
@@ -197,59 +192,6 @@ describe('RuntimeControlClientImpl', () => {
 
       expect(result).toEqual(children);
       expect(mockRuntime._getChildren).toHaveBeenCalledWith(callerInstanceId);
-    });
-  });
-
-  describe('submitTask', () => {
-    it('should submit task', async () => {
-      const task: TaskSubmission = {
-        description: 'Test task',
-        targetInstanceId: 'agent-1',
-      };
-
-      const result = await client.submitTask(task);
-
-      expect(result).toBe('task-id');
-      expect(mockRuntime.submitTask).toHaveBeenCalledWith(task);
-    });
-  });
-
-  describe('getTaskStatus', () => {
-    it('should return task status from runtime', async () => {
-      const task: RuntimeTask = {
-        taskId: 'task-1',
-        description: 'Test',
-        priority: 'normal',
-        status: 'pending',
-        targetInstanceId: 'agent-1',
-        createdAt: new Date(),
-      };
-      vi.mocked(mockRuntime.getTaskStatus).mockResolvedValue(task);
-
-      const result = await client.getTaskStatus('task-1');
-
-      expect(result).toEqual(task);
-      expect(mockRuntime.getTaskStatus).toHaveBeenCalledWith('task-1');
-    });
-  });
-
-  describe('getPendingTasks', () => {
-    it('should return pending tasks from runtime', async () => {
-      const tasks: RuntimeTask[] = [];
-      vi.mocked(mockRuntime.getPendingTasks).mockResolvedValue(tasks);
-
-      const result = await client.getPendingTasks('agent-1');
-
-      expect(result).toEqual(tasks);
-      expect(mockRuntime.getPendingTasks).toHaveBeenCalledWith('agent-1');
-    });
-
-    it('should call without instanceId when not provided', async () => {
-      vi.mocked(mockRuntime.getPendingTasks).mockResolvedValue([]);
-
-      await client.getPendingTasks();
-
-      expect(mockRuntime.getPendingTasks).toHaveBeenCalledWith(undefined);
     });
   });
 

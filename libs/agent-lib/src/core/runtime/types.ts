@@ -10,6 +10,8 @@
  */
 
 import type { AgentStatus } from '../common/types.js';
+import type { A2ATaskResult } from '../a2a/types.js';
+import type { IMessageBus } from './topology/messaging/MessageBus.js';
 
 // =============================================================================
 // Agent Metadata
@@ -32,6 +34,12 @@ export interface AgentMetadata {
     createdAt: Date;
   };
   childInstanceIds?: string[];
+  // A2A service discovery fields (merged from AgentCard)
+  version?: string;
+  capabilities?: string[];
+  skills?: string[];
+  endpoint?: string;
+  metadata?: Record<string, unknown>;
 }
 
 // =============================================================================
@@ -54,6 +62,7 @@ export interface RuntimeStats {
  * - Create/destroy/start/stop agents
  * - Manage topology (register, connect agents)
  * - Query runtime state
+ * - Send A2A messages to other agents
  */
 export interface IRuntimeControlClient {
   // ============================================
@@ -98,6 +107,39 @@ export interface IRuntimeControlClient {
   disconnectAgents(from: string, to: string): void;
   getTopologyGraph(): ITopologyGraph;
   getTopologyStats(): RoutingStats;
+
+  // ============================================
+  // A2A Communication
+  // ============================================
+
+  /**
+   * Send a task to another agent via A2A protocol
+   */
+  sendA2ATask(
+    targetAgentId: string,
+    taskId: string,
+    description: string,
+    input: Record<string, unknown>,
+    options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
+  ): Promise<A2ATaskResult>;
+
+  /**
+   * Send a query to another agent via A2A protocol
+   */
+  sendA2AQuery(
+    targetAgentId: string,
+    query: string,
+    options?: { expectedFormat?: string },
+  ): Promise<unknown>;
+
+  /**
+   * Send an event notification to another agent via A2A protocol (fire-and-forget)
+   */
+  sendA2AEvent(
+    targetAgentId: string,
+    eventType: string,
+    data: unknown,
+  ): Promise<void>;
 }
 
 // =============================================================================
@@ -172,6 +214,12 @@ export interface AgentSoul {
   name?: string;
   type?: string;
   description?: string;
+  // A2A service discovery fields (AgentCard)
+  version?: string;
+  capabilities?: string[];
+  skills?: string[];
+  endpoint?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ComponentRegistration {
@@ -216,6 +264,7 @@ export interface RuntimeControlAgentOptions {
   components?: ComponentRegistration[];
   hooks?: HookConfig;
   parentInstanceId?: string;
+  messageBus?: IMessageBus;
 }
 
 // =============================================================================

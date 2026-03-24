@@ -42,7 +42,6 @@ import {
   type StopAgentParams,
   type ListAgentsParams,
   type GetAgentParams,
-  type SubmitTaskParams,
   type RegisterInTopologyParams,
   type UnregisterFromTopologyParams,
   type ConnectAgentsParams,
@@ -102,7 +101,6 @@ export class RuntimeControlComponent extends ToolComponent {
       ['stopAgent', runtimeControlToolSchemas.stopAgent],
       ['listAgents', runtimeControlToolSchemas.listAgents],
       ['getAgent', runtimeControlToolSchemas.getAgent],
-      ['submitTask', runtimeControlToolSchemas.submitTask],
       ['getStats', runtimeControlToolSchemas.getStats],
       ['listChildAgents', runtimeControlToolSchemas.listChildAgents],
       ['getMyInfo', runtimeControlToolSchemas.getMyInfo],
@@ -156,8 +154,6 @@ export class RuntimeControlComponent extends ToolComponent {
           return await this.handleListAgents(params as ListAgentsParams);
         case 'getAgent':
           return await this.handleGetAgent(params as GetAgentParams);
-        case 'submitTask':
-          return await this.handleSubmitTask(params as SubmitTaskParams);
         case 'getStats':
           return await this.handleGetStats();
         case 'listChildAgents':
@@ -569,47 +565,6 @@ export class RuntimeControlComponent extends ToolComponent {
           error: (error as Error).message,
         } as unknown as AgentMetadata | null,
         summary: `[RuntimeControl] Failed to get agent: ${(error as Error).message}`,
-      };
-    }
-  }
-
-  /**
-   * Handle submitTask tool call
-   */
-  private async handleSubmitTask(
-    params: SubmitTaskParams,
-  ): Promise<ToolCallResult<{ taskId: string }>> {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return {
-        success: false,
-        data: {
-          error: 'Runtime control not available',
-          taskId: '',
-        } as unknown as { taskId: string },
-        summary: '[RuntimeControl] Runtime control not available',
-      };
-    }
-
-    try {
-      const taskId = await client.submitTask({
-        targetInstanceId: params.targetInstanceId,
-        description: params.description,
-        input: params.input,
-        priority: params.priority as any,
-      });
-      return {
-        success: true,
-        data: { taskId },
-        summary: `[RuntimeControl] Submitted task: ${taskId}`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: { error: (error as Error).message, taskId: '' } as unknown as {
-          taskId: string;
-        },
-        summary: `[RuntimeControl] Failed to submit task: ${(error as Error).message}`,
       };
     }
   }
