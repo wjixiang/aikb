@@ -414,7 +414,7 @@ export class Agent {
     space?: string | number,
   ): string {
     const seen = new WeakSet();
-    const jsonStringify = (value: unknown, key?: string): unknown => {
+    const jsonReplacer = (key: string, value: unknown): unknown => {
       if (typeof value === 'object' && value !== null) {
         if (seen.has(value)) {
           return '[Circular]';
@@ -422,16 +422,12 @@ export class Agent {
         seen.add(value);
       }
       if (replacer && typeof replacer === 'function') {
-        return replacer(key || '', value);
+        return replacer(key, value);
       }
       return value;
     };
     try {
-      return JSON.stringify(
-        obj,
-        jsonStringify as (key: string, value: unknown) => unknown,
-        space,
-      );
+      return JSON.stringify(obj, jsonReplacer, space);
     } catch (error) {
       return `[Stringify Error: ${error instanceof Error ? error.message : String(error)}]`;
     }
@@ -661,7 +657,7 @@ export class Agent {
       );
       this.logger.warn(
         '[MailDriven] Available components: ' +
-          (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
+        (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
       );
       return;
     }
@@ -1104,18 +1100,18 @@ export class Agent {
         this.logger.debug(
           {
             count: toolResults.length,
-            toolResults: this.safeStringify(toolResults),
+            toolResults: JSON.stringify(toolResults),
           },
-          '[Agent core] toolResults count',
-        );
-        const toolResultsJson =
-          toolResults && toolResults.length > 0
-            ? this.safeStringify(toolResults, null, 2)
-            : '[]';
-        this.logger.info(
-          { toolResults: toolResultsJson },
           '[Agent core] tool call executed',
         );
+        // const toolResultsJson =
+        //   toolResults && toolResults.length > 0
+        //     ? this.safeStringify(toolResults, null, 2)
+        //     : '[]';
+        // this.logger.info(
+        //   { toolResults: toolResultsJson },
+        //   '[Agent core] tool call executed',
+        // );
 
         // Check for completion
         const hasCompletion = toolResults.some(
