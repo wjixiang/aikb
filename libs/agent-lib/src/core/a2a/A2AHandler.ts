@@ -59,6 +59,14 @@ export interface IA2AHandler {
 
   /** Send error response */
   sendTaskError(conversationId: string, error: string): Promise<void>;
+
+  /** Set callback for when a task is completed via completeTask tool */
+  setTaskCompletionCallback(
+    callback: (conversationId: string, output: unknown, status: string) => void,
+  ): void;
+
+  /** Signal that an A2A task has been completed (calls the registered callback) */
+  completeTask(conversationId: string, output: unknown, status: string): void;
 }
 
 /**
@@ -71,6 +79,7 @@ export interface PendingTask {
   from: string;
   payload: A2APayload;
   receivedAt: number;
+  acknowledged?: boolean;
 }
 
 /**
@@ -99,6 +108,15 @@ export class A2AHandler implements IA2AHandler {
    * Key: conversationId
    */
   private pendingTasks: Map<string, PendingTask> = new Map();
+
+  /**
+   * Callback for when task is completed via completeTask tool
+   */
+  private taskCompletionCallback?: (
+    conversationId: string,
+    output: unknown,
+    status: string,
+  ) => void;
 
   constructor(messageBus: IMessageBus, config: A2AHandlerConfig) {
     this.logger = pino({
@@ -274,6 +292,15 @@ export class A2AHandler implements IA2AHandler {
   }
 
   /**
+   * Set callback for when task is completed via completeTask tool
+   */
+  setTaskCompletionCallback(
+    callback: (conversationId: string, output: unknown, status: string) => void,
+  ): void {
+    this.taskCompletionCallback = callback;
+  }
+
+  /**
    * Send acknowledgment for a pending task
    */
   async acknowledge(conversationId: string): Promise<void> {
@@ -291,6 +318,7 @@ export class A2AHandler implements IA2AHandler {
         messageId: pending.messageId,
         status: 'acknowledged',
       });
+      pending.acknowledged = true;
       this.logger.debug({ conversationId }, 'Sent ACK');
     } catch (error) {
       this.logger.error({ error, conversationId }, 'Failed to send ACK');
@@ -350,6 +378,25 @@ export class A2AHandler implements IA2AHandler {
     } catch (err) {
       this.logger.error({ err, conversationId }, 'Failed to send error');
       throw err;
+    }
+  }
+
+  /**
+   * Signal that an A2A task has been completed
+   * Calls the registered callback to notify the waiting task handler
+   */
+  completeTask(conversationId: string, output: unknown, status: string): void {
+    if (this.taskCompletionCallback) {
+      this.taskCompletionCallback(conversationId, output, status);
+      this.logger.debug(
+        { conversationId, status },
+        'Task completion callback invoked',
+      );
+    } else {
+      this.logger.warn(
+        { conversationId },
+        'No task completion callback registered',
+      );
     }
   }
 

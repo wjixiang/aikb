@@ -165,6 +165,15 @@ export class Agent {
   private _a2aClient?: A2AClient;
   private _pendingA2AMessages: A2AMessage[] = [];
 
+  // A2A task completion tracking
+  private _a2aTaskCompletions: Map<
+    string,
+    {
+      resolve: (result: { output: unknown; status: string }) => void;
+      timeoutId: NodeJS.Timeout;
+    }
+  > = new Map();
+
   // Persistence service (for component states - instance-level)
   private persistenceService?: IPersistenceService;
 
@@ -310,6 +319,17 @@ export class Agent {
       return;
     }
 
+    // Register callback for completeTask tool to signal A2A task completion
+    this._a2aHandler.setTaskCompletionCallback(
+      (conversationId, output, status) => {
+        this.completeA2ATask(
+          conversationId,
+          output,
+          status as 'completed' | 'failed',
+        );
+      },
+    );
+
     // Register task handler - when a task is received, trigger agent processing
     this._a2aHandler.onTask(async (payload, ctx) => {
       this.logger.info(
@@ -338,16 +358,44 @@ export class Agent {
       this._pendingA2AMessages.push(ctx.message);
 
       // Wake up agent if idle and process the task
+      // Wait for completeTask to be called to signal completion
       let taskOutput: unknown = null;
+      let taskStatus: 'completed' | 'failed' = 'completed';
+
       if (this._status === 'idle' || this._status === 'completed') {
         this._status = 'running';
-        taskOutput = await this.requestLoop();
+
+        // Start processing and wait for completeTask to be called
+        // Run requestLoop in background and wait for completion
+        const processingPromise = this.requestLoop();
+
+        // Wait for either completeTask or timeout
+        try {
+          const result = await Promise.race([
+            this.waitForA2ATaskCompletion(
+              ctx.message.conversationId,
+              this.config.apiRequestTimeout * 5,
+            ),
+            processingPromise, // Fallback: if requestLoop finishes first, use its result
+          ]);
+
+          // If we got result from completeTask
+          if (result && typeof result === 'object' && 'output' in result) {
+            taskOutput = result.output;
+            taskStatus = result.status as 'completed' | 'failed';
+          }
+        } catch (error) {
+          this.logger.warn(
+            { error, conversationId: ctx.message.conversationId },
+            '[Agent] A2A task completion wait error',
+          );
+        }
       }
 
       // Return the task result
       return {
         taskId: payload.taskId || '',
-        status: this._status === 'aborted' ? 'failed' : 'completed',
+        status: this._status === 'aborted' ? 'failed' : taskStatus,
         output: taskOutput,
       };
     });
@@ -459,6 +507,44 @@ export class Agent {
    */
   public clearPendingA2AMessages(): void {
     this._pendingA2AMessages = [];
+  }
+
+  /**
+   * Complete an A2A task with output
+   * Called when Agent calls completeTask tool
+   */
+  public completeA2ATask(
+    conversationId: string,
+    output: unknown,
+    status: 'completed' | 'failed' = 'completed',
+  ): void {
+    const completion = this._a2aTaskCompletions.get(conversationId);
+    if (completion) {
+      clearTimeout(completion.timeoutId);
+      completion.resolve({ output, status });
+      this._a2aTaskCompletions.delete(conversationId);
+      this.logger.debug(
+        { conversationId, status },
+        '[Agent] A2A task completed by completeTask tool',
+      );
+    }
+  }
+
+  /**
+   * Wait for an A2A task to be completed via completeTask tool
+   */
+  private waitForA2ATaskCompletion(
+    conversationId: string,
+    timeoutMs: number = 300000,
+  ): Promise<{ output: unknown; status: string }> {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        this._a2aTaskCompletions.delete(conversationId);
+        reject(new Error(`A2A task completion timeout: ${conversationId}`));
+      }, timeoutMs);
+
+      this._a2aTaskCompletions.set(conversationId, { resolve, timeoutId });
+    });
   }
 
   // ==================== Lifecycle Methods ====================

@@ -17,9 +17,9 @@ export function createBibRetrieveAgentSoul(): AgentSoulConfig {
       {
         component: new BibliographySearchComponent(),
       },
-      {
-        component: new A2ATaskComponent(),
-      },
+      // {
+      //   component: new A2ATaskComponent(),
+      // },
     ],
   };
 }

@@ -19,9 +19,9 @@ export function createDiagnosisAgentSoul(): AgentSoulConfig {
       {
         component: new BibliographySearchComponent(),
       },
-      {
-        component: new A2ATaskComponent(),
-      },
+      // {
+      //   component: new A2ATaskComponent(),
+      // },
     ],
   };
 }

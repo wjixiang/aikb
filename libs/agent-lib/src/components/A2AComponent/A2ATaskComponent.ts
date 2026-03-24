@@ -188,16 +188,21 @@ This component handles Agent-to-Agent (A2A) task communication.
       if (pending.length === 0) {
         elements.push(new tdiv({ content: 'No pending tasks' }));
       } else {
+        const acknowledged = pending.filter((t) => t.acknowledged).length;
+        const pendingCount = pending.length - acknowledged;
         elements.push(
-          new tdiv({ content: `Pending tasks: ${pending.length}` }),
+          new tdiv({
+            content: `Pending: ${pendingCount} | Acknowledged: ${acknowledged}`,
+          }),
         );
 
         for (const task of pending) {
           const payload = task.payload;
           const desc = payload.description || payload.taskId || 'Unknown task';
+          const ackTag = task.acknowledged ? '[ACK]' : '[PENDING]';
           elements.push(
             new tdiv({
-              content: `• [${task.messageType}] ${desc} from ${task.from}`,
+              content: `• ${ackTag} [${task.messageType}] ${desc} (id: ${task.conversationId}) from ${task.from}`,
             }),
           );
         }
@@ -268,7 +273,9 @@ This component handles Agent-to-Agent (A2A) task communication.
     params: CompleteTaskParams,
   ): Promise<ToolCallResult<{ success: boolean; conversationId: string }>> {
     try {
-      await this.getA2AHandler().sendTaskResult(
+      // Signal task completion via callback (waits for result)
+      // The actual result sending is handled by the task handler
+      this.getA2AHandler().completeTask(
         params.conversationId,
         params.output,
         params.status || 'completed',
@@ -303,9 +310,11 @@ This component handles Agent-to-Agent (A2A) task communication.
     params: FailTaskParams,
   ): Promise<ToolCallResult<{ success: boolean; conversationId: string }>> {
     try {
-      await this.getA2AHandler().sendTaskError(
+      // Signal task failure via callback
+      this.getA2AHandler().completeTask(
         params.conversationId,
-        params.error,
+        { error: params.error },
+        'failed',
       );
       return {
         success: true,
@@ -375,10 +384,20 @@ This component handles Agent-to-Agent (A2A) task communication.
   > {
     try {
       const pending = this.getA2AHandler().getPendingTasks();
+      const formattedTasks = pending.map((task) => ({
+        ...task,
+        displayId: task.acknowledged
+          ? `[ACK] ${task.conversationId}`
+          : task.conversationId,
+      }));
       return {
         success: true,
         data: { tasks: pending },
-        summary: `[A2A Task] Found ${pending.length} pending tasks`,
+        summary: `[A2A Task] Found ${pending.length} pending tasks${
+          pending.some((t) => t.acknowledged)
+            ? ` (${pending.filter((t) => t.acknowledged).length} acknowledged)`
+            : ''
+        }`,
       };
     } catch (error) {
       return {

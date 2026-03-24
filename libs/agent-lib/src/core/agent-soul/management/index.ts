@@ -16,9 +16,9 @@ export function createManagementAgentSoul(): AgentSoulConfig {
         '疾病管理与治疗文献检索专家，负责保守治疗、药物治疗、手术治疗、临床指南等文献的检索与筛选',
     },
     components: [
-      {
-        component: new A2ATaskComponent(),
-      },
+      // {
+      //   component: new A2ATaskComponent(),
+      // },
       {
         component: new BibliographySearchComponent(),
       }
