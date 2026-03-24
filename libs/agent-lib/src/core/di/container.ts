@@ -266,7 +266,7 @@ export class AgentContainer {
       const a2aHandler = createA2AHandler(this.messageBus, a2aHandlerConfig);
       this.container
         .bind<IA2AHandler>(TYPES.IA2AHandler)
-        .to(a2aHandler as unknown as { new (...args: any[]): IA2AHandler })
+        .toDynamicValue(() => a2aHandler)
         .inSingletonScope();
     }
 
