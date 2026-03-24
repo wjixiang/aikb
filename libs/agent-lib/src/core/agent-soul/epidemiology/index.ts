@@ -17,7 +17,6 @@ export function createEpidemiologyAgentSoul(): AgentSoulConfig {
     },
     components: [
       {
-        id: 'bibliography-search',
         component: new BibliographySearchComponent(),
       },
     ],

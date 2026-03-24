@@ -140,21 +140,25 @@ export abstract class ToolComponent {
   }
 
   /**
-   * Inject dependencies from DI container (override in subclass)
-   * Called automatically when component is registered in AgentContainer.
+   * Inject dependencies from DI container
+   *
+   * Base implementation auto-injects dependencies declared in static injectSymbols.
+   * Subclasses can override to add custom injection logic (call super first).
    *
    * @param container - The DI container to resolve dependencies from
-   *
-   * @example
-   * protected injectDependencies(container: Container): void {
-   *   const ctor = this.constructor as typeof ToolComponent;
-   *   if (ctor.injectSymbols) {
-   *     this._a2aHandler = container.get(ctor.injectSymbols.a2aHandler);
-   *   }
-   * }
    */
   protected injectDependencies(container: Container): void {
-    // Override in subclass to inject dependencies
+    const ctor = this.constructor as typeof ToolComponent;
+    if (ctor.injectSymbols) {
+      for (const [key, symbol] of Object.entries(ctor.injectSymbols)) {
+        try {
+          const value = container.get(symbol);
+          (this as Record<string, unknown>)[`_${key}`] = value;
+        } catch {
+          // Dependency not available in container, skip
+        }
+      }
+    }
   }
 
   /**

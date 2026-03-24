@@ -42,6 +42,35 @@ export interface IA2AHandler {
 
   /** Stop listening for messages */
   stopListening(): void;
+
+  /** Get pending task messages awaiting acknowledgment */
+  getPendingTasks(): PendingTask[];
+
+  /** Send acknowledgment for a message */
+  acknowledge(conversationId: string): Promise<void>;
+
+  /** Send task result response */
+  sendTaskResult(
+    conversationId: string,
+    output: unknown,
+    status: A2ATaskStatus,
+    error?: string,
+  ): Promise<void>;
+
+  /** Send error response */
+  sendTaskError(conversationId: string, error: string): Promise<void>;
+}
+
+/**
+ * Pending task awaiting acknowledgment
+ */
+export interface PendingTask {
+  conversationId: string;
+  messageId: string;
+  messageType: A2AMessageType;
+  from: string;
+  payload: A2APayload;
+  receivedAt: number;
 }
 
 /**
@@ -64,6 +93,12 @@ export class A2AHandler implements IA2AHandler {
 
   private unsubscribeMessage?: () => void;
   private isListening = false;
+
+  /**
+   * Pending tasks awaiting acknowledgment
+   * Key: conversationId
+   */
+  private pendingTasks: Map<string, PendingTask> = new Map();
 
   constructor(messageBus: IMessageBus, config: A2AHandlerConfig) {
     this.logger = pino({
@@ -232,7 +267,95 @@ export class A2AHandler implements IA2AHandler {
   }
 
   /**
+   * Get all pending tasks awaiting acknowledgment
+   */
+  getPendingTasks(): PendingTask[] {
+    return Array.from(this.pendingTasks.values());
+  }
+
+  /**
+   * Send acknowledgment for a pending task
+   */
+  async acknowledge(conversationId: string): Promise<void> {
+    const pending = this.pendingTasks.get(conversationId);
+    if (!pending) {
+      this.logger.warn(
+        { conversationId },
+        'No pending task found for acknowledgment',
+      );
+      return;
+    }
+
+    try {
+      await this.messageBus.sendAck(pending.from, conversationId, {
+        messageId: pending.messageId,
+        status: 'acknowledged',
+      });
+      this.logger.debug({ conversationId }, 'Sent ACK');
+    } catch (error) {
+      this.logger.error({ error, conversationId }, 'Failed to send ACK');
+      throw error;
+    }
+  }
+
+  /**
+   * Send task result response
+   */
+  async sendTaskResult(
+    conversationId: string,
+    output: unknown,
+    status: A2ATaskStatus,
+    error?: string,
+  ): Promise<void> {
+    const pending = this.pendingTasks.get(conversationId);
+    if (!pending) {
+      this.logger.warn(
+        { conversationId },
+        'No pending task found for sending result',
+      );
+      throw new Error(`No pending task found: ${conversationId}`);
+    }
+
+    try {
+      await this.messageBus.sendResult(pending.from, conversationId, {
+        output,
+        status,
+        error,
+      });
+      this.pendingTasks.delete(conversationId);
+      this.logger.debug({ conversationId, status }, 'Sent result');
+    } catch (error) {
+      this.logger.error({ error, conversationId }, 'Failed to send result');
+      throw error;
+    }
+  }
+
+  /**
+   * Send error response
+   */
+  async sendTaskError(conversationId: string, error: string): Promise<void> {
+    const pending = this.pendingTasks.get(conversationId);
+    if (!pending) {
+      this.logger.warn(
+        { conversationId },
+        'No pending task found for sending error',
+      );
+      throw new Error(`No pending task found: ${conversationId}`);
+    }
+
+    try {
+      await this.messageBus.sendError(pending.from, conversationId, error);
+      this.pendingTasks.delete(conversationId);
+      this.logger.debug({ conversationId }, 'Sent error');
+    } catch (err) {
+      this.logger.error({ err, conversationId }, 'Failed to send error');
+      throw err;
+    }
+  }
+
+  /**
    * Process a task message
+   * Stores in pendingTasks for manual ACK, does NOT auto-ACK
    */
   private async processTask(
     message: A2AMessage,
@@ -246,17 +369,24 @@ export class A2AHandler implements IA2AHandler {
 
     const payload = message.content;
 
-    // Send acknowledgment
-    await this.sendAck(message);
+    // Store as pending task (component will control ACK via acknowledge())
+    this.pendingTasks.set(message.conversationId, {
+      conversationId: message.conversationId,
+      messageId: message.messageId,
+      messageType: message.messageType,
+      from: message.from,
+      payload,
+      receivedAt: Date.now(),
+    });
 
-    // Call task handler with timeout
+    // Call task handler with timeout (handler should call acknowledge() when ready)
     const result = await this.withTimeout(
       this.taskHandler(payload, context),
       this.handlerTimeout,
     );
 
+    // If handler returns a result, send it automatically
     if (result) {
-      // Send result response
       await this.sendResult(
         message,
         result.output,

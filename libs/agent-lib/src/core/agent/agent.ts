@@ -29,7 +29,6 @@ import type {
   A2ATaskResult,
 } from '../a2a/index.js';
 import { createA2AHandler } from '../a2a/index.js';
-import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import type { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
@@ -164,7 +163,6 @@ export class Agent {
   // A2A Handler for agent-to-agent communication
   private _a2aHandler?: A2AHandler;
   private _a2aClient?: A2AClient;
-  private _messageBus?: IMessageBus;
   private _pendingA2AMessages: A2AMessage[] = [];
 
   // Persistence service (for component states - instance-level)
@@ -304,42 +302,8 @@ export class Agent {
   }
 
   /**
-   * Initialize A2A Handler for agent-to-agent communication
-   * Called by AgentRuntime after setting the message bus
-   * @deprecated A2AHandler is now injected via DI. This method is kept for backward compatibility.
-   */
-  public initializeA2A(): void {
-    // If already initialized via DI, skip
-    if (this._a2aHandler) {
-      this.logger.debug(
-        '[Agent] A2A Handler already initialized via DI, skipping',
-      );
-      return;
-    }
-
-    // Fallback to old initialization if not injected via DI
-    if (this._messageBus) {
-      const handlerTimeout = Math.max(
-        180000,
-        (this.config.apiRequestTimeout || 60000) * 3,
-      );
-
-      this._a2aHandler = createA2AHandler(this._messageBus, {
-        instanceId: this.instanceId,
-        supportedTypes: ['task', 'query', 'event'],
-        handlerTimeout,
-      });
-
-      this.setupA2AHandlers();
-      this._a2aHandler.startListening();
-      this.logger.info('[Agent] A2A Handler initialized (legacy mode)');
-    }
-  }
-
-  /**
    * Setup A2A message handlers
-   * Called from constructor when A2AHandler is injected via DI,
-   * or from initializeA2A() as fallback
+   * Called from constructor when A2AHandler is injected via DI
    */
   private setupA2AHandlers(): void {
     if (!this._a2aHandler) {
@@ -395,13 +359,6 @@ export class Agent {
         '[Agent] Received A2A event',
       );
     });
-  }
-
-  /**
-   * Set the message bus for A2A communication
-   */
-  public setMessageBus(messageBus: IMessageBus): void {
-    this._messageBus = messageBus;
   }
 
   // ==================== Public API ====================

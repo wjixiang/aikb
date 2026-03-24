@@ -17,7 +17,6 @@ export function createDiagnosisAgentSoul(): AgentSoulConfig {
     },
     components: [
       {
-        id: 'bibliography-search',
         component: new BibliographySearchComponent(),
       },
     ],

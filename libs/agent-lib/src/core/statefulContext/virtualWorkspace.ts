@@ -30,8 +30,9 @@ import type { A2AHandler } from '../a2a/index.js';
 
 /** Component registration for DI-managed components */
 export interface DIComponentRegistration {
-  id: string;
+  /** Component instance (uses component.componentId as identifier) */
   component: ToolComponent;
+  /** Registration priority (higher = registered first) */
   priority?: number;
 }
 
@@ -88,8 +89,12 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     this._a2aHandler = a2aHandler;
 
     if (diComponents && diComponents.length > 0) {
-      for (const { id, component, priority } of diComponents) {
-        this.componentRegistry.register(id, component, priority);
+      for (const { component, priority } of diComponents) {
+        this.componentRegistry.register(
+          component.componentId,
+          component,
+          priority,
+        );
       }
     }
   }
@@ -100,9 +105,9 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     this.toolManager.registerProvider(this.globalToolProvider);
   }
 
-  protected _registerToolProvider(id: string, component: ToolComponent): void {
+  protected _registerToolProvider(component: ToolComponent): void {
     const provider = new ComponentToolProvider(
-      id,
+      component.componentId,
       component,
       this.notifyToolExecuted.bind(this),
     );
@@ -112,7 +117,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   private registerComponentTools(): void {
     const registrations = this.componentRegistry.getAllRegistrations();
     for (const registration of registrations) {
-      this._registerToolProvider(registration.id, registration.component);
+      this._registerToolProvider(registration.component);
     }
   }
 
@@ -410,7 +415,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     for (const registration of sortedRegistrations) {
       const componentContainer = new MdDiv(
-        { content: `## ${registration.id}`, styles: { showBorder: true } },
+        {
+          content: `## ${registration.component.componentId}`,
+          styles: { showBorder: true },
+        },
         [],
         1,
       );
@@ -472,7 +480,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     for (const registration of sortedRegistrations) {
       const componentContainer = new tdiv({
-        content: registration.id,
+        content: registration.component.componentId,
         styles: { showBorder: true },
       });
 
@@ -598,14 +606,17 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     for (const registration of registrations) {
       try {
         const result = await registration.component.exportData(options);
-        results[registration.id] = result;
+        results[registration.component.componentId] = result;
       } catch (error) {
-        results[registration.id] = {
+        results[registration.component.componentId] = {
           data: {
             error: error instanceof Error ? error.message : String(error),
           },
           format: options?.format ?? 'json',
-          metadata: { componentId: registration.id, error: true },
+          metadata: {
+            componentId: registration.component.componentId,
+            error: true,
+          },
         };
       }
     }
@@ -631,10 +642,13 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     for (const registration of registrations) {
       if (registration.component.exportState) {
         try {
-          states.set(registration.id, registration.component.exportState());
+          states.set(
+            registration.component.componentId,
+            registration.component.exportState(),
+          );
         } catch (error) {
           console.error(
-            `[VirtualWorkspace] Failed to export state for ${registration.id}:`,
+            `[VirtualWorkspace] Failed to export state for ${registration.component.componentId}:`,
             error,
           );
         }

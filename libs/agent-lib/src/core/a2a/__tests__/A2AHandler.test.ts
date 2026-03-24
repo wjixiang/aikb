@@ -6,7 +6,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { A2AHandler } from '../A2AHandler';
 import type { IMessageBus } from '../../runtime/topology/messaging/MessageBus';
 import type { A2AMessage, A2APayload } from '../types';
-import { createA2AMessage, createA2ATaskMessage, createA2AQueryMessage } from '../types';
+import {
+  createA2AMessage,
+  createA2ATaskMessage,
+  createA2AQueryMessage,
+} from '../types';
 
 // Mock implementations
 const createMockMessageBus = (): IMessageBus => {
@@ -37,7 +41,9 @@ describe('A2AHandler', () => {
   let messageBus: IMessageBus;
 
   const createTaskMessage = (from: string, to: string): A2AMessage => {
-    return createA2ATaskMessage(from, to, 'task-001', 'Test task', { query: 'test' });
+    return createA2ATaskMessage(from, to, 'task-001', 'Test task', {
+      query: 'test',
+    });
   };
 
   const createQueryMessage = (from: string, to: string): A2AMessage => {
@@ -82,7 +88,33 @@ describe('A2AHandler', () => {
 
       expect(result).toBeDefined();
       expect(result?.status).toBe('completed');
+      // Note: sendAck is NOT called automatically anymore - task is stored in pendingTasks
+      // Component should call acknowledge() when ready to process
+      expect(messageBus.sendAck).not.toHaveBeenCalled();
+      expect(messageBus.sendResult).toHaveBeenCalled();
+    });
+
+    it('should store task in pendingTasks and allow manual acknowledge', async () => {
+      const message = createTaskMessage('agent-002', 'test-agent-001');
+
+      handler.onTask(async (payload, ctx) => ({
+        taskId: 'task-001',
+        status: 'completed',
+        output: { result: 'success' },
+      }));
+
+      const result = await handler.handleMessage(message);
+
+      // Task should be in pendingTasks
+      const pending = handler.getPendingTasks();
+      expect(pending).toHaveLength(1);
+      expect(pending[0].conversationId).toBe(message.conversationId);
+
+      // Manual acknowledge should send ACK
+      await handler.acknowledge(message.conversationId);
       expect(messageBus.sendAck).toHaveBeenCalled();
+
+      // sendResult was called automatically after handler returned
       expect(messageBus.sendResult).toHaveBeenCalled();
     });
 

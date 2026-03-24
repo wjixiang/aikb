@@ -17,7 +17,6 @@ export function createManagementAgentSoul(): AgentSoulConfig {
     },
     components: [
       {
-        id: 'bibliography-search',
         component: new BibliographySearchComponent(),
       },
     ],

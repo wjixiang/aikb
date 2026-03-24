@@ -330,7 +330,7 @@ export class AgentContainer {
     if (this.config.components && this.config.components.length > 0) {
       this.container
         .bind<
-          Array<{ id: string; component: ToolComponent; priority?: number }>
+          Array<{ component: ToolComponent; priority?: number }>
         >(TYPES.ToolComponents)
         .toConstantValue(this.config.components);
     }

@@ -219,6 +219,24 @@ export type {
  */
 export { PaperAnalysisComponent } from './paperAnalysis/paperAnalysisComponent.js';
 
+// ==================== A2A Task Component ====================
+
+/**
+ * A2A Task Module
+ *
+ * A2A task acknowledgment and response management.
+ */
+export { A2ATaskComponent } from './A2AComponent/index.js';
+export {
+  a2aTaskToolSchemas,
+  type AcknowledgeTaskParams,
+  type CompleteTaskParams,
+  type FailTaskParams,
+  type SendTaskResultParams,
+  type GetPendingTasksParams,
+  type A2ATaskToolName,
+} from './A2AComponent/index.js';
+
 // ==================== Bookshelf Components ====================
 
 /**

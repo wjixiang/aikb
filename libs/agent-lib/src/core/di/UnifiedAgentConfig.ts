@@ -11,8 +11,9 @@ import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
 /** Component registration for DI injection */
 export interface DIComponentRegistration {
-  id: string;
+  /** Component instance (uses component.componentId as identifier) */
   component: ToolComponent;
+  /** Registration priority (higher = registered first) */
   priority?: number;
 }
 

@@ -17,7 +17,6 @@ export function createQualityOfLifeAgentSoul(): AgentSoulConfig {
     },
     components: [
       {
-        id: 'bibliography-search',
         component: new BibliographySearchComponent(),
       },
     ],

@@ -17,9 +17,7 @@ import { defaultUnifiedConfig } from '../di/UnifiedAgentConfig.js';
  * Component registration configuration
  */
 export interface ComponentRegistration {
-  /** Component identifier (e.g., 'bibliography-search') */
-  id: string;
-  /** Component instance */
+  /** Component instance (uses component.componentId as identifier) */
   component: ToolComponent;
   /** Registration priority (higher = registered first) */
   priority?: number;

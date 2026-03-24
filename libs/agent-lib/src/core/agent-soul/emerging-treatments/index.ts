@@ -17,7 +17,6 @@ export function createEmergingTreatmentsAgentSoul(): AgentSoulConfig {
     },
     components: [
       {
-        id: 'bibliography-search',
         component: new BibliographySearchComponent(),
       },
     ],

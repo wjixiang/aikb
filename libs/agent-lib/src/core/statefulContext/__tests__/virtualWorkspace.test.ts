@@ -34,9 +34,7 @@ describe('VirtualWorkspace (Component-based)', () => {
   describe('Component Registration', () => {
     it('should register a component via DI', async () => {
       const component = new TestComponent();
-      const diComponents: DIComponentRegistration[] = [
-        { id: 'test-component', component },
-      ];
+      const diComponents: DIComponentRegistration[] = [{ component }];
 
       const { workspace } = await createTestWorkspace(
         { id: 'di-test', name: 'DI Test' },
@@ -52,8 +50,8 @@ describe('VirtualWorkspace (Component-based)', () => {
       const component2 = new TestComponent2();
 
       const diComponents: DIComponentRegistration[] = [
-        { id: 'comp1', component: component1 },
-        { id: 'comp2', component: component2 },
+        { component: component1 },
+        { component: component2 },
       ];
 
       const { workspace } = await createTestWorkspace(
@@ -61,8 +59,9 @@ describe('VirtualWorkspace (Component-based)', () => {
         diComponents,
       );
 
-      expect(workspace.getComponent('comp1')).toBe(component1);
-      expect(workspace.getComponent('comp2')).toBe(component2);
+      // Components are registered with their componentId
+      expect(workspace.getComponent('test-component')).toBe(component1);
+      expect(workspace.getComponent('test-component-2')).toBe(component2);
     });
 
     it('should get all component keys', async () => {
@@ -70,8 +69,8 @@ describe('VirtualWorkspace (Component-based)', () => {
       const component2 = new TestComponent2();
 
       const diComponents: DIComponentRegistration[] = [
-        { id: 'comp1', component: component1 },
-        { id: 'comp2', component: component2 },
+        { component: component1 },
+        { component: component2 },
       ];
 
       const { workspace } = await createTestWorkspace(
@@ -80,17 +79,15 @@ describe('VirtualWorkspace (Component-based)', () => {
       );
 
       const keys = workspace.getComponentKeys();
-      expect(keys).toContain('comp1');
-      expect(keys).toContain('comp2');
+      expect(keys).toContain('test-component');
+      expect(keys).toContain('test-component-2');
     });
   });
 
   describe('Rendering', () => {
     it('should render workspace with registered components', async () => {
       const component = new TestComponent();
-      const diComponents: DIComponentRegistration[] = [
-        { id: 'test-component', component },
-      ];
+      const diComponents: DIComponentRegistration[] = [{ component }];
 
       const { workspace } = await createTestWorkspace(
         { id: 'render-test', name: 'Render Test' },
@@ -104,9 +101,7 @@ describe('VirtualWorkspace (Component-based)', () => {
 
     it('should render components section', async () => {
       const component = new TestComponent();
-      const diComponents: DIComponentRegistration[] = [
-        { id: 'test-component', component },
-      ];
+      const diComponents: DIComponentRegistration[] = [{ component }];
 
       const { workspace } = await createTestWorkspace(
         { id: 'section-test', name: 'Section Test' },
@@ -122,9 +117,7 @@ describe('VirtualWorkspace (Component-based)', () => {
   describe('Tool Management', () => {
     it('should get available tools from components', async () => {
       const component = new TestComponent();
-      const diComponents: DIComponentRegistration[] = [
-        { id: 'test-component', component },
-      ];
+      const diComponents: DIComponentRegistration[] = [{ component }];
 
       const { workspace } = await createTestWorkspace(
         { id: 'tool-test', name: 'Tool Test' },
@@ -138,9 +131,7 @@ describe('VirtualWorkspace (Component-based)', () => {
 
     it('should check if tool is available', async () => {
       const component = new TestComponent();
-      const diComponents: DIComponentRegistration[] = [
-        { id: 'test-component', component },
-      ];
+      const diComponents: DIComponentRegistration[] = [{ component }];
 
       const { workspace } = await createTestWorkspace(
         { id: 'avail-test', name: 'Avail Test' },
@@ -153,9 +144,7 @@ describe('VirtualWorkspace (Component-based)', () => {
 
     it('should execute tool call', async () => {
       const component = new TestComponent();
-      const diComponents: DIComponentRegistration[] = [
-        { id: 'test-component', component },
-      ];
+      const diComponents: DIComponentRegistration[] = [{ component }];
 
       const { workspace } = await createTestWorkspace(
         { id: 'exec-test', name: 'Exec Test' },
@@ -181,9 +170,7 @@ describe('VirtualWorkspace (Component-based)', () => {
 
     it('should get workspace stats', async () => {
       const component = new TestComponent();
-      const diComponents: DIComponentRegistration[] = [
-        { id: 'test-component', component },
-      ];
+      const diComponents: DIComponentRegistration[] = [{ component }];
 
       const { workspace } = await createTestWorkspace(
         { id: 'stats-test', name: 'Stats Test' },
@@ -199,9 +186,7 @@ describe('VirtualWorkspace (Component-based)', () => {
   describe('render component according to render mode', () => {
     it('should render in markdown', async () => {
       const component = new TestComponent();
-      const diComponents: DIComponentRegistration[] = [
-        { id: 'test-component', component },
-      ];
+      const diComponents: DIComponentRegistration[] = [{ component }];
 
       const container = new AgentContainer({
         api: { apiKey: 'test-key' },
