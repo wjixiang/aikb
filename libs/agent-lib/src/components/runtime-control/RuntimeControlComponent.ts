@@ -42,6 +42,8 @@ import {
   type StopAgentParams,
   type ListAgentsParams,
   type GetAgentParams,
+  type ListAgentSoulsParams,
+  type CreateAgentByTypeParams,
   type RegisterInTopologyParams,
   type UnregisterFromTopologyParams,
   type ConnectAgentsParams,
@@ -57,6 +59,7 @@ import type {
   TopologyEdge,
   RoutingStats,
 } from '../../core/runtime/types.js';
+import { agentSoulRegistry, createAgentSoulByType } from '../../core/index.js';
 
 /**
  * RuntimeControlComponent - Provides tools for Agent lifecycle management
@@ -121,6 +124,9 @@ This component enables creation and management of child agents for distributed t
       ['getStats', runtimeControlToolSchemas.getStats],
       ['listChildAgents', runtimeControlToolSchemas.listChildAgents],
       ['getMyInfo', runtimeControlToolSchemas.getMyInfo],
+      // Agent Soul tools
+      ['listAgentSouls', runtimeControlToolSchemas.listAgentSouls],
+      ['createAgentByType', runtimeControlToolSchemas.createAgentByType],
       // Topology tools
       ['registerInTopology', runtimeControlToolSchemas.registerInTopology],
       [
@@ -177,6 +183,15 @@ This component enables creation and management of child agents for distributed t
           return await this.handleListChildAgents();
         case 'getMyInfo':
           return await this.handleGetMyInfo();
+        // Agent Soul tools
+        case 'listAgentSouls':
+          return await this.handleListAgentSouls(
+            params as ListAgentSoulsParams,
+          );
+        case 'createAgentByType':
+          return await this.handleCreateAgentByType(
+            params as CreateAgentByTypeParams,
+          );
         // Topology tools
         case 'registerInTopology':
           return await this.handleRegisterInTopology(
@@ -686,6 +701,133 @@ This component enables creation and management of child agents for distributed t
       },
       summary: `[RuntimeControl] Got agent info for: ${client.getSelfInstanceId()}`,
     };
+  }
+
+  // ============================================
+  // Agent Soul Tool Handlers
+  // ============================================
+
+  private async handleListAgentSouls(params: ListAgentSoulsParams): Promise<
+    ToolCallResult<{
+      souls: Array<{
+        type: string;
+        name: string;
+        description: string;
+        capabilities: string[];
+      }>;
+    }>
+  > {
+    try {
+      let souls = agentSoulRegistry.getAll();
+
+      if (params.capability) {
+        souls = agentSoulRegistry.getByCapability(params.capability);
+      }
+
+      return {
+        success: true,
+        data: {
+          souls: souls.map((s) => ({
+            type: s.type,
+            name: s.name,
+            description: s.description,
+            capabilities: s.capabilities,
+          })),
+        },
+        summary: `[RuntimeControl] Listed ${souls.length} available agent soul(s)`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: (error as Error).message,
+          souls: [],
+        } as unknown as {
+          souls: Array<{
+            type: string;
+            name: string;
+            description: string;
+            capabilities: string[];
+          }>;
+        },
+        summary: `[RuntimeControl] Failed to list agent souls: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  private async handleCreateAgentByType(
+    params: CreateAgentByTypeParams,
+  ): Promise<
+    ToolCallResult<{
+      instanceId: string;
+      name: string;
+      soulType: string;
+      createdAt: string;
+    }>
+  > {
+    const client = this.getRuntimeClient();
+    if (!client) {
+      return {
+        success: false,
+        data: {
+          error: 'Runtime control not available',
+          instanceId: '',
+          name: '',
+          soulType: params.soulType,
+          createdAt: '',
+        } as unknown as {
+          instanceId: string;
+          name: string;
+          soulType: string;
+          createdAt: string;
+        },
+        summary: '[RuntimeControl] Runtime control not available',
+      };
+    }
+
+    try {
+      const soulConfig = createAgentSoulByType(params.soulType as any);
+      const agentConfig = soulConfig.agent;
+      const name =
+        params.name || agentConfig?.name || `${params.soulType} Agent`;
+
+      const instanceId = await client.createAgent({
+        agent: {
+          name,
+          type: params.soulType,
+          description: agentConfig?.description,
+          sop: agentConfig?.sop,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          instanceId,
+          name,
+          soulType: params.soulType,
+          createdAt: new Date().toISOString(),
+        },
+        summary: `[RuntimeControl] Created ${name} (${params.soulType}) with id ${instanceId}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: (error as Error).message,
+          instanceId: '',
+          name: params.name || '',
+          soulType: params.soulType,
+          createdAt: '',
+        } as unknown as {
+          instanceId: string;
+          name: string;
+          soulType: string;
+          createdAt: string;
+        },
+        summary: `[RuntimeControl] Failed to create agent: ${(error as Error).message}`,
+      };
+    }
   }
 
   // ============================================

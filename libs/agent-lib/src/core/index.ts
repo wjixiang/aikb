@@ -20,6 +20,18 @@ export type { AgentConfig } from './agent/agent.js';
 export type { AgentFactoryOptions } from './agent/AgentFactory.js';
 export * from './agent/ObservableAgent.js';
 
+// Agent Soul
+export {
+  createAgentSoulByType,
+  getAvailableAgentSoulTypes,
+} from './agent-soul/index.js';
+export type { AgentSoulType } from './agent-soul/index.js';
+export { AgentSoulRegistry, agentSoulRegistry } from './AgentSoulRegistry.js';
+export type {
+  AgentSoulEntry,
+  IAgentSoulRegistry,
+} from './AgentSoulRegistry.js';
+
 // Assistant Message
 export { NativeToolCallParser } from './assistant-message/NativeToolCallParser.js';
 

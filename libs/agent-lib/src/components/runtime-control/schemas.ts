@@ -29,6 +29,36 @@ export const createAgentParamsSchema = z.object({
 export type CreateAgentParams = z.infer<typeof createAgentParamsSchema>;
 
 /**
+ * Schema for listing available agent souls
+ */
+export const listAgentSoulsParamsSchema = z.object({
+  capability: z
+    .string()
+    .optional()
+    .describe(
+      'Filter by capability (e.g., "literature-search", "paper-analysis")',
+    ),
+});
+
+export type ListAgentSoulsParams = z.infer<typeof listAgentSoulsParamsSchema>;
+
+/**
+ * Schema for creating an agent by soul type
+ */
+export const createAgentByTypeParamsSchema = z.object({
+  soulType: z
+    .string()
+    .describe(
+      'Type of agent soul to create (e.g., "epidemiology", "pathophysiology", "diagnosis", etc.)',
+    ),
+  name: z.string().optional().describe('Optional custom name for the agent'),
+});
+
+export type CreateAgentByTypeParams = z.infer<
+  typeof createAgentByTypeParamsSchema
+>;
+
+/**
  * Schema for destroying an agent via tool call
  */
 export const destroyAgentParamsSchema = z.object({
@@ -203,6 +233,17 @@ export const runtimeControlToolSchemas = {
     desc: 'Get information about this agent (its own instanceId, permissions, etc.)',
     paramsSchema: z.object({}),
   },
+  // Agent Soul tools
+  listAgentSouls: {
+    toolName: 'listAgentSouls',
+    desc: 'List all available agent soul types that can be created. Use this to discover what specialized agents are available.',
+    paramsSchema: listAgentSoulsParamsSchema,
+  },
+  createAgentByType: {
+    toolName: 'createAgentByType',
+    desc: 'Create a new child agent using a predefined soul type (e.g., "epidemiology", "pathophysiology"). Use this for specialized literature search tasks.',
+    paramsSchema: createAgentByTypeParamsSchema,
+  },
   // Topology tools
   registerInTopology: {
     toolName: 'registerInTopology',
@@ -255,6 +296,21 @@ export interface RuntimeControlToolReturnTypes {
     name?: string;
     agentType?: string;
     parentInstanceId?: string;
+  };
+  // Agent Soul tools
+  listAgentSouls: {
+    souls: Array<{
+      type: string;
+      name: string;
+      description: string;
+      capabilities: string[];
+    }>;
+  };
+  createAgentByType: {
+    instanceId: string;
+    name: string;
+    soulType: string;
+    createdAt: string;
   };
   // Topology tools
   registerInTopology: { success: boolean; instanceId: string };
