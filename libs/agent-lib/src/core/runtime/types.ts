@@ -12,6 +12,7 @@
 import type { AgentStatus } from '../common/types.js';
 import type { A2ATaskResult } from '../a2a/types.js';
 import type { IMessageBus } from './topology/messaging/MessageBus.js';
+import type { DIComponentRegistration } from '../di/UnifiedAgentConfig.js';
 
 // =============================================================================
 // Agent Metadata
@@ -225,12 +226,6 @@ export interface AgentSoul {
   metadata?: Record<string, unknown>;
 }
 
-export interface ComponentRegistration {
-  id: string;
-  component: unknown;
-  priority?: number;
-}
-
 export interface ObservableAgentCallbacks {
   onAgentStart?: () => void;
   onAgentStop?: () => void;
@@ -264,7 +259,7 @@ export interface RuntimeControlAgentOptions {
   api?: Partial<RuntimeControlProviderSettings>;
   workspace?: Partial<RuntimeControlVirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;
-  components?: ComponentRegistration[];
+  components?: DIComponentRegistration[];
   hooks?: HookConfig;
   parentInstanceId?: string;
   messageBus?: IMessageBus;

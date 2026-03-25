@@ -782,7 +782,7 @@ This component enables creation and management of child agents for distributed t
         params.name || agentConfig?.name || `${params.soulType} Agent`;
 
       console.log(
-        `[RuntimeControl] Creating agent by type: ${params.soulType}, name: ${name}`,
+        `[RuntimeControl] Creating agent by type: ${params.soulType}, name: ${name}, components: ${soulConfig.components?.length || 0}`,
       );
 
       const instanceId = await client.createAgent({
@@ -792,6 +792,7 @@ This component enables creation and management of child agents for distributed t
           description: agentConfig?.description,
           sop: agentConfig?.sop,
         },
+        components: soulConfig.components,
       });
 
       console.log(

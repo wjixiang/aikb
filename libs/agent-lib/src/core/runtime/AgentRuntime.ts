@@ -1140,7 +1140,9 @@ export class AgentRuntime implements IAgentRuntime {
   }
 
   getRegistry(): IAgentCardRegistry {
-    return this.registry as unknown as IAgentCardRegistry;
+    // Return the global AgentCardRegistry for A2A service discovery
+    // This is different from this.registry (AgentRegistry) which tracks metadata
+    return getGlobalAgentRegistry();
   }
 
   createUserContext(options?: {
