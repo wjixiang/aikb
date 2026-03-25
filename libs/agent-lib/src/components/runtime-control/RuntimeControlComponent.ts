@@ -465,7 +465,7 @@ This component enables creation and management of child agents for distributed t
    */
   private async handleStartAgent(
     params: StartAgentParams,
-  ): Promise<ToolCallResult<{ success: boolean; agent?: AgentMetadata }>> {
+  ): Promise<ToolCallResult<{ success: boolean; alias?: string }>> {
     const client = this.getRuntimeClient();
     if (!client) {
       return {
@@ -492,9 +492,9 @@ This component enables creation and management of child agents for distributed t
 
       return {
         success: true,
-        data: { success: true, agent },
+        data: { success: true, alias: agent?.alias },
         summary: agent
-          ? `[RuntimeControl] Sent start request to agent: ${params.agentId} (${agent.name}) alias: ${agent.alias}`
+          ? `[RuntimeControl] Sent start request to agent: ${agent.name} (${agent.alias})`
           : `[RuntimeControl] Sent start request to agent: ${params.agentId}`,
       };
     } catch (error) {
@@ -796,10 +796,10 @@ This component enables creation and management of child agents for distributed t
   ): Promise<
     ToolCallResult<{
       instanceId: string;
+      alias: string;
       name: string;
       soulType: string;
       createdAt: string;
-      agent?: AgentMetadata;
     }>
   > {
     const client = this.getRuntimeClient();
@@ -809,11 +809,13 @@ This component enables creation and management of child agents for distributed t
         data: {
           error: 'Runtime control not available',
           instanceId: '',
+          alias: '',
           name: '',
           soulType: params.soulType,
           createdAt: '',
         } as unknown as {
           instanceId: string;
+          alias: string;
           name: string;
           soulType: string;
           createdAt: string;
@@ -844,12 +846,12 @@ This component enables creation and management of child agents for distributed t
         success: true,
         data: {
           instanceId,
+          alias: agent?.alias || instanceId,
           name,
           soulType: params.soulType,
           createdAt: new Date().toISOString(),
-          agent,
         },
-        summary: `[RuntimeControl] Created ${name} (${params.soulType}) with id ${instanceId}`,
+        summary: `[RuntimeControl] Created ${name} (${agent?.alias || instanceId})`,
       };
     } catch (error) {
       return {
@@ -857,15 +859,16 @@ This component enables creation and management of child agents for distributed t
         data: {
           error: (error as Error).message,
           instanceId: '',
+          alias: '',
           name: params.name || '',
           soulType: params.soulType,
           createdAt: '',
         } as unknown as {
           instanceId: string;
+          alias: string;
           name: string;
           soulType: string;
           createdAt: string;
-          agent?: AgentMetadata;
         },
         summary: `[RuntimeControl] Failed to create agent: ${(error as Error).message}`,
       };

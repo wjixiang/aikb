@@ -365,7 +365,7 @@ export type RuntimeControlToolName = keyof typeof runtimeControlToolSchemas;
 export interface RuntimeControlToolReturnTypes {
   createAgent: { instanceId: string; name: string; createdAt: string };
   destroyAgent: { success: boolean; destroyedCount: number };
-  startAgent: { success: boolean; agent?: AgentMetadata };
+  startAgent: { success: boolean; alias?: string };
   stopAgent: { success: boolean };
   listAgents: { agents: AgentMetadata[] };
   getAgent: AgentMetadata | null;
@@ -388,10 +388,10 @@ export interface RuntimeControlToolReturnTypes {
   };
   createAgentByType: {
     instanceId: string;
+    alias: string;
     name: string;
     soulType: string;
     createdAt: string;
-    agent?: AgentMetadata;
   };
   // Topology tools
   registerInTopology: { success: boolean; instanceId: string };
