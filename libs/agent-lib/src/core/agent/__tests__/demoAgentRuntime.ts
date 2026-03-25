@@ -25,7 +25,8 @@ import pino from 'pino';
 // Load .env BEFORE importing souls (they use process.env at module level)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenvConfig({ path: join(__dirname, '..', '..', '..', '..', '.env') });
+// dotenvConfig({ path: join(__dirname, '..', '..', '..', '..', '.env') });
+dotenvConfig()
 
 import { createAgentRuntime } from '../../runtime';
 import type { RuntimeEvent } from '../../runtime/types.js';

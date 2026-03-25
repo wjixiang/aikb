@@ -1,4 +1,5 @@
 import { injectable, inject, optional, postConstruct } from 'inversify';
+import pino from 'pino';
 import {
   ToolComponent,
   type VirtualWorkspaceConfig,
@@ -63,6 +64,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     new Map();
   private globalToolProvider: GlobalToolProvider;
   private _a2aHandler?: A2AHandler;
+  private logger = pino({
+    level: process.env['LOG_LEVEL'] || 'debug',
+    timestamp: pino.stdTimeFunctions.isoTime,
+  });
 
   constructor(
     @inject(TYPES.IToolManager) toolManager: IToolManager,
@@ -135,6 +140,19 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   getComponentKeys(): string[] {
     return this.componentRegistry.getIds();
+  }
+
+  /**
+   * Add a component dynamically after initialization
+   * This registers the component and its tools
+   */
+  addComponent(component: ToolComponent): void {
+    this.componentRegistry.register(component.componentId, component);
+    this._registerToolProvider(component);
+    this.logger.debug(
+      { componentId: component.componentId },
+      'Component added dynamically',
+    );
   }
 
   getA2AHandler(): A2AHandler | undefined {

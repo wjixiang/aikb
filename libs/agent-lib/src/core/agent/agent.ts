@@ -36,6 +36,10 @@ import type { ISessionManager } from '../session/ISessionManager.js';
 import type { SessionState } from '../session/types.js';
 import pino from 'pino';
 import type { IRuntimeControlClient } from '../runtime/types.js';
+import {
+  RuntimeControlComponent,
+  type RuntimeControlComponentConfig,
+} from '../../components/runtime-control/index.js';
 
 export interface AgentConfig {
   apiRequestTimeout: number;
@@ -687,6 +691,16 @@ export class Agent {
    */
   setRuntimeClient(client: IRuntimeControlClient): void {
     this._runtimeClient = client;
+
+    const runtimeControlConfig: RuntimeControlComponentConfig = {
+      instanceId: this.instanceId,
+      getRuntimeClient: () => client,
+    };
+    const runtimeControlComponent = new RuntimeControlComponent(
+      runtimeControlConfig,
+    );
+    this.workspace.addComponent(runtimeControlComponent);
+
     this.logger.info('[Agent] Runtime control client set');
   }
 
