@@ -1,6 +1,9 @@
 // 综合检索 Agent（保留原有）
 export { createBibRetrieveAgentSoul } from './article-retrieve/index.js';
 
+// 协调者 Agent
+export { createCoordinatorAgentSoul } from './coordinator/index.js';
+
 // 独立模块 Agents
 export {
   createEpidemiologyAgentSoul,
@@ -34,6 +37,7 @@ import { createDiagnosisAgentSoul } from './diagnosis/index.js';
 import { createManagementAgentSoul } from './management/index.js';
 import { createQualityOfLifeAgentSoul } from './quality-of-life/index.js';
 import { createEmergingTreatmentsAgentSoul } from './emerging-treatments/index.js';
+import { createCoordinatorAgentSoul } from './coordinator/index.js';
 import { AgentSoulConfig } from '../agent/AgentFactory';
 
 export type AgentSoulType =

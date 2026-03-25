@@ -27,6 +27,14 @@ export * from './agent/ObservableAgent.js';
 export {
   createAgentSoulByType,
   getAvailableAgentSoulTypes,
+  createBibRetrieveAgentSoul,
+  createEpidemiologyAgentSoul,
+  createPathophysiologyAgentSoul,
+  createDiagnosisAgentSoul,
+  createManagementAgentSoul,
+  createQualityOfLifeAgentSoul,
+  createEmergingTreatmentsAgentSoul,
+  createCoordinatorAgentSoul,
 } from './agent-soul/index.js';
 export type { AgentSoulType } from './agent-soul/index.js';
 export { AgentSoulRegistry, agentSoulRegistry } from './AgentSoulRegistry.js';
