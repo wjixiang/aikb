@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { A2ATaskResult } from '../../core/a2a/types.js';
 
 /**
  * Schema for acknowledging a task
@@ -71,6 +72,29 @@ export const getPendingTasksParamsSchema = z
 export type GetPendingTasksParams = z.infer<typeof getPendingTasksParamsSchema>;
 
 /**
+ * Schema for sending a task to another agent
+ */
+export const sendTaskParamsSchema = z.object({
+  targetAgentId: z
+    .string()
+    .describe('Agent ID of the target agent to send the task to'),
+  taskId: z.string().describe('Unique task identifier'),
+  description: z.string().describe('Description of the task'),
+  input: z
+    .record(z.unknown())
+    .optional()
+    .default({})
+    .describe('Input data for the task'),
+  priority: z
+    .enum(['low', 'normal', 'high', 'urgent'])
+    .optional()
+    .default('normal')
+    .describe('Task priority'),
+});
+
+export type SendTaskParams = z.infer<typeof sendTaskParamsSchema>;
+
+/**
  * Tool schema definitions
  */
 export const a2aTaskToolSchemas = {
@@ -99,6 +123,11 @@ export const a2aTaskToolSchemas = {
     desc: 'Get all pending A2A tasks awaiting acknowledgment or response.',
     paramsSchema: getPendingTasksParamsSchema,
   },
+  sendTask: {
+    toolName: 'sendTask',
+    desc: 'Send a task to another agent and wait for the result.',
+    paramsSchema: sendTaskParamsSchema,
+  },
 } as const;
 
 export type A2ATaskToolName = keyof typeof a2aTaskToolSchemas;
@@ -124,6 +153,11 @@ export interface A2ATaskToolReturnTypes {
       };
       receivedAt: number;
     }>;
+  };
+  sendTask: {
+    success: boolean;
+    result?: A2ATaskResult;
+    error?: string;
   };
 }
 

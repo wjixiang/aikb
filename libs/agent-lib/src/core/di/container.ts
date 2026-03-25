@@ -30,8 +30,10 @@ import {
 import type { TestOverrides } from './types.js';
 import { ToolComponent } from '../../components/core/toolComponent.js';
 import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
-import { createA2AHandler } from '../a2a/index.js';
+import { createA2AHandler, createA2AClient } from '../a2a/index.js';
 import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
+import type { IA2AClient } from '../a2a/index.js';
+import { getGlobalAgentRegistry } from '../a2a/index.js';
 import { A2ATaskComponent } from '../../components/A2AComponent/A2ATaskComponent.js';
 import {
   RuntimeControlComponent,
@@ -272,6 +274,18 @@ export class AgentContainer {
       this.container
         .bind<IA2AHandler>(TYPES.IA2AHandler)
         .toDynamicValue(() => a2aHandler)
+        .inSingletonScope();
+    }
+
+    // A2A Client (singleton within container, depends on IMessageBus)
+    if (this.messageBus) {
+      const agentRegistry = getGlobalAgentRegistry();
+      const a2aClient = createA2AClient(this.messageBus, agentRegistry, {
+        instanceId: this.instanceId,
+      });
+      this.container
+        .bind<IA2AClient>(TYPES.IA2AClient)
+        .toDynamicValue(() => a2aClient)
         .inSingletonScope();
     }
 

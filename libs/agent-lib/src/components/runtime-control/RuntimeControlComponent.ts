@@ -38,7 +38,6 @@ import {
   type RuntimeControlToolReturnType,
   type CreateAgentParams,
   type DestroyAgentParams,
-  type StartAgentParams,
   type StopAgentParams,
   type ListAgentsParams,
   type GetAgentParams,
@@ -78,7 +77,7 @@ This component enables creation and management of child agents for distributed t
 **Workflow:**
 1. Create child agents using createAgent when parallel processing is needed
 2. Monitor agent status using listAgents and getAgent
-3. Control agent lifecycle with startAgent and stopAgent
+3. Control agent lifecycle with stopAgent
 4. Establish agent connections via registerInTopology and connectAgents
 
 **Best Practices:**
@@ -117,7 +116,6 @@ This component enables creation and management of child agents for distributed t
     ][] = [
       ['createAgent', runtimeControlToolSchemas.createAgent],
       ['destroyAgent', runtimeControlToolSchemas.destroyAgent],
-      ['startAgent', runtimeControlToolSchemas.startAgent],
       ['stopAgent', runtimeControlToolSchemas.stopAgent],
       ['listAgents', runtimeControlToolSchemas.listAgents],
       ['getAgent', runtimeControlToolSchemas.getAgent],
@@ -169,8 +167,6 @@ This component enables creation and management of child agents for distributed t
           return await this.handleCreateAgent(params as CreateAgentParams);
         case 'destroyAgent':
           return await this.handleDestroyAgent(params as DestroyAgentParams);
-        case 'startAgent':
-          return await this.handleStartAgent(params as StartAgentParams);
         case 'stopAgent':
           return await this.handleStopAgent(params as StopAgentParams);
         case 'listAgents':
@@ -455,56 +451,6 @@ This component enables creation and management of child agents for distributed t
           destroyedCount: 0,
         } as unknown as { success: boolean; destroyedCount: number },
         summary: `[RuntimeControl] Failed to destroy agent: ${(error as Error).message}`,
-      };
-    }
-  }
-
-  /**
-   * Handle startAgent tool call
-   * Sends an A2A task to the target agent to start its work
-   */
-  private async handleStartAgent(
-    params: StartAgentParams,
-  ): Promise<ToolCallResult<{ success: boolean; alias?: string }>> {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return {
-        success: false,
-        data: { error: 'Runtime control not available' } as unknown as {
-          success: boolean;
-        },
-        summary: '[RuntimeControl] Runtime control not available',
-      };
-    }
-
-    try {
-      const resolvedAgentId = client.resolveAgentId(params.agentId);
-      const agents = await client.listAgents();
-      const agent = agents.find((a) => a.instanceId === resolvedAgentId);
-
-      await client.sendA2ATask(
-        params.agentId,
-        `start-${resolvedAgentId}-${Date.now()}`,
-        'start',
-        { source: 'runtime-control' },
-        { priority: 'high' },
-      );
-
-      return {
-        success: true,
-        data: { success: true, alias: agent?.alias },
-        summary: agent
-          ? `[RuntimeControl] Sent start request to agent: ${agent.name} (${agent.alias})`
-          : `[RuntimeControl] Sent start request to agent: ${params.agentId}`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: {
-          error: (error as Error).message,
-          success: false,
-        } as unknown as { success: boolean },
-        summary: `[RuntimeControl] Failed to start agent: ${(error as Error).message}`,
       };
     }
   }

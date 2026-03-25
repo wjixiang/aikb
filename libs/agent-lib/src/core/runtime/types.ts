@@ -59,7 +59,7 @@ export interface RuntimeStats {
  * IRuntimeControlClient - Runtime control interface for Agents
  *
  * All agents have equal capabilities to:
- * - Create/destroy/start/stop agents
+ * - Create/destroy/stop agents
  * - Manage topology (register, connect agents)
  * - Query runtime state
  * - Send A2A messages to other agents
@@ -70,7 +70,6 @@ export interface IRuntimeControlClient {
   // ============================================
 
   createAgent(options: RuntimeControlAgentOptions): Promise<string>;
-  startAgent(instanceId: string): Promise<void>;
   stopAgent(instanceId: string): Promise<void>;
   destroyAgent(
     instanceId: string,

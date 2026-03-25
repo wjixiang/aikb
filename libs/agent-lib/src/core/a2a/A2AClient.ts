@@ -47,14 +47,27 @@ export interface IA2AClient {
     targetAgentId: string,
     output: unknown,
     status: A2ATaskStatus,
-    options?: { conversationId?: string; referenceId?: string; taskId?: string; error?: string },
+    options?: {
+      conversationId?: string;
+      referenceId?: string;
+      taskId?: string;
+      error?: string;
+    },
   ): Promise<void>;
 
   /** Send an event notification to another agent */
-  sendEvent(targetAgentId: string, eventType: string, data: unknown): Promise<void>;
+  sendEvent(
+    targetAgentId: string,
+    eventType: string,
+    data: unknown,
+  ): Promise<void>;
 
   /** Send a cancel message for a task */
-  sendCancel(targetAgentId: string, taskId: string, conversationId: string): Promise<void>;
+  sendCancel(
+    targetAgentId: string,
+    taskId: string,
+    conversationId: string,
+  ): Promise<void>;
 
   /** Get the client instance ID */
   getInstanceId(): string;
@@ -101,8 +114,47 @@ export class A2AClient implements IA2AClient {
     options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
   ): Promise<A2ATaskResult> {
     this.logger.info(
-      { targetAgentId, taskId, description },
+      {
+        targetAgentId,
+        taskId,
+        description,
+        priority: options?.priority ?? 'normal',
+      },
       'Sending task to agent',
+    );
+
+    // Check if target agent exists in registry
+    if (!this.agentRegistry.hasAgent(targetAgentId)) {
+      const availableAgents = this.agentRegistry
+        .getAllAgents()
+        .map((a) => `${a.name} (${a.instanceId})`)
+        .join(', ');
+
+      this.logger.error(
+        {
+          targetAgentId,
+          taskId,
+          availableAgents: availableAgents || 'none',
+        },
+        'Target agent not found in registry',
+      );
+
+      throw new Error(
+        `Target agent not found: ${targetAgentId}. Available agents: ${availableAgents || 'none'}`,
+      );
+    }
+
+    // Get target agent info for better logging
+    const targetAgent = this.agentRegistry.getAgent(targetAgentId);
+    this.logger.info(
+      {
+        targetAgentId,
+        targetAgentName: targetAgent?.name ?? 'unknown',
+        taskId,
+        priority: options?.priority ?? 'normal',
+        capabilities: targetAgent?.capabilities ?? [],
+      },
+      'Target agent found, proceeding with task send',
     );
 
     // Create A2A task message
@@ -125,13 +177,50 @@ export class A2AClient implements IA2AClient {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
+        this.logger.debug(
+          {
+            attempt,
+            taskId,
+            targetAgentId,
+            conversationId: a2aMessage.conversationId,
+          },
+          `Sending task attempt ${attempt}/${maxAttempts}`,
+        );
+
         // Send via MessageBus and wait for result
         const ack = await this.messageBus.send(topologyMessage);
+
+        this.logger.info(
+          {
+            taskId,
+            messageId: ack.messageId,
+            conversationId: a2aMessage.conversationId,
+          },
+          'Task sent successfully, received ACK',
+        );
 
         this.logger.debug({ ack: ack.messageId }, 'Received ACK for task');
 
         // Wait for result
+        this.logger.info(
+          {
+            taskId,
+            conversationId: a2aMessage.conversationId,
+            timeoutMs: this.defaultTimeout,
+          },
+          'Waiting for task result',
+        );
+
         const result = await this.waitForResult(a2aMessage.conversationId);
+
+        this.logger.info(
+          {
+            taskId,
+            conversationId: a2aMessage.conversationId,
+            status: (result.content as A2APayload).status,
+          },
+          'Task result received successfully',
+        );
 
         return this.parseTaskResult(result.content as A2APayload);
       } catch (error) {
@@ -143,7 +232,14 @@ export class A2AClient implements IA2AClient {
 
         if (isTimeout && hasRetries) {
           this.logger.warn(
-            { attempt, maxAttempts, backoffMs, error: lastError.message },
+            {
+              attempt,
+              maxAttempts,
+              backoffMs: backoffMs * attempt,
+              error: lastError.message,
+              taskId,
+              conversationId: a2aMessage.conversationId,
+            },
             'Task timed out, retrying with backoff',
           );
           await this.sleep(backoffMs * attempt); // Exponential backoff
@@ -243,7 +339,11 @@ export class A2AClient implements IA2AClient {
   /**
    * Send an event notification to another agent
    */
-  async sendEvent(targetAgentId: string, eventType: string, data: unknown): Promise<void> {
+  async sendEvent(
+    targetAgentId: string,
+    eventType: string,
+    data: unknown,
+  ): Promise<void> {
     this.logger.info({ targetAgentId, eventType }, 'Sending event to agent');
 
     // Create A2A event message
@@ -262,8 +362,15 @@ export class A2AClient implements IA2AClient {
   /**
    * Send a cancel message for a task
    */
-  async sendCancel(targetAgentId: string, taskId: string, conversationId: string): Promise<void> {
-    this.logger.info({ targetAgentId, taskId, conversationId }, 'Sending cancel to agent');
+  async sendCancel(
+    targetAgentId: string,
+    taskId: string,
+    conversationId: string,
+  ): Promise<void> {
+    this.logger.info(
+      { targetAgentId, taskId, conversationId },
+      'Sending cancel to agent',
+    );
 
     const payload: A2APayload = {
       taskId,
@@ -317,8 +424,13 @@ export class A2AClient implements IA2AClient {
         return conversation.result;
       }
 
-      if (conversation?.status === 'failed' || conversation?.status === 'timeout') {
-        throw new Error(`Conversation ${conversation.status}: ${conversationId}`);
+      if (
+        conversation?.status === 'failed' ||
+        conversation?.status === 'timeout'
+      ) {
+        throw new Error(
+          `Conversation ${conversation.status}: ${conversationId}`,
+        );
       }
 
       // Wait a bit before checking again

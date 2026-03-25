@@ -6,7 +6,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { A2AClient } from '../A2AClient';
 import { AgentCardRegistry } from '../AgentCard';
 import type { IMessageBus } from '../../runtime/topology/messaging/MessageBus';
-import type { TopologyMessage, Conversation } from '../../runtime/topology/types';
+import type {
+  TopologyMessage,
+  Conversation,
+} from '../../runtime/topology/types';
 
 // Mock implementations
 const createMockMessageBus = (): IMessageBus => {
@@ -98,6 +101,16 @@ describe('A2AClient', () => {
       const description = 'Search PubMed for papers';
       const input = { query: 'cancer treatment' };
 
+      registry.register({
+        instanceId: 'agent-002',
+        name: 'Agent 002',
+        description: 'Test agent',
+        version: '1.0.0',
+        capabilities: [],
+        skills: [],
+        endpoint: 'agent-002',
+      });
+
       await client.sendTask('agent-002', taskId, description, input);
 
       expect(messageBus.send).toHaveBeenCalled();
@@ -110,7 +123,23 @@ describe('A2AClient', () => {
     });
 
     it('should include priority when specified', async () => {
-      await client.sendTask('agent-002', 'task-001', 'test', {}, { priority: 'high' });
+      registry.register({
+        instanceId: 'agent-002',
+        name: 'Agent 002',
+        description: 'Test agent',
+        version: '1.0.0',
+        capabilities: [],
+        skills: [],
+        endpoint: 'agent-002',
+      });
+
+      await client.sendTask(
+        'agent-002',
+        'task-001',
+        'test',
+        {},
+        { priority: 'high' },
+      );
 
       const sentMessage = (messageBus.send as any).mock.calls[0][0];
       expect(sentMessage.content.content.priority).toBe('high');

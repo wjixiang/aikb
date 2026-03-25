@@ -40,7 +40,6 @@ describe('RuntimeControlComponent', () => {
     return {
       createAgent: vi.fn(() => Promise.resolve('child-agent-id-' + Date.now())),
       destroyAgent: vi.fn(() => Promise.resolve()),
-      startAgent: vi.fn(() => Promise.resolve()),
       stopAgent: vi.fn(() => Promise.resolve()),
       resolveAgentId: vi.fn((id: string) => id),
       getAgent: vi.fn((id) =>
@@ -102,10 +101,9 @@ describe('RuntimeControlComponent', () => {
     });
 
     it('should have all required tools', () => {
-      expect(component.toolSet.size).toBe(17);
+      expect(component.toolSet.size).toBe(16);
       expect(component.toolSet.has('createAgent')).toBe(true);
       expect(component.toolSet.has('destroyAgent')).toBe(true);
-      expect(component.toolSet.has('startAgent')).toBe(true);
       expect(component.toolSet.has('stopAgent')).toBe(true);
       expect(component.toolSet.has('listAgents')).toBe(true);
       expect(component.toolSet.has('getAgent')).toBe(true);
@@ -161,20 +159,6 @@ describe('RuntimeControlComponent', () => {
         'child-agent-id',
         { cascade: true },
       );
-    });
-  });
-
-  describe('startAgent tool', () => {
-    it('should send start request via A2A', async () => {
-      mockRuntimeClient.resolveAgentId = vi.fn((id: string) => id);
-
-      const result = await component.handleToolCall('startAgent', {
-        agentId: 'child-agent-id',
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.data.success).toBe(true);
-      expect(mockRuntimeClient.sendA2ATask).toHaveBeenCalled();
     });
   });
 
