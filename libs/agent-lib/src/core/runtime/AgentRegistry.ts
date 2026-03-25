@@ -386,8 +386,10 @@ export class AgentRegistry implements IAgentRegistry {
       this.agents.clear();
 
       for (const instance of instances) {
+        const alias = `restored-${instance.instanceId.slice(0, 8)}`;
         this.agents.set(instance.instanceId, {
           instanceId: instance.instanceId,
+          alias,
           status: instance.status as AgentStatus,
           config: instance.config as Record<string, unknown>,
           name: instance.name ?? undefined,

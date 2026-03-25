@@ -145,7 +145,7 @@ describe('RuntimeControlComponent', () => {
   describe('destroyAgent tool', () => {
     it('should destroy agent successfully', async () => {
       const result = await component.handleToolCall('destroyAgent', {
-        instanceId: 'child-agent-id',
+        agentId: 'child-agent-id',
         cascade: true,
       });
 
@@ -161,7 +161,7 @@ describe('RuntimeControlComponent', () => {
   describe('startAgent tool', () => {
     it('should start agent successfully', async () => {
       const result = await component.handleToolCall('startAgent', {
-        instanceId: 'child-agent-id',
+        agentId: 'child-agent-id',
       });
 
       expect(result.success).toBe(true);
@@ -175,7 +175,7 @@ describe('RuntimeControlComponent', () => {
   describe('stopAgent tool', () => {
     it('should stop agent successfully', async () => {
       const result = await component.handleToolCall('stopAgent', {
-        instanceId: 'child-agent-id',
+        agentId: 'child-agent-id',
       });
 
       expect(result.success).toBe(true);
@@ -191,6 +191,7 @@ describe('RuntimeControlComponent', () => {
       const mockAgents: AgentMetadata[] = [
         {
           instanceId: 'agent-1',
+          alias: 'agent-1-alias',
           status: 'idle',
           name: 'Agent 1',
           createdAt: new Date(),
@@ -198,6 +199,7 @@ describe('RuntimeControlComponent', () => {
         },
         {
           instanceId: 'agent-2',
+          alias: 'agent-2-alias',
           status: 'running',
           name: 'Agent 2',
           createdAt: new Date(),
@@ -231,6 +233,7 @@ describe('RuntimeControlComponent', () => {
     it('should return agent when found', async () => {
       const mockAgent: AgentMetadata = {
         instanceId: 'child-agent-id',
+        alias: 'child-agent-alias',
         status: 'idle',
         name: 'Child Agent',
         createdAt: new Date(),
@@ -239,7 +242,7 @@ describe('RuntimeControlComponent', () => {
       mockRuntimeClient.listAgents = vi.fn(() => Promise.resolve([mockAgent]));
 
       const result = await component.handleToolCall('getAgent', {
-        instanceId: 'child-agent-id',
+        agentId: 'child-agent-id',
       });
 
       expect(result.success).toBe(true);
@@ -251,7 +254,7 @@ describe('RuntimeControlComponent', () => {
       mockRuntimeClient.listAgents = vi.fn(() => Promise.resolve([]));
 
       const result = await component.handleToolCall('getAgent', {
-        instanceId: 'non-existent',
+        agentId: 'non-existent',
       });
 
       expect(result.success).toBe(false);
@@ -272,11 +275,11 @@ describe('RuntimeControlComponent', () => {
       const mockChildren: AgentMetadata[] = [
         {
           instanceId: 'child-1',
+          alias: 'child-1-alias',
           status: 'idle',
           name: 'Child 1',
           createdAt: new Date(),
           updatedAt: new Date(),
-          parentInstanceId: 'parent-agent-id',
         },
       ];
       mockRuntimeClient.listChildAgents = vi.fn(() =>

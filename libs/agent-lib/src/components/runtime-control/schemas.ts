@@ -61,32 +61,66 @@ export type CreateAgentByTypeParams = z.infer<
 /**
  * Schema for destroying an agent via tool call
  */
-export const destroyAgentParamsSchema = z.object({
-  instanceId: z.string().describe('Instance ID of the agent to destroy'),
-  cascade: z
-    .boolean()
-    .optional()
-    .default(true)
-    .describe('Also destroy child agents'),
-});
+export const destroyAgentParamsSchema = z
+  .object({
+    agentId: z
+      .string()
+      .optional()
+      .describe('Agent ID, alias, or name (e.g., "epidemiology-a1b2")'),
+    instanceId: z
+      .string()
+      .optional()
+      .describe('Deprecated: use agentId instead'),
+    cascade: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe('Also destroy child agents'),
+  })
+  .transform((data) => ({
+    agentId: (data.agentId || data.instanceId) as string,
+    cascade: data.cascade,
+  }));
 
 export type DestroyAgentParams = z.infer<typeof destroyAgentParamsSchema>;
 
 /**
  * Schema for starting an agent via tool call
  */
-export const startAgentParamsSchema = z.object({
-  instanceId: z.string().describe('Instance ID of the agent to start'),
-});
+export const startAgentParamsSchema = z
+  .object({
+    agentId: z
+      .string()
+      .optional()
+      .describe('Agent ID, alias, or name (e.g., "epidemiology-a1b2")'),
+    instanceId: z
+      .string()
+      .optional()
+      .describe('Deprecated: use agentId instead'),
+  })
+  .transform((data) => ({
+    agentId: (data.agentId || data.instanceId) as string,
+  }));
 
 export type StartAgentParams = z.infer<typeof startAgentParamsSchema>;
 
 /**
  * Schema for stopping an agent via tool call
  */
-export const stopAgentParamsSchema = z.object({
-  instanceId: z.string().describe('Instance ID of the agent to stop'),
-});
+export const stopAgentParamsSchema = z
+  .object({
+    agentId: z
+      .string()
+      .optional()
+      .describe('Agent ID, alias, or name (e.g., "epidemiology-a1b2")'),
+    instanceId: z
+      .string()
+      .optional()
+      .describe('Deprecated: use agentId instead'),
+  })
+  .transform((data) => ({
+    agentId: data.agentId || data.instanceId,
+  }));
 
 export type StopAgentParams = z.infer<typeof stopAgentParamsSchema>;
 
@@ -107,25 +141,49 @@ export type ListAgentsParams = z.infer<typeof listAgentsParamsSchema>;
 /**
  * Schema for getting agent info via tool call
  */
-export const getAgentParamsSchema = z.object({
-  instanceId: z.string().describe('Instance ID of the agent'),
-});
+export const getAgentParamsSchema = z
+  .object({
+    agentId: z
+      .string()
+      .optional()
+      .describe('Agent ID, alias, or name (e.g., "epidemiology-a1b2")'),
+    instanceId: z
+      .string()
+      .optional()
+      .describe('Deprecated: use agentId instead'),
+  })
+  .transform((data) => ({
+    agentId: (data.agentId || data.instanceId) as string,
+  }));
 
 export type GetAgentParams = z.infer<typeof getAgentParamsSchema>;
 
 /**
  * Schema for registering agent in topology
  */
-export const registerInTopologyParamsSchema = z.object({
-  instanceId: z.string().describe('Instance ID of the agent to register'),
-  nodeType: z
-    .enum(['router', 'worker', 'hybrid'])
-    .describe('Type of node in topology'),
-  capabilities: z
-    .array(z.string())
-    .optional()
-    .describe('List of capabilities this agent has'),
-});
+export const registerInTopologyParamsSchema = z
+  .object({
+    agentId: z
+      .string()
+      .optional()
+      .describe('Agent ID, alias, or name (e.g., "epidemiology-a1b2")'),
+    instanceId: z
+      .string()
+      .optional()
+      .describe('Deprecated: use agentId instead'),
+    nodeType: z
+      .enum(['router', 'worker', 'hybrid'])
+      .describe('Type of node in topology'),
+    capabilities: z
+      .array(z.string())
+      .optional()
+      .describe('List of capabilities this agent has'),
+  })
+  .transform((data) => ({
+    agentId: (data.agentId || data.instanceId) as string,
+    nodeType: data.nodeType,
+    capabilities: data.capabilities,
+  }));
 
 export type RegisterInTopologyParams = z.infer<
   typeof registerInTopologyParamsSchema
@@ -134,9 +192,20 @@ export type RegisterInTopologyParams = z.infer<
 /**
  * Schema for unregistering agent from topology
  */
-export const unregisterFromTopologyParamsSchema = z.object({
-  instanceId: z.string().describe('Instance ID of the agent to unregister'),
-});
+export const unregisterFromTopologyParamsSchema = z
+  .object({
+    agentId: z
+      .string()
+      .optional()
+      .describe('Agent ID, alias, or name (e.g., "epidemiology-a1b2")'),
+    instanceId: z
+      .string()
+      .optional()
+      .describe('Deprecated: use agentId instead'),
+  })
+  .transform((data) => ({
+    agentId: (data.agentId || data.instanceId) as string,
+  }));
 
 export type UnregisterFromTopologyParams = z.infer<
   typeof unregisterFromTopologyParamsSchema
@@ -146,8 +215,8 @@ export type UnregisterFromTopologyParams = z.infer<
  * Schema for connecting agents in topology
  */
 export const connectAgentsParamsSchema = z.object({
-  from: z.string().describe('Source agent instance ID'),
-  to: z.string().describe('Target agent instance ID'),
+  from: z.string().describe('Source agent ID, alias, or name'),
+  to: z.string().describe('Target agent ID, alias, or name'),
   edgeType: z
     .enum(['parent-child', 'peer', 'route'])
     .optional()
@@ -160,8 +229,8 @@ export type ConnectAgentsParams = z.infer<typeof connectAgentsParamsSchema>;
  * Schema for disconnecting agents in topology
  */
 export const disconnectAgentsParamsSchema = z.object({
-  from: z.string().describe('Source agent instance ID'),
-  to: z.string().describe('Target agent instance ID'),
+  from: z.string().describe('Source agent ID, alias, or name'),
+  to: z.string().describe('Target agent ID, alias, or name'),
 });
 
 export type DisconnectAgentsParams = z.infer<
@@ -178,9 +247,20 @@ export type GetTopologyInfoParams = z.infer<typeof getTopologyInfoParamsSchema>;
 /**
  * Schema for getting neighbors in topology
  */
-export const getNeighborsParamsSchema = z.object({
-  instanceId: z.string().describe('Instance ID of the agent'),
-});
+export const getNeighborsParamsSchema = z
+  .object({
+    agentId: z
+      .string()
+      .optional()
+      .describe('Agent ID, alias, or name (e.g., "epidemiology-a1b2")'),
+    instanceId: z
+      .string()
+      .optional()
+      .describe('Deprecated: use agentId instead'),
+  })
+  .transform((data) => ({
+    agentId: (data.agentId || data.instanceId) as string,
+  }));
 
 export type GetNeighborsParams = z.infer<typeof getNeighborsParamsSchema>;
 

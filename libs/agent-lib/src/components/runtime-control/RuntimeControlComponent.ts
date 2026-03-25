@@ -417,14 +417,14 @@ This component enables creation and management of child agents for distributed t
     }
 
     try {
-      await client.destroyAgent(params.instanceId, {
+      await client.destroyAgent(params.agentId, {
         cascade: params.cascade,
       });
 
       return {
         success: true,
         data: { success: true, destroyedCount: 1 },
-        summary: `[RuntimeControl] Destroyed agent: ${params.instanceId}`,
+        summary: `[RuntimeControl] Destroyed agent: ${params.agentId}`,
       };
     } catch (error) {
       return {
@@ -457,15 +457,17 @@ This component enables creation and management of child agents for distributed t
     }
 
     try {
-      await client.startAgent(params.instanceId);
+      await client.startAgent(params.agentId);
       const agents = await client.listAgents();
-      const agent = agents.find((a) => a.instanceId === params.instanceId);
+      const agent = agents.find(
+        (a) => a.instanceId === params.agentId || a.alias === params.agentId,
+      );
       return {
         success: true,
         data: { success: true, agent },
         summary: agent
-          ? `[RuntimeControl] Started agent: ${params.instanceId} (${agent.name})`
-          : `[RuntimeControl] Started agent: ${params.instanceId}`,
+          ? `[RuntimeControl] Started agent: ${params.agentId} (${agent.name}) alias: ${agent.alias}`
+          : `[RuntimeControl] Started agent: ${params.agentId}`,
       };
     } catch (error) {
       return {
@@ -497,11 +499,11 @@ This component enables creation and management of child agents for distributed t
     }
 
     try {
-      await client.stopAgent(params.instanceId);
+      await client.stopAgent(params.agentId!);
       return {
         success: true,
         data: { success: true },
-        summary: `[RuntimeControl] Stopped agent: ${params.instanceId}`,
+        summary: `[RuntimeControl] Stopped agent: ${params.agentId}`,
       };
     } catch (error) {
       return {
@@ -574,7 +576,7 @@ This component enables creation and management of child agents for distributed t
     }
 
     try {
-      const agent = await client.getAgent(params.instanceId);
+      const agent = await client.getAgent(params.agentId);
       if (!agent) {
         return {
           success: false,
@@ -587,12 +589,14 @@ This component enables creation and management of child agents for distributed t
 
       const agents = await client.listAgents();
       const metadata =
-        agents.find((a) => a.instanceId === params.instanceId) ?? null;
+        agents.find(
+          (a) => a.instanceId === params.agentId || a.alias === params.agentId,
+        ) ?? null;
 
       return {
         success: true,
         data: metadata,
-        summary: `[RuntimeControl] Got agent: ${params.instanceId}`,
+        summary: `[RuntimeControl] Got agent: ${params.agentId}`,
       };
     } catch (error) {
       return {
@@ -861,14 +865,14 @@ This component enables creation and management of child agents for distributed t
 
     try {
       client.registerInTopology(
-        params.instanceId,
+        params.agentId,
         params.nodeType,
         params.capabilities,
       );
       return {
         success: true,
-        data: { success: true, instanceId: params.instanceId },
-        summary: `[RuntimeControl] Registered ${params.instanceId} as ${params.nodeType}`,
+        data: { success: true, instanceId: params.agentId },
+        summary: `[RuntimeControl] Registered ${params.agentId} as ${params.nodeType}`,
       };
     } catch (error) {
       return {
@@ -876,7 +880,7 @@ This component enables creation and management of child agents for distributed t
         data: {
           error: (error as Error).message,
           success: false,
-          instanceId: params.instanceId,
+          instanceId: params.agentId,
         } as unknown as { success: boolean; instanceId: string },
         summary: `[RuntimeControl] Failed to register in topology: ${(error as Error).message}`,
       };
@@ -899,11 +903,11 @@ This component enables creation and management of child agents for distributed t
     }
 
     try {
-      client.unregisterFromTopology(params.instanceId);
+      client.unregisterFromTopology(params.agentId);
       return {
         success: true,
-        data: { success: true, instanceId: params.instanceId },
-        summary: `[RuntimeControl] Unregistered ${params.instanceId} from topology`,
+        data: { success: true, instanceId: params.agentId },
+        summary: `[RuntimeControl] Unregistered ${params.agentId} from topology`,
       };
     } catch (error) {
       return {
@@ -911,7 +915,7 @@ This component enables creation and management of child agents for distributed t
         data: {
           error: (error as Error).message,
           success: false,
-          instanceId: params.instanceId,
+          instanceId: params.agentId,
         } as unknown as { success: boolean; instanceId: string },
         summary: `[RuntimeControl] Failed to unregister from topology: ${(error as Error).message}`,
       };
@@ -1058,12 +1062,12 @@ This component enables creation and management of child agents for distributed t
 
     try {
       const graph = client.getTopologyGraph();
-      const neighbors = graph.getNeighbors(params.instanceId);
+      const neighbors = graph.getNeighbors(params.agentId);
 
       return {
         success: true,
         data: { neighbors },
-        summary: `[RuntimeControl] Found ${neighbors.length} neighbors for ${params.instanceId}`,
+        summary: `[RuntimeControl] Found ${neighbors.length} neighbors for ${params.agentId}`,
       };
     } catch (error) {
       return {

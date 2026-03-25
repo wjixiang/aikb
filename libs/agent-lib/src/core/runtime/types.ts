@@ -19,6 +19,7 @@ import type { IMessageBus } from './topology/messaging/MessageBus.js';
 
 export interface AgentMetadata {
   instanceId: string;
+  alias: string;
   status: AgentStatus;
   name?: string;
   agentType?: string;
@@ -34,7 +35,6 @@ export interface AgentMetadata {
     createdAt: Date;
   };
   childInstanceIds?: string[];
-  // A2A service discovery fields (merged from AgentCard)
   version?: string;
   capabilities?: string[];
   skills?: string[];

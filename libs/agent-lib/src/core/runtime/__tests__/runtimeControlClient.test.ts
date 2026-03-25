@@ -22,6 +22,7 @@ describe('RuntimeControlClientImpl', () => {
       _destroyAgentWithCascade: vi.fn().mockResolvedValue(undefined),
       getAgent: vi.fn().mockResolvedValue({} as Agent),
       listAgents: vi.fn().mockResolvedValue([]),
+      listAgentsSync: vi.fn().mockReturnValue([]),
       getAgentMetadata: vi.fn().mockReturnValue({
         instanceId: callerInstanceId,
         parentInstanceId: undefined,
@@ -116,12 +117,14 @@ describe('RuntimeControlClientImpl', () => {
       const agents: AgentMetadata[] = [
         {
           instanceId: 'agent-1',
+          alias: 'agent-1-alias',
           status: 'idle',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
           instanceId: 'agent-2',
+          alias: 'agent-2-alias',
           status: 'running',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -155,6 +158,7 @@ describe('RuntimeControlClientImpl', () => {
     it('should return parent instance id from metadata', () => {
       vi.mocked(mockRuntime.getAgentMetadata).mockReturnValue({
         instanceId: callerInstanceId,
+        alias: 'parent-alias',
         parentInstanceId: 'grandparent',
         status: 'idle',
         createdAt: new Date(),
@@ -167,6 +171,7 @@ describe('RuntimeControlClientImpl', () => {
     it('should return undefined when no parent', () => {
       vi.mocked(mockRuntime.getAgentMetadata).mockReturnValue({
         instanceId: callerInstanceId,
+        alias: 'parent-alias',
         status: 'idle',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -181,6 +186,7 @@ describe('RuntimeControlClientImpl', () => {
       const children: AgentMetadata[] = [
         {
           instanceId: 'child-1',
+          alias: 'child-1-alias',
           status: 'idle',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -200,8 +206,6 @@ describe('RuntimeControlClientImpl', () => {
       const stats: RuntimeStats = {
         totalAgents: 5,
         agentsByStatus: { idle: 3, running: 2, completed: 0, aborted: 0 },
-        totalPendingTasks: 10,
-        totalProcessingTasks: 2,
       };
       vi.mocked(mockRuntime.getStats).mockResolvedValue(stats);
 

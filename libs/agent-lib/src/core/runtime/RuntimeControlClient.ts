@@ -29,6 +29,25 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     private callerInstanceId: string,
   ) {}
 
+  resolveAgentId(idOrAlias: string): string {
+    const agents = this.runtime.listAgentsSync();
+    const byInstanceId = agents.find(
+      (a: AgentMetadata) => a.instanceId === idOrAlias,
+    );
+    if (byInstanceId) {
+      return idOrAlias;
+    }
+    const byAlias = agents.find((a: AgentMetadata) => a.alias === idOrAlias);
+    if (byAlias) {
+      return byAlias.instanceId;
+    }
+    const byName = agents.find((a: AgentMetadata) => a.name === idOrAlias);
+    if (byName) {
+      return byName.instanceId;
+    }
+    return idOrAlias;
+  }
+
   // ============================================
   // Agent Lifecycle
   // ============================================
@@ -37,18 +56,21 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     return this.runtime._createChildAgent(this.callerInstanceId, options);
   }
 
-  async startAgent(instanceId: string): Promise<void> {
+  async startAgent(instanceIdOrAlias: string): Promise<void> {
+    const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.startAgent(instanceId);
   }
 
-  async stopAgent(instanceId: string): Promise<void> {
+  async stopAgent(instanceIdOrAlias: string): Promise<void> {
+    const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.stopAgent(instanceId);
   }
 
   async destroyAgent(
-    instanceId: string,
+    instanceIdOrAlias: string,
     options?: { cascade?: boolean },
   ): Promise<void> {
+    const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime._destroyAgentWithCascade(
       instanceId,
       options?.cascade ?? true,
@@ -59,7 +81,8 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   // Agent Query
   // ============================================
 
-  async getAgent(instanceId: string): Promise<Agent | undefined> {
+  async getAgent(instanceIdOrAlias: string): Promise<Agent | undefined> {
+    const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.getAgent(instanceId) as Promise<Agent | undefined>;
   }
 
@@ -93,22 +116,32 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   // ============================================
 
   registerInTopology(
-    instanceId: string,
+    instanceIdOrAlias: string,
     nodeType: TopologyNodeType,
     capabilities?: string[],
   ): void {
+    const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.registerInTopology(instanceId, nodeType, capabilities);
   }
 
-  unregisterFromTopology(instanceId: string): void {
+  unregisterFromTopology(instanceIdOrAlias: string): void {
+    const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.unregisterFromTopology(instanceId);
   }
 
-  connectAgents(from: string, to: string, edgeType?: EdgeType): void {
+  connectAgents(
+    fromOrAlias: string,
+    toOrAlias: string,
+    edgeType?: EdgeType,
+  ): void {
+    const from = this.resolveAgentId(fromOrAlias);
+    const to = this.resolveAgentId(toOrAlias);
     return this.runtime.connectAgents(from, to, edgeType);
   }
 
-  disconnectAgents(from: string, to: string): void {
+  disconnectAgents(fromOrAlias: string, toOrAlias: string): void {
+    const from = this.resolveAgentId(fromOrAlias);
+    const to = this.resolveAgentId(toOrAlias);
     return this.runtime.disconnectAgents(from, to);
   }
 
@@ -125,26 +158,34 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   // ============================================
 
   async sendA2ATask(
-    targetAgentId: string,
+    targetAgentIdOrAlias: string,
     taskId: string,
     description: string,
     input: Record<string, unknown>,
     options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
   ): Promise<import('../a2a/types.js').A2ATaskResult> {
-    const agent = await this.runtime.getAgent(this.callerInstanceId) as Agent;
+    const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
+    const agent = (await this.runtime.getAgent(this.callerInstanceId)) as Agent;
     const a2aClient = agent?.getA2AClient();
     if (!a2aClient) {
       throw new Error('A2A client not initialized');
     }
-    return a2aClient.sendTask(targetAgentId, taskId, description, input, options);
+    return a2aClient.sendTask(
+      targetAgentId,
+      taskId,
+      description,
+      input,
+      options,
+    );
   }
 
   async sendA2AQuery(
-    targetAgentId: string,
+    targetAgentIdOrAlias: string,
     query: string,
     options?: { expectedFormat?: string },
   ): Promise<unknown> {
-    const agent = await this.runtime.getAgent(this.callerInstanceId) as Agent;
+    const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
+    const agent = (await this.runtime.getAgent(this.callerInstanceId)) as Agent;
     const a2aClient = agent?.getA2AClient();
     if (!a2aClient) {
       throw new Error('A2A client not initialized');
@@ -152,8 +193,13 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     return a2aClient.sendQuery(targetAgentId, query, options);
   }
 
-  async sendA2AEvent(targetAgentId: string, eventType: string, data: unknown): Promise<void> {
-    const agent = await this.runtime.getAgent(this.callerInstanceId) as Agent;
+  async sendA2AEvent(
+    targetAgentIdOrAlias: string,
+    eventType: string,
+    data: unknown,
+  ): Promise<void> {
+    const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
+    const agent = (await this.runtime.getAgent(this.callerInstanceId)) as Agent;
     const a2aClient = agent?.getA2AClient();
     if (!a2aClient) {
       throw new Error('A2A client not initialized');

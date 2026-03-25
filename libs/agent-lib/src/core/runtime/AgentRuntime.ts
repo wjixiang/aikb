@@ -82,6 +82,24 @@ import { A2AClient, createA2AClient } from '../a2a/index.js';
 import type { IAgentCardRegistry } from '../a2a/index.js';
 import { createUserContext, type UserContext } from './UserContext.js';
 
+function generateShortUuid(length = 4): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function generateAgentAlias(name: string): string {
+  const safeName = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 20);
+  return `${safeName}-${generateShortUuid(4)}`;
+}
+
 /**
  * AgentFilter - Options for filtering agents in listAgents()
  *
@@ -578,8 +596,12 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Register in registry
     const unifiedConfig = container.getConfig();
+    const agentName =
+      unifiedConfig.agent.name || unifiedConfig.agent.type || 'agent';
+    const alias = generateAgentAlias(agentName);
     const metadata: AgentMetadata = {
       instanceId,
+      alias,
       status: 'idle',
       name: unifiedConfig.agent.name,
       agentType: unifiedConfig.agent.type,
@@ -588,7 +610,6 @@ export class AgentRuntime implements IAgentRuntime {
       createdAt: new Date(),
       updatedAt: new Date(),
       parentInstanceId,
-      // A2A service discovery fields from AgentSoul
       version: unifiedConfig.agent.version,
       capabilities: unifiedConfig.agent.capabilities,
       skills: unifiedConfig.agent.skills,
@@ -770,6 +791,33 @@ export class AgentRuntime implements IAgentRuntime {
       }
       if (filter.name) {
         agents = agents.filter((a) => a.name?.includes(filter.name!));
+      }
+    }
+
+    return agents;
+  }
+
+  /**
+   * Synchronous version of listAgents for internal use.
+   */
+  listAgentsSync(filter?: AgentFilter): AgentMetadata[] {
+    let agents = this.registry.getAll();
+
+    if (filter) {
+      if (filter.status) {
+        agents = agents.filter(
+          (a: AgentMetadata) => a.status === filter.status,
+        );
+      }
+      if (filter.agentType) {
+        agents = agents.filter(
+          (a: AgentMetadata) => a.agentType === filter.agentType,
+        );
+      }
+      if (filter.name) {
+        agents = agents.filter((a: AgentMetadata) =>
+          a.name?.includes(filter.name!),
+        );
       }
     }
 
@@ -1137,8 +1185,12 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Register metadata with hierarchy info
     const unifiedConfig = container.getConfig();
+    const agentName =
+      unifiedConfig.agent.name || unifiedConfig.agent.type || 'agent';
+    const alias = generateAgentAlias(agentName);
     const metadata: AgentMetadata = {
       instanceId,
+      alias,
       status: 'idle',
       name: unifiedConfig.agent.name,
       agentType: unifiedConfig.agent.type,
@@ -1152,7 +1204,6 @@ export class AgentRuntime implements IAgentRuntime {
         name: parentMetadata?.name,
         createdAt: new Date(),
       },
-      // A2A service discovery fields from AgentSoul
       version: unifiedConfig.agent.version,
       capabilities: unifiedConfig.agent.capabilities,
       skills: unifiedConfig.agent.skills,
