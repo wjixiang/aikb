@@ -359,12 +359,17 @@ export class Agent {
         if (this._status === 'idle' || this._status === 'completed') {
           this._status = 'running';
         }
+        // Send ACK for start task
+        await ctx.acknowledge();
         return {
           taskId: payload.taskId || '',
           status: 'completed' as const,
           output: { started: true, message: 'Agent started' },
         };
       }
+
+      // Send acknowledgment for the task
+      await ctx.acknowledge();
 
       // Inject A2A task as a user message so the LLM can process it
       const taskDescription = payload.description || 'Task received';

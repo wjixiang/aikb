@@ -53,12 +53,23 @@ export interface AgentCardSummary {
 /**
  * A2A Message Types - High-level protocol messages
  */
-export type A2AMessageType = 'task' | 'query' | 'response' | 'event' | 'stream' | 'cancel';
+export type A2AMessageType =
+  | 'task'
+  | 'query'
+  | 'response'
+  | 'event'
+  | 'stream'
+  | 'cancel';
 
 /**
  * Task status for A2A Task messages
  */
-export type A2ATaskStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+export type A2ATaskStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 /**
  * A2A Payload - Content of an A2A message
@@ -231,6 +242,8 @@ export interface A2AContext {
   startTime: number;
   /** Request metadata */
   metadata: Record<string, unknown>;
+  /** Send acknowledgment for the message */
+  acknowledge(): Promise<void>;
 }
 
 /**
@@ -325,7 +338,12 @@ export function createA2AMessage(
   to: string,
   messageType: A2AMessageType,
   content: A2APayload,
-  options?: Partial<Pick<A2AMessage, 'conversationId' | 'streaming' | 'referenceId' | 'priority'>>,
+  options?: Partial<
+    Pick<
+      A2AMessage,
+      'conversationId' | 'streaming' | 'referenceId' | 'priority'
+    >
+  >,
 ): A2AMessage {
   return {
     messageId: createA2AMessageId(),

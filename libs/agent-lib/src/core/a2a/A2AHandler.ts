@@ -154,6 +154,9 @@ export class A2AHandler implements IA2AHandler {
       message,
       startTime: Date.now(),
       metadata: {},
+      acknowledge: async () => {
+        await this.acknowledge(message.conversationId);
+      },
     };
 
     try {
