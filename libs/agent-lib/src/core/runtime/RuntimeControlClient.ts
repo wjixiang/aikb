@@ -22,6 +22,8 @@ import type {
 import type { AgentRuntime } from './AgentRuntime.js';
 import type { ITopologyGraph } from './topology/graph/TopologyGraph.js';
 import type { RoutingStats } from './topology/types.js';
+import { createA2AClient } from '../a2a/index.js';
+import type { IA2AClient, A2ATaskResult } from '../a2a/index.js';
 
 export class RuntimeControlClientImpl implements IRuntimeControlClient {
   constructor(
@@ -157,19 +159,26 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   // A2A Communication
   // ============================================
 
+  private createDirectA2AClient(): IA2AClient {
+    return createA2AClient(
+      this.runtime.getMessageBus(),
+      this.runtime.getRegistry() as any,
+      {
+        instanceId: this.callerInstanceId,
+        defaultTimeout: 120000,
+      },
+    );
+  }
+
   async sendA2ATask(
     targetAgentIdOrAlias: string,
     taskId: string,
     description: string,
     input: Record<string, unknown>,
     options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
-  ): Promise<import('../a2a/types.js').A2ATaskResult> {
+  ): Promise<A2ATaskResult> {
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const agent = (await this.runtime.getAgent(this.callerInstanceId)) as Agent;
-    const a2aClient = agent?.getA2AClient();
-    if (!a2aClient) {
-      throw new Error('A2A client not initialized');
-    }
+    const a2aClient = this.createDirectA2AClient();
     return a2aClient.sendTask(
       targetAgentId,
       taskId,
@@ -185,11 +194,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     options?: { expectedFormat?: string },
   ): Promise<unknown> {
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const agent = (await this.runtime.getAgent(this.callerInstanceId)) as Agent;
-    const a2aClient = agent?.getA2AClient();
-    if (!a2aClient) {
-      throw new Error('A2A client not initialized');
-    }
+    const a2aClient = this.createDirectA2AClient();
     return a2aClient.sendQuery(targetAgentId, query, options);
   }
 
@@ -199,11 +204,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     data: unknown,
   ): Promise<void> {
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const agent = (await this.runtime.getAgent(this.callerInstanceId)) as Agent;
-    const a2aClient = agent?.getA2AClient();
-    if (!a2aClient) {
-      throw new Error('A2A client not initialized');
-    }
+    const a2aClient = this.createDirectA2AClient();
     return a2aClient.sendEvent(targetAgentId, eventType, data);
   }
 }
