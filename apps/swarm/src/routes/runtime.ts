@@ -1,47 +1,12 @@
-/**
- * Runtime Routes
- *
- * HTTP API for AgentRuntime management.
- */
-
 import type { FastifyPluginAsync } from 'fastify';
 import type { AgentStatus } from 'agent-lib/core';
-
-const responseSchema = {
-  type: 'object',
-  properties: {
-    success: { type: 'boolean' },
-    data: { type: 'object', additionalProperties: true },
-    count: { type: 'number' },
-    serverId: { type: 'string' },
-    error: { type: 'string' },
-  },
-};
-
-const arrayResponseSchema = {
-  type: 'object',
-  properties: {
-    success: { type: 'boolean' },
-    data: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          instanceId: { type: 'string' },
-          alias: { type: 'string' },
-          status: { type: 'string' },
-          name: { type: 'string' },
-          agentType: { type: 'string' },
-          description: { type: 'string' },
-          metadata: { type: 'object' },
-        },
-      },
-    },
-    count: { type: 'number' },
-    serverId: { type: 'string' },
-    error: { type: 'string' },
-  },
-};
+import {
+  baseResponseSchema,
+  baseArrayResponseSchema,
+  agentFilterSchema,
+  createAgentBodySchema,
+  toFastifySchema,
+} from './schemas.js';
 
 export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -50,8 +15,10 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Get runtime statistics including agent counts and status',
-        response: { 200: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       const stats = await fastify.agentRuntime.getStats();
@@ -65,19 +32,11 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'List all agents in the runtime with optional filtering',
-        querystring: {
-          type: 'object',
-          properties: {
-            status: {
-              type: 'string',
-              description: 'Filter by agent status (running, stopped, idle)',
-            },
-            type: { type: 'string', description: 'Filter by agent type' },
-            name: { type: 'string', description: 'Filter by agent name' },
-          },
+        querystring: toFastifySchema(agentFilterSchema),
+        response: {
+          200: toFastifySchema(baseArrayResponseSchema),
         },
-        response: { 200: arrayResponseSchema },
-      } as any,
+      },
     },
     async (request, reply) => {
       const { status, type, name } = request.query as {
@@ -104,46 +63,12 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Create a new agent in the runtime',
-        body: {
-          type: 'object',
-          properties: {
-            agent: {
-              type: 'object',
-              description: 'Agent configuration',
-              properties: {
-                name: { type: 'string', description: 'Agent name' },
-                type: { type: 'string', description: 'Agent type/class' },
-                description: {
-                  type: 'string',
-                  description: 'Agent description',
-                },
-                sop: {
-                  type: 'string',
-                  description: 'Standard Operating Procedure JSON',
-                },
-              },
-            },
-            api: {
-              type: 'object',
-              description: 'API configuration for the agent',
-              properties: {
-                provider: {
-                  type: 'string',
-                  description: 'API provider (openai, azure, etc.)',
-                },
-                apiKey: { type: 'string', description: 'API key' },
-                baseUrl: { type: 'string', description: 'Base URL for API' },
-                modelId: { type: 'string', description: 'Model identifier' },
-              },
-            },
-            components: {
-              type: 'array',
-              description: 'Runtime components to attach',
-            },
-          },
+        body: toFastifySchema(createAgentBodySchema),
+        response: {
+          201: toFastifySchema(baseResponseSchema),
+          400: toFastifySchema(baseResponseSchema),
         },
-        response: { 201: responseSchema, 400: responseSchema },
-      } as any,
+      },
     },
     async (request, reply) => {
       const body = request.body as {
@@ -202,8 +127,11 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             instanceId: { type: 'string', description: 'Agent instance ID' },
           },
         },
-        response: { 200: responseSchema, 404: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+          404: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       const { instanceId } = request.params as { instanceId: string };
@@ -244,8 +172,11 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             instanceId: { type: 'string', description: 'Agent instance ID' },
           },
         },
-        response: { 200: responseSchema, 400: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+          400: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       const { instanceId } = request.params as { instanceId: string };
@@ -273,8 +204,11 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             instanceId: { type: 'string', description: 'Agent instance ID' },
           },
         },
-        response: { 200: responseSchema, 400: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+          400: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       const { instanceId } = request.params as { instanceId: string };
@@ -296,8 +230,10 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Get the agent topology graph showing agent relationships',
-        response: { 200: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       const topology = fastify.agentRuntime.getTopologyGraph();
@@ -318,8 +254,10 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Get topology statistics',
-        response: { 200: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       const stats = fastify.agentRuntime.getTopologyStats();

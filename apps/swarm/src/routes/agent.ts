@@ -1,33 +1,9 @@
-/**
- * Agent Routes
- *
- * HTTP API for individual agent operations.
- */
-
 import type { FastifyPluginAsync } from 'fastify';
-
-const responseSchema = {
-  type: 'object',
-  properties: {
-    success: { type: 'boolean' },
-    data: { type: 'object', additionalProperties: true },
-    count: { type: 'number' },
-    error: { type: 'string' },
-  },
-};
-
-const arrayResponseSchema = {
-  type: 'object',
-  properties: {
-    success: { type: 'boolean' },
-    data: {
-      type: 'array',
-      items: { type: 'object', additionalProperties: true },
-    },
-    count: { type: 'number' },
-    error: { type: 'string' },
-  },
-};
+import {
+  baseResponseSchema,
+  baseArrayResponseSchema,
+  toFastifySchema,
+} from './schemas.js';
 
 export const agentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -45,8 +21,11 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
             },
           },
         },
-        response: { 200: responseSchema, 404: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+          404: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request: any, reply: any) => {
       const { instanceId } = request.params;
@@ -91,8 +70,11 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
             },
           },
         },
-        response: { 200: responseSchema, 400: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+          400: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request: any, reply: any) => {
       const { instanceId } = request.params;
@@ -127,8 +109,11 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
             },
           },
         },
-        response: { 200: responseSchema, 400: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+          400: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request: any, reply: any) => {
       const { instanceId } = request.params;
@@ -163,8 +148,11 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
             },
           },
         },
-        response: { 200: responseSchema, 400: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+          400: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request: any, reply: any) => {
       const { instanceId } = request.params;
@@ -199,8 +187,11 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
             },
           },
         },
-        response: { 200: arrayResponseSchema, 400: arrayResponseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseArrayResponseSchema),
+          400: toFastifySchema(baseArrayResponseSchema),
+        },
+      },
     },
     async (request: any, reply: any) => {
       const { instanceId } = request.params;
@@ -232,8 +223,10 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
             },
           },
         },
-        response: { 200: responseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(baseResponseSchema),
+        },
+      },
     },
     async (request: any, reply: any) => {
       return {

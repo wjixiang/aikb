@@ -1,46 +1,9 @@
-/**
- * Health Routes
- *
- * Health check and server status endpoints.
- */
-
 import type { FastifyPluginAsync } from 'fastify';
-
-const healthResponseSchema = {
-  type: 'object',
-  properties: {
-    status: { type: 'string' },
-    service: { type: 'string' },
-    serverId: { type: 'string' },
-    timestamp: { type: 'string' },
-    uptime: { type: 'number' },
-    message: { type: 'string' },
-  },
-};
-
-const metricsResponseSchema = {
-  type: 'object',
-  properties: {
-    server: {
-      type: 'object',
-      properties: {
-        id: { type: 'string' },
-        port: { type: 'number' },
-        uptime: { type: 'number' },
-        memory: { type: 'object' },
-        timestamp: { type: 'string' },
-      },
-    },
-    runtime: {
-      type: 'object',
-      nullable: true,
-      properties: {
-        agents: { type: 'object' },
-        topology: { type: 'object' },
-      },
-    },
-  },
-};
+import {
+  healthResponseSchema,
+  metricsResponseSchema,
+  toFastifySchema,
+} from './schemas.js';
 
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -49,8 +12,10 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['health'],
         description: 'Basic health check - returns OK if server is running',
-        response: { 200: healthResponseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(healthResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       return {
@@ -69,8 +34,11 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
         tags: ['health'],
         description:
           'Readiness check - returns OK if server and runtime are ready to accept requests',
-        response: { 200: healthResponseSchema, 503: healthResponseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(healthResponseSchema),
+          503: toFastifySchema(healthResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       const runtime = fastify.agentRuntime;
@@ -98,8 +66,10 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['health'],
         description: 'Liveness check - returns OK if server process is alive',
-        response: { 200: healthResponseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(healthResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       return {
@@ -116,8 +86,10 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['health'],
         description: 'Get detailed server and runtime metrics',
-        response: { 200: metricsResponseSchema },
-      } as any,
+        response: {
+          200: toFastifySchema(metricsResponseSchema),
+        },
+      },
     },
     async (request, reply) => {
       const runtime = fastify.agentRuntime;
