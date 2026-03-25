@@ -78,8 +78,13 @@ import type { IMessageBus } from './topology/messaging/MessageBus.js';
 import type { IMessageRouter } from './topology/routing/MessageRouter.js';
 
 // A2A Communication
-import { A2AClient, createA2AClient } from '../a2a/index.js';
+import {
+  A2AClient,
+  createA2AClient,
+  getGlobalAgentRegistry,
+} from '../a2a/index.js';
 import type { IAgentCardRegistry } from '../a2a/index.js';
+import type { AgentCard } from '../a2a/types.js';
 import { createUserContext, type IUserContext } from './UserContext.js';
 
 function generateShortUuid(length = 4): string {
@@ -578,10 +583,10 @@ export class AgentRuntime implements IAgentRuntime {
     const controlClient = this.createControlClient(instanceId);
     agent.setRuntimeClient(controlClient);
 
-    // Create and inject A2A Client
+    // Create and inject A2A Client using global AgentCardRegistry
     const a2aClient = createA2AClient(
       this.messageBus,
-      this.registry as unknown as IAgentCardRegistry,
+      getGlobalAgentRegistry(),
       {
         instanceId,
         defaultTimeout: 60000,
@@ -617,6 +622,19 @@ export class AgentRuntime implements IAgentRuntime {
       metadata: unifiedConfig.agent.metadata,
     };
     this.registry.register(metadata);
+
+    // Register in AgentCardRegistry for A2A communication
+    const agentCard: AgentCard = {
+      instanceId,
+      name: unifiedConfig.agent.name || agentName,
+      description: unifiedConfig.agent.description || '',
+      version: unifiedConfig.agent.version || '1.0.0',
+      capabilities: unifiedConfig.agent.capabilities || [],
+      skills: unifiedConfig.agent.skills || [],
+      endpoint: unifiedConfig.agent.endpoint || instanceId,
+      metadata: unifiedConfig.agent.metadata,
+    };
+    getGlobalAgentRegistry().register(agentCard);
 
     // Update parent's child list if parent specified
     if (parentInstanceId) {
@@ -734,6 +752,9 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Unregister from registry
     this.registry.unregister(instanceId);
+
+    // Unregister from AgentCardRegistry for A2A communication
+    getGlobalAgentRegistry().unregister(instanceId);
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:destroyed', { instanceId });
@@ -1164,10 +1185,10 @@ export class AgentRuntime implements IAgentRuntime {
     const controlClient = this.createControlClient(instanceId);
     agent.setRuntimeClient(controlClient);
 
-    // Create and inject A2A Client
+    // Create and inject A2A Client using global AgentCardRegistry
     const a2aClient = createA2AClient(
       this.messageBus,
-      this.registry as unknown as IAgentCardRegistry,
+      getGlobalAgentRegistry(),
       {
         instanceId,
         defaultTimeout: 60000,
