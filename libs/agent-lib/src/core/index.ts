@@ -17,7 +17,10 @@ export { Agent, defaultAgentConfig } from './agent/agent.js';
 export * from './config.js';
 export { AgentFactory } from './agent/AgentFactory.js';
 export type { AgentConfig } from './agent/agent.js';
-export type { AgentFactoryOptions } from './agent/AgentFactory.js';
+export type {
+  AgentFactoryOptions,
+  AgentSoulConfig,
+} from './agent/AgentFactory.js';
 export * from './agent/ObservableAgent.js';
 
 // Agent Soul
@@ -82,3 +85,34 @@ export * from './runtime/topology/index.js';
 
 // A2A (Agent-to-Agent) Communication
 export * from './a2a/index.js';
+
+// Runtime (selective exports to avoid conflicts)
+export type {
+  AgentMetadata,
+  RuntimeEvent,
+  RuntimeEventType,
+  AgentEventPayload,
+  AgentRuntimeConfig,
+  PersistenceConfig,
+  IAgentRegistry,
+  IEventDispatcher,
+  IAgentRuntime,
+  AgentFilter,
+  IRuntimeControlClient,
+  RuntimeControlAgentOptions,
+  AgentSoul,
+  ObservableAgentCallbacks as RuntimeObservableAgentCallbacks,
+  HookConfig as RuntimeHookConfig,
+  RuntimeControlProviderSettings,
+  RuntimeControlVirtualWorkspaceConfig,
+} from './runtime/index.js';
+export {
+  generateEventId,
+  AgentRegistry,
+  createAgentRegistry,
+  EventDispatcher,
+  createEventDispatcher,
+  AgentRuntime,
+  createAgentRuntime,
+  RuntimeControlClientImpl,
+} from './runtime/index.js';

@@ -14,5 +14,13 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   treeshake: true,
-  external: ['@prisma/client-runtime-utils', 'pino', '@apollo/client', 'graphql', '@apollo/client/dev'],
+  external: [
+    '@prisma/client-runtime-utils',
+    'pino',
+    '@apollo/client',
+    'graphql',
+    '@apollo/client/dev',
+    'ioredis',
+    'events',
+  ],
 });

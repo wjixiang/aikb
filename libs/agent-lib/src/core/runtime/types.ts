@@ -310,11 +310,17 @@ export type RuntimeEventType =
   | 'agent:error'
   | 'agent:idle';
 
+export interface AgentEventPayload {
+  instanceId: string;
+  error?: Error;
+  [key: string]: unknown;
+}
+
 export interface RuntimeEvent {
   id: string;
   type: RuntimeEventType;
   timestamp: Date;
-  payload: unknown;
+  payload: AgentEventPayload;
 }
 
 export type EventHandler = (event: RuntimeEvent) => void;

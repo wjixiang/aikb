@@ -57,6 +57,7 @@ import type {
   AgentStatus,
   RuntimeEvent,
   RuntimeEventType,
+  AgentEventPayload,
   IRuntimeControlClient,
   RuntimeControlAgentOptions,
   RuntimeStats,
@@ -222,6 +223,35 @@ export interface IAgentRuntime {
    * @returns Promise resolving to array of agent metadata
    */
   listAgents(filter?: AgentFilter): Promise<AgentMetadata[]>;
+
+  /**
+   * Get agent metadata by instance ID.
+   * @param instanceId The agent's unique instance identifier
+   * @returns Agent metadata or undefined if not found
+   */
+  getAgentMetadata(instanceId: string): AgentMetadata | undefined;
+
+  /**
+   * Resolve agent ID, alias, or name to instance ID.
+   * @param idOrAliasOrName Instance ID, alias, or name to resolve
+   * @returns Resolved instance ID
+   * @throws Error if agent not found
+   */
+  resolveAgentId(idOrAliasOrName: string): string;
+
+  /**
+   * List child agents of a parent agent.
+   * @param parentInstanceId Parent agent's instance ID
+   * @returns Promise resolving to array of child agent metadata
+   */
+  listChildAgents(parentInstanceId: string): Promise<AgentMetadata[]>;
+
+  /**
+   * Get a RuntimeControlClient for a specific agent.
+   * @param instanceId The agent's instance ID
+   * @returns IRuntimeControlClient instance
+   */
+  getRuntimeClient(instanceId: string): IRuntimeControlClient;
 
   // ============================================
   // Event System
@@ -513,10 +543,16 @@ export class AgentRuntime implements IAgentRuntime {
     this.messageBus = createMessageBusFromConfig(messageBusConfig);
 
     // Connect to Redis if using RedisMessageBus
-    if (messageBusConfig.mode === 'redis' && isRedisMessageBus(this.messageBus)) {
+    if (
+      messageBusConfig.mode === 'redis' &&
+      isRedisMessageBus(this.messageBus)
+    ) {
       // Connection happens lazily on first use, but we can connect eagerly here
       this.messageBus.connect().catch((err) => {
-        console.error('[AgentRuntime] Failed to connect to Redis:', err.message);
+        console.error(
+          '[AgentRuntime] Failed to connect to Redis:',
+          err.message,
+        );
       });
     }
 
@@ -525,7 +561,10 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Route topology events through runtime event dispatcher
     this.messageBus.onEvent((event) => {
-      this.eventDispatcher.emitEvent(event.type as any, event.payload);
+      this.eventDispatcher.emitEvent(
+        event.type as any,
+        event.payload as AgentEventPayload,
+      );
     });
 
     // Route topology messages through runtime message handler
@@ -874,6 +913,72 @@ export class AgentRuntime implements IAgentRuntime {
     return agents;
   }
 
+  /**
+   * Get agent metadata by instance ID.
+   *
+   * @param instanceId The agent's unique instance identifier
+   * @returns Agent metadata or undefined if not found
+   */
+  getAgentMetadata(instanceId: string): AgentMetadata | undefined {
+    return this.registry.get(instanceId);
+  }
+
+  /**
+   * Resolve agent ID, alias, or name to instance ID.
+   *
+   * Tries to find agent by:
+   * 1. Exact instanceId match
+   * 2. Exact alias match
+   * 3. Partial name match
+   *
+   * @param idOrAliasOrName Instance ID, alias, or name to resolve
+   * @returns Resolved instance ID
+   * @throws Error if agent not found
+   */
+  resolveAgentId(idOrAliasOrName: string): string {
+    // 1. Try exact instanceId match
+    if (this.registry.has(idOrAliasOrName)) {
+      return idOrAliasOrName;
+    }
+
+    // 2. Try exact alias match
+    const allAgents = this.registry.getAll();
+    const byAlias = allAgents.find((a) => a.alias === idOrAliasOrName);
+    if (byAlias) {
+      return byAlias.instanceId;
+    }
+
+    // 3. Try partial name match
+    const byName = allAgents.find(
+      (a) => a.name && a.name.includes(idOrAliasOrName),
+    );
+    if (byName) {
+      return byName.instanceId;
+    }
+
+    throw new Error(`Agent not found: ${idOrAliasOrName}`);
+  }
+
+  /**
+   * List child agents of a parent agent.
+   *
+   * @param parentInstanceId Parent agent's instance ID
+   * @returns Promise resolving to array of child agent metadata
+   */
+  async listChildAgents(parentInstanceId: string): Promise<AgentMetadata[]> {
+    return this.registry.getChildren(parentInstanceId);
+  }
+
+  /**
+   * Get a RuntimeControlClient for a specific agent.
+   *
+   * @param instanceId The agent's instance ID
+   * @returns IRuntimeControlClient instance
+   */
+  getRuntimeClient(instanceId: string): IRuntimeControlClient {
+    return this.createControlClient(instanceId);
+  }
+
   // ============================================
   // Public: Event System
   // ============================================
@@ -927,6 +1032,7 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Emit start event
     this.eventDispatcher.emitEvent('agent:started', {
+      instanceId: 'runtime',
       runtimeStarted: true,
       agentCount: this.containers.size,
     });
@@ -1390,13 +1496,6 @@ export class AgentRuntime implements IAgentRuntime {
    */
   _isDescendantOf(ancestorId: string, descendantId: string): boolean {
     return this.registry.isAncestorOf(ancestorId, descendantId);
-  }
-
-  /**
-   * Get agent metadata by instanceId (internal API)
-   */
-  getAgentMetadata(instanceId: string): AgentMetadata | undefined {
-    return this.registry.get(instanceId);
   }
 
   /**

@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Redis MessageBus
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Swarm Server 1
+  swarm-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9400:9400"
+    environment:
+      - SERVER_ID=swarm-server-1
+      - PORT=9400
+      - HOST=0.0.0.0
+      - LOG_LEVEL=info
+      - MAX_AGENTS=20
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - A2A_MESSAGE_BUS_MODE=redis
+      - A2A_REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Swarm Server 2
+  swarm-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9401:9401"
+    environment:
+      - SERVER_ID=swarm-server-2
+      - PORT=9401
+      - HOST=0.0.0.0
+      - LOG_LEVEL=info
+      - MAX_AGENTS=20
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - A2A_MESSAGE_BUS_MODE=redis
+      - A2A_REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      swarm-1:
+        condition: service_started
+    restart: unless-stopped
+
+  # Swarm Server 3
+  swarm-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9402:9402"
+    environment:
+      - SERVER_ID=swarm-server-3
+      - PORT=9402
+      - HOST=0.0.0.0
+      - LOG_LEVEL=info
+      - MAX_AGENTS=20
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - A2A_MESSAGE_BUS_MODE=redis
+      - A2A_REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  default:
+    name: swarm-network

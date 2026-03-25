@@ -4,7 +4,12 @@
  * Provides event-driven communication for the Agent Runtime.
  */
 
-import type { RuntimeEvent, RuntimeEventType, EventHandler } from './types.js';
+import type {
+  RuntimeEvent,
+  RuntimeEventType,
+  EventHandler,
+  AgentEventPayload,
+} from './types.js';
 import { generateEventId } from './types.js';
 
 /**
@@ -21,7 +26,10 @@ export interface IEventDispatcher {
    * Subscribe to multiple event types
    * Returns an unsubscribe function
    */
-  subscribeAll(eventTypes: RuntimeEventType[], handler: EventHandler): () => void;
+  subscribeAll(
+    eventTypes: RuntimeEventType[],
+    handler: EventHandler,
+  ): () => void;
 
   /**
    * Emit an event
@@ -31,7 +39,7 @@ export interface IEventDispatcher {
   /**
    * Emit an event with auto-generated ID and timestamp
    */
-  emitEvent(type: RuntimeEventType, payload: unknown): void;
+  emitEvent(type: RuntimeEventType, payload: AgentEventPayload): void;
 
   /**
    * Get subscriber count for an event type
@@ -74,8 +82,13 @@ export class EventDispatcher implements IEventDispatcher {
     };
   }
 
-  subscribeAll(eventTypes: RuntimeEventType[], handler: EventHandler): () => void {
-    const unsubscribers = eventTypes.map((type) => this.subscribe(type, handler));
+  subscribeAll(
+    eventTypes: RuntimeEventType[],
+    handler: EventHandler,
+  ): () => void {
+    const unsubscribers = eventTypes.map((type) =>
+      this.subscribe(type, handler),
+    );
 
     return () => {
       unsubscribers.forEach((unsub) => unsub());
@@ -93,12 +106,15 @@ export class EventDispatcher implements IEventDispatcher {
       try {
         handler(event);
       } catch (error) {
-        console.error(`[EventDispatcher] Error in handler for ${event.type}:`, error);
+        console.error(
+          `[EventDispatcher] Error in handler for ${event.type}:`,
+          error,
+        );
       }
     });
   }
 
-  emitEvent(type: RuntimeEventType, payload: unknown): void {
+  emitEvent(type: RuntimeEventType, payload: AgentEventPayload): void {
     this.emit({
       id: generateEventId(),
       type,

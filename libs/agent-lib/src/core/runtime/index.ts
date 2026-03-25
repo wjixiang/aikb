@@ -30,11 +30,10 @@ export type {
   EventHandler,
   AgentRuntimeConfig,
   PersistenceConfig,
+  AgentEventPayload,
 } from './types.js';
 
-export {
-  generateEventId,
-} from './types.js';
+export { generateEventId } from './types.js';
 
 // Agent Registry
 export type { IAgentRegistry } from './AgentRegistry.js';
@@ -53,7 +52,6 @@ export type {
   IRuntimeControlClient,
   RuntimeControlAgentOptions,
   AgentSoul,
-  ComponentRegistration,
   ObservableAgentCallbacks,
   HookConfig,
   RuntimeControlProviderSettings,
