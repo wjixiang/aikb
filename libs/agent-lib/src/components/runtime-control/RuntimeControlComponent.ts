@@ -444,7 +444,7 @@ This component enables creation and management of child agents for distributed t
    */
   private async handleStartAgent(
     params: StartAgentParams,
-  ): Promise<ToolCallResult<{ success: boolean }>> {
+  ): Promise<ToolCallResult<{ success: boolean; agent?: AgentMetadata }>> {
     const client = this.getRuntimeClient();
     if (!client) {
       return {
@@ -458,10 +458,14 @@ This component enables creation and management of child agents for distributed t
 
     try {
       await client.startAgent(params.instanceId);
+      const agents = await client.listAgents();
+      const agent = agents.find((a) => a.instanceId === params.instanceId);
       return {
         success: true,
-        data: { success: true },
-        summary: `[RuntimeControl] Started agent: ${params.instanceId}`,
+        data: { success: true, agent },
+        summary: agent
+          ? `[RuntimeControl] Started agent: ${params.instanceId} (${agent.name})`
+          : `[RuntimeControl] Started agent: ${params.instanceId}`,
       };
     } catch (error) {
       return {
@@ -763,6 +767,7 @@ This component enables creation and management of child agents for distributed t
       name: string;
       soulType: string;
       createdAt: string;
+      agent?: AgentMetadata;
     }>
   > {
     const client = this.getRuntimeClient();
@@ -800,6 +805,9 @@ This component enables creation and management of child agents for distributed t
         },
       });
 
+      const agents = await client.listAgents();
+      const agent = agents.find((a) => a.instanceId === instanceId);
+
       return {
         success: true,
         data: {
@@ -807,6 +815,7 @@ This component enables creation and management of child agents for distributed t
           name,
           soulType: params.soulType,
           createdAt: new Date().toISOString(),
+          agent,
         },
         summary: `[RuntimeControl] Created ${name} (${params.soulType}) with id ${instanceId}`,
       };
@@ -824,6 +833,7 @@ This component enables creation and management of child agents for distributed t
           name: string;
           soulType: string;
           createdAt: string;
+          agent?: AgentMetadata;
         },
         summary: `[RuntimeControl] Failed to create agent: ${(error as Error).message}`,
       };
