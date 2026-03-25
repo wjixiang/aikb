@@ -349,6 +349,23 @@ export class Agent {
         '[Agent] Received A2A task, processing',
       );
 
+      // Handle special "start" task - auto respond without LLM
+      if (payload.description === 'start') {
+        this.logger.info(
+          { taskId: payload.taskId },
+          '[Agent] Received start task, auto-responding',
+        );
+        // Transition to running if idle
+        if (this._status === 'idle' || this._status === 'completed') {
+          this._status = 'running';
+        }
+        return {
+          taskId: payload.taskId || '',
+          status: 'completed' as const,
+          output: { started: true, message: 'Agent started' },
+        };
+      }
+
       // Inject A2A task as a user message so the LLM can process it
       const taskDescription = payload.description || 'Task received';
       const taskInput = payload.input
