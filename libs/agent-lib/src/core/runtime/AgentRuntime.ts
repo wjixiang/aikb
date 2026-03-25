@@ -80,7 +80,7 @@ import type { IMessageRouter } from './topology/routing/MessageRouter.js';
 // A2A Communication
 import { A2AClient, createA2AClient } from '../a2a/index.js';
 import type { IAgentCardRegistry } from '../a2a/index.js';
-import { createUserContext, type UserContext } from './UserContext.js';
+import { createUserContext, type IUserContext } from './UserContext.js';
 
 function generateShortUuid(length = 4): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -369,7 +369,7 @@ export interface IAgentRuntime {
   createUserContext(options?: {
     userId?: string;
     defaultTimeout?: number;
-  }): import('./UserContext.js').UserContext;
+  }): IUserContext;
 }
 
 /**
@@ -1096,7 +1096,7 @@ export class AgentRuntime implements IAgentRuntime {
   createUserContext(options?: {
     userId?: string;
     defaultTimeout?: number;
-  }): UserContext {
+  }): IUserContext {
     return createUserContext(this, options);
   }
 
