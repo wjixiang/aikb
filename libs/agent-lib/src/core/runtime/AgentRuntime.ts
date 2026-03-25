@@ -1093,9 +1093,17 @@ export class AgentRuntime implements IAgentRuntime {
       throw new Error(`Maximum agent limit reached: ${this.config.maxAgents}`);
     }
 
-    // Create the agent with parent info
+    // Merge API config: runtime default + options.api
+    // This ensures child agents use the runtime's default API config if not specified
+    const mergedApi = {
+      ...this.defaultApiConfig,
+      ...options?.api,
+    };
+
+    // Create the agent with parent info and merged API config
     const container = AgentFactory.create({
       ...options,
+      api: mergedApi,
       messageBus: this.messageBus,
     } as AgentFactoryOptions);
 
