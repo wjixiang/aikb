@@ -6,14 +6,31 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 
+const responseSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean' },
+    data: { type: 'object' },
+    count: { type: 'number' },
+    error: { type: 'string' },
+  },
+};
+
 export const agentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/:instanceId',
     {
-      schema: { tags: ['agents'] } as any,
+      schema: {
+        tags: ['agents'],
+        params: {
+          type: 'object',
+          properties: { instanceId: { type: 'string' } },
+        },
+        response: { 200: responseSchema, 404: responseSchema },
+      } as any,
     },
     async (request: any, reply: any) => {
-      const instanceId = request.params.instanceId;
+      const { instanceId } = request.params;
       try {
         const resolvedId = fastify.agentRuntime.resolveAgentId(instanceId);
         const agent = await fastify.agentRuntime.getAgent(resolvedId);
@@ -30,7 +47,6 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
             status: agent.status,
             name: metadata?.name,
             type: metadata?.agentType,
-            serverId: fastify.serverId,
           },
         };
       } catch {
@@ -44,10 +60,17 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/:instanceId/start',
     {
-      schema: { tags: ['agents'] } as any,
+      schema: {
+        tags: ['agents'],
+        params: {
+          type: 'object',
+          properties: { instanceId: { type: 'string' } },
+        },
+        response: { 200: responseSchema, 400: responseSchema },
+      } as any,
     },
     async (request: any, reply: any) => {
-      const instanceId = request.params.instanceId;
+      const { instanceId } = request.params;
       try {
         const resolvedId = fastify.agentRuntime.resolveAgentId(instanceId);
         await fastify.agentRuntime.startAgent(resolvedId);
@@ -69,10 +92,17 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/:instanceId/stop',
     {
-      schema: { tags: ['agents'] } as any,
+      schema: {
+        tags: ['agents'],
+        params: {
+          type: 'object',
+          properties: { instanceId: { type: 'string' } },
+        },
+        response: { 200: responseSchema, 400: responseSchema },
+      } as any,
     },
     async (request: any, reply: any) => {
-      const instanceId = request.params.instanceId;
+      const { instanceId } = request.params;
       try {
         const resolvedId = fastify.agentRuntime.resolveAgentId(instanceId);
         await fastify.agentRuntime.stopAgent(resolvedId);
@@ -94,10 +124,17 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/:instanceId',
     {
-      schema: { tags: ['agents'] } as any,
+      schema: {
+        tags: ['agents'],
+        params: {
+          type: 'object',
+          properties: { instanceId: { type: 'string' } },
+        },
+        response: { 200: responseSchema, 400: responseSchema },
+      } as any,
     },
     async (request: any, reply: any) => {
-      const instanceId = request.params.instanceId;
+      const { instanceId } = request.params;
       try {
         const resolvedId = fastify.agentRuntime.resolveAgentId(instanceId);
         await fastify.agentRuntime.destroyAgent(resolvedId);
@@ -119,10 +156,17 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/:instanceId/children',
     {
-      schema: { tags: ['agents'] } as any,
+      schema: {
+        tags: ['agents'],
+        params: {
+          type: 'object',
+          properties: { instanceId: { type: 'string' } },
+        },
+        response: { 200: responseSchema, 400: responseSchema },
+      } as any,
     },
     async (request: any, reply: any) => {
-      const instanceId = request.params.instanceId;
+      const { instanceId } = request.params;
       try {
         const resolvedId = fastify.agentRuntime.resolveAgentId(instanceId);
         const children = await fastify.agentRuntime.listChildAgents(resolvedId);
@@ -141,7 +185,14 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/:instanceId/logs',
     {
-      schema: { tags: ['agents'] } as any,
+      schema: {
+        tags: ['agents'],
+        params: {
+          type: 'object',
+          properties: { instanceId: { type: 'string' } },
+        },
+        response: { 200: responseSchema },
+      } as any,
     },
     async (request: any, reply: any) => {
       return {
