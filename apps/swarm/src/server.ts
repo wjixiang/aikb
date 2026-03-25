@@ -1,42 +1,28 @@
 /**
  * Swarm Application - Fastify + AgentRuntime
- *
- * 一个 Fastify 服务器 = 一个 AgentRuntime
- *
- * Architecture:
- * - Fastify 服务器包装 AgentRuntime
- * - HTTP API 映射到 RuntimeControlClient 方法
- * - 支持 Redis 分布式部署
- * - 健康检查和监控
  */
 
 import 'dotenv/config';
 import Fastify from 'fastify';
+import { default as cors } from '@fastify/cors';
+import { default as swagger } from '@fastify/swagger';
+import { default as swaggerUi } from '@fastify/swagger-ui';
+import type { AgentRuntimeConfig } from 'agent-lib/core';
 import { createAgentRuntime } from 'agent-lib/core';
 import { agentRuntimePlugin } from './plugins/agent-runtime.js';
 import { runtimeRoutes } from './routes/runtime.js';
 import { agentRoutes } from './routes/agent.js';
 import { a2aRoutes } from './routes/a2a.js';
 import { healthRoutes } from './routes/health.js';
-import type { AgentRuntimeConfig } from 'agent-lib/core';
 import { loadConfig } from './config.js';
-
-// ============================================================
-// Configuration
-// ============================================================
 
 const config = loadConfig();
 
-// Build AgentRuntime config
 const runtimeConfig: AgentRuntimeConfig = {
   maxAgents: config.server.maxAgents,
   defaultApiConfig: config.api as any,
   messageBus: config.messageBus as any,
 };
-
-// ============================================================
-// Fastify Server
-// ============================================================
 
 const fastify = Fastify({
   logger: {
@@ -44,26 +30,49 @@ const fastify = Fastify({
   },
 });
 
-// ============================================================
-// Register Plugin & Routes
-// ============================================================
+await fastify.register(cors as any);
 
-// Register AgentRuntime plugin
+await fastify.register(swagger as any, {
+  openapi: {
+    info: {
+      title: 'Swarm Agent Runtime API',
+      description:
+        'HTTP API for AgentRuntime management and Agent-to-Agent communication',
+      version: '1.0.0',
+    },
+    servers: [
+      {
+        url: `http://localhost:${config.server.port}`,
+        description: 'Local server',
+      },
+    ],
+    tags: [
+      { name: 'health', description: 'Health check endpoints' },
+      { name: 'runtime', description: 'Runtime management endpoints' },
+      { name: 'agents', description: 'Individual agent operations' },
+      { name: 'a2a', description: 'Agent-to-Agent communication' },
+    ],
+  },
+});
+
+await fastify.register(swaggerUi as any, {
+  routePrefix: '/docs',
+  uiConfig: {
+    docExpansion: 'list',
+    deepLinking: true,
+  },
+});
+
 await fastify.register(agentRuntimePlugin, {
   runtimeConfig,
   serverId: config.server.id,
   port: config.server.port,
 });
 
-// Register routes
 await fastify.register(healthRoutes, { prefix: '/health' });
 await fastify.register(runtimeRoutes, { prefix: '/api/runtime' });
 await fastify.register(agentRoutes, { prefix: '/api/agents' });
 await fastify.register(a2aRoutes, { prefix: '/api/a2a' });
-
-// ============================================================
-// Start Server
-// ============================================================
 
 const port = config.server.port;
 const host = config.server.host;
@@ -74,26 +83,21 @@ try {
   fastify.log.info(`   Server ID: ${config.server.id}`);
   fastify.log.info(`   MessageBus: ${config.messageBus?.mode || 'memory'}`);
   fastify.log.info(`   Max Agents: ${config.server.maxAgents}`);
+  fastify.log.info(`   API Docs: http://${host}:${port}/docs`);
 } catch (err) {
   fastify.log.error(err);
   process.exit(1);
 }
 
-// ============================================================
-// Graceful Shutdown
-// ============================================================
-
 const shutdown = async (signal: string) => {
   fastify.log.info(`⬇️  ${signal} received, shutting down...`);
 
-  // Stop AgentRuntime
   const runtime = fastify.agentRuntime;
   if (runtime) {
     await runtime.stop();
     fastify.log.info('   AgentRuntime stopped');
   }
 
-  // Close Fastify
   await fastify.close();
   fastify.log.info('   Fastify server closed');
 
