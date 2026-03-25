@@ -6,39 +6,11 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 
-const healthSchema = {
-  type: 'object',
-  properties: {
-    status: { type: 'string' },
-    service: { type: 'string' },
-    serverId: { type: 'string' },
-    timestamp: { type: 'string' },
-  },
-};
-
-const readySchema = {
-  type: 'object',
-  properties: {
-    status: { type: 'string', enum: ['ready', 'not_ready'] },
-    serverId: { type: 'string' },
-    message: { type: 'string' },
-  },
-};
-
-const liveSchema = {
-  type: 'object',
-  properties: {
-    status: { type: 'string' },
-    serverId: { type: 'string' },
-    uptime: { type: 'number' },
-  },
-};
-
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/',
     {
-      schema: { response: { 200: healthSchema } },
+      schema: { tags: ['health'] } as any,
     },
     async (request, reply) => {
       return {
@@ -53,26 +25,28 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/ready',
     {
-      schema: { response: { 200: readySchema, 503: readySchema } },
+      schema: { tags: ['health'] } as any,
     },
     async (request, reply) => {
       const runtime = fastify.agentRuntime;
-
       if (!runtime) {
-        return reply.code(503).send({
-          status: 'not_ready',
-          message: 'AgentRuntime not initialized',
-        });
+        return reply
+          .code(503)
+          .send({
+            status: 'not_ready',
+            message: 'AgentRuntime not initialized',
+          });
       }
-
       try {
         await runtime.getStats();
         return { status: 'ready', serverId: fastify.serverId };
       } catch {
-        return reply.code(503).send({
-          status: 'not_ready',
-          message: 'AgentRuntime not functional',
-        });
+        return reply
+          .code(503)
+          .send({
+            status: 'not_ready',
+            message: 'AgentRuntime not functional',
+          });
       }
     },
   );
@@ -80,7 +54,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/live',
     {
-      schema: { response: { 200: liveSchema } },
+      schema: { tags: ['health'] } as any,
     },
     async (request, reply) => {
       return {
@@ -93,7 +67,6 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/metrics', async (request, reply) => {
     const runtime = fastify.agentRuntime;
-
     return {
       server: {
         id: fastify.serverId,
