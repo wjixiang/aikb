@@ -48,6 +48,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['health'],
+        description: 'Basic health check - returns OK if server is running',
         response: { 200: healthResponseSchema },
       } as any,
     },
@@ -66,6 +67,8 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['health'],
+        description:
+          'Readiness check - returns OK if server and runtime are ready to accept requests',
         response: { 200: healthResponseSchema, 503: healthResponseSchema },
       } as any,
     },
@@ -94,6 +97,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['health'],
+        description: 'Liveness check - returns OK if server process is alive',
         response: { 200: healthResponseSchema },
       } as any,
     },
@@ -111,6 +115,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['health'],
+        description: 'Get detailed server and runtime metrics',
         response: { 200: metricsResponseSchema },
       } as any,
     },

@@ -37,8 +37,13 @@ await fastify.register(swagger as any, {
     info: {
       title: 'Swarm Agent Runtime API',
       description:
-        'HTTP API for AgentRuntime management and Agent-to-Agent communication',
+        'HTTP API for managing AgentRuntime, agents, and Agent-to-Agent (A2A) communication. ' +
+        'Provides endpoints for creating, starting, stopping, and destroying agents, ' +
+        'as well as sending tasks, queries, and events between agents.',
       version: '1.0.0',
+      contact: {
+        name: 'API Support',
+      },
     },
     servers: [
       {
@@ -47,10 +52,22 @@ await fastify.register(swagger as any, {
       },
     ],
     tags: [
-      { name: 'health', description: 'Health check endpoints' },
-      { name: 'runtime', description: 'Runtime management endpoints' },
-      { name: 'agents', description: 'Individual agent operations' },
-      { name: 'a2a', description: 'Agent-to-Agent communication' },
+      {
+        name: 'health',
+        description: 'Health check endpoints - server status and readiness',
+      },
+      {
+        name: 'runtime',
+        description: 'Runtime management - agent lifecycle and topology',
+      },
+      {
+        name: 'agents',
+        description: 'Individual agent operations - per-agent actions',
+      },
+      {
+        name: 'a2a',
+        description: 'Agent-to-Agent communication - tasks, queries, events',
+      },
     ],
   },
 });

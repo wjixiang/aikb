@@ -10,7 +10,20 @@ const responseSchema = {
   type: 'object',
   properties: {
     success: { type: 'boolean' },
-    data: { type: 'object' },
+    data: { type: 'object', additionalProperties: true },
+    count: { type: 'number' },
+    error: { type: 'string' },
+  },
+};
+
+const arrayResponseSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean' },
+    data: {
+      type: 'array',
+      items: { type: 'object', additionalProperties: true },
+    },
     count: { type: 'number' },
     error: { type: 'string' },
   },
@@ -22,9 +35,15 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['agents'],
+        description: 'Get details of a specific agent',
         params: {
           type: 'object',
-          properties: { instanceId: { type: 'string' } },
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
         },
         response: { 200: responseSchema, 404: responseSchema },
       } as any,
@@ -62,9 +81,15 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['agents'],
+        description: 'Start a stopped agent',
         params: {
           type: 'object',
-          properties: { instanceId: { type: 'string' } },
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
         },
         response: { 200: responseSchema, 400: responseSchema },
       } as any,
@@ -79,12 +104,10 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
           data: { instanceId: resolvedId, status: 'started' },
         };
       } catch (error) {
-        return reply
-          .code(400)
-          .send({
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
   );
@@ -94,9 +117,15 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['agents'],
+        description: 'Stop a running agent',
         params: {
           type: 'object',
-          properties: { instanceId: { type: 'string' } },
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
         },
         response: { 200: responseSchema, 400: responseSchema },
       } as any,
@@ -111,12 +140,10 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
           data: { instanceId: resolvedId, status: 'stopped' },
         };
       } catch (error) {
-        return reply
-          .code(400)
-          .send({
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
   );
@@ -126,9 +153,15 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['agents'],
+        description: 'Destroy an agent completely',
         params: {
           type: 'object',
-          properties: { instanceId: { type: 'string' } },
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
         },
         response: { 200: responseSchema, 400: responseSchema },
       } as any,
@@ -143,12 +176,10 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
           data: { instanceId: resolvedId, status: 'destroyed' },
         };
       } catch (error) {
-        return reply
-          .code(400)
-          .send({
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
   );
@@ -158,11 +189,17 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['agents'],
+        description: 'List all child agents spawned by this agent',
         params: {
           type: 'object',
-          properties: { instanceId: { type: 'string' } },
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
         },
-        response: { 200: responseSchema, 400: responseSchema },
+        response: { 200: arrayResponseSchema, 400: arrayResponseSchema },
       } as any,
     },
     async (request: any, reply: any) => {
@@ -172,12 +209,10 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
         const children = await fastify.agentRuntime.listChildAgents(resolvedId);
         return { success: true, data: children, count: children.length };
       } catch (error) {
-        return reply
-          .code(400)
-          .send({
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
   );
@@ -187,9 +222,15 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['agents'],
+        description: 'Retrieve agent execution logs',
         params: {
           type: 'object',
-          properties: { instanceId: { type: 'string' } },
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
         },
         response: { 200: responseSchema },
       } as any,

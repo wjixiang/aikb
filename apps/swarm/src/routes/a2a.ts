@@ -12,7 +12,20 @@ const a2aResponseSchema = {
   type: 'object',
   properties: {
     success: { type: 'boolean' },
-    data: { type: 'object' },
+    data: { type: 'object', additionalProperties: true },
+    count: { type: 'number' },
+    error: { type: 'string' },
+  },
+};
+
+const a2aArrayResponseSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean' },
+    data: {
+      type: 'array',
+      items: { type: 'object', additionalProperties: true },
+    },
     count: { type: 'number' },
     error: { type: 'string' },
   },
@@ -22,11 +35,17 @@ const taskBodySchema = {
   type: 'object',
   required: ['targetAgentId', 'taskId', 'description'],
   properties: {
-    targetAgentId: { type: 'string' },
-    taskId: { type: 'string' },
-    description: { type: 'string' },
-    input: { type: 'object' },
-    priority: { type: 'number' },
+    targetAgentId: {
+      type: 'string',
+      description: 'Target agent instance ID or alias',
+    },
+    taskId: { type: 'string', description: 'Unique task identifier' },
+    description: { type: 'string', description: 'Task description' },
+    input: { type: 'object', description: 'Task input data' },
+    priority: {
+      type: 'number',
+      description: 'Task priority (higher = more urgent)',
+    },
   },
 };
 
@@ -34,9 +53,15 @@ const queryBodySchema = {
   type: 'object',
   required: ['targetAgentId', 'query'],
   properties: {
-    targetAgentId: { type: 'string' },
-    query: { type: 'string' },
-    expectedFormat: { type: 'string' },
+    targetAgentId: {
+      type: 'string',
+      description: 'Target agent instance ID or alias',
+    },
+    query: { type: 'string', description: 'Query string to send to agent' },
+    expectedFormat: {
+      type: 'string',
+      description: 'Expected response format (e.g., json, text)',
+    },
   },
 };
 
@@ -44,9 +69,12 @@ const eventBodySchema = {
   type: 'object',
   required: ['targetAgentId', 'eventType'],
   properties: {
-    targetAgentId: { type: 'string' },
-    eventType: { type: 'string' },
-    data: { type: 'object' },
+    targetAgentId: {
+      type: 'string',
+      description: 'Target agent instance ID or alias',
+    },
+    eventType: { type: 'string', description: 'Type of event to send' },
+    data: { type: 'object', description: 'Event payload data' },
   },
 };
 
@@ -56,6 +84,7 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['a2a'],
+        description: 'Send an asynchronous task to another agent',
         body: taskBodySchema,
         response: { 200: a2aResponseSchema, 400: a2aResponseSchema },
       } as any,
@@ -94,6 +123,8 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['a2a'],
+        description:
+          'Send a synchronous query to another agent and wait for response',
         body: queryBodySchema,
         response: { 200: a2aResponseSchema, 400: a2aResponseSchema },
       } as any,
@@ -124,6 +155,7 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['a2a'],
+        description: 'Send an event notification to another agent',
         body: eventBodySchema,
         response: { 200: a2aResponseSchema, 400: a2aResponseSchema },
       } as any,
@@ -150,7 +182,8 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['a2a'],
-        response: { 200: a2aResponseSchema },
+        description: 'List all agent-to-agent conversations',
+        response: { 200: a2aArrayResponseSchema },
       } as any,
     },
     async (request: any, reply: any) => {
@@ -163,9 +196,12 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['a2a'],
+        description: 'Get details of a specific conversation',
         params: {
           type: 'object',
-          properties: { id: { type: 'string' } },
+          properties: {
+            id: { type: 'string', description: 'Conversation ID' },
+          },
         },
         response: { 200: a2aResponseSchema, 404: a2aResponseSchema },
       } as any,
