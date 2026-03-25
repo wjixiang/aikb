@@ -33,6 +33,10 @@ import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import { createA2AHandler } from '../a2a/index.js';
 import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
 import { A2ATaskComponent } from '../../components/A2AComponent/A2ATaskComponent.js';
+import {
+  RuntimeControlComponent,
+  RuntimeControlState,
+} from '../../components/runtime-control/index.js';
 
 type Logger = ReturnType<typeof pino>;
 
@@ -327,12 +331,29 @@ export class AgentContainer {
       .bind<Container>(TYPES.Container)
       .toConstantValue(this.container);
 
+    // Create shared state for RuntimeControlComponent
+    const runtimeControlState = new RuntimeControlState();
+
+    // Bind RuntimeControlState for DI
+    this.container
+      .bind<RuntimeControlState>(TYPES.RuntimeControlState)
+      .toConstantValue(runtimeControlState);
+
     // Bind ToolComponents array for DI-managed registration
-    // Always include A2ATaskComponent as global component for A2A support
+    // Always include A2ATaskComponent and RuntimeControlComponent as global components
     const globalComponents: Array<{
       component: ToolComponent;
       priority?: number;
-    }> = [{ component: new A2ATaskComponent(), priority: 0 }];
+    }> = [
+      { component: new A2ATaskComponent(), priority: 0 },
+      {
+        component: new RuntimeControlComponent({
+          instanceId: this.instanceId,
+          state: runtimeControlState,
+        }),
+        priority: 0,
+      },
+    ];
 
     // Inject dependencies into global components
     for (const { component } of globalComponents) {

@@ -15,5 +15,6 @@
  */
 
 export { RuntimeControlComponent } from './RuntimeControlComponent.js';
+export { RuntimeControlState } from './types.js';
 export type { RuntimeControlComponentConfig } from './types.js';
 export * from './schemas.js';

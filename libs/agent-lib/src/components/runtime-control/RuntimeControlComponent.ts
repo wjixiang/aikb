@@ -93,9 +93,12 @@ This component enables creation and management of child agents for distributed t
   }
 
   /**
-   * Get the RuntimeControlClient via callback
+   * Get the RuntimeControlClient via state or callback
    */
   private getRuntimeClient(): IRuntimeControlClient | undefined {
+    if (this.config.state) {
+      return this.config.state.getRuntimeClient();
+    }
     return this.config.getRuntimeClient?.();
   }
 

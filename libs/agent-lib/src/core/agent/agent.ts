@@ -38,6 +38,7 @@ import pino from 'pino';
 import type { IRuntimeControlClient } from '../runtime/types.js';
 import {
   RuntimeControlComponent,
+  RuntimeControlState,
   type RuntimeControlComponentConfig,
 } from '../../components/runtime-control/index.js';
 
@@ -178,6 +179,9 @@ export class Agent {
     }
   > = new Map();
 
+  // RuntimeControlComponent state (set via DI)
+  private _runtimeControlState?: RuntimeControlState;
+
   // Persistence service (for component states - instance-level)
   private persistenceService?: IPersistenceService;
 
@@ -213,6 +217,9 @@ export class Agent {
     @inject(TYPES.IA2AHandler)
     @optional()
     a2aHandler?: A2AHandler,
+    @inject(TYPES.RuntimeControlState)
+    @optional()
+    runtimeControlState?: RuntimeControlState,
   ) {
     this.instanceId = instanceId;
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'debug' });
@@ -227,6 +234,7 @@ export class Agent {
     this.hookModule = hookModule;
     this.sessionManager = sessionManager;
     this.persistenceService = persistenceService;
+    this._runtimeControlState = runtimeControlState;
 
     void this.sessionManager.createSession(this.getSessionState());
 
@@ -692,16 +700,18 @@ export class Agent {
   setRuntimeClient(client: IRuntimeControlClient): void {
     this._runtimeClient = client;
 
-    const runtimeControlConfig: RuntimeControlComponentConfig = {
-      instanceId: this.instanceId,
-      getRuntimeClient: () => client,
-    };
-    const runtimeControlComponent = new RuntimeControlComponent(
-      runtimeControlConfig,
-    );
-    this.workspace.addComponent(runtimeControlComponent);
+    if (this._runtimeControlState) {
+      this._runtimeControlState.setRuntimeClient(client);
+    }
 
     this.logger.info('[Agent] Runtime control client set');
+  }
+
+  /**
+   * Set the RuntimeControlComponent state (called via DI)
+   */
+  setRuntimeControlState(state: RuntimeControlState): void {
+    this._runtimeControlState = state;
   }
 
   /**

@@ -349,6 +349,12 @@ export const TYPES = {
   IA2AHandler: Symbol('IA2AHandler'),
 
   /**
+   * RuntimeControlState - Shared state for RuntimeControlComponent
+   * @scope Singleton - Shared within agent container
+   */
+  RuntimeControlState: Symbol('RuntimeControlState'),
+
+  /**
    * A2AHandlerConfig - Configuration for A2AHandler
    * @scope Singleton - Bound at container creation
    */
