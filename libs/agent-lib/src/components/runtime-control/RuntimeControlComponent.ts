@@ -461,6 +461,7 @@ This component enables creation and management of child agents for distributed t
 
   /**
    * Handle startAgent tool call
+   * Sends an A2A task to the target agent to start its work
    */
   private async handleStartAgent(
     params: StartAgentParams,
@@ -477,17 +478,24 @@ This component enables creation and management of child agents for distributed t
     }
 
     try {
-      await client.startAgent(params.agentId);
+      const resolvedAgentId = client.resolveAgentId(params.agentId);
       const agents = await client.listAgents();
-      const agent = agents.find(
-        (a) => a.instanceId === params.agentId || a.alias === params.agentId,
+      const agent = agents.find((a) => a.instanceId === resolvedAgentId);
+
+      await client.sendA2ATask(
+        params.agentId,
+        `start-${resolvedAgentId}-${Date.now()}`,
+        'start',
+        { source: 'runtime-control' },
+        { priority: 'high' },
       );
+
       return {
         success: true,
         data: { success: true, agent },
         summary: agent
-          ? `[RuntimeControl] Started agent: ${params.agentId} (${agent.name}) alias: ${agent.alias}`
-          : `[RuntimeControl] Started agent: ${params.agentId}`,
+          ? `[RuntimeControl] Sent start request to agent: ${params.agentId} (${agent.name}) alias: ${agent.alias}`
+          : `[RuntimeControl] Sent start request to agent: ${params.agentId}`,
       };
     } catch (error) {
       return {

@@ -42,6 +42,7 @@ describe('RuntimeControlComponent', () => {
       destroyAgent: vi.fn(() => Promise.resolve()),
       startAgent: vi.fn(() => Promise.resolve()),
       stopAgent: vi.fn(() => Promise.resolve()),
+      resolveAgentId: vi.fn((id: string) => id),
       getAgent: vi.fn((id) =>
         Promise.resolve({ instanceId: id } as AgentMetadata),
       ),
@@ -70,6 +71,11 @@ describe('RuntimeControlComponent', () => {
         failedConversations: 0,
         timedOutConversations: 0,
       })),
+      sendA2ATask: vi.fn(() =>
+        Promise.resolve({ taskId: 'task-1', status: 'completed' as const }),
+      ),
+      sendA2AQuery: vi.fn(() => Promise.resolve(null)),
+      sendA2AEvent: vi.fn(() => Promise.resolve()),
     };
   };
 
@@ -159,16 +165,16 @@ describe('RuntimeControlComponent', () => {
   });
 
   describe('startAgent tool', () => {
-    it('should start agent successfully', async () => {
+    it('should send start request via A2A', async () => {
+      mockRuntimeClient.resolveAgentId = vi.fn((id: string) => id);
+
       const result = await component.handleToolCall('startAgent', {
         agentId: 'child-agent-id',
       });
 
       expect(result.success).toBe(true);
       expect(result.data.success).toBe(true);
-      expect(mockRuntimeClient.startAgent).toHaveBeenCalledWith(
-        'child-agent-id',
-      );
+      expect(mockRuntimeClient.sendA2ATask).toHaveBeenCalled();
     });
   });
 

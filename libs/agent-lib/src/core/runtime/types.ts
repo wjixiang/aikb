@@ -81,6 +81,10 @@ export interface IRuntimeControlClient {
   // Agent Query
   // ============================================
 
+  /**
+   * Resolve agent ID, alias, or name to instance ID
+   */
+  resolveAgentId(idOrAlias: string): string;
   getAgent(instanceId: string): Promise<unknown>;
   listAgents(filter?: AgentFilter): Promise<AgentMetadata[]>;
   getSelfInstanceId(): string;
