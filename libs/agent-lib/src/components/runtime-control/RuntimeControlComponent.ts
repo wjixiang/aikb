@@ -6,23 +6,24 @@
  *
  * ## Usage
  *
- * The component is typically registered with the Agent and uses a callback
- * to access the RuntimeControlClient at runtime (since it's set after creation).
+ * The component receives dependencies via @inject() decorator:
  *
  * @example
  * ```typescript
- * // In Agent initialization
- * this.runtimeControlComponent = new RuntimeControlComponent({
- *   instanceId: this.instanceId,
- *   getRuntimeClient: () => this._runtimeClient,
- * });
- *
- * // Agent can now create child agents via LLM tool calls
+ * // Dependencies injected via Inversify
+ * constructor(
+ *   @inject(TYPES.AgentInstanceId) instanceId: string,
+ *   @inject(TYPES.RuntimeControlState) state: RuntimeControlState,
+ * ) {
+ *   super();
+ * }
  * ```
  *
  * @module RuntimeControlComponent
  */
 
+import 'reflect-metadata';
+import { injectable, inject } from 'inversify';
 import {
   ToolComponent,
   ExportOptions,
@@ -31,7 +32,8 @@ import {
 import type { Tool, ToolCallResult } from '../core/types.js';
 import type { TUIElement } from '../ui/TUIElement.js';
 import { th, tdiv } from '../ui/index.js';
-import type { RuntimeControlComponentConfig } from './types.js';
+import { TYPES } from '../../core/di/types.js';
+import type { RuntimeControlState } from './types.js';
 import {
   runtimeControlToolSchemas,
   type RuntimeControlToolName,
@@ -66,6 +68,7 @@ import { agentSoulRegistry, createAgentSoulByType } from '../../core/index.js';
  * This component wraps the RuntimeControlClient functionality into tools
  * that can be called by the LLM.
  */
+@injectable()
 export class RuntimeControlComponent extends ToolComponent {
   override componentId = 'runtime-control';
   override displayName = 'Runtime Control';
@@ -85,23 +88,25 @@ This component enables creation and management of child agents for distributed t
 - Clean up agents when tasks complete via destroyAgent
 - Register agents in topology for coordinated workflows`;
 
-  private config: RuntimeControlComponentConfig;
+  protected instanceId: string;
+  protected controlState: RuntimeControlState;
   toolSet: Map<string, Tool>;
 
-  constructor(config: RuntimeControlComponentConfig) {
+  constructor(
+    @inject(TYPES.AgentInstanceId) instanceId: string,
+    @inject(TYPES.RuntimeControlState) controlState: RuntimeControlState,
+  ) {
     super();
-    this.config = config;
+    this.instanceId = instanceId;
+    this.controlState = controlState;
     this.toolSet = this.initializeToolSet();
   }
 
   /**
-   * Get the RuntimeControlClient via state or callback
+   * Get the RuntimeControlClient via controlState
    */
   private getRuntimeClient(): IRuntimeControlClient | undefined {
-    if (this.config.state) {
-      return this.config.state.getRuntimeClient();
-    }
-    return this.config.getRuntimeClient?.();
+    return this.controlState.getRuntimeClient();
   }
 
   /**
@@ -776,6 +781,10 @@ This component enables creation and management of child agents for distributed t
       const name =
         params.name || agentConfig?.name || `${params.soulType} Agent`;
 
+      console.log(
+        `[RuntimeControl] Creating agent by type: ${params.soulType}, name: ${name}`,
+      );
+
       const instanceId = await client.createAgent({
         agent: {
           name,
@@ -785,8 +794,19 @@ This component enables creation and management of child agents for distributed t
         },
       });
 
+      console.log(
+        `[RuntimeControl] Agent created with instanceId: ${instanceId}`,
+      );
+
       const agents = await client.listAgents();
       const agent = agents.find((a) => a.instanceId === instanceId);
+
+      console.log(
+        `[RuntimeControl] Agent metadata found: ${agent ? `alias=${agent.alias}, name=${agent.name}` : 'NOT FOUND'}`,
+      );
+      console.log(
+        `[RuntimeControl] Total agents in registry: ${agents.length}`,
+      );
 
       return {
         success: true,
@@ -800,6 +820,9 @@ This component enables creation and management of child agents for distributed t
         summary: `[RuntimeControl] Created ${name} (${agent?.alias || instanceId})`,
       };
     } catch (error) {
+      console.error(
+        `[RuntimeControl] Failed to create agent: ${(error as Error).message}`,
+      );
       return {
         success: false,
         data: {

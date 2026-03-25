@@ -5,19 +5,28 @@
  */
 
 import pino from 'pino';
-import type { AgentCard, AgentCardSummary, A2ARegistryConfig } from './types.js';
+import type {
+  AgentCard,
+  AgentCardSummary,
+  A2ARegistryConfig,
+} from './types.js';
 
 export interface IAgentCardRegistry {
   register(card: AgentCard): void;
   unregister(instanceId: string): void;
   getAgent(instanceId: string): AgentCard | undefined;
+  getAgentByAlias(alias: string): AgentCard | undefined;
   findByCapability(capability: string): AgentCard[];
   findBySkill(skill: string): AgentCard[];
   getAllAgents(): AgentCard[];
   getAgentSummaries(): AgentCardSummary[];
   hasAgent(instanceId: string): boolean;
+  hasAgentByAlias(alias: string): boolean;
+  resolveAgentId(idOrAlias: string): string | undefined;
   updateAgent(instanceId: string, updates: Partial<AgentCard>): void;
   clear(): void;
+  /** Get the number of registered agents */
+  readonly size: number;
 }
 
 /**
@@ -30,6 +39,7 @@ export interface IAgentCardRegistry {
 export class AgentCardRegistry implements IAgentCardRegistry {
   private readonly logger: pino.Logger;
   private readonly agents: Map<string, AgentCard> = new Map();
+  private readonly aliasIndex: Map<string, string> = new Map();
   private readonly capabilityIndex: Map<string, Set<string>> = new Map();
   private readonly skillIndex: Map<string, Set<string>> = new Map();
   private readonly config: Required<A2ARegistryConfig>;
@@ -53,14 +63,16 @@ export class AgentCardRegistry implements IAgentCardRegistry {
       throw new Error('Agent card must have an instanceId');
     }
 
-    // Remove existing registration if present
     if (this.agents.has(card.instanceId)) {
       this.unregister(card.instanceId);
     }
 
     this.agents.set(card.instanceId, { ...card });
 
-    // Index by capabilities
+    if (card.alias) {
+      this.aliasIndex.set(card.alias, card.instanceId);
+    }
+
     for (const capability of card.capabilities) {
       if (!this.capabilityIndex.has(capability)) {
         this.capabilityIndex.set(capability, new Set());
@@ -68,7 +80,6 @@ export class AgentCardRegistry implements IAgentCardRegistry {
       this.capabilityIndex.get(capability)!.add(card.instanceId);
     }
 
-    // Index by skills
     for (const skill of card.skills) {
       if (!this.skillIndex.has(skill)) {
         this.skillIndex.set(skill, new Set());
@@ -76,7 +87,9 @@ export class AgentCardRegistry implements IAgentCardRegistry {
       this.skillIndex.get(skill)!.add(card.instanceId);
     }
 
-    this.logger.debug(`Registered agent: ${card.name} (${card.instanceId})`);
+    this.logger.debug(
+      `Registered agent: ${card.name} (${card.instanceId}${card.alias ? `, alias: ${card.alias}` : ''})`,
+    );
   }
 
   /**
@@ -88,7 +101,10 @@ export class AgentCardRegistry implements IAgentCardRegistry {
       return;
     }
 
-    // Remove from capability index
+    if (card.alias) {
+      this.aliasIndex.delete(card.alias);
+    }
+
     for (const capability of card.capabilities) {
       this.capabilityIndex.get(capability)?.delete(instanceId);
       if (this.capabilityIndex.get(capability)?.size === 0) {
@@ -96,7 +112,6 @@ export class AgentCardRegistry implements IAgentCardRegistry {
       }
     }
 
-    // Remove from skill index
     for (const skill of card.skills) {
       this.skillIndex.get(skill)?.delete(instanceId);
       if (this.skillIndex.get(skill)?.size === 0) {
@@ -154,6 +169,7 @@ export class AgentCardRegistry implements IAgentCardRegistry {
   getAgentSummaries(): AgentCardSummary[] {
     return Array.from(this.agents.values()).map((card) => ({
       instanceId: card.instanceId,
+      alias: card.alias,
       name: card.name,
       capabilities: card.capabilities,
       skills: card.skills,
@@ -167,16 +183,34 @@ export class AgentCardRegistry implements IAgentCardRegistry {
     return this.agents.has(instanceId);
   }
 
-  /**
-   * Update an existing agent's card
-   */
+  getAgentByAlias(alias: string): AgentCard | undefined {
+    const instanceId = this.aliasIndex.get(alias);
+    if (!instanceId) {
+      return undefined;
+    }
+    return this.agents.get(instanceId);
+  }
+
+  hasAgentByAlias(alias: string): boolean {
+    return this.aliasIndex.has(alias);
+  }
+
+  resolveAgentId(idOrAlias: string): string | undefined {
+    if (this.agents.has(idOrAlias)) {
+      return idOrAlias;
+    }
+    return this.aliasIndex.get(idOrAlias);
+  }
+
   updateAgent(instanceId: string, updates: Partial<AgentCard>): void {
     const existing = this.agents.get(instanceId);
     if (!existing) {
       throw new Error(`Agent not found: ${instanceId}`);
     }
 
-    // Remove old indexes
+    if (existing.alias) {
+      this.aliasIndex.delete(existing.alias);
+    }
     for (const capability of existing.capabilities) {
       this.capabilityIndex.get(capability)?.delete(instanceId);
     }
@@ -184,16 +218,17 @@ export class AgentCardRegistry implements IAgentCardRegistry {
       this.skillIndex.get(skill)?.delete(instanceId);
     }
 
-    // Merge updates
     const updated: AgentCard = {
       ...existing,
       ...updates,
-      instanceId, // Ensure instanceId cannot be changed
+      instanceId,
     };
 
     this.agents.set(instanceId, updated);
 
-    // Rebuild indexes
+    if (updated.alias) {
+      this.aliasIndex.set(updated.alias, instanceId);
+    }
     for (const capability of updated.capabilities) {
       if (!this.capabilityIndex.has(capability)) {
         this.capabilityIndex.set(capability, new Set());
@@ -216,6 +251,7 @@ export class AgentCardRegistry implements IAgentCardRegistry {
    */
   clear(): void {
     this.agents.clear();
+    this.aliasIndex.clear();
     this.capabilityIndex.clear();
     this.skillIndex.clear();
     this.logger.debug('Cleared all agent registrations');
@@ -234,6 +270,13 @@ export class AgentCardRegistry implements IAgentCardRegistry {
       totalCapabilities: this.capabilityIndex.size,
       totalSkills: this.skillIndex.size,
     };
+  }
+
+  /**
+   * Get the number of registered agents
+   */
+  get size(): number {
+    return this.agents.size;
   }
 }
 

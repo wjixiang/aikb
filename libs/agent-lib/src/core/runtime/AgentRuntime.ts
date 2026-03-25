@@ -565,7 +565,6 @@ export class AgentRuntime implements IAgentRuntime {
       api: mergedApi,
       workspace: overrides?.workspace,
       observers: overrides?.observers,
-      messageBus: this.messageBus,
     };
 
     const parentInstanceId = (
@@ -573,7 +572,7 @@ export class AgentRuntime implements IAgentRuntime {
     )?.parentInstanceId;
 
     // Create agent container using AgentFactory
-    const container = AgentFactory.create(options);
+    const container = AgentFactory.create(options, this.messageBus);
     const instanceId = container.instanceId;
 
     // Wait for agent initialization
@@ -626,6 +625,7 @@ export class AgentRuntime implements IAgentRuntime {
     // Register in AgentCardRegistry for A2A communication
     const agentCard: AgentCard = {
       instanceId,
+      alias,
       name: unifiedConfig.agent.name || agentName,
       description: unifiedConfig.agent.description || '',
       version: unifiedConfig.agent.version || '1.0.0',
@@ -1158,6 +1158,13 @@ export class AgentRuntime implements IAgentRuntime {
     parentInstanceId: string,
     options: RuntimeControlAgentOptions,
   ): Promise<string> {
+    console.log(
+      `[AgentRuntime._createChildAgent] Creating child agent for parent: ${parentInstanceId}`,
+    );
+    console.log(
+      `[AgentRuntime._createChildAgent] Options: ${JSON.stringify(options.agent)}`,
+    );
+
     if (this.containers.size >= (this.config.maxAgents ?? 10)) {
       throw new Error(`Maximum agent limit reached: ${this.config.maxAgents}`);
     }
@@ -1170,13 +1177,18 @@ export class AgentRuntime implements IAgentRuntime {
     };
 
     // Create the agent with parent info and merged API config
-    const container = AgentFactory.create({
-      ...options,
-      api: mergedApi,
-      messageBus: this.messageBus,
-    } as AgentFactoryOptions);
+    const container = AgentFactory.create(
+      {
+        ...options,
+        api: mergedApi,
+      } as AgentFactoryOptions,
+      this.messageBus,
+    );
 
     const instanceId = container.instanceId;
+    console.log(
+      `[AgentRuntime._createChildAgent] Created container with instanceId: ${instanceId}`,
+    );
 
     // Get agent and inject dependencies
     const agent = await container.getAgent();
@@ -1232,6 +1244,30 @@ export class AgentRuntime implements IAgentRuntime {
       metadata: unifiedConfig.agent.metadata,
     };
     this.registry.register(metadata);
+    console.log(
+      `[AgentRuntime._createChildAgent] Registered in AgentRegistry: ${instanceId}, alias: ${alias}`,
+    );
+
+    // Register in AgentCardRegistry for A2A communication
+    // This is critical - without this, sendTask cannot find the agent
+    const agentCard: AgentCard = {
+      instanceId,
+      name: unifiedConfig.agent.name || agentName,
+      description: unifiedConfig.agent.description || '',
+      version: unifiedConfig.agent.version || '1.0.0',
+      capabilities: unifiedConfig.agent.capabilities || [],
+      skills: unifiedConfig.agent.skills || [],
+      endpoint: unifiedConfig.agent.endpoint || instanceId,
+      metadata: unifiedConfig.agent.metadata,
+      alias, // Include alias for resolution
+    };
+    getGlobalAgentRegistry().register(agentCard);
+    console.log(
+      `[AgentRuntime._createChildAgent] Registered in AgentCardRegistry: ${instanceId}, alias: ${alias}`,
+    );
+    console.log(
+      `[AgentRuntime._createChildAgent] AgentCardRegistry size: ${getGlobalAgentRegistry().size}`,
+    );
 
     // Update parent's child list
     this.registry.addChildRelation(parentInstanceId, instanceId);
@@ -1250,6 +1286,9 @@ export class AgentRuntime implements IAgentRuntime {
       parentInstanceId,
     });
 
+    console.log(
+      `[AgentRuntime._createChildAgent] Child agent creation complete: ${instanceId}`,
+    );
     return instanceId;
   }
 
@@ -1288,8 +1327,11 @@ export class AgentRuntime implements IAgentRuntime {
     // Remove container
     this.containers.delete(instanceId);
 
-    // Unregister
+    // Unregister from AgentRegistry
     this.registry.unregister(instanceId);
+
+    // Unregister from AgentCardRegistry for A2A communication
+    getGlobalAgentRegistry().unregister(instanceId);
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:destroyed', { instanceId });
