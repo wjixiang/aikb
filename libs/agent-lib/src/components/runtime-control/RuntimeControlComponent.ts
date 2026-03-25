@@ -248,9 +248,11 @@ This component enables creation and management of child agents for distributed t
       return elements;
     }
 
-    elements.push(
-      new tdiv({ content: `Instance: ${client.getSelfInstanceId()}` }),
-    );
+    const selfInstanceId = client.getSelfInstanceId();
+    const allAgents = await client.listAgents();
+    const selfAgent = allAgents.find((a) => a.instanceId === selfInstanceId);
+    const selfDisplay = selfAgent?.alias || selfInstanceId.slice(0, 8);
+    elements.push(new tdiv({ content: `Instance: ${selfDisplay}` }));
 
     // Render Topology Info
     try {
@@ -258,6 +260,24 @@ This component enables creation and management of child agents for distributed t
       const stats = client.getTopologyStats();
       const nodes = graph.getAllNodes();
       const edges = graph.getAllEdges();
+
+      // Get agent metadata to display aliases
+      const agents = await client.listAgents();
+      const instanceIdToAlias = new Map(
+        agents.map((a) => [a.instanceId, a.alias]),
+      );
+      const instanceIdToName = new Map(
+        agents.map((a) => [a.instanceId, a.name]),
+      );
+
+      const getDisplayId = (instanceId: string) => {
+        const alias = instanceIdToAlias.get(instanceId);
+        const name = instanceIdToName.get(instanceId);
+        if (alias) {
+          return name ? `${name} (${alias})` : alias;
+        }
+        return instanceId.slice(0, 8);
+      };
 
       elements.push(
         new th({
@@ -292,7 +312,7 @@ This component enables creation and management of child agents for distributed t
             : '';
           elements.push(
             new tdiv({
-              content: `  • ${node.instanceId} (${node.nodeType})${capabilities}`,
+              content: `  • ${getDisplayId(node.instanceId)} (${node.nodeType})${capabilities}`,
             }),
           );
         }
@@ -310,7 +330,7 @@ This component enables creation and management of child agents for distributed t
           const arrow = edge.bidirectional ? '<->' : '->';
           elements.push(
             new tdiv({
-              content: `  ${edge.from} ${arrow} ${edge.to} (${edge.edgeType})`,
+              content: `  ${getDisplayId(edge.from)} ${arrow} ${getDisplayId(edge.to)} (${edge.edgeType})`,
             }),
           );
         }
