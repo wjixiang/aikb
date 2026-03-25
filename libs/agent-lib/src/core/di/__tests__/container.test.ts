@@ -9,28 +9,39 @@ import { MemoryModule } from '../../memory/MemoryModule.js';
 import { IVirtualWorkspace } from '../../statefulContext/index.js';
 import { IMemoryModule } from '../../memory/types.js';
 import { AgentFactory } from '../../agent/AgentFactory.js';
+import { MessageBus } from '../../runtime/topology/messaging/MessageBus.js';
+import type { IMessageBus } from '../../runtime/topology/messaging/MessageBus.js';
+
+// Create a mock messageBus for testing
+function createMockMessageBus(): IMessageBus {
+  return new MessageBus();
+}
 
 describe('AgentContainer', () => {
   describe('Basic Container Setup', () => {
     it('should create a container instance', () => {
-      const container = new AgentContainer();
+      const messageBus = createMockMessageBus();
+      const container = new AgentContainer({}, messageBus);
       expect(container).toBeInstanceOf(AgentContainer);
     });
 
     it('should provide access to the underlying container', () => {
-      const container = new AgentContainer();
+      const messageBus = createMockMessageBus();
+      const container = new AgentContainer({}, messageBus);
       const internalContainer = container.getContainer();
       expect(internalContainer).toBeInstanceOf(Container);
     });
 
     it('should create agent via getAgent()', async () => {
-      const container = new AgentContainer({ api: { apiKey: 'test-key' } });
+      const messageBus = createMockMessageBus();
+      const container = new AgentContainer({ api: { apiKey: 'test-key' } }, messageBus);
       const agent = await container.getAgent();
       expect(agent).toBeInstanceOf(Agent);
     });
 
     it('should return same agent instance on multiple getAgent() calls', async () => {
-      const container = new AgentContainer({ api: { apiKey: 'test-key' } });
+      const messageBus = createMockMessageBus();
+      const container = new AgentContainer({ api: { apiKey: 'test-key' } }, messageBus);
       const agent1 = await container.getAgent();
       const agent2 = await container.getAgent();
       expect(agent1).toBe(agent2);
@@ -39,7 +50,8 @@ describe('AgentContainer', () => {
 
   describe('Service Bindings', () => {
     it('should bind services as singletons within container', async () => {
-      const container = new AgentContainer({ api: { apiKey: 'test-key' } });
+      const messageBus = createMockMessageBus();
+      const container = new AgentContainer({ api: { apiKey: 'test-key' } }, messageBus);
       const agent = await container.getAgent();
       const workspace = agent.workspace;
       const memoryModule = agent.getMemoryModule();
@@ -49,8 +61,10 @@ describe('AgentContainer', () => {
     });
 
     it('should have isolated services per container', async () => {
-      const container1 = new AgentContainer({ api: { apiKey: 'key-1' } });
-      const container2 = new AgentContainer({ api: { apiKey: 'key-2' } });
+      const messageBus1 = createMockMessageBus();
+      const messageBus2 = createMockMessageBus();
+      const container1 = new AgentContainer({ api: { apiKey: 'key-1' } }, messageBus1);
+      const container2 = new AgentContainer({ api: { apiKey: 'key-2' } }, messageBus2);
 
       const agent1 = await container1.getAgent();
       const agent2 = await container2.getAgent();
@@ -62,42 +76,46 @@ describe('AgentContainer', () => {
 
   describe('Configuration', () => {
     it('should use default configuration when no options provided', () => {
-      const container = new AgentContainer();
+      const messageBus = createMockMessageBus();
+      const container = new AgentContainer({}, messageBus);
       const config = container.getConfig();
       expect(config.agent.sop).toBe('Default SOP');
       expect(config.api.apiProvider).toBe('zai');
     });
 
     it('should accept custom agent configuration', () => {
+      const messageBus = createMockMessageBus();
       const container = new AgentContainer({
         agent: {
           sop: 'Custom SOP',
           config: { apiRequestTimeout: 90000 },
         },
-      });
+      }, messageBus);
       const config = container.getConfig();
       expect(config.agent.sop).toBe('Custom SOP');
       expect(config.agent.config.apiRequestTimeout).toBe(90000);
     });
 
     it('should accept custom API configuration', () => {
+      const messageBus = createMockMessageBus();
       const container = new AgentContainer({
         api: {
           apiModelId: 'custom-model',
           apiKey: 'test-key',
         },
-      });
+      }, messageBus);
       const config = container.getConfig();
       expect(config.api.apiModelId).toBe('custom-model');
       expect(config.api.apiKey).toBe('test-key');
     });
 
     it('should merge partial agent config with defaults', () => {
+      const messageBus = createMockMessageBus();
       const container = new AgentContainer({
         agent: {
           config: { apiRequestTimeout: 90000 },
         },
-      });
+      }, messageBus);
       const config = container.getConfig();
       expect(config.agent.config.apiRequestTimeout).toBe(90000);
       expect(config.agent.config.maxRetryAttempts).toBe(3); // Default preserved

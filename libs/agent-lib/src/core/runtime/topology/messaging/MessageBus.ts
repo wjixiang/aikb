@@ -12,13 +12,61 @@ import type {
   TopologyEvent,
   Conversation,
   TopologyConfig,
+} from '../types.js';
+import {
+  createMessage,
+  createTopologyEvent,
   DEFAULT_TOPOLOGY_CONFIG,
 } from '../types.js';
-import { createMessage, createTopologyEvent } from '../types.js';
 import type { IConversationManager } from './Conversation.js';
 import { createConversationManager } from './Conversation.js';
 import type { IAckTracker } from './AckTracker.js';
 import { createAckTracker } from './AckTracker.js';
+
+/**
+ * NullMessageBus - A no-op message bus for testing without a real message bus
+ */
+export class NullMessageBus implements IMessageBus {
+  send(): Promise<TopologyMessage> {
+    throw new Error('NullMessageBus: send() called without messageBus');
+  }
+  publish(): void {
+    // no-op
+  }
+  sendAck(): Promise<TopologyMessage> {
+    throw new Error('NullMessageBus: sendAck() called without messageBus');
+  }
+  sendResult(): Promise<TopologyMessage> {
+    throw new Error('NullMessageBus: sendResult() called without messageBus');
+  }
+  sendError(): Promise<TopologyMessage> {
+    throw new Error('NullMessageBus: sendError() called without messageBus');
+  }
+  broadcast(): Promise<TopologyMessage[]> {
+    throw new Error('NullMessageBus: broadcast() called without messageBus');
+  }
+  onMessage(): () => void {
+    return () => {};
+  }
+  onEvent(): () => void {
+    return () => {};
+  }
+  getConversation(): Conversation | undefined {
+    return undefined;
+  }
+  getPendingConversations(): Conversation[] {
+    return [];
+  }
+  getActiveConversations(): Conversation[] {
+    return [];
+  }
+  setConfig(): void {
+    // no-op
+  }
+  getConfig(): Required<TopologyConfig> {
+    return DEFAULT_TOPOLOGY_CONFIG;
+  }
+}
 
 export interface IMessageBus {
   send(message: TopologyMessage): Promise<TopologyMessage>;

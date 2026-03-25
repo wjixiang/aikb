@@ -15,10 +15,10 @@ export function createBibRetrieveAgentSoul(): AgentSoulConfig {
     },
     components: [
       {
-        component: new BibliographySearchComponent(),
+        componentClass: BibliographySearchComponent,
       },
       // {
-      //   component: new A2ATaskComponent(),
+      //   componentClass: A2ATaskComponent,
       // },
     ],
   };

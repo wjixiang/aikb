@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RuntimeControlComponent } from '../RuntimeControlComponent.js';
+import { RuntimeControlComponent, RuntimeControlState } from '../index.js';
 import type {
   IRuntimeControlClient,
   AgentMetadata,
@@ -8,6 +8,7 @@ import type {
 describe('RuntimeControlComponent', () => {
   let component: RuntimeControlComponent;
   let mockRuntimeClient: IRuntimeControlClient;
+  let controlState: RuntimeControlState;
 
   const createMockClient = (): IRuntimeControlClient => {
     const mockGraph = {
@@ -81,10 +82,9 @@ describe('RuntimeControlComponent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRuntimeClient = createMockClient();
-    component = new RuntimeControlComponent({
-      instanceId: 'test-agent-id',
-      getRuntimeClient: () => mockRuntimeClient,
-    });
+    controlState = new RuntimeControlState();
+    controlState.setRuntimeClient(mockRuntimeClient);
+    component = new RuntimeControlComponent('test-agent-id', controlState);
   });
 
   describe('constructor', () => {
@@ -315,10 +315,8 @@ describe('RuntimeControlComponent', () => {
     });
 
     it('should handle when runtime client is not available', () => {
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => undefined,
-      });
+      const emptyState = new RuntimeControlState();
+      component = new RuntimeControlComponent('test-agent-id', emptyState);
 
       const result = component.handleToolCall('createAgent', {
         name: 'test',
@@ -342,10 +340,8 @@ describe('RuntimeControlComponent', () => {
     });
 
     it('should render with runtime client not available', async () => {
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => undefined,
-      });
+      const emptyState = new RuntimeControlState();
+      component = new RuntimeControlComponent('test-agent-id', emptyState);
 
       const elements = await component.renderImply();
 
@@ -362,10 +358,8 @@ describe('RuntimeControlComponent', () => {
     });
 
     it('should handle export when client not available', async () => {
-      component = new RuntimeControlComponent({
-        instanceId: 'test-agent-id',
-        getRuntimeClient: () => undefined,
-      });
+      const emptyState = new RuntimeControlState();
+      component = new RuntimeControlComponent('test-agent-id', emptyState);
 
       const result = await component.exportData();
 

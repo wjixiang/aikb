@@ -64,14 +64,14 @@ export class AgentContainer {
   private agentInstance: Agent | null = null;
   private isRestoring = false;
   private initPromise: Promise<void> | null = null;
-  private messageBus?: IMessageBus;
 
-  constructor(options: AgentCreationOptions = {}, instanceId?: string) {
+  constructor(options: AgentCreationOptions = {}, messageBus: IMessageBus, instanceId?: string) {
     this.container = new Container({
       defaultScope: 'Singleton',
     });
 
-    this.messageBus = options.messageBus;
+    // Bind messageBus immediately as required dependency
+    this.container.bind<IMessageBus>(TYPES.IMessageBus).toConstantValue(messageBus);
 
     if (instanceId) {
       // Restore agent: setup bindings first to get persistence service
@@ -248,13 +248,6 @@ export class AgentContainer {
       .toConstantValue(this.config.hooks ?? {});
     this.container.bind(TYPES.HookModule).to(HookModule).inSingletonScope();
 
-    // MessageBus (provided by AgentRuntime)
-    if (this.messageBus) {
-      this.container
-        .bind<IMessageBus>(TYPES.IMessageBus)
-        .toConstantValue(this.messageBus);
-    }
-
     // A2A Handler configuration
     const a2aHandlerConfig: A2AHandlerConfig = {
       instanceId: this.instanceId,
@@ -268,26 +261,22 @@ export class AgentContainer {
       .bind<A2AHandlerConfig>(TYPES.A2AHandlerConfig)
       .toConstantValue(a2aHandlerConfig);
 
-    // A2A Handler (singleton within container, depends on IMessageBus)
-    if (this.messageBus) {
-      const a2aHandler = createA2AHandler(this.messageBus, a2aHandlerConfig);
-      this.container
-        .bind<IA2AHandler>(TYPES.IA2AHandler)
-        .toDynamicValue(() => a2aHandler)
-        .inSingletonScope();
-    }
+    // A2A Handler (singleton within container)
+    const messageBus = this.container.get<IMessageBus>(TYPES.IMessageBus);
+    this.container
+      .bind<IA2AHandler>(TYPES.IA2AHandler)
+      .toConstantValue(createA2AHandler(messageBus, a2aHandlerConfig));
 
-    // A2A Client (singleton within container, depends on IMessageBus)
-    if (this.messageBus) {
-      const agentRegistry = getGlobalAgentRegistry();
-      const a2aClient = createA2AClient(this.messageBus, agentRegistry, {
-        instanceId: this.instanceId,
-      });
-      this.container
-        .bind<IA2AClient>(TYPES.IA2AClient)
-        .toDynamicValue(() => a2aClient)
-        .inSingletonScope();
-    }
+    // A2A Client (singleton within container)
+    this.container
+      .bind<IA2AClient>(TYPES.IA2AClient)
+      .toDynamicValue(() => {
+        const agentRegistry = getGlobalAgentRegistry();
+        return createA2AClient(messageBus, agentRegistry, {
+          instanceId: this.instanceId,
+        });
+      })
+      .inSingletonScope();
 
     // API Client
     this.container
@@ -353,54 +342,57 @@ export class AgentContainer {
       .bind<RuntimeControlState>(TYPES.RuntimeControlState)
       .toConstantValue(runtimeControlState);
 
-    // Bind ToolComponents array for DI-managed registration
-    // Always include A2ATaskComponent and RuntimeControlComponent as global components
-    const globalComponents: Array<{
+    // Bind global component classes as singletons
+    // These will be resolved with DI when building the ToolComponents array
+    this.container.bind(A2ATaskComponent).toSelf().inSingletonScope();
+    this.container.bind(RuntimeControlComponent).toSelf().inSingletonScope();
+
+    // Bind custom component classes if provided
+    if (this.config.components && this.config.components.length > 0) {
+      for (const { componentClass } of this.config.components) {
+        this.container.bind(componentClass).toSelf().inSingletonScope();
+      }
+    }
+
+    // Build the ToolComponents array by resolving component instances
+    // This uses toDynamicValue to ensure components are created after all dependencies are bound
+    const buildToolComponents = (): Array<{
       component: ToolComponent;
       priority?: number;
-    }> = [
-      { component: new A2ATaskComponent(), priority: 0 },
-      {
-        component: new RuntimeControlComponent({
-          instanceId: this.instanceId,
-          state: runtimeControlState,
-        }),
-        priority: 0,
-      },
-    ];
+    }> => {
+      const components: Array<{ component: ToolComponent; priority?: number }> = [
+        { component: this.container.get(A2ATaskComponent) as unknown as ToolComponent, priority: 0 },
+        { component: this.container.get(RuntimeControlComponent) as unknown as ToolComponent, priority: 0 },
+      ];
 
-    // Inject dependencies into global components
-    for (const { component } of globalComponents) {
-      component._injectDependencies(this.container);
-    }
-
-    if (this.config.components && this.config.components.length > 0) {
-      // Inject dependencies into custom components
-      for (const { component } of this.config.components) {
-        component._injectDependencies(this.container);
+      // Add custom components from config
+      if (this.config.components) {
+        for (const { componentClass, priority } of this.config.components) {
+          components.push({
+            component: this.container.get(componentClass) as unknown as ToolComponent,
+            priority,
+          });
+        }
       }
-      this.container
-        .bind<
-          Array<{ component: ToolComponent; priority?: number }>
-        >(TYPES.ToolComponents)
-        .toConstantValue([...globalComponents, ...this.config.components]);
-    } else {
-      this.container
-        .bind<
-          Array<{ component: ToolComponent; priority?: number }>
-        >(TYPES.ToolComponents)
-        .toConstantValue(globalComponents);
-    }
+
+      return components;
+    };
+
+    this.container
+      .bind<
+        Array<{ component: ToolComponent; priority?: number }>
+      >(TYPES.ToolComponents)
+      .toDynamicValue(buildToolComponents)
+      .inSingletonScope();
   }
 
   /**
    * Inject dependencies into components
    * Called after container is fully set up
-   * Note: Dependencies are now injected in setupBindings for global components
+   * Note: Components now use constructor injection, so this is a no-op
    */
   private injectComponentDependencies(): void {
-    // Dependencies are injected in setupBindings for global components
-    // Custom components don't need dependency injection here
+    // No-op: Components now use @inject() in constructor
   }
 
   async getAgent(): Promise<Agent> {

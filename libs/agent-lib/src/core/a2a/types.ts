@@ -18,6 +18,8 @@ import type { TopologyMessage } from '../runtime/topology/types';
 export interface AgentCard {
   /** Unique identifier for the agent instance */
   instanceId: string;
+  /** Short human-readable alias for easier reference */
+  alias?: string;
   /** Human-readable name */
   name: string;
   /** Description of the agent's purpose */
@@ -41,6 +43,7 @@ export interface AgentCard {
  */
 export interface AgentCardSummary {
   instanceId: string;
+  alias?: string;
   name: string;
   capabilities: string[];
   skills: string[];

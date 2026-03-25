@@ -4,24 +4,19 @@ import type { AgentConfig, SOP } from './agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';
-import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import {
   AgentContainer,
   type AgentCreationOptions,
   type UnifiedAgentConfig,
 } from '../di/container.js';
-import { defaultUnifiedConfig } from '../di/UnifiedAgentConfig.js';
+import {
+  defaultUnifiedConfig,
+  type DIComponentRegistration,
+} from '../di/UnifiedAgentConfig.js';
 
-/**
- * Component registration configuration
- */
-export interface ComponentRegistration {
-  /** Component instance (uses component.componentId as identifier) */
-  component: ToolComponent;
-  /** Registration priority (higher = registered first) */
-  priority?: number;
-}
+// Re-export for backward compatibility
+export type { DIComponentRegistration as ComponentRegistration } from '../di/UnifiedAgentConfig.js';
 
 export interface AgentSoul {
   sop?: SOP;
@@ -39,7 +34,7 @@ export interface AgentSoul {
  */
 export interface AgentSoulConfig {
   agent?: AgentSoul;
-  components?: ComponentRegistration[];
+  components?: DIComponentRegistration[];
 }
 
 /**
@@ -63,33 +58,37 @@ export interface AgentFactoryOptions extends AgentSoulConfig {
  *   agent: { sop: 'My SOP' },
  *   api: { apiKey: '...' },
  *   components: [
- *     { id: 'bibliography-search', component: new BibliographySearchComponent() }
+ *     { componentClass: BibliographySearchComponent }
  *   ]
- * });
+ * }, messageBus);
  * const agent = container.getAgent();
  * ```
  *
  * @example Direct creation
  * ```typescript
- * const agent = AgentFactory.createAgent({
+ * const agent = await AgentFactory.createAgent({
  *   agent: { sop: 'My SOP' }
- * });
+ * }, messageBus);
  * ```
  */
 export class AgentFactory {
   /**
    * Create a new AgentContainer with the given options
    * Each container manages one Agent instance
+   * @param options - Agent creation options
+   * @param messageBus - Required message bus for agent communication
    */
-  static create(options: AgentFactoryOptions = {}): AgentContainer {
-    return new AgentContainer(options);
+  static create(options: AgentFactoryOptions = {}, messageBus: IMessageBus): AgentContainer {
+    return new AgentContainer(options, messageBus);
   }
 
   /**
    * Create and return an Agent instance directly
+   * @param options - Agent creation options
+   * @param messageBus - Required message bus for agent communication
    */
-  static async createAgent(options: AgentFactoryOptions = {}): Promise<Agent> {
-    const container = this.create(options);
+  static async createAgent(options: AgentFactoryOptions = {}, messageBus: IMessageBus): Promise<Agent> {
+    const container = this.create(options, messageBus);
     return container.getAgent();
   }
 }

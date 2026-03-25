@@ -5,14 +5,13 @@ import type { ProviderSettings } from '../types/provider-settings.js';
 import type { PersistenceConfig } from '../persistence/types.js';
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { HookConfig } from '../hooks/types.js';
-import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
 /** Component registration for DI injection */
 export interface DIComponentRegistration {
-  /** Component instance (uses component.componentId as identifier) */
-  component: ToolComponent;
+  /** Component class (will be instantiated by factory with DI) */
+  componentClass: new (...args: any[]) => ToolComponent;
   /** Registration priority (higher = registered first) */
   priority?: number;
 }
@@ -82,12 +81,6 @@ export interface AgentCreationOptions {
    * Hook configuration for lifecycle events
    */
   hooks?: HookConfig;
-
-  /**
-   * MessageBus instance (provided by AgentRuntime)
-   * This is passed in when creating the container, not stored in config
-   */
-  messageBus?: IMessageBus;
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {

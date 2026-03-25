@@ -17,10 +17,10 @@ export function createPathophysiologyAgentSoul(): AgentSoulConfig {
     },
     components: [
       // {
-      //   component: new A2ATaskComponent(),
+      //   componentClass: A2ATaskComponent,
       // },
       {
-        component: new BibliographySearchComponent(),
+        componentClass: BibliographySearchComponent,
       },
     ],
   };

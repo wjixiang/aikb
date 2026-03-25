@@ -8,26 +8,27 @@
  *
  * ## Usage
  *
- * The component uses `injectSymbols` to receive IA2AHandler via DI:
+ * The component uses `@inject()` decorator to receive dependencies via DI:
  *
  * ```typescript
  * class A2ATaskComponent extends ToolComponent {
- *   static readonly injectSymbols = {
- *     a2aHandler: TYPES.IA2AHandler,
- *   } as const;
- *   // ...
+ *   constructor(
+ *     @inject(TYPES.IA2AHandler) private a2aHandler: IA2AHandler,
+ *   ) {
+ *     super();
+ *   }
  * }
  * ```
  *
  * @module A2ATaskComponent
  */
 
-import { Container } from 'inversify';
+import 'reflect-metadata';
+import { injectable, inject } from 'inversify';
 import {
   ToolComponent,
   ExportOptions,
   type ExportResult,
-  type InjectSymbolsMap,
 } from '../core/toolComponent.js';
 import type { Tool, ToolCallResult } from '../core/types.js';
 import type { TUIElement } from '../ui/TUIElement.js';
@@ -50,6 +51,7 @@ import {
 /**
  * A2ATaskComponent - Tools for managing A2A task acknowledgment
  */
+@injectable()
 export class A2ATaskComponent extends ToolComponent {
   override componentId = 'a2a-task';
   override displayName = 'A2A Task Manager';
@@ -70,30 +72,19 @@ This component handles Agent-to-Agent (A2A) task communication.
 - NEVER make up or guess a conversationId - use the value from getPendingTasks
 - Always acknowledge tasks before processing to prevent sender timeout`;
 
-  static override readonly injectSymbols: InjectSymbolsMap = {
-    a2aHandler: TYPES.IA2AHandler,
-    a2aClient: TYPES.IA2AClient,
-  };
-
-  private _a2aHandler!: IA2AHandler;
-  private _a2aClient!: IA2AClient;
-  // Note: _a2aHandler and _a2aClient are auto-injected by base class via injectSymbols
-  // Both are REQUIRED dependencies - component cannot function without them
+  protected a2aHandler: IA2AHandler;
+  protected a2aClient: IA2AClient;
 
   override toolSet: Map<string, Tool>;
 
-  constructor() {
+  constructor(
+    @inject(TYPES.IA2AHandler) a2aHandler: IA2AHandler,
+    @inject(TYPES.IA2AClient) a2aClient: IA2AClient,
+  ) {
     super();
+    this.a2aHandler = a2aHandler;
+    this.a2aClient = a2aClient;
     this.toolSet = this.initializeToolSet();
-  }
-
-  /**
-   * Inject dependencies from DI container
-   * A2AHandler and A2AClient are bound to container during initialization,
-   * so they should be available when injectDependencies is called.
-   */
-  protected override injectDependencies(container: Container): void {
-    super.injectDependencies(container);
   }
 
   /**
@@ -101,7 +92,7 @@ This component handles Agent-to-Agent (A2A) task communication.
    * Note: A2AHandler is initialized and bound to container before this component is created
    */
   private getA2AHandler(): IA2AHandler {
-    return this._a2aHandler;
+    return this.a2aHandler;
   }
 
   /**
@@ -109,7 +100,7 @@ This component handles Agent-to-Agent (A2A) task communication.
    * Note: A2AClient is initialized and bound to container before this component is created
    */
   private getA2AClient(): IA2AClient {
-    return this._a2aClient;
+    return this.a2aClient;
   }
 
   /**

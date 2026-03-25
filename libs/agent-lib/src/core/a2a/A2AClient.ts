@@ -123,11 +123,14 @@ export class A2AClient implements IA2AClient {
       'Sending task to agent',
     );
 
-    // Check if target agent exists in registry
-    if (!this.agentRegistry.hasAgent(targetAgentId)) {
+    const resolvedId = this.agentRegistry.resolveAgentId(targetAgentId);
+    if (!resolvedId) {
       const availableAgents = this.agentRegistry
         .getAllAgents()
-        .map((a) => `${a.name} (${a.instanceId})`)
+        .map(
+          (a) =>
+            `${a.name} (${a.instanceId}${a.alias ? `, alias: ${a.alias}` : ''})`,
+        )
         .join(', ');
 
       this.logger.error(
@@ -144,11 +147,11 @@ export class A2AClient implements IA2AClient {
       );
     }
 
-    // Get target agent info for better logging
-    const targetAgent = this.agentRegistry.getAgent(targetAgentId);
+    const targetAgent = this.agentRegistry.getAgent(resolvedId);
     this.logger.info(
       {
         targetAgentId,
+        resolvedId,
         targetAgentName: targetAgent?.name ?? 'unknown',
         taskId,
         priority: options?.priority ?? 'normal',
@@ -157,10 +160,9 @@ export class A2AClient implements IA2AClient {
       'Target agent found, proceeding with task send',
     );
 
-    // Create A2A task message
     const a2aMessage = createA2ATaskMessage(
       this.instanceId,
-      targetAgentId,
+      resolvedId,
       taskId,
       description,
       input,
@@ -269,10 +271,14 @@ export class A2AClient implements IA2AClient {
   ): Promise<unknown> {
     this.logger.info({ targetAgentId, query }, 'Sending query to agent');
 
-    // Create A2A query message
+    const resolvedId = this.agentRegistry.resolveAgentId(targetAgentId);
+    if (!resolvedId) {
+      throw new Error(`Target agent not found: ${targetAgentId}`);
+    }
+
     const a2aMessage = createA2AQueryMessage(
       this.instanceId,
-      targetAgentId,
+      resolvedId,
       query,
       options,
     );
@@ -322,10 +328,12 @@ export class A2AClient implements IA2AClient {
       'Sending response to agent',
     );
 
-    // Create A2A response message
+    const resolvedId =
+      this.agentRegistry.resolveAgentId(targetAgentId) ?? targetAgentId;
+
     const a2aMessage = createA2AResponseMessage(
       this.instanceId,
-      targetAgentId,
+      resolvedId,
       output,
       status,
       options,
@@ -346,10 +354,14 @@ export class A2AClient implements IA2AClient {
   ): Promise<void> {
     this.logger.info({ targetAgentId, eventType }, 'Sending event to agent');
 
-    // Create A2A event message
+    const resolvedId = this.agentRegistry.resolveAgentId(targetAgentId);
+    if (!resolvedId) {
+      throw new Error(`Target agent not found: ${targetAgentId}`);
+    }
+
     const a2aMessage = createA2AEventMessage(
       this.instanceId,
-      targetAgentId,
+      resolvedId,
       eventType,
       data,
     );
@@ -372,6 +384,9 @@ export class A2AClient implements IA2AClient {
       'Sending cancel to agent',
     );
 
+    const resolvedId =
+      this.agentRegistry.resolveAgentId(targetAgentId) ?? targetAgentId;
+
     const payload: A2APayload = {
       taskId,
       status: 'cancelled',
@@ -379,7 +394,7 @@ export class A2AClient implements IA2AClient {
 
     const a2aMessage = createA2AMessage(
       this.instanceId,
-      targetAgentId,
+      resolvedId,
       'cancel',
       payload,
       { conversationId },

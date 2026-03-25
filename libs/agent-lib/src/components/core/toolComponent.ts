@@ -39,12 +39,6 @@ export interface ExportOptions {
 }
 
 /**
- * Injection symbols map type
- * Components can declare dependencies using static injectSymbols
- */
-export type InjectSymbolsMap = Record<string, symbol>;
-
-/**
  * ToolComponent - Abstract base class for components that provide tools
  *
  * Components can be managed by Skills, which control their lifecycle
@@ -52,21 +46,20 @@ export type InjectSymbolsMap = Record<string, symbol>;
  * rendering logic, and custom export functionality.
  *
  * @note This class is decorated with @injectable() for InversifyJS IoC integration.
- * Components can be resolved via DI container using their TYPE symbols from di/types.ts.
+ * Components can use standard @inject() decorator in their constructors for DI.
  *
  * ## Dependency Injection
  *
- * Components can declare dependencies via static `injectSymbols` property:
+ * Components can use standard @inject() decorator in constructor:
  * ```typescript
  * class MyComponent extends ToolComponent {
- *   static readonly injectSymbols = {
- *     a2aHandler: TYPES.IA2AHandler,
- *   } as const;
+ *   private a2aHandler: IA2AHandler;
  *
- *   private _a2aHandler?: A2AHandler;
- *
- *   protected injectDependencies(container: Container): void {
- *     this._a2aHandler = container.get(MyComponent.injectSymbols.a2aHandler);
+ *   constructor(
+ *     @inject(TYPES.IA2AHandler) a2aHandler: IA2AHandler,
+ *   ) {
+ *     super();
+ *     this.a2aHandler = a2aHandler;
  *   }
  * }
  * ```
@@ -91,16 +84,6 @@ export abstract class ToolComponent {
    * that should be included in the agent's system prompt
    */
   abstract componentPrompt: string;
-
-  /**
-   * Declare dependencies for DI injection (override in subclass)
-   * @example
-   * static readonly injectSymbols = {
-   *   a2aHandler: TYPES.IA2AHandler,
-   *   messageBus: TYPES.IMessageBus,
-   * } as const;
-   */
-  static readonly injectSymbols?: InjectSymbolsMap;
 
   // ==================== Centralized State Management (Phase 3) ====================
 
@@ -149,27 +132,19 @@ export abstract class ToolComponent {
   /**
    * Inject dependencies from DI container
    *
-   * Base implementation auto-injects dependencies declared in static injectSymbols.
-   * Subclasses can override to add custom injection logic (call super first).
+   * @deprecated This method is kept for backward compatibility but is now a no-op.
+   * Components should use @inject() decorator in constructor for DI.
    *
-   * @param container - The DI container to resolve dependencies from
+   * @param container - The DI container (not used anymore)
    */
   protected injectDependencies(container: Container): void {
-    const ctor = this.constructor as typeof ToolComponent;
-    if (ctor.injectSymbols) {
-      for (const [key, symbol] of Object.entries(ctor.injectSymbols)) {
-        try {
-          const value = container.get(symbol);
-          (this as Record<string, unknown>)[`_${key}`] = value;
-        } catch {
-          // Dependency not available in container, skip
-        }
-      }
-    }
+    // No-op: Components now use @inject() in constructor
+    // This method is kept for backward compatibility
   }
 
   /**
    * Internal method called by AgentContainer to inject dependencies
+   * @deprecated Use constructor injection with @inject() decorator instead
    * @internal
    */
   _injectDependencies(container: Container): void {

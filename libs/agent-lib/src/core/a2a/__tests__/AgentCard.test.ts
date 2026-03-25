@@ -9,8 +9,14 @@ import type { AgentCard } from '../types';
 describe('AgentCardRegistry', () => {
   let registry: AgentCardRegistry;
 
-  const createTestAgent = (instanceId: string, capabilities: string[] = [], skills: string[] = []): AgentCard => ({
+  const createTestAgent = (
+    instanceId: string,
+    capabilities: string[] = [],
+    skills: string[] = [],
+    alias?: string,
+  ): AgentCard => ({
     instanceId,
+    alias,
     name: `Agent ${instanceId}`,
     description: `Test agent ${instanceId}`,
     version: '1.0.0',
@@ -35,7 +41,9 @@ describe('AgentCardRegistry', () => {
     it('should throw error when registering without instanceId', () => {
       const agent = createTestAgent('');
 
-      expect(() => registry.register(agent)).toThrow('Agent card must have an instanceId');
+      expect(() => registry.register(agent)).toThrow(
+        'Agent card must have an instanceId',
+      );
     });
 
     it('should index agent by capabilities', () => {
@@ -52,7 +60,11 @@ describe('AgentCardRegistry', () => {
     });
 
     it('should index agent by skills', () => {
-      const agent = createTestAgent('agent-001', [], ['pubmed', 'paper-analysis']);
+      const agent = createTestAgent(
+        'agent-001',
+        [],
+        ['pubmed', 'paper-analysis'],
+      );
 
       registry.register(agent);
 
@@ -65,7 +77,7 @@ describe('AgentCardRegistry', () => {
 
     it('should replace existing agent with same instanceId', () => {
       const agent1 = createTestAgent('agent-001', ['search'], []);
-           registry.register(agent1);
+      registry.register(agent1);
 
       const agent2 = createTestAgent('agent-001', ['analysis'], []);
       registry.register(agent2);
@@ -126,8 +138,8 @@ describe('AgentCardRegistry', () => {
       const found = registry.findByCapability('search');
 
       expect(found).toHaveLength(2);
-      expect(found.map(a => a.instanceId)).toContain('agent-001');
-      expect(found.map(a => a.instanceId)).toContain('agent-003');
+      expect(found.map((a) => a.instanceId)).toContain('agent-001');
+      expect(found.map((a) => a.instanceId)).toContain('agent-003');
     });
 
     it('should return empty array for non-existent capability', () => {
@@ -190,8 +202,9 @@ describe('AgentCardRegistry', () => {
     });
 
     it('should throw error when updating non-existent agent', () => {
-      expect(() => registry.updateAgent('non-existent', { capabilities: ['search'] }))
-        .toThrow('Agent not found');
+      expect(() =>
+        registry.updateAgent('non-existent', { capabilities: ['search'] }),
+      ).toThrow('Agent not found');
     });
   });
 
@@ -208,13 +221,88 @@ describe('AgentCardRegistry', () => {
 
   describe('getStats', () => {
     it('should return registry statistics', () => {
-      registry.register(createTestAgent('agent-001', ['search', 'analysis'], ['pubmed']));
+      registry.register(
+        createTestAgent('agent-001', ['search', 'analysis'], ['pubmed']),
+      );
 
       const stats = registry.getStats();
 
       expect(stats.totalAgents).toBe(1);
       expect(stats.totalCapabilities).toBe(2);
       expect(stats.totalSkills).toBe(1);
+    });
+  });
+
+  describe('alias support', () => {
+    it('should register agent with alias', () => {
+      const agent = createTestAgent('agent-001', ['search'], [], 'my-agent');
+      registry.register(agent);
+
+      expect(registry.hasAgent('agent-001')).toBe(true);
+      expect(registry.hasAgentByAlias('my-agent')).toBe(true);
+    });
+
+    it('should get agent by alias', () => {
+      const agent = createTestAgent('agent-001', ['search'], [], 'my-agent');
+      registry.register(agent);
+
+      const found = registry.getAgentByAlias('my-agent');
+      expect(found).toBeDefined();
+      expect(found?.instanceId).toBe('agent-001');
+    });
+
+    it('should return undefined for non-existent alias', () => {
+      const found = registry.getAgentByAlias('non-existent');
+      expect(found).toBeUndefined();
+    });
+
+    it('should resolve agent id from alias', () => {
+      const agent = createTestAgent('agent-001', ['search'], [], 'my-agent');
+      registry.register(agent);
+
+      expect(registry.resolveAgentId('my-agent')).toBe('agent-001');
+      expect(registry.resolveAgentId('agent-001')).toBe('agent-001');
+    });
+
+    it('should return undefined when resolving non-existent id or alias', () => {
+      expect(registry.resolveAgentId('non-existent')).toBeUndefined();
+    });
+
+    it('should remove alias index when unregistering', () => {
+      const agent = createTestAgent('agent-001', ['search'], [], 'my-agent');
+      registry.register(agent);
+
+      registry.unregister('agent-001');
+
+      expect(registry.hasAgentByAlias('my-agent')).toBe(false);
+    });
+
+    it('should update alias index when updating agent', () => {
+      const agent = createTestAgent('agent-001', ['search'], [], 'old-alias');
+      registry.register(agent);
+
+      registry.updateAgent('agent-001', { alias: 'new-alias' });
+
+      expect(registry.hasAgentByAlias('old-alias')).toBe(false);
+      expect(registry.hasAgentByAlias('new-alias')).toBe(true);
+    });
+
+    it('should include alias in agent summaries', () => {
+      const agent = createTestAgent('agent-001', ['search'], [], 'my-agent');
+      registry.register(agent);
+
+      const summaries = registry.getAgentSummaries();
+
+      expect(summaries[0].alias).toBe('my-agent');
+    });
+
+    it('should clear alias index when clearing registry', () => {
+      const agent = createTestAgent('agent-001', ['search'], [], 'my-agent');
+      registry.register(agent);
+
+      registry.clear();
+
+      expect(registry.hasAgentByAlias('my-agent')).toBe(false);
     });
   });
 });
