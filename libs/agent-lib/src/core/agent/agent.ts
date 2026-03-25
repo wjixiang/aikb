@@ -210,13 +210,11 @@ export class Agent {
     @inject(TYPES.IToolManager) toolManager: IToolManager,
     @inject(TYPES.HookModule) hookModule: HookModule,
     @inject(TYPES.ISessionManager) sessionManager: ISessionManager,
+    @inject(TYPES.IA2AHandler) a2aHandler: A2AHandler,
     @inject(TYPES.IPersistenceService)
     @optional()
     persistenceService?: IPersistenceService,
     @inject(TYPES.TaskId) @optional() taskId?: string,
-    @inject(TYPES.IA2AHandler)
-    @optional()
-    a2aHandler?: A2AHandler,
     @inject(TYPES.RuntimeControlState)
     @optional()
     runtimeControlState?: RuntimeControlState,
@@ -238,13 +236,13 @@ export class Agent {
 
     void this.sessionManager.createSession(this.getSessionState());
 
-    // Initialize A2A Handler if injected via DI
-    if (a2aHandler) {
-      this._a2aHandler = a2aHandler;
-      this.setupA2AHandlers();
-      this._a2aHandler.startListening();
-      this.logger.info('[Agent] A2A Handler initialized via DI');
-    }
+    this._a2aHandler = a2aHandler;
+    this.setupA2AHandlers();
+    this._a2aHandler.startListening();
+    this.logger.info('[Agent] A2A Handler initialized via DI');
+    console.log(
+      `[Agent] ${this.instanceId}: A2A Handler initialized and listening`,
+    );
   }
 
   private getSessionState(): SessionState {

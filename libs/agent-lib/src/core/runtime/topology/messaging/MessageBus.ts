@@ -126,6 +126,10 @@ export class MessageBus implements IMessageBus {
   }
 
   async send(message: TopologyMessage): Promise<TopologyMessage> {
+    console.log(
+      `[MessageBus.send] Creating conversation: from=${message.from}, to=${message.to}, conversationId=${message.conversationId}`,
+    );
+
     const conversation = this.conversationManager.create(message, {
       ackTimeout: this.config.defaultAckTimeout,
       resultTimeout: this.config.defaultResultTimeout,
@@ -133,6 +137,10 @@ export class MessageBus implements IMessageBus {
     });
 
     this.emitEvent('conversation:started', conversation);
+
+    console.log(
+      `[MessageBus.send] Delivering message: conversationId=${message.conversationId}, handlers=${this.messageHandlers.size}`,
+    );
 
     const ackPromise = this.waitForAck(
       conversation.conversationId,
@@ -367,13 +375,29 @@ export class MessageBus implements IMessageBus {
   private async dispatchMessage(message: TopologyMessage): Promise<void> {
     this.emitEvent('message:received', message);
 
+    const a2aType = (message.content as { messageType?: string })?.messageType;
+    console.log(
+      `[MessageBus] Dispatching message: from=${message.from}, to=${message.to}, msgType=${message.messageType}, a2aType=${a2aType ?? 'N/A'}, handlers=${this.messageHandlers.size}`,
+    );
+
+    let handlerIndex = 0;
     for (const handler of this.messageHandlers) {
+      handlerIndex++;
+      console.log(
+        `[MessageBus] Invoking handler ${handlerIndex}/${this.messageHandlers.size}`,
+      );
+
       try {
-        await handler(message);
+        const result = handler(message);
+        if (result && typeof result.then === 'function') {
+          await result;
+        }
+        console.log(`[MessageBus] Handler ${handlerIndex} completed`);
       } catch (error) {
-        console.error('[MessageBus] Message handler error:', error);
+        console.error(`[MessageBus] Handler ${handlerIndex} error:`, error);
       }
     }
+    console.log(`[MessageBus] All ${handlerIndex} handlers processed`);
   }
 
   private emitEvent(type: TopologyEvent['type'], payload: unknown): void {

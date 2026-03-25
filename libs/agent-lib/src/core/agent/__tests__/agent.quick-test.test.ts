@@ -2,6 +2,12 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { AgentFactory } from '../AgentFactory.js';
 import type { ApiClient } from '../../api-client/index.js';
+import { MessageBus } from '../../runtime/topology/messaging/MessageBus.js';
+
+// Create a mock messageBus for testing
+function createMockMessageBus() {
+  return new MessageBus();
+}
 
 /**
  * Quick unit test for Agent with mocked ApiClient
@@ -21,6 +27,7 @@ describe('Agent - Quick Integration Test', () => {
   });
 
   it('should create agent with mocked ApiClient', async () => {
+    const messageBus = createMockMessageBus();
     const container = AgentFactory.create({
       agent: { sop: 'Test SOP' },
       api: {
@@ -28,7 +35,7 @@ describe('Agent - Quick Integration Test', () => {
         apiKey: 'test-key',
         apiModelId: 'test-model',
       },
-    });
+    }, messageBus);
 
     const agent = await container.getAgent();
     expect(agent).toBeDefined();
@@ -55,6 +62,7 @@ describe('Agent - Quick Integration Test', () => {
       makeRequest: mockMakeRequest,
     } as unknown as ApiClient;
 
+    const messageBus = createMockMessageBus();
     const container = AgentFactory.create({
       agent: { sop: 'Test SOP' },
       api: {
@@ -62,7 +70,7 @@ describe('Agent - Quick Integration Test', () => {
         apiKey: 'test-key',
         apiModelId: 'test-model',
       },
-    });
+    }, messageBus);
 
     const agent = await container.getAgent();
 

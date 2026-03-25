@@ -122,18 +122,20 @@ describe('AgentContainer', () => {
     });
 
     it('should accept workspace configuration', () => {
+      const messageBus = createMockMessageBus();
       const container = new AgentContainer({
         workspace: {
           id: 'custom-workspace',
           name: 'My Workspace',
         },
-      });
+      }, messageBus);
       const config = container.getConfig();
       expect(config.workspace.id).toBe('custom-workspace');
       expect(config.workspace.name).toBe('My Workspace');
     });
 
     it('should accept taskId', async () => {
+      const messageBus = createMockMessageBus();
       const container = new AgentContainer({
         agent: {
           taskId: 'test-task-123',
@@ -141,7 +143,7 @@ describe('AgentContainer', () => {
         api: {
           apiKey: 'test-key',
         },
-      });
+      }, messageBus);
       const agent = await container.getAgent();
       expect(agent.getTaskId).toBe('test-task-123');
     });
@@ -149,31 +151,34 @@ describe('AgentContainer', () => {
 
   describe('Agent Access', () => {
     it('should create agent with correct configuration', async () => {
+      const messageBus = createMockMessageBus();
       const container = new AgentContainer({
         agent: {
           sop: 'Test SOP',
           taskId: 'test-123',
         },
         api: { apiKey: 'test-key' },
-      });
+      }, messageBus);
       const agent = await container.getAgent();
       expect(agent).toBeInstanceOf(Agent);
       expect(agent.getTaskId).toBe('test-123');
     });
 
     it('should have workspace available on agent', async () => {
+      const messageBus = createMockMessageBus();
       const container = new AgentContainer({
         api: { apiKey: 'test-key' },
-      });
+      }, messageBus);
       const agent = await container.getAgent();
       expect(agent.workspace).toBeDefined();
       expect(agent.workspace).toBeInstanceOf(VirtualWorkspace);
     });
 
     it('should have memory module available on agent', async () => {
+      const messageBus = createMockMessageBus();
       const container = new AgentContainer({
         api: { apiKey: 'test-key' },
-      });
+      }, messageBus);
       const agent = await container.getAgent();
       expect(agent.getMemoryModule()).toBeDefined();
     });
@@ -183,22 +188,24 @@ describe('AgentContainer', () => {
 describe('AgentFactory', () => {
   describe('create', () => {
     it('should create a container with Agent', async () => {
+      const messageBus = createMockMessageBus();
       const container = AgentFactory.create({
         agent: { sop: 'Test SOP' },
         api: { apiKey: 'test-key' },
-      });
+      }, messageBus);
       expect(container).toBeInstanceOf(AgentContainer);
       expect(await container.getAgent()).toBeInstanceOf(Agent);
     });
 
     it('should pass configuration to container', async () => {
+      const messageBus = createMockMessageBus();
       const container = AgentFactory.create({
         agent: {
           sop: 'Factory SOP',
           taskId: 'factory-task',
         },
         api: { apiKey: 'test-key' },
-      });
+      }, messageBus);
       const agent = await container.getAgent();
       expect(agent.getTaskId).toBe('factory-task');
     });
@@ -206,14 +213,16 @@ describe('AgentFactory', () => {
 
   describe('createAgent', () => {
     it('should create and return agent directly', async () => {
+      const messageBus = createMockMessageBus();
       const agent = await AgentFactory.createAgent({
         agent: { sop: 'Direct SOP' },
         api: { apiKey: 'test-key' },
-      });
+      }, messageBus);
       expect(agent).toBeInstanceOf(Agent);
     });
 
     it('should accept full configuration', async () => {
+      const messageBus = createMockMessageBus();
       const agent = await AgentFactory.createAgent({
         agent: {
           sop: 'Full Config SOP',
@@ -221,7 +230,7 @@ describe('AgentFactory', () => {
           config: { apiRequestTimeout: 120000 },
         },
         api: { apiModelId: 'custom-model', apiKey: 'test-key' },
-      });
+      }, messageBus);
       expect(agent).toBeInstanceOf(Agent);
       expect(agent.getTaskId).toBe('full-config-task');
     });
@@ -230,14 +239,16 @@ describe('AgentFactory', () => {
 
 describe('Multiple Containers', () => {
   it('should create isolated agents in separate containers', async () => {
+    const messageBus1 = createMockMessageBus();
+    const messageBus2 = createMockMessageBus();
     const container1 = new AgentContainer({
       agent: { taskId: 'agent-1' },
       api: { apiKey: 'key-1' },
-    });
+    }, messageBus1);
     const container2 = new AgentContainer({
       agent: { taskId: 'agent-2' },
       api: { apiKey: 'key-2' },
-    });
+    }, messageBus2);
 
     const agent1 = await container1.getAgent();
     const agent2 = await container2.getAgent();
@@ -249,14 +260,16 @@ describe('Multiple Containers', () => {
   });
 
   it('should have independent configurations', () => {
+    const messageBus1 = createMockMessageBus();
+    const messageBus2 = createMockMessageBus();
     const container1 = new AgentContainer({
       agent: { sop: 'SOP 1' },
       api: { apiModelId: 'model-1', apiKey: 'key-1' },
-    });
+    }, messageBus1);
     const container2 = new AgentContainer({
       agent: { sop: 'SOP 2' },
       api: { apiModelId: 'model-2', apiKey: 'key-2' },
-    });
+    }, messageBus2);
 
     expect(container1.getConfig().agent.sop).toBe('SOP 1');
     expect(container2.getConfig().agent.sop).toBe('SOP 2');

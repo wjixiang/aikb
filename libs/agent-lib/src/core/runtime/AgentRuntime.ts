@@ -72,7 +72,11 @@ import { RuntimeControlClientImpl } from './RuntimeControlClient.js';
 import type { ITopologyGraph } from './topology/graph/TopologyGraph.js';
 import type { TopologyMessage, RoutingStats } from './topology/types.js';
 import { createTopologyGraph } from './topology/graph/TopologyGraph.js';
-import { createMessageBus } from './topology/messaging/MessageBus.js';
+import {
+  createMessageBusFromConfig,
+  isRedisMessageBus,
+  type MessageBusFactoryConfig,
+} from './topology/messaging/index.js';
 import { createMessageRouter } from './topology/routing/MessageRouter.js';
 import type { IMessageBus } from './topology/messaging/MessageBus.js';
 import type { IMessageRouter } from './topology/routing/MessageRouter.js';
@@ -472,6 +476,15 @@ export class AgentRuntime implements IAgentRuntime {
    *
    * @example
    * const runtime = new AgentRuntime({ maxAgents: 5 });
+   *
+   * @example
+   * // Use Redis for distributed A2A communication
+   * const runtime = new AgentRuntime({
+   *   messageBus: {
+   *     mode: 'redis',
+   *     redis: { url: 'redis://localhost:6379' }
+   *   }
+   * });
    */
   constructor(config: AgentRuntimeConfig = {}) {
     this.config = {
@@ -488,9 +501,25 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Initialize topology network for agent communication
     this.topologyGraph = createTopologyGraph();
-    this.messageBus = createMessageBus({
-      defaultAckTimeout: 120000, // 120 seconds for ACK timeout
-    });
+
+    // Create MessageBus based on configuration
+    const messageBusConfig: MessageBusFactoryConfig = {
+      mode: config.messageBus?.mode ?? 'memory',
+      redis: config.messageBus?.redis,
+      topology: {
+        defaultAckTimeout: 120000, // 120 seconds for ACK timeout
+      },
+    };
+    this.messageBus = createMessageBusFromConfig(messageBusConfig);
+
+    // Connect to Redis if using RedisMessageBus
+    if (messageBusConfig.mode === 'redis' && isRedisMessageBus(this.messageBus)) {
+      // Connection happens lazily on first use, but we can connect eagerly here
+      this.messageBus.connect().catch((err) => {
+        console.error('[AgentRuntime] Failed to connect to Redis:', err.message);
+      });
+    }
+
     this.messageRouter = createMessageRouter(this.topologyGraph);
     this.messageRouter.setMessageBus(this.messageBus);
 
@@ -1279,6 +1308,15 @@ export class AgentRuntime implements IAgentRuntime {
       capabilities: unifiedConfig.agent.capabilities ?? [],
     });
 
+    // Subscribe to Redis channel if using RedisMessageBus
+    // This is required for the agent to receive messages from other processes
+    if (isRedisMessageBus(this.messageBus)) {
+      console.log(
+        `[AgentRuntime._createChildAgent] Subscribing to Redis channel for agent: ${instanceId}`,
+      );
+      this.messageBus.subscribeAgent(instanceId);
+    }
+
     // Emit event
     this.eventDispatcher.emitEvent('agent:created', {
       instanceId,
@@ -1332,6 +1370,14 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Unregister from AgentCardRegistry for A2A communication
     getGlobalAgentRegistry().unregister(instanceId);
+
+    // Unsubscribe from Redis channel if using RedisMessageBus
+    if (isRedisMessageBus(this.messageBus)) {
+      console.log(
+        `[AgentRuntime._destroyAgentWithCascade] Unsubscribing from Redis channel for agent: ${instanceId}`,
+      );
+      this.messageBus.unsubscribeAgent(instanceId);
+    }
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:destroyed', { instanceId });

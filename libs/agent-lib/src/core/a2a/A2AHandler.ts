@@ -245,25 +245,39 @@ export class A2AHandler implements IA2AHandler {
       return;
     }
 
-    this.unsubscribeMessage = this.messageBus.onMessage(
-      async (topologyMessage) => {
-        // Only process messages addressed to this agent
-        if (topologyMessage.to !== this.instanceId) {
-          return;
-        }
-
-        // Check if this is an A2A message (content should be A2AMessage)
-        const content = topologyMessage.content;
-        if (this.isA2AMessage(content)) {
-          await this.handleMessage(content);
-        }
-      },
+    console.log(
+      `[A2AHandler.startListening] Agent ${this.instanceId} registering handler on MessageBus`,
     );
+
+    this.unsubscribeMessage = this.messageBus.onMessage((topologyMessage) => {
+      console.log(
+        `[A2AHandler.onMessage] Agent ${this.instanceId} received: to=${topologyMessage.to}, myId=${this.instanceId}`,
+        `from=${topologyMessage.from}, conversationId=${topologyMessage.conversationId}`,
+      );
+
+      if (topologyMessage.to !== this.instanceId) {
+        this.logger.trace(
+          { msgTo: topologyMessage.to, myId: this.instanceId },
+          '[A2AHandler] Message not for me, skipping',
+        );
+        return;
+      }
+
+      const content = topologyMessage.content;
+      if (this.isA2AMessage(content)) {
+        this.handleMessage(content).catch((error) => {
+          this.logger.error({ error }, '[A2AHandler] Error handling message');
+        });
+      }
+    });
 
     this.isListening = true;
     this.logger.info(
       { instanceId: this.instanceId },
       'Started listening for A2A messages',
+    );
+    console.log(
+      `[A2AHandler.startListening] Agent ${this.instanceId} now listening for A2A messages`,
     );
   }
 

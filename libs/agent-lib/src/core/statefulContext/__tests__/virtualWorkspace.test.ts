@@ -10,11 +10,18 @@ import { AgentContainer } from '../../di/container.js';
 import { VirtualWorkspace } from '../virtualWorkspace.js';
 import type { DIComponentRegistration } from '../../di/UnifiedAgentConfig.js';
 import { TestComponent, TestComponent2 } from './testComponents.js';
+import { MessageBus } from '../../runtime/topology/messaging/MessageBus.js';
+
+// Create a mock messageBus for testing
+function createMockMessageBus() {
+  return new MessageBus();
+}
 
 function createTestWorkspace(
   config: Partial<{ id: string; name: string }> = {},
   diComponents?: DIComponentRegistration[],
 ): Promise<{ workspace: VirtualWorkspace; container: AgentContainer }> {
+  const messageBus = createMockMessageBus();
   const container = new AgentContainer({
     api: { apiKey: 'test-key' },
     workspace: {
@@ -22,7 +29,7 @@ function createTestWorkspace(
       name: config.name ?? 'Test Workspace',
     },
     components: diComponents,
-  });
+  }, messageBus);
 
   return container.getAgent().then((agent) => ({
     workspace: agent.workspace as VirtualWorkspace,
@@ -177,6 +184,7 @@ describe('VirtualWorkspace (Component-based)', () => {
   describe('render component according to render mode', () => {
     it('should render in markdown', async () => {
       const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const messageBus = createMockMessageBus();
 
       const container = new AgentContainer({
         api: { apiKey: 'test-key' },
@@ -186,7 +194,7 @@ describe('VirtualWorkspace (Component-based)', () => {
           renderMode: 'markdown',
         },
         components: diComponents,
-      });
+      }, messageBus);
 
       const agent = await container.getAgent();
       const workspace = agent.workspace as VirtualWorkspace;

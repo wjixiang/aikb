@@ -14,3 +14,20 @@ export {
   type IAckTracker,
   type AckCallback,
 } from './AckTracker.js';
+
+// Redis MessageBus exports
+export { RedisMessageBus, createRedisMessageBus } from './RedisMessageBus.js';
+export {
+  type RedisMessageBusConfig,
+  DEFAULT_REDIS_CONFIG,
+  buildRedisOptions,
+  createDefaultRetryStrategy,
+  parseRedisUrl,
+} from './RedisConfig.js';
+export {
+  createMessageBus as createMessageBusFromConfig,
+  createMessageBusFromEnv,
+  isRedisMessageBus,
+  type MessageBusMode,
+  type MessageBusFactoryConfig,
+} from './MessageBusFactory.js';

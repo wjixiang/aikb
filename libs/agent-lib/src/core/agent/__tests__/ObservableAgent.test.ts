@@ -6,15 +6,22 @@ import {
   type ObservableAgentCallbacks,
 } from '../ObservableAgent.js';
 import { AgentFactory } from '../AgentFactory.js';
+import { MessageBus } from '../../runtime/topology/messaging/MessageBus.js';
+
+// Create a mock messageBus for testing
+function createMockMessageBus() {
+  return new MessageBus();
+}
 
 describe('ObservableAgent', () => {
   let agent: Awaited<ReturnType<typeof AgentFactory.createAgent>>;
 
   beforeEach(async () => {
+    const messageBus = createMockMessageBus();
     agent = await AgentFactory.createAgent({
       agent: { sop: 'Test SOP' },
       api: { apiKey: 'test-key' },
-    });
+    }, messageBus);
   });
 
   describe('createObservableAgent', () => {

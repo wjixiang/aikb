@@ -147,6 +147,18 @@ describe('A2AClient', () => {
   });
 
   describe('sendQuery', () => {
+    beforeEach(() => {
+      registry.register({
+        instanceId: 'agent-002',
+        name: 'Agent 002',
+        description: 'Test agent',
+        version: '1.0.0',
+        capabilities: [],
+        skills: [],
+        endpoint: 'agent-002',
+      });
+    });
+
     it('should send query message via messageBus', async () => {
       const query = 'What is the status of task-001?';
 
@@ -187,6 +199,18 @@ describe('A2AClient', () => {
   });
 
   describe('sendEvent', () => {
+    beforeEach(() => {
+      registry.register({
+        instanceId: 'agent-002',
+        name: 'Agent 002',
+        description: 'Test agent',
+        version: '1.0.0',
+        capabilities: [],
+        skills: [],
+        endpoint: 'agent-002',
+      });
+    });
+
     it('should send event via publish', async () => {
       const eventType = 'task:completed';
       const data = { taskId: 'task-001' };

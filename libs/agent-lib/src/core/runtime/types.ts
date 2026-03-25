@@ -274,10 +274,27 @@ export interface RuntimeControlAgentOptions {
 // Runtime Configuration
 // =============================================================================
 
+/**
+ * MessageBus mode configuration
+ */
+export type MessageBusMode = 'memory' | 'redis';
+
+/**
+ * MessageBus configuration for AgentRuntime
+ */
+export interface MessageBusConfig {
+  /** Operating mode: 'memory' for local, 'redis' for distributed */
+  mode: MessageBusMode;
+  /** Redis configuration (required when mode is 'redis') */
+  redis?: import('./topology/messaging/RedisConfig.js').RedisMessageBusConfig;
+}
+
 export interface AgentRuntimeConfig {
   maxAgents?: number;
   defaultApiConfig?: Partial<RuntimeControlProviderSettings>;
   persistence?: PersistenceConfig;
+  /** MessageBus configuration - defaults to in-memory */
+  messageBus?: MessageBusConfig;
 }
 
 export interface AgentFilter {

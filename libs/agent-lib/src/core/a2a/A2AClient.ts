@@ -169,10 +169,19 @@ export class A2AClient implements IA2AClient {
       options,
     );
 
-    // Convert to Topology message and send
     const topologyMessage = this.convertToTopologyMessage(a2aMessage);
 
-    // Use retry config or defaults
+    this.logger.debug(
+      {
+        taskId,
+        from: this.instanceId,
+        to: resolvedId,
+        conversationId: a2aMessage.conversationId,
+        topologyTo: topologyMessage.to,
+      },
+      '[A2AClient] Created topology message for sending',
+    );
+
     const maxAttempts = this.retryConfig?.maxAttempts ?? 3;
     const backoffMs = this.retryConfig?.backoffMs ?? 1000;
     let lastError: Error | undefined;
