@@ -179,12 +179,6 @@ export const TYPES = {
   PicosComponent: Symbol('PicosComponent'),
 
   /**
-   * BibliographySearchComponent - PubMed search and article retrieval
-   * @scope Singleton - Shared across all skill activations
-   */
-  BibliographySearchComponent: Symbol('BibliographySearchComponent'),
-
-  /**
    * PrismaCheckListComponent - PRISMA checklist management
    * @scope Singleton - Shared across all skill activations
    */

@@ -62,7 +62,7 @@ export interface AgentFactoryOptions extends AgentBlueprint {
  *   agent: { sop: 'My SOP' },
  *   api: { apiKey: '...' },
  *   components: [
- *     { componentClass: BibliographySearchComponent }
+ *     { componentClass: PicosComponent }
  *   ]
  * }, messageBus);
  * const agent = container.getAgent();

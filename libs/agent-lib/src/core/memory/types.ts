@@ -33,7 +33,10 @@ export interface ToolResultBlock {
  * Extended content block type for conversation messages.
  * Includes Anthropic.ContentBlockParam and custom block types like ThinkingBlock and ToolResultBlock.
  */
-export type ExtendedContentBlock = Anthropic.ContentBlockParam | ThinkingBlock | ToolResultBlock;
+export type ExtendedContentBlock =
+  | Anthropic.ContentBlockParam
+  | ThinkingBlock
+  | ToolResultBlock;
 
 /**
  * Unified message type for conversation history
@@ -85,7 +88,10 @@ export class MessageBuilder {
   /**
    * Create a message with custom content blocks
    */
-  static custom(role: 'user' | 'assistant' | 'system', content: ExtendedContentBlock[]): ApiMessage {
+  static custom(
+    role: 'user' | 'assistant' | 'system',
+    content: ExtendedContentBlock[],
+  ): ApiMessage {
     return {
       role,
       content,
@@ -130,7 +136,7 @@ export interface MemoryModuleConfig {
  * Represents a changed section in workspace context diff
  */
 export interface WorkspaceContextDiff {
-  /** Component name (e.g., 'mail', 'bibliographySearch') or 'header' for workspace header */
+  /** Component name (e.g., 'mail', 'picos') or 'header' for workspace header */
   section: string;
   /** Whether this section changed since last iteration */
   changed: boolean;
@@ -254,5 +260,4 @@ export interface IMemoryModule {
    * Clear all memory
    */
   clear(): void;
-
 }

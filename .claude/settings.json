@@ -21,7 +21,15 @@
       "Bash(find /mnt/disk1/project/project/aikb/docker -type f -name *.yml -o -name *.yaml)",
       "Bash(npm info:*)",
       "Bash(npm ls:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(curl -s http://192.168.123.98:9400/openapi.json)",
+      "Bash(curl -s http://192.168.123.98:9400/health)",
+      "Bash(curl -s http://192.168.123.98:9400/)",
+      "Bash(curl -s http://192.168.123.98:9400/docs/json)",
+      "Bash(curl -s http://192.168.123.98:9400/swagger/json)",
+      "Bash(curl -s http://192.168.123.98:9400/api-docs)",
+      "Bash(curl -s http://192.168.123.98:9400/topology)",
+      "Bash(curl -s http://192.168.123.98:9400/agents)"
     ]
   }
 }
