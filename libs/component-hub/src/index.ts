@@ -19,7 +19,6 @@ export {
 } from './fileSystem/markdown/index.js';
 
 export { RuntimeControlComponent } from './runtime-control/index.js';
-export { RuntimeControlState } from 'agent-lib/core';
 export {
   SwarmAPIClient,
   type RESTConfig as RuntimeControlRESTConfig,

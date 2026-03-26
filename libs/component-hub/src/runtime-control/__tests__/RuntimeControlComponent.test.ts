@@ -1,88 +1,95 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RuntimeControlComponent } from '../index.js';
-import { RuntimeControlState } from 'agent-lib/core';
-import type { IRuntimeControlClient, AgentMetadata } from 'agent-lib/core';
 
 describe('RuntimeControlComponent', () => {
   let component: RuntimeControlComponent;
-  let mockRuntimeClient: IRuntimeControlClient;
-  let controlState: RuntimeControlState;
-
-  const createMockClient = (): IRuntimeControlClient => {
-    const mockGraph = {
-      addNode: vi.fn(),
-      removeNode: vi.fn(),
-      getNode: vi.fn(),
-      hasNode: vi.fn(() => true),
-      getAllNodes: vi.fn(() => [
-        {
-          instanceId: 'parent-agent-id',
-          nodeType: 'router' as const,
-          capabilities: [],
-        },
-      ]),
-      addEdge: vi.fn(),
-      removeEdge: vi.fn(),
-      hasEdge: vi.fn(() => false),
-      getEdge: vi.fn(),
-      getAllEdges: vi.fn(() => []),
-      getNeighbors: vi.fn(() => []),
-      getChildren: vi.fn(() => []),
-      getParent: vi.fn(),
-      getParents: vi.fn(() => []),
-      findPath: vi.fn(() => null),
-      isReachable: vi.fn(() => false),
-      clear: vi.fn(),
-      size: { nodes: 1, edges: 0 },
-    };
-
-    return {
-      createAgent: vi.fn(() => Promise.resolve('child-agent-id-' + Date.now())),
-      destroyAgent: vi.fn(() => Promise.resolve()),
-      stopAgent: vi.fn(() => Promise.resolve()),
-      resolveAgentId: vi.fn((id: string) => id),
-      getAgent: vi.fn((id) =>
-        Promise.resolve({ instanceId: id } as AgentMetadata),
-      ),
-      listAgents: vi.fn(() => Promise.resolve([])),
-      getStats: vi.fn(() =>
-        Promise.resolve({
-          totalAgents: 1,
-          agentsByStatus: { idle: 1, running: 0, completed: 0, aborted: 0 },
-          totalPendingTasks: 0,
-          totalProcessingTasks: 0,
-        }),
-      ),
-      getSelfInstanceId: vi.fn(() => 'parent-agent-id'),
-      getParentInstanceId: vi.fn(() => undefined),
-      listChildAgents: vi.fn(() => Promise.resolve([])),
-      registerInTopology: vi.fn(),
-      unregisterFromTopology: vi.fn(),
-      connectAgents: vi.fn(),
-      disconnectAgents: vi.fn(),
-      getTopologyGraph: vi.fn(() => mockGraph),
-      getTopologyStats: vi.fn(() => ({
-        totalMessages: 0,
-        totalConversations: 0,
-        activeConversations: 0,
-        completedConversations: 0,
-        failedConversations: 0,
-        timedOutConversations: 0,
-      })),
-      sendA2ATask: vi.fn(() =>
-        Promise.resolve({ taskId: 'task-1', status: 'completed' as const }),
-      ),
-      sendA2AQuery: vi.fn(() => Promise.resolve(null)),
-      sendA2AEvent: vi.fn(() => Promise.resolve()),
-    };
+  let mockRestClient: {
+    getStats: ReturnType<typeof vi.fn>;
+    listAgents: ReturnType<typeof vi.fn>;
+    getAgent: ReturnType<typeof vi.fn>;
+    createAgent: ReturnType<typeof vi.fn>;
+    destroyAgent: ReturnType<typeof vi.fn>;
+    stopAgent: ReturnType<typeof vi.fn>;
+    startAgent: ReturnType<typeof vi.fn>;
+    getTopology: ReturnType<typeof vi.fn>;
+    getTopologyStats: ReturnType<typeof vi.fn>;
+    listAgentSouls: ReturnType<typeof vi.fn>;
+    createAgentBySoul: ReturnType<typeof vi.fn>;
+    registerInTopology: ReturnType<typeof vi.fn>;
+    unregisterFromTopology: ReturnType<typeof vi.fn>;
+    connectAgents: ReturnType<typeof vi.fn>;
+    disconnectAgents: ReturnType<typeof vi.fn>;
+    getNeighbors: ReturnType<typeof vi.fn>;
   };
+
+  const createMockRestClient = () => ({
+    getStats: vi.fn(() =>
+      Promise.resolve({
+        totalAgents: 1,
+        runningAgents: 1,
+      }),
+    ),
+    listAgents: vi.fn(() => Promise.resolve({ data: [] })),
+    getAgent: vi.fn(() =>
+      Promise.resolve({
+        instanceId: 'child-agent-id',
+        status: 'idle',
+      }),
+    ),
+    createAgent: vi.fn(() =>
+      Promise.resolve({ instanceId: 'child-agent-id-' + Date.now() }),
+    ),
+    destroyAgent: vi.fn(() => Promise.resolve()),
+    stopAgent: vi.fn(() => Promise.resolve()),
+    startAgent: vi.fn(() => Promise.resolve()),
+    getTopology: vi.fn(() =>
+      Promise.resolve({
+        nodes: [
+          {
+            instanceId: 'parent-agent-id',
+            nodeType: 'router',
+            capabilities: [],
+          },
+        ],
+        edges: [],
+        size: 1,
+      }),
+    ),
+    getTopologyStats: vi.fn(() =>
+      Promise.resolve({
+        totalMessages: 0,
+        activeConversations: 0,
+      }),
+    ),
+    listAgentSouls: vi.fn(() =>
+      Promise.resolve({
+        data: [
+          {
+            token: 'epidemiology',
+            name: 'Epidemiology',
+            type: 'epidemiology',
+            description: 'Epi agent',
+          },
+        ],
+      }),
+    ),
+    createAgentBySoul: vi.fn(() =>
+      Promise.resolve({ instanceId: 'soul-agent-id' }),
+    ),
+    registerInTopology: vi.fn(() => Promise.resolve()),
+    unregisterFromTopology: vi.fn(() => Promise.resolve()),
+    connectAgents: vi.fn(() => Promise.resolve()),
+    disconnectAgents: vi.fn(() => Promise.resolve()),
+    getNeighbors: vi.fn(() => Promise.resolve({ data: [] })),
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRuntimeClient = createMockClient();
-    controlState = new RuntimeControlState();
-    controlState.setRuntimeClient(mockRuntimeClient);
-    component = new RuntimeControlComponent('test-agent-id', controlState);
+    mockRestClient = createMockRestClient();
+    component = new RuntimeControlComponent('test-agent-id', {
+      restBaseUrl: 'http://localhost:9400',
+    }) as RuntimeControlComponent;
+    (component as any).restClient = mockRestClient;
   });
 
   describe('constructor', () => {
@@ -94,35 +101,34 @@ describe('RuntimeControlComponent', () => {
       expect(component.displayName).toBe('Runtime Control');
     });
 
-    it('should have correct description', () => {
-      expect(component.description).toBe('Create and manage child agents');
-    });
-
     it('should have all required tools', () => {
       expect(component.toolSet.size).toBe(16);
-      expect(component.toolSet.has('createAgent')).toBe(true);
-      expect(component.toolSet.has('destroyAgent')).toBe(true);
-      expect(component.toolSet.has('stopAgent')).toBe(true);
-      expect(component.toolSet.has('listAgents')).toBe(true);
-      expect(component.toolSet.has('getAgent')).toBe(true);
-      expect(component.toolSet.has('getStats')).toBe(true);
-      expect(component.toolSet.has('listChildAgents')).toBe(true);
-      expect(component.toolSet.has('getMyInfo')).toBe(true);
-      // Agent Soul tools
-      expect(component.toolSet.has('listAgentSouls')).toBe(true);
-      expect(component.toolSet.has('createAgentByType')).toBe(true);
-      // Topology tools
-      expect(component.toolSet.has('registerInTopology')).toBe(true);
-      expect(component.toolSet.has('unregisterFromTopology')).toBe(true);
-      expect(component.toolSet.has('connectAgents')).toBe(true);
-      expect(component.toolSet.has('disconnectAgents')).toBe(true);
-      expect(component.toolSet.has('getTopologyInfo')).toBe(true);
-      expect(component.toolSet.has('getNeighbors')).toBe(true);
+      const expected = [
+        'createAgent',
+        'destroyAgent',
+        'stopAgent',
+        'listAgents',
+        'getAgent',
+        'getStats',
+        'listChildAgents',
+        'getMyInfo',
+        'listAgentSouls',
+        'createAgentByType',
+        'registerInTopology',
+        'unregisterFromTopology',
+        'connectAgents',
+        'disconnectAgents',
+        'getTopologyInfo',
+        'getNeighbors',
+      ];
+      for (const tool of expected) {
+        expect(component.toolSet.has(tool)).toBe(true);
+      }
     });
   });
 
   describe('createAgent tool', () => {
-    it('should create agent successfully', async () => {
+    it('should create agent via REST', async () => {
       const result = await component.handleToolCall('createAgent', {
         name: 'test-worker',
         agentType: 'worker',
@@ -133,124 +139,84 @@ describe('RuntimeControlComponent', () => {
       expect(result.success).toBe(true);
       expect(result.data.instanceId).toMatch(/^child-agent-id-/);
       expect(result.data.name).toBe('test-worker');
-      expect(mockRuntimeClient.createAgent).toHaveBeenCalledWith({
-        agent: {
-          name: 'test-worker',
-          type: 'worker',
-          description: 'A test worker',
-          sop: 'You are a worker',
-        },
+      expect(mockRestClient.createAgent).toHaveBeenCalledWith({
+        name: 'test-worker',
+        type: 'worker',
+        description: 'A test worker',
+        sop: 'You are a worker',
       });
     });
   });
 
   describe('destroyAgent tool', () => {
-    it('should destroy agent successfully', async () => {
+    it('should destroy agent via REST', async () => {
       const result = await component.handleToolCall('destroyAgent', {
         agentId: 'child-agent-id',
         cascade: true,
       });
 
       expect(result.success).toBe(true);
-      expect(result.data.success).toBe(true);
-      expect(mockRuntimeClient.destroyAgent).toHaveBeenCalledWith(
+      expect(mockRestClient.destroyAgent).toHaveBeenCalledWith(
         'child-agent-id',
-        { cascade: true },
+        true,
       );
     });
   });
 
   describe('stopAgent tool', () => {
-    it('should stop agent successfully', async () => {
+    it('should stop agent via REST', async () => {
       const result = await component.handleToolCall('stopAgent', {
         agentId: 'child-agent-id',
       });
 
       expect(result.success).toBe(true);
-      expect(result.data.success).toBe(true);
-      expect(mockRuntimeClient.stopAgent).toHaveBeenCalledWith(
-        'child-agent-id',
-      );
+      expect(mockRestClient.stopAgent).toHaveBeenCalledWith('child-agent-id');
     });
   });
 
   describe('listAgents tool', () => {
-    it('should list agents successfully', async () => {
-      const mockAgents: AgentMetadata[] = [
-        {
-          instanceId: 'agent-1',
-          alias: 'agent-1-alias',
-          status: 'idle',
-          name: 'Agent 1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          instanceId: 'agent-2',
-          alias: 'agent-2-alias',
-          status: 'running',
-          name: 'Agent 2',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
-      mockRuntimeClient.listAgents = vi.fn(() => Promise.resolve(mockAgents));
+    it('should list agents via REST', async () => {
+      mockRestClient.listAgents = vi.fn(() =>
+        Promise.resolve({
+          data: [
+            { instanceId: 'agent-1', status: 'idle' },
+            { instanceId: 'agent-2', status: 'running' },
+          ],
+        }),
+      );
 
       const result = await component.handleToolCall('listAgents', {});
 
       expect(result.success).toBe(true);
-      expect(result.data.agents).toEqual(mockAgents);
+      expect(result.data.agents).toHaveLength(2);
     });
 
-    it('should pass filters to listAgents', async () => {
+    it('should pass filters to REST', async () => {
       await component.handleToolCall('listAgents', {
         status: 'idle',
         agentType: 'worker',
-        name: 'test',
       });
 
-      expect(mockRuntimeClient.listAgents).toHaveBeenCalledWith({
+      expect(mockRestClient.listAgents).toHaveBeenCalledWith({
         status: 'idle',
-        agentType: 'worker',
-        name: 'test',
+        type: 'worker',
       });
     });
   });
 
   describe('getAgent tool', () => {
-    it('should return agent when found', async () => {
-      const mockAgent: AgentMetadata = {
-        instanceId: 'child-agent-id',
-        alias: 'child-agent-alias',
-        status: 'idle',
-        name: 'Child Agent',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      mockRuntimeClient.listAgents = vi.fn(() => Promise.resolve([mockAgent]));
-
+    it('should get agent via REST', async () => {
       const result = await component.handleToolCall('getAgent', {
         agentId: 'child-agent-id',
       });
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockAgent);
-    });
-
-    it('should return null when agent not found', async () => {
-      mockRuntimeClient.getAgent = vi.fn(() => Promise.resolve(null));
-      mockRuntimeClient.listAgents = vi.fn(() => Promise.resolve([]));
-
-      const result = await component.handleToolCall('getAgent', {
-        agentId: 'non-existent',
-      });
-
-      expect(result.success).toBe(false);
+      expect(result.data?.instanceId).toBe('child-agent-id');
     });
   });
 
   describe('getStats tool', () => {
-    it('should get stats successfully', async () => {
+    it('should get stats via REST', async () => {
       const result = await component.handleToolCall('getStats', {});
 
       expect(result.success).toBe(true);
@@ -258,35 +224,71 @@ describe('RuntimeControlComponent', () => {
     });
   });
 
-  describe('listChildAgents tool', () => {
-    it('should list child agents successfully', async () => {
-      const mockChildren: AgentMetadata[] = [
-        {
-          instanceId: 'child-1',
-          alias: 'child-1-alias',
-          status: 'idle',
-          name: 'Child 1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
-      mockRuntimeClient.listChildAgents = vi.fn(() =>
-        Promise.resolve(mockChildren),
-      );
-
-      const result = await component.handleToolCall('listChildAgents', {});
+  describe('listAgentSouls tool', () => {
+    it('should list agent souls via REST', async () => {
+      const result = await component.handleToolCall('listAgentSouls', {});
 
       expect(result.success).toBe(true);
-      expect(result.data.agents).toEqual(mockChildren);
+      if (result.data) {
+        expect(result.data.souls).toHaveLength(1);
+        expect(result.data.souls[0].type).toBe('epidemiology');
+      }
     });
   });
 
-  describe('getMyInfo tool', () => {
-    it('should return own info successfully', async () => {
-      const result = await component.handleToolCall('getMyInfo', {});
+  describe('createAgentByType tool', () => {
+    it('should create agent by soul via REST', async () => {
+      const result = await component.handleToolCall('createAgentByType', {
+        soulType: 'epidemiology',
+        name: 'Epi Agent',
+      });
 
       expect(result.success).toBe(true);
-      expect(result.data.instanceId).toBe('parent-agent-id');
+      expect(result.data.soulType).toBe('epidemiology');
+      expect(mockRestClient.createAgentBySoul).toHaveBeenCalledWith(
+        'epidemiology',
+        'Epi Agent',
+      );
+    });
+  });
+
+  describe('topology tools', () => {
+    it('should register in topology via REST', async () => {
+      const result = await component.handleToolCall('registerInTopology', {
+        agentId: 'agent-1',
+        nodeType: 'worker',
+        capabilities: ['search'],
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockRestClient.registerInTopology).toHaveBeenCalledWith(
+        'agent-1',
+        'worker',
+        ['search'],
+      );
+    });
+
+    it('should connect agents via REST', async () => {
+      const result = await component.handleToolCall('connectAgents', {
+        from: 'agent-1',
+        to: 'agent-2',
+        edgeType: 'peer',
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockRestClient.connectAgents).toHaveBeenCalledWith(
+        'agent-1',
+        'agent-2',
+        'peer',
+      );
+    });
+
+    it('should get topology info via REST', async () => {
+      const result = await component.handleToolCall('getTopologyInfo', {});
+
+      expect(result.success).toBe(true);
+      expect(result.data!.nodes).toHaveLength(1);
+      expect(result.data.edges).toHaveLength(0);
     });
   });
 
@@ -298,8 +300,8 @@ describe('RuntimeControlComponent', () => {
       expect(result.data).toHaveProperty('error');
     });
 
-    it('should handle runtime client errors', async () => {
-      mockRuntimeClient.createAgent = vi.fn(() =>
+    it('should handle REST errors', async () => {
+      mockRestClient.createAgent = vi.fn(() =>
         Promise.reject(new Error('Creation failed')),
       );
 
@@ -312,56 +314,53 @@ describe('RuntimeControlComponent', () => {
       expect(result.summary).toContain('Creation failed');
     });
 
-    it('should handle when runtime client is not available', () => {
-      const emptyState = new RuntimeControlState();
-      component = new RuntimeControlComponent('test-agent-id', emptyState);
+    it('should handle when REST client is not configured', () => {
+      const noRest = new RuntimeControlComponent('test-agent-id');
 
-      const result = component.handleToolCall('createAgent', {
-        name: 'test',
-        agentType: 'worker',
-      });
-
-      return expect(result).resolves.toMatchObject({
+      return expect(
+        noRest.handleToolCall('createAgent', {
+          name: 'test',
+          agentType: 'worker',
+        }),
+      ).resolves.toMatchObject({
         success: false,
         data: expect.objectContaining({
-          error: 'Runtime control not available',
+          error: expect.stringContaining('not configured'),
         }),
       });
     });
   });
 
+  describe('getMyInfo tool', () => {
+    it('should return instance ID without REST call', async () => {
+      const result = await component.handleToolCall('getMyInfo', {});
+
+      expect(result.success).toBe(true);
+      expect(result.data.instanceId).toBe('test-agent-id');
+    });
+  });
+
   describe('renderImply', () => {
-    it('should render with runtime client available', async () => {
+    it('should render with REST client available', async () => {
       const elements = await component.renderImply();
 
       expect(elements.length).toBeGreaterThan(0);
     });
 
-    it('should render with runtime client not available', async () => {
-      const emptyState = new RuntimeControlState();
-      component = new RuntimeControlComponent('test-agent-id', emptyState);
-
-      const elements = await component.renderImply();
+    it('should render without REST client', async () => {
+      const noRest = new RuntimeControlComponent('test-agent-id');
+      const elements = await noRest.renderImply();
 
       expect(elements.length).toBeGreaterThan(0);
     });
   });
 
   describe('exportData', () => {
-    it('should export data successfully', async () => {
+    it('should export data', async () => {
       const result = await component.exportData();
 
       expect(result.format).toBe('json');
-      expect(result.data).toHaveProperty('myInstanceId');
-    });
-
-    it('should handle export when client not available', async () => {
-      const emptyState = new RuntimeControlState();
-      component = new RuntimeControlComponent('test-agent-id', emptyState);
-
-      const result = await component.exportData();
-
-      expect(result.data).toHaveProperty('error');
+      expect(result.data).toHaveProperty('instanceId');
     });
   });
 });

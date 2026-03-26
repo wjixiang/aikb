@@ -8,20 +8,11 @@ import {
 import type { Tool, ToolCallResult } from 'agent-lib/components';
 import type { TUIElement } from 'agent-lib/components/ui';
 import { th, tdiv } from 'agent-lib/components/ui';
-import { TYPES, RuntimeControlState } from 'agent-lib/core';
-import type {
-  IRuntimeControlClient,
-  RuntimeStats,
-  AgentMetadata,
-  TopologyNode,
-  TopologyEdge,
-  RoutingStats,
-} from 'agent-lib/core';
-import { agentSoulRegistry, createAgentSoulByType } from 'agent-lib/core';
+import { TYPES } from 'agent-lib/core';
 import {
   runtimeControlToolSchemas,
   type RuntimeControlToolName,
-  type RuntimeControlToolReturnType,
+  type RuntimeControlToolReturnTypes,
   type CreateAgentParams,
   type DestroyAgentParams,
   type StopAgentParams,
@@ -38,6 +29,9 @@ import {
 } from './schemas.js';
 import { SwarmAPIClient, type RuntimeControlRESTConfig } from './restClient.js';
 
+type RuntimeControlToolReturnType<T extends RuntimeControlToolName> =
+  RuntimeControlToolReturnTypes[T];
+
 @injectable()
 export class RuntimeControlComponent extends ToolComponent {
   override componentId = 'runtime-control';
@@ -45,14 +39,12 @@ export class RuntimeControlComponent extends ToolComponent {
   override description = 'Create and manage child agents';
   override componentPrompt = `## Runtime Control
 
-This component enables creation and management of child agents for distributed task processing.
+This component enables creation and management of child agents via REST API.
 
-**Agent Lifecycle (in-process via DI):**
+**Workflow:**
 1. Create child agents using createAgent or createAgentByType
 2. Monitor agent status using listAgents and getAgent
 3. Control agent lifecycle with stopAgent
-
-**Topology Management (via REST API):**
 4. Register agents in topology via registerInTopology
 5. Connect agents via connectAgents
 6. View topology via getTopologyInfo and getNeighbors
@@ -63,22 +55,17 @@ This component enables creation and management of child agents for distributed t
 - Register agents in topology for coordinated workflows`;
 
   protected instanceId: string;
-  protected controlState: RuntimeControlState;
-  protected restConfig?: RuntimeControlRESTConfig;
   protected restClient?: SwarmAPIClient;
   toolSet: Map<string, Tool>;
 
   constructor(
     @inject(TYPES.AgentInstanceId) instanceId: string,
-    @inject(TYPES.RuntimeControlState) controlState: RuntimeControlState,
     @inject(TYPES.RuntimeControlRESTConfig)
     @optional()
     restConfig?: RuntimeControlRESTConfig,
   ) {
     super();
     this.instanceId = instanceId;
-    this.controlState = controlState;
-    this.restConfig = restConfig;
     if (restConfig?.restBaseUrl) {
       this.restClient = new SwarmAPIClient(
         restConfig.restBaseUrl,
@@ -88,10 +75,6 @@ This component enables creation and management of child agents for distributed t
     this.toolSet = this.initializeToolSet();
   }
 
-  private getRuntimeClient(): IRuntimeControlClient | undefined {
-    return this.controlState.getRuntimeClient();
-  }
-
   private initializeToolSet(): Map<string, Tool> {
     const tools = new Map<string, Tool>();
 
@@ -99,7 +82,6 @@ This component enables creation and management of child agents for distributed t
       string,
       (typeof runtimeControlToolSchemas)[keyof typeof runtimeControlToolSchemas],
     ][] = [
-      // Agent lifecycle tools (DI-based, in-process)
       ['createAgent', runtimeControlToolSchemas.createAgent],
       ['destroyAgent', runtimeControlToolSchemas.destroyAgent],
       ['stopAgent', runtimeControlToolSchemas.stopAgent],
@@ -108,10 +90,8 @@ This component enables creation and management of child agents for distributed t
       ['getStats', runtimeControlToolSchemas.getStats],
       ['listChildAgents', runtimeControlToolSchemas.listChildAgents],
       ['getMyInfo', runtimeControlToolSchemas.getMyInfo],
-      // Agent Soul tools (DI-based, in-process)
       ['listAgentSouls', runtimeControlToolSchemas.listAgentSouls],
       ['createAgentByType', runtimeControlToolSchemas.createAgentByType],
-      // Topology tools (REST-based, cross-container)
       ['registerInTopology', runtimeControlToolSchemas.registerInTopology],
       [
         'unregisterFromTopology',
@@ -146,7 +126,6 @@ This component enables creation and management of child agents for distributed t
   ): Promise<ToolCallResult<unknown>> => {
     try {
       switch (toolName) {
-        // Agent lifecycle (DI)
         case 'createAgent':
           return await this.handleCreateAgent(params as CreateAgentParams);
         case 'destroyAgent':
@@ -163,7 +142,6 @@ This component enables creation and management of child agents for distributed t
           return await this.handleListChildAgents();
         case 'getMyInfo':
           return await this.handleGetMyInfo();
-        // Agent Soul (DI)
         case 'listAgentSouls':
           return await this.handleListAgentSouls(
             params as ListAgentSoulsParams,
@@ -172,7 +150,6 @@ This component enables creation and management of child agents for distributed t
           return await this.handleCreateAgentByType(
             params as CreateAgentByTypeParams,
           );
-        // Topology (REST)
         case 'registerInTopology':
           return await this.handleRegisterInTopology(
             params as RegisterInTopologyParams,
@@ -218,98 +195,55 @@ This component enables creation and management of child agents for distributed t
 
     elements.push(
       new th({
-        content: 'Runtime Control - Agent Management',
+        content: 'Runtime Control',
         styles: { align: 'center' },
       }),
     );
+    elements.push(
+      new tdiv({
+        content: `Instance: ${this.instanceId.slice(0, 8)}`,
+      }),
+    );
 
-    // Agent info section (DI)
-    const client = this.getRuntimeClient();
-    if (client) {
-      const selfInstanceId = client.getSelfInstanceId();
-      const allAgents = await client.listAgents();
-      const selfAgent = allAgents.find((a) => a.instanceId === selfInstanceId);
-      const selfDisplay = selfAgent?.alias || selfInstanceId.slice(0, 8);
-      elements.push(new tdiv({ content: `Instance: ${selfDisplay}` }));
-    } else {
-      elements.push(
-        new tdiv({ content: `Instance: ${this.instanceId.slice(0, 8)}` }),
-      );
+    if (!this.restClient) {
+      elements.push(new tdiv({ content: 'REST API not configured' }));
+      return elements;
     }
 
-    // Topology section (REST)
-    if (this.restClient) {
-      try {
-        const [topology, stats] = await Promise.all([
-          this.restClient.getTopology(),
-          this.restClient.getTopologyStats(),
-        ]);
+    try {
+      const [stats, topology] = await Promise.all([
+        this.restClient.getStats(),
+        this.restClient.getTopology(),
+      ]);
 
-        const nodes: any[] = topology.nodes || [];
-        const edges: any[] = topology.edges || [];
+      const totalAgents = stats.totalAgents || 0;
+      const runningAgents = stats.runningAgents || 0;
+      elements.push(
+        new tdiv({
+          content: `Agents: ${totalAgents} total, ${runningAgents} running`,
+        }),
+      );
 
+      const nodes: any[] = topology.nodes || [];
+      const edges: any[] = topology.edges || [];
+
+      if (nodes.length > 0) {
         elements.push(
           new th({
-            content: 'Topology Network (via REST)',
+            content: `Topology (${nodes.length} nodes, ${edges.length} edges)`,
             styles: { align: 'left' },
           }),
         );
-        elements.push(
-          new tdiv({
-            content: `Nodes: ${nodes.length} | Edges: ${edges.length}`,
-          }),
-        );
-        elements.push(
-          new tdiv({
-            content: `Messages: ${stats.totalMessages || 0} | Active: ${stats.activeConversations || 0}`,
-          }),
-        );
-
-        if (nodes.length > 0) {
+        for (const node of nodes) {
           elements.push(
-            new th({
-              content: 'Agents in Topology',
-              styles: { align: 'left' },
+            new tdiv({
+              content: `  • ${node.instanceId || node.id} (${node.nodeType || '?'})`,
             }),
           );
-          for (const node of nodes) {
-            const capabilities = node.capabilities?.length
-              ? ` [${node.capabilities.join(', ')}]`
-              : '';
-            elements.push(
-              new tdiv({
-                content: `  • ${node.instanceId || node.id} (${node.nodeType || '?'})${capabilities}`,
-              }),
-            );
-          }
         }
-
-        if (edges.length > 0) {
-          elements.push(
-            new th({
-              content: 'Connections',
-              styles: { align: 'left' },
-            }),
-          );
-          for (const edge of edges) {
-            const arrow = edge.bidirectional ? '<->' : '->';
-            elements.push(
-              new tdiv({
-                content: `  ${edge.from} ${arrow} ${edge.to} (${edge.edgeType || '?'})`,
-              }),
-            );
-          }
-        }
-      } catch {
-        elements.push(new tdiv({ content: 'Topology REST API not available' }));
       }
-    } else {
-      elements.push(
-        new tdiv({
-          content:
-            'Topology: REST not configured (set runtimeControl.restBaseUrl)',
-        }),
-      );
+    } catch {
+      elements.push(new tdiv({ content: 'Runtime API unreachable' }));
     }
 
     return elements;
@@ -320,31 +254,17 @@ This component enables creation and management of child agents for distributed t
   // ============================================
 
   async exportData(_options?: ExportOptions): Promise<ExportResult> {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return {
-        data: {
-          error: 'Runtime control not available',
-          instanceId: this.instanceId,
-          restBaseUrl: this.restConfig?.restBaseUrl,
-        },
-        format: 'json',
-      };
-    }
-
-    const agents = await client.listChildAgents();
     return {
       data: {
-        myInstanceId: client.getSelfInstanceId(),
-        childAgents: agents,
-        restBaseUrl: this.restConfig?.restBaseUrl,
+        instanceId: this.instanceId,
+        restBaseUrl: this.restClient ? 'configured' : 'not configured',
       },
       format: 'json',
     };
   }
 
   // ============================================
-  // Agent Lifecycle Tool Handlers (DI-based, in-process)
+  // Agent Lifecycle (REST)
   // ============================================
 
   private async handleCreateAgent(
@@ -352,246 +272,166 @@ This component enables creation and management of child agents for distributed t
   ): Promise<
     ToolCallResult<{ instanceId: string; name: string; createdAt: string }>
   > {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return this.noClientError<{
-        instanceId: string;
-        name: string;
-        createdAt: string;
-      }>();
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
-      const instanceId = await client.createAgent({
-        agent: {
-          name: params.name,
-          type: params.agentType,
-          description: params.description,
-          sop: params.sop,
-        },
+      const result = await this.restClient.createAgent({
+        name: params.name,
+        type: params.agentType,
+        description: params.description,
+        sop: params.sop,
       });
-
       return {
         success: true,
         data: {
-          instanceId,
+          instanceId: result.instanceId,
           name: params.name,
           createdAt: new Date().toISOString(),
         },
-        summary: `[RuntimeControl] Created agent: ${params.name} (${instanceId})`,
+        summary: `[RuntimeControl] Created agent: ${params.name} (${result.instanceId})`,
       };
     } catch (error) {
-      return this.diError(error);
+      return this.restError(error);
     }
   }
 
   private async handleDestroyAgent(
     params: DestroyAgentParams,
   ): Promise<ToolCallResult<{ success: boolean; destroyedCount: number }>> {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return this.noClientError<{
-        success: boolean;
-        destroyedCount: number;
-      }>();
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
-      await client.destroyAgent(params.agentId, {
-        cascade: params.cascade,
-      });
+      await this.restClient.destroyAgent(params.agentId, params.cascade);
       return {
         success: true,
         data: { success: true, destroyedCount: 1 },
         summary: `[RuntimeControl] Destroyed agent: ${params.agentId}`,
       };
     } catch (error) {
-      return this.diError(error);
+      return this.restError(error);
     }
   }
 
   private async handleStopAgent(
     params: StopAgentParams,
   ): Promise<ToolCallResult<{ success: boolean }>> {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return this.noClientError<{ success: boolean }>();
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
-      await client.stopAgent(params.agentId!);
+      await this.restClient.stopAgent(params.agentId!);
       return {
         success: true,
         data: { success: true },
         summary: `[RuntimeControl] Stopped agent: ${params.agentId}`,
       };
     } catch (error) {
-      return this.diError(error);
+      return this.restError(error);
     }
   }
 
   private async handleListAgents(
     params: ListAgentsParams,
-  ): Promise<ToolCallResult<{ agents: AgentMetadata[] }>> {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return this.noClientError<{ agents: AgentMetadata[] }>();
-    }
+  ): Promise<ToolCallResult<{ agents: any[] }>> {
+    if (!this.restClient) return this.noClient<{ agents: any[] }>();
 
     try {
-      const agents = await client.listAgents({
-        status: params.status as any,
-        agentType: params.agentType,
-        name: params.name,
-      });
+      const filter: Record<string, string> = {};
+      if (params.status) filter['status'] = params.status;
+      if (params.agentType) filter['type'] = params.agentType;
+      if (params.name) filter['name'] = params.name;
+      const agents = await this.restClient.listAgents(filter);
+      const list = agents.data || agents;
       return {
         success: true,
-        data: { agents },
-        summary: `[RuntimeControl] Listed ${agents.length} agent(s)`,
+        data: { agents: list },
+        summary: `[RuntimeControl] Listed ${list.length} agent(s)`,
       };
     } catch (error) {
-      return this.diError(error);
+      return this.restError<{ agents: any[] }>(error);
     }
   }
 
   private async handleGetAgent(
     params: GetAgentParams,
-  ): Promise<ToolCallResult<AgentMetadata | null>> {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return this.noClientError<AgentMetadata | null>();
-    }
+  ): Promise<ToolCallResult<any>> {
+    if (!this.restClient) return this.noClient();
 
     try {
-      const agent = await client.getAgent(params.agentId);
-      if (!agent) {
-        return {
-          success: false,
-          data: {
-            error: 'Agent not found or not accessible',
-          } as unknown as AgentMetadata | null,
-          summary: '[RuntimeControl] Agent not found or not accessible',
-        };
-      }
-
-      const agents = await client.listAgents();
-      const metadata =
-        agents.find(
-          (a) => a.instanceId === params.agentId || a.alias === params.agentId,
-        ) ?? null;
-
+      const agent = await this.restClient.getAgent(params.agentId);
       return {
         success: true,
-        data: metadata,
+        data: agent,
         summary: `[RuntimeControl] Got agent: ${params.agentId}`,
       };
     } catch (error) {
-      return this.diError(error);
+      return this.restError(error);
     }
   }
 
-  private async handleGetStats(): Promise<ToolCallResult<RuntimeStats>> {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return this.noClientError<RuntimeStats>();
-    }
+  private async handleGetStats(): Promise<ToolCallResult<any>> {
+    if (!this.restClient) return this.noClient();
 
     try {
-      const stats = await client.getStats();
+      const stats = await this.restClient.getStats();
       return {
         success: true,
         data: stats,
-        summary: `[RuntimeControl] Got runtime stats`,
+        summary: '[RuntimeControl] Got runtime stats',
       };
     } catch (error) {
-      return this.diError(error);
+      return this.restError(error);
     }
   }
 
   private async handleListChildAgents(): Promise<
-    ToolCallResult<{ agents: AgentMetadata[] }>
+    ToolCallResult<{ agents: any[] }>
   > {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return this.noClientError<{ agents: AgentMetadata[] }>();
-    }
+    if (!this.restClient) return this.noClient<{ agents: any[] }>();
 
     try {
-      const agents = await client.listChildAgents();
+      const allAgents = await this.restClient.listAgents();
+      const list = allAgents.data || allAgents;
+      const myChildren = list.filter(
+        (a: any) => a.parentInstanceId === this.instanceId,
+      );
       return {
         success: true,
-        data: { agents },
-        summary: `[RuntimeControl] Listed ${agents.length} child agent(s)`,
+        data: { agents: myChildren },
+        summary: `[RuntimeControl] Listed ${myChildren.length} child agent(s)`,
       };
     } catch (error) {
-      return this.diError(error);
+      return this.restError<{ agents: any[] }>(error);
     }
   }
 
   private async handleGetMyInfo(): Promise<
-    ToolCallResult<{
-      instanceId: string;
-      name?: string;
-      agentType?: string;
-      parentInstanceId?: string;
-    }>
+    ToolCallResult<{ instanceId: string }>
   > {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return {
-        success: true,
-        data: { instanceId: this.instanceId },
-        summary: `[RuntimeControl] Got agent info for: ${this.instanceId}`,
-      };
-    }
-
-    const parentInstanceId = client.getParentInstanceId();
-
     return {
       success: true,
-      data: {
-        instanceId: client.getSelfInstanceId(),
-        parentInstanceId,
-      },
-      summary: `[RuntimeControl] Got agent info for: ${client.getSelfInstanceId()}`,
+      data: { instanceId: this.instanceId },
+      summary: `[RuntimeControl] Got agent info for: ${this.instanceId}`,
     };
   }
 
   // ============================================
-  // Agent Soul Tool Handlers (DI-based, in-process)
+  // Agent Souls (REST)
   // ============================================
 
-  private async handleListAgentSouls(params: ListAgentSoulsParams): Promise<
-    ToolCallResult<{
-      souls: Array<{
-        type: string;
-        name: string;
-        description: string;
-        capabilities: string[];
-      }>;
-    }>
-  > {
+  private async handleListAgentSouls(
+    params: ListAgentSoulsParams,
+  ): Promise<ToolCallResult<{ souls: any[] }>> {
+    if (!this.restClient) return this.noClient<{ souls: any[] }>();
+
     try {
-      let souls = agentSoulRegistry.getAll();
-
-      if (params.capability) {
-        souls = agentSoulRegistry.getByCapability(params.capability);
-      }
-
+      const souls = await this.restClient.listAgentSouls();
       return {
         success: true,
-        data: {
-          souls: souls.map((s) => ({
-            type: s.type,
-            name: s.name,
-            description: s.description,
-            capabilities: s.capabilities,
-          })),
-        },
-        summary: `[RuntimeControl] Listed ${souls.length} available agent soul(s)`,
+        data: { souls: souls.data || souls },
+        summary: `[RuntimeControl] Listed available agent soul(s)`,
       };
     } catch (error) {
-      return this.diError(error);
+      return this.restError<{ souls: any[] }>(error);
     }
   }
 
@@ -606,83 +446,37 @@ This component enables creation and management of child agents for distributed t
       createdAt: string;
     }>
   > {
-    const client = this.getRuntimeClient();
-    if (!client) {
-      return this.noClientError<{
-        instanceId: string;
-        alias: string;
-        name: string;
-        soulType: string;
-        createdAt: string;
-      }>();
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
-      const soulConfig = createAgentSoulByType(params.soulType as any);
-      const agentConfig = soulConfig.agent;
-      const name =
-        params.name || agentConfig?.name || `${params.soulType} Agent`;
-
-      console.log(
-        `[RuntimeControl] Creating agent by type: ${params.soulType}, name: ${name}, components: ${soulConfig.components?.length || 0}`,
+      const result = await this.restClient.createAgentBySoul(
+        params.soulType,
+        params.name,
       );
-
-      const instanceId = await client.createAgent({
-        agent: {
-          name,
-          type: params.soulType,
-          description: agentConfig?.description,
-          sop: agentConfig?.sop,
-        },
-        components: soulConfig.components,
-      });
-
-      console.log(
-        `[RuntimeControl] Agent created with instanceId: ${instanceId}`,
-      );
-
-      const agents = await client.listAgents();
-      const agent = agents.find((a) => a.instanceId === instanceId);
-
-      console.log(
-        `[RuntimeControl] Agent metadata found: ${agent ? `alias=${agent.alias}, name=${agent.name}` : 'NOT FOUND'}`,
-      );
-      console.log(
-        `[RuntimeControl] Total agents in registry: ${agents.length}`,
-      );
-
       return {
         success: true,
         data: {
-          instanceId,
-          alias: agent?.alias || instanceId,
-          name,
+          instanceId: result.instanceId,
+          alias: result.alias || result.instanceId,
+          name: params.name || params.soulType,
           soulType: params.soulType,
           createdAt: new Date().toISOString(),
         },
-        summary: `[RuntimeControl] Created ${name} (${agent?.alias || instanceId})`,
+        summary: `[RuntimeControl] Created ${params.name || params.soulType} (${result.instanceId})`,
       };
     } catch (error) {
-      console.error(
-        `[RuntimeControl] Failed to create agent: ${(error as Error).message}`,
-      );
-      return this.diError(error);
+      return this.restError(error);
     }
   }
 
   // ============================================
-  // Topology Tool Handlers (REST-based, cross-container)
+  // Topology (REST)
   // ============================================
 
   private async handleRegisterInTopology(
     params: RegisterInTopologyParams,
   ): Promise<ToolCallResult<{ success: boolean; instanceId: string }>> {
-    if (!this.restClient) {
-      return this.noRestError<{
-        success: boolean;
-        instanceId: string;
-      }>(params.agentId);
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
       await this.restClient.registerInTopology(
@@ -703,12 +497,7 @@ This component enables creation and management of child agents for distributed t
   private async handleUnregisterFromTopology(
     params: UnregisterFromTopologyParams,
   ): Promise<ToolCallResult<{ success: boolean; instanceId: string }>> {
-    if (!this.restClient) {
-      return this.noRestError<{
-        success: boolean;
-        instanceId: string;
-      }>(params.agentId);
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
       await this.restClient.unregisterFromTopology(params.agentId);
@@ -725,13 +514,7 @@ This component enables creation and management of child agents for distributed t
   private async handleConnectAgents(
     params: ConnectAgentsParams,
   ): Promise<ToolCallResult<{ success: boolean; from: string; to: string }>> {
-    if (!this.restClient) {
-      return this.noRestError<{
-        success: boolean;
-        from: string;
-        to: string;
-      }>(`${params.from} -> ${params.to}`);
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
       await this.restClient.connectAgents(
@@ -752,13 +535,7 @@ This component enables creation and management of child agents for distributed t
   private async handleDisconnectAgents(
     params: DisconnectAgentsParams,
   ): Promise<ToolCallResult<{ success: boolean; from: string; to: string }>> {
-    if (!this.restClient) {
-      return this.noRestError<{
-        success: boolean;
-        from: string;
-        to: string;
-      }>(`${params.from} -> ${params.to}`);
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
       await this.restClient.disconnectAgents(params.from, params.to);
@@ -774,20 +551,13 @@ This component enables creation and management of child agents for distributed t
 
   private async handleGetTopologyInfo(): Promise<
     ToolCallResult<{
-      nodes: TopologyNode[];
-      edges: TopologyEdge[];
-      stats: RoutingStats;
+      nodes: any[];
+      edges: any[];
+      stats: any;
       size: { nodes: number; edges: number };
     }>
   > {
-    if (!this.restClient) {
-      return this.noRestError<{
-        nodes: TopologyNode[];
-        edges: TopologyEdge[];
-        stats: RoutingStats;
-        size: { nodes: number; edges: number };
-      }>();
-    }
+    if (!this.restClient) return this.noClient();
 
     try {
       const [topology, stats] = await Promise.all([
@@ -814,10 +584,8 @@ This component enables creation and management of child agents for distributed t
 
   private async handleGetNeighbors(
     params: GetNeighborsParams,
-  ): Promise<ToolCallResult<{ neighbors: TopologyNode[] }>> {
-    if (!this.restClient) {
-      return this.noRestError<{ neighbors: TopologyNode[] }>(params.agentId);
-    }
+  ): Promise<ToolCallResult<{ neighbors: any[] }>> {
+    if (!this.restClient) return this.noClient<{ neighbors: any[] }>();
 
     try {
       const result = await this.restClient.getNeighbors(params.agentId);
@@ -827,7 +595,7 @@ This component enables creation and management of child agents for distributed t
         summary: `[RuntimeControl] Found neighbors for ${params.agentId}`,
       };
     } catch (error) {
-      return this.restError(error);
+      return this.restError<{ neighbors: any[] }>(error);
     }
   }
 
@@ -835,50 +603,23 @@ This component enables creation and management of child agents for distributed t
   // Error Helpers
   // ============================================
 
-  private noClientError<T>(context?: string): ToolCallResult<T> {
-    return {
-      success: false,
-      data: {
-        error: 'Runtime control client not available',
-        ...(context ? { context } : {}),
-      } as unknown as T,
-      summary: '[RuntimeControl] Runtime control client not available',
-    };
-  }
-
-  private noRestError<T>(context?: string): ToolCallResult<T> {
+  private noClient<T>(): ToolCallResult<T> {
     return {
       success: false,
       data: {
         error:
-          'Topology REST API not configured. Set runtimeControl.restBaseUrl in agent config.',
-        ...(context ? { context } : {}),
+          'Runtime REST API not configured. Set runtimeControl.restBaseUrl in agent config.',
       } as unknown as T,
-      summary: '[RuntimeControl] Topology REST API not configured',
+      summary: '[RuntimeControl] REST API not configured',
     };
   }
 
-  private diError<T>(error: unknown, context?: string): ToolCallResult<T> {
+  private restError<T>(error: unknown): ToolCallResult<T> {
     const msg = error instanceof Error ? error.message : String(error);
     return {
       success: false,
-      data: {
-        error: msg,
-        ...(context ? { context } : {}),
-      } as unknown as T,
+      data: { error: msg } as unknown as T,
       summary: `[RuntimeControl] Failed: ${msg}`,
-    };
-  }
-
-  private restError<T>(error: unknown, context?: string): ToolCallResult<T> {
-    const msg = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      data: {
-        error: msg,
-        ...(context ? { context } : {}),
-      } as unknown as T,
-      summary: `[RuntimeControl] REST API error: ${msg}`,
     };
   }
 }

@@ -371,6 +371,181 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
     },
   );
 
+  fastify.post(
+    '/topology/nodes',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'Register an agent as a node in the topology graph',
+        body: {
+          type: 'object',
+          required: ['agentId'],
+          properties: {
+            agentId: { type: 'string', description: 'Agent instance ID' },
+            nodeType: {
+              type: 'string',
+              description: 'Node type (e.g., router, worker, coordinator)',
+            },
+            capabilities: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Agent capabilities',
+            },
+          },
+        },
+        response: { 201: responseSchema, 400: responseSchema },
+      } as any,
+    },
+    async (request, reply) => {
+      const { agentId, nodeType, capabilities } = request.body as {
+        agentId: string;
+        nodeType?: string;
+        capabilities?: string[];
+      };
+      try {
+        fastify.agentRuntime.registerInTopology(
+          agentId,
+          (nodeType as any) || 'worker',
+          capabilities,
+        );
+        return reply.code(201).send({
+          success: true,
+          data: { agentId, nodeType, capabilities },
+        });
+      } catch (error) {
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
+
+  fastify.delete(
+    '/topology/nodes/:agentId',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'Unregister an agent from the topology graph',
+        params: {
+          type: 'object',
+          properties: {
+            agentId: { type: 'string', description: 'Agent instance ID' },
+          },
+        },
+        response: { 200: responseSchema, 400: responseSchema },
+      } as any,
+    },
+    async (request, reply) => {
+      const { agentId } = request.params as { agentId: string };
+      try {
+        fastify.agentRuntime.unregisterFromTopology(agentId);
+        return { success: true, data: { agentId } };
+      } catch (error) {
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
+
+  fastify.get(
+    '/topology/nodes/:agentId/neighbors',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'Get the neighbors of a specific agent in the topology',
+        params: {
+          type: 'object',
+          properties: {
+            agentId: { type: 'string', description: 'Agent instance ID' },
+          },
+        },
+        response: { 200: responseSchema, 404: responseSchema },
+      } as any,
+    },
+    async (request, reply) => {
+      const { agentId } = request.params as { agentId: string };
+      const graph = fastify.agentRuntime.getTopologyGraph();
+      const neighbors = graph.getNeighbors(agentId);
+      return { success: true, data: neighbors };
+    },
+  );
+
+  fastify.post(
+    '/topology/edges',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'Connect two agents in the topology graph',
+        body: {
+          type: 'object',
+          required: ['from', 'to'],
+          properties: {
+            from: { type: 'string', description: 'Source agent ID' },
+            to: { type: 'string', description: 'Target agent ID' },
+            edgeType: {
+              type: 'string',
+              description: 'Edge type (e.g., peer, parent-child)',
+            },
+          },
+        },
+        response: { 201: responseSchema, 400: responseSchema },
+      } as any,
+    },
+    async (request, reply) => {
+      const { from, to, edgeType } = request.body as {
+        from: string;
+        to: string;
+        edgeType?: string;
+      };
+      try {
+        fastify.agentRuntime.connectAgents(from, to, edgeType as any);
+        return reply.code(201).send({
+          success: true,
+          data: { from, to, edgeType },
+        });
+      } catch (error) {
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
+
+  fastify.delete(
+    '/topology/edges',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'Disconnect two agents in the topology graph',
+        querystring: {
+          type: 'object',
+          required: ['from', 'to'],
+          properties: {
+            from: { type: 'string', description: 'Source agent ID' },
+            to: { type: 'string', description: 'Target agent ID' },
+          },
+        },
+        response: { 200: responseSchema, 400: responseSchema },
+      } as any,
+    },
+    async (request, reply) => {
+      const { from, to } = request.query as { from: string; to: string };
+      try {
+        fastify.agentRuntime.disconnectAgents(from, to);
+        return { success: true, data: { from, to } };
+      } catch (error) {
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
+
   fastify.get(
     '/agent-souls',
     {
