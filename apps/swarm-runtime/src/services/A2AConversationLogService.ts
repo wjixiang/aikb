@@ -10,7 +10,7 @@ import { AgentPrismaService } from 'agent-lib/core';
 export interface EdgeActivity {
   from: string;
   to: string;
-  status: 'active' | 'completed' | 'failed';
+  status: 'pending' | 'acknowledged' | 'completed' | 'failed';
   conversationCount: number;
   lastActivityAt: number;
 }
@@ -106,12 +106,11 @@ export class A2AConversationLogService {
     }
 
     return Array.from(edgeMap.values()).map((entry) => {
-      let status: 'active' | 'completed' | 'failed';
-      if (
-        entry.latestStatus === 'pending' ||
-        entry.latestStatus === 'acknowledged'
-      ) {
-        status = 'active';
+      let status: 'pending' | 'acknowledged' | 'completed' | 'failed';
+      if (entry.latestStatus === 'pending') {
+        status = 'pending';
+      } else if (entry.latestStatus === 'acknowledged') {
+        status = 'acknowledged';
       } else if (entry.latestStatus === 'completed') {
         status = 'completed';
       } else {

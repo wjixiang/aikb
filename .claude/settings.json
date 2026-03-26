@@ -29,7 +29,10 @@
       "Bash(curl -s http://192.168.123.98:9400/swagger/json)",
       "Bash(curl -s http://192.168.123.98:9400/api-docs)",
       "Bash(curl -s http://192.168.123.98:9400/topology)",
-      "Bash(curl -s http://192.168.123.98:9400/agents)"
+      "Bash(curl -s http://192.168.123.98:9400/agents)",
+      "Bash(curl -s http://192.168.123.98:9400/api/runtime/topology/edge-activity)",
+      "Bash(curl -s http://192.168.123.98:9400/api/runtime/topology)",
+      "Bash(curl -s http://192.168.123.98:9400/api/runtime/agents)"
     ]
   }
 }

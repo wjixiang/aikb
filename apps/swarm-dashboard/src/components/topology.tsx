@@ -18,7 +18,7 @@ interface GraphNode extends d3.SimulationNodeDatum {
   agentType?: string;
 }
 
-type EdgeActivityStatus = 'active' | 'completed' | 'failed';
+type EdgeActivityStatus = 'pending' | 'acknowledged' | 'completed' | 'failed';
 
 interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
   source: GraphNode | string;
@@ -55,7 +55,13 @@ const EDGE_ACTIVITY_STYLES: Record<
   string,
   { stroke: string; width: number; opacity: number; dasharray?: string }
 > = {
-  active: {
+  pending: {
+    stroke: '#f59e0b',
+    width: 2,
+    opacity: 1,
+    dasharray: '4 6',
+  },
+  acknowledged: {
     stroke: '#22c55e',
     width: 2.5,
     opacity: 1,
@@ -123,11 +129,17 @@ export function AgentTopology() {
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
-      @keyframes dash-flow {
+      @keyframes dash-flow-pending {
+        to { stroke-dashoffset: -20; }
+      }
+      @keyframes dash-flow-ack {
         to { stroke-dashoffset: -24; }
       }
-      .edge-active {
-        animation: dash-flow 0.8s linear infinite;
+      .edge-pending {
+        animation: dash-flow-pending 1.2s linear infinite;
+      }
+      .edge-acknowledged {
+        animation: dash-flow-ack 0.8s linear infinite;
       }
     `;
     document.head.appendChild(style);
@@ -221,7 +233,8 @@ export function AgentTopology() {
       const defs = svg.append('defs');
       const markerConfigs = [
         { id: 'arrowhead', fill: '#94a3b8' },
-        { id: 'arrowhead-active', fill: '#22c55e' },
+        { id: 'arrowhead-pending', fill: '#f59e0b' },
+        { id: 'arrowhead-acknowledged', fill: '#22c55e' },
         { id: 'arrowhead-completed', fill: '#3b82f6' },
         { id: 'arrowhead-failed', fill: '#ef4444' },
       ];
@@ -275,7 +288,8 @@ export function AgentTopology() {
           if (d.activity) return `url(#arrowhead-${d.activity})`;
           return 'url(#arrowhead)';
         })
-        .classed('edge-active', (d) => d.activity === 'active');
+        .classed('edge-pending', (d) => d.activity === 'pending')
+        .classed('edge-acknowledged', (d) => d.activity === 'acknowledged');
 
       // Edge tooltip on hover
       const edgeTooltip = svg
@@ -495,12 +509,23 @@ export function AgentTopology() {
             <span
               className="inline-block w-4 h-0.5"
               style={{
+                backgroundColor: '#f59e0b',
+                borderTop: '1px dashed #f59e0b',
+                height: 0,
+              }}
+            />
+            waiting ACK
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-4 h-0.5"
+              style={{
                 backgroundColor: '#22c55e',
                 borderTop: '1px dashed #22c55e',
                 height: 0,
               }}
             />
-            active
+            ACK'd
           </span>
           <span className="flex items-center gap-1.5">
             <span

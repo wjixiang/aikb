@@ -114,7 +114,7 @@ export interface TopologyEdge {
 export interface EdgeActivity {
   from: string
   to: string
-  status: 'active' | 'completed' | 'failed'
+  status: 'pending' | 'acknowledged' | 'completed' | 'failed'
   conversationCount: number
   lastActivityAt: number
 }

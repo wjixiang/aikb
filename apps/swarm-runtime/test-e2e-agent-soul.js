@@ -140,7 +140,7 @@ async function run() {
     // Step 3: Create task
     console.log('\n📝 Step 3: Create task');
     const taskRes = await request('POST', '/tasks', {
-      description: '查找椎间盘突出治疗措施的最新文献',
+      description: '查找有关于血管外科的最新文献，用于撰写综述',
       targetInstanceId: agentId,
       priority: 'normal',
     });
