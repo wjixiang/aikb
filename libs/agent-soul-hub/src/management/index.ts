@@ -1,4 +1,4 @@
-import { AgentSoulConfig } from 'agent-lib/core';
+import { AgentBlueprint } from 'agent-lib/core';
 import { BibliographySearchComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
@@ -143,7 +143,7 @@ const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 3. **分级治疗**：注意收集阶梯治疗策略的循证依据
 4. **长期随访**：优先选择随访时间 >1 年的研究`;
 
-export function createManagementAgentSoul(): AgentSoulConfig {
+export function createManagementAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,

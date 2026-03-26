@@ -75,5 +75,5 @@ export {
 
 export {
   createRouterAgentSoul,
-  type RouterAgentSoulConfig,
+  type RouterAgentBlueprint,
 } from './routing/RouterAgentSoul.js';

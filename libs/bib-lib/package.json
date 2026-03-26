@@ -9,6 +9,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./prisma": {
+      "import": "./dist/prisma.js",
+      "types": "./dist/prisma.d.ts"
     }
   },
   "scripts": {
@@ -35,6 +39,8 @@
     "dotenv": "^17.3.1",
     "express": "^5.1.0",
     "fast-xml-parser": "^5.3.4",
+    "jose": "^6.2.2",
+    "js-cookie": "^3.0.5",
     "pg": "^8.16.3",
     "swagger-ui-express": "^5.0.1",
     "tslib": "^2.3.0"

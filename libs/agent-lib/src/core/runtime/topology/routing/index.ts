@@ -10,5 +10,5 @@ export {
 } from './RoutingTools.js';
 export {
   createRouterAgentSoul,
-  type RouterAgentSoulConfig,
+  type RouterAgentBlueprint,
 } from './RouterAgentSoul.js';

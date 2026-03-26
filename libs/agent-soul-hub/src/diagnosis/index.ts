@@ -1,4 +1,4 @@
-import { AgentSoulConfig } from 'agent-lib/core';
+import { AgentBlueprint } from 'agent-lib/core';
 import { BibliographySearchComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 诊断、筛查与预防文献检索 Agent
@@ -143,7 +143,7 @@ const SOP_CONTENT = `# 诊断、筛查与预防文献检索 Agent
 2. **指南优先**：关注各大协会的临床实践指南
 3. **分型标准**：注意收集椎间盘突出分型的标准文献`;
 
-export function createDiagnosisAgentSoul(): AgentSoulConfig {
+export function createDiagnosisAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,

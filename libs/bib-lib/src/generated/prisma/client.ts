@@ -33,7 +33,7 @@ export * from "./enums"
  * const articles = await prisma.article.findMany()
  * ```
  * 
- * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
+ * Read more in our [docs](https://pris.ly/d/client).
  */
 export const PrismaClient = $Class.getPrismaClientClass()
 export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts extends Prisma.PrismaClientOptions["omit"] = Prisma.PrismaClientOptions["omit"], ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>
@@ -84,3 +84,58 @@ export type ArticleId = Prisma.ArticleIdModel
  * 
  */
 export type ArticleEmbedding = Prisma.ArticleEmbeddingModel
+/**
+ * Model User
+ * 
+ */
+export type User = Prisma.UserModel
+/**
+ * Model Session
+ * 
+ */
+export type Session = Prisma.SessionModel
+/**
+ * Model ApiKey
+ * 
+ */
+export type ApiKey = Prisma.ApiKeyModel
+/**
+ * Model Library
+ * 
+ */
+export type Library = Prisma.LibraryModel
+/**
+ * Model Collection
+ * 
+ */
+export type Collection = Prisma.CollectionModel
+/**
+ * Model Tag
+ * 
+ */
+export type Tag = Prisma.TagModel
+/**
+ * Model ArticleRef
+ * 
+ */
+export type ArticleRef = Prisma.ArticleRefModel
+/**
+ * Model ArticleCollection
+ * 
+ */
+export type ArticleCollection = Prisma.ArticleCollectionModel
+/**
+ * Model ArticleTag
+ * 
+ */
+export type ArticleTag = Prisma.ArticleTagModel
+/**
+ * Model PdfAnnotation
+ * 
+ */
+export type PdfAnnotation = Prisma.PdfAnnotationModel
+/**
+ * Model Note
+ * 
+ */
+export type Note = Prisma.NoteModel

@@ -21,6 +21,12 @@ export * from './export/export.service';
 export type { ExportOptions, ExportResult } from './export/types';
 export * from './api/index';
 
+// ============ User & Library Management ============
+export * from './auth';
+export * from './library';
+export * from './collection';
+export * from './tag';
+
 export interface BibliographyItem {
     id: string;
     title: string;

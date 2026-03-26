@@ -36,6 +36,7 @@ model Article {
   grants       Grant[]
   articleIds   ArticleId[]
   embeddings   ArticleEmbedding[]
+  articleRefs  ArticleRef[]    // User library references
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -201,3 +202,214 @@ model ArticleEmbedding {
   @@index([articleId])
   @@index([provider, model])
 }
+
+// ============ User Management ============
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  avatar       String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  libraries    Library[]
+  sessions     Session[]
+  apiKeys      ApiKey[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ApiKey {
+  id         String   @id @default(uuid())
+  userId     String
+  name       String
+  key        String   @unique
+  scopes     String[]
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============ Library (Per User) ============
+model Library {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collections Collection[]
+  tags        Tag[]
+  articleRefs ArticleRef[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+// ============ Collection (Hierarchical) ============
+model Collection {
+  id          String       @id @default(uuid())
+  libraryId   String
+  parentId    String?
+  name        String
+  description String?
+  color       String?
+  icon        String?
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  library     Library           @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  parent      Collection?       @relation("CollectionHierarchy", fields: [parentId], references: [id])
+  children    Collection[]      @relation("CollectionHierarchy")
+  articleRefs ArticleCollection[]
+
+  @@index([libraryId])
+  @@index([parentId])
+}
+
+// ============ Tag ============
+model Tag {
+  id        String   @id @default(uuid())
+  libraryId String
+  name      String
+  color     String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  library   Library          @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  articleRefs ArticleTag[]
+
+  @@unique([libraryId, name])
+  @@index([libraryId])
+}
+
+// ============ Article Reference (Link Article to User Library) ============
+model ArticleRef {
+  id        String   @id @default(uuid())
+  libraryId String
+  pmid      BigInt   // Reference to Article.pmid
+
+  // PDF attachment
+  pdfUrl        String?
+  pdfPageCount  Int?
+  pdfFileSize   BigInt?
+  pdfUploadedAt DateTime?
+  pdfFileName   String?
+
+  // User-specific data
+  notes        String?  @db.Text
+  dateAdded    DateTime @default(now())
+  dateAccessed DateTime?
+  isFavorite   Boolean  @default(false)
+  isRead       Boolean  @default(false)
+  rating       Int?     // 1-5 stars
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  library     Library               @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  article     Article               @relation(fields: [pmid], references: [pmid], onDelete: Cascade)
+  collections ArticleCollection[]
+  tags        ArticleTag[]
+  annotations PdfAnnotation[]
+  noteItems   Note[]
+
+  @@unique([libraryId, pmid])
+  @@index([libraryId])
+  @@index([pmid])
+}
+
+// ============ Article-Collection Junction ============
+model ArticleCollection {
+  id           String   @id @default(uuid())
+  articleRefId String
+  collectionId String
+  addedAt      DateTime @default(now())
+
+  articleRef   ArticleRef  @relation(fields: [articleRefId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([articleRefId, collectionId])
+  @@index([articleRefId])
+  @@index([collectionId])
+}
+
+// ============ Article-Tag Junction ============
+model ArticleTag {
+  id           String   @id @default(uuid())
+  articleRefId String
+  tagId        String
+  createdAt    DateTime @default(now())
+
+  articleRef   ArticleRef @relation(fields: [articleRefId], references: [id], onDelete: Cascade)
+  tag          Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([articleRefId, tagId])
+  @@index([articleRefId])
+  @@index([tagId])
+}
+
+// ============ PDF Annotation ============
+model PdfAnnotation {
+  id           String   @id @default(uuid())
+  articleRefId String
+  userId       String
+  type         String   // highlight, underline, note, drawing
+  pageNumber   Int
+  position     Json     // {x, y, width, height} or text range
+  content      String?  // note content
+  color        String?  // hex color
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  articleRef   ArticleRef @relation(fields: [articleRefId], references: [id], onDelete: Cascade)
+
+  @@index([articleRefId])
+  @@index([userId])
+}
+
+// ============ Note ============
+model Note {
+  id           String   @id @default(uuid())
+  articleRefId String?
+  libraryId    String
+  parentId     String?  // for note hierarchy
+  title        String?
+  content      String   @db.Text
+  tags         String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  articleRef   ArticleRef? @relation(fields: [articleRefId], references: [id], onDelete: Cascade)
+  parent       Note?       @relation("NoteHierarchy", fields: [parentId], references: [id])
+  children     Note[]      @relation("NoteHierarchy")
+
+  @@index([libraryId])
+  @@index([articleRefId])
+  @@index([parentId])
+}
+
+// ============ Update Article model to add ArticleRef relation ============
+// Add to existing Article model (around line 38):
+// articleRefs ArticleRef[]

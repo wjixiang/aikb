@@ -1,4 +1,4 @@
-import { AgentSoulConfig } from 'agent-lib/core';
+import { AgentBlueprint } from 'agent-lib/core';
 import { BibliographySearchComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 流行病学与危险因素文献检索 Agent
@@ -151,7 +151,7 @@ const SOP_CONTENT = `# 流行病学与危险因素文献检索 Agent
 /**
  * 流行病学与危险因素检索 Agent Soul
  */
-export function createEpidemiologyAgentSoul(): AgentSoulConfig {
+export function createEpidemiologyAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,

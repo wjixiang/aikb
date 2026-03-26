@@ -1,4 +1,4 @@
-import { AgentSoulConfig } from 'agent-lib/core';
+import { AgentBlueprint } from 'agent-lib/core';
 
 const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
 
@@ -103,7 +103,7 @@ const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
 ## 建议
 [对后续工作的建议]`;
 
-export function createCoordinatorAgentSoul(): AgentSoulConfig {
+export function createCoordinatorAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,

@@ -1,4 +1,4 @@
-import { AgentSoulConfig } from 'agent-lib/core';
+import { AgentBlueprint } from 'agent-lib/core';
 import { BibliographySearchComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 病理机制与疼痛通路文献检索 Agent
@@ -141,7 +141,7 @@ const SOP_CONTENT = `# 病理机制与疼痛通路文献检索 Agent
 2. **关注新进展**：关注近年来的新发现（如新型炎症介质）
 3. **跨学科**：可关注神经科学、免疫学交叉研究`;
 
-export function createPathophysiologyAgentSoul(): AgentSoulConfig {
+export function createPathophysiologyAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,

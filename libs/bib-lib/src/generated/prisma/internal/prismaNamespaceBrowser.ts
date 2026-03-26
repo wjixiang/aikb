@@ -59,7 +59,18 @@ export const ModelName = {
   Chemical: 'Chemical',
   Grant: 'Grant',
   ArticleId: 'ArticleId',
-  ArticleEmbedding: 'ArticleEmbedding'
+  ArticleEmbedding: 'ArticleEmbedding',
+  User: 'User',
+  Session: 'Session',
+  ApiKey: 'ApiKey',
+  Library: 'Library',
+  Collection: 'Collection',
+  Tag: 'Tag',
+  ArticleRef: 'ArticleRef',
+  ArticleCollection: 'ArticleCollection',
+  ArticleTag: 'ArticleTag',
+  PdfAnnotation: 'PdfAnnotation',
+  Note: 'Note'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -68,12 +79,12 @@ export type ModelName = (typeof ModelName)[keyof typeof ModelName]
  * Enums
  */
 
-export const TransactionIsolationLevel = {
+export const TransactionIsolationLevel = runtime.makeStrictEnum({
   ReadUncommitted: 'ReadUncommitted',
   ReadCommitted: 'ReadCommitted',
   RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
-} as const
+} as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
@@ -201,12 +212,170 @@ export const ArticleEmbeddingScalarFieldEnum = {
 export type ArticleEmbeddingScalarFieldEnum = (typeof ArticleEmbeddingScalarFieldEnum)[keyof typeof ArticleEmbeddingScalarFieldEnum]
 
 
+export const UserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  passwordHash: 'passwordHash',
+  name: 'name',
+  avatar: 'avatar',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const SessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  token: 'token',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
+
+
+export const ApiKeyScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  key: 'key',
+  scopes: 'scopes',
+  lastUsedAt: 'lastUsedAt',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type ApiKeyScalarFieldEnum = (typeof ApiKeyScalarFieldEnum)[keyof typeof ApiKeyScalarFieldEnum]
+
+
+export const LibraryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  description: 'description',
+  isDefault: 'isDefault',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LibraryScalarFieldEnum = (typeof LibraryScalarFieldEnum)[keyof typeof LibraryScalarFieldEnum]
+
+
+export const CollectionScalarFieldEnum = {
+  id: 'id',
+  libraryId: 'libraryId',
+  parentId: 'parentId',
+  name: 'name',
+  description: 'description',
+  color: 'color',
+  icon: 'icon',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CollectionScalarFieldEnum = (typeof CollectionScalarFieldEnum)[keyof typeof CollectionScalarFieldEnum]
+
+
+export const TagScalarFieldEnum = {
+  id: 'id',
+  libraryId: 'libraryId',
+  name: 'name',
+  color: 'color',
+  createdAt: 'createdAt'
+} as const
+
+export type TagScalarFieldEnum = (typeof TagScalarFieldEnum)[keyof typeof TagScalarFieldEnum]
+
+
+export const ArticleRefScalarFieldEnum = {
+  id: 'id',
+  libraryId: 'libraryId',
+  pmid: 'pmid',
+  pdfUrl: 'pdfUrl',
+  pdfPageCount: 'pdfPageCount',
+  pdfFileSize: 'pdfFileSize',
+  pdfUploadedAt: 'pdfUploadedAt',
+  pdfFileName: 'pdfFileName',
+  notes: 'notes',
+  dateAdded: 'dateAdded',
+  dateAccessed: 'dateAccessed',
+  isFavorite: 'isFavorite',
+  isRead: 'isRead',
+  rating: 'rating',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleRefScalarFieldEnum = (typeof ArticleRefScalarFieldEnum)[keyof typeof ArticleRefScalarFieldEnum]
+
+
+export const ArticleCollectionScalarFieldEnum = {
+  id: 'id',
+  articleRefId: 'articleRefId',
+  collectionId: 'collectionId',
+  addedAt: 'addedAt'
+} as const
+
+export type ArticleCollectionScalarFieldEnum = (typeof ArticleCollectionScalarFieldEnum)[keyof typeof ArticleCollectionScalarFieldEnum]
+
+
+export const ArticleTagScalarFieldEnum = {
+  id: 'id',
+  articleRefId: 'articleRefId',
+  tagId: 'tagId',
+  createdAt: 'createdAt'
+} as const
+
+export type ArticleTagScalarFieldEnum = (typeof ArticleTagScalarFieldEnum)[keyof typeof ArticleTagScalarFieldEnum]
+
+
+export const PdfAnnotationScalarFieldEnum = {
+  id: 'id',
+  articleRefId: 'articleRefId',
+  userId: 'userId',
+  type: 'type',
+  pageNumber: 'pageNumber',
+  position: 'position',
+  content: 'content',
+  color: 'color',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PdfAnnotationScalarFieldEnum = (typeof PdfAnnotationScalarFieldEnum)[keyof typeof PdfAnnotationScalarFieldEnum]
+
+
+export const NoteScalarFieldEnum = {
+  id: 'id',
+  articleRefId: 'articleRefId',
+  libraryId: 'libraryId',
+  parentId: 'parentId',
+  title: 'title',
+  content: 'content',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NoteScalarFieldEnum = (typeof NoteScalarFieldEnum)[keyof typeof NoteScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -223,4 +392,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

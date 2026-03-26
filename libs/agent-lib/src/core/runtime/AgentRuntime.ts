@@ -49,7 +49,7 @@ import type { ProviderSettings } from '../types/provider-settings.js';
 import {
   AgentFactory,
   type AgentFactoryOptions,
-  type AgentSoulConfig,
+  type AgentBlueprint,
 } from '../agent/AgentFactory.js';
 import type {
   AgentMetadata,
@@ -178,7 +178,7 @@ export interface IAgentRuntime {
    * @returns Promise resolving to the new agent's instance ID
    */
   createAgent(
-    soul: AgentSoulConfig,
+    soul: AgentBlueprint,
     overrides?: Partial<AgentFactoryOptions>,
   ): Promise<string>;
 
@@ -657,7 +657,7 @@ export class AgentRuntime implements IAgentRuntime {
    * });
    */
   async createAgent(
-    soul: AgentSoulConfig,
+    soul: AgentBlueprint,
     overrides?: Partial<AgentFactoryOptions>,
   ): Promise<string> {
     if (this.containers.size >= (this.config.maxAgents ?? 10)) {

@@ -1,11 +1,11 @@
-import type { AgentSoulConfig } from 'agent-lib/core';
+import type { AgentBlueprint } from 'agent-lib/core';
 
 export interface AgentSoulMetadata {
   token: string;
   name: string;
   type: string;
   description: string;
-  factory: () => AgentSoulConfig;
+  factory: () => AgentBlueprint;
 }
 
 export const agentSoulRegistry: Map<string, AgentSoulMetadata> = new Map();
@@ -22,7 +22,7 @@ export function getAllAgentSouls(): AgentSoulMetadata[] {
   return Array.from(agentSoulRegistry.values());
 }
 
-export function createAgentSoulByToken(token: string): AgentSoulConfig {
+export function createAgentSoulByToken(token: string): AgentBlueprint {
   const metadata = agentSoulRegistry.get(token);
   if (!metadata) {
     const available = Array.from(agentSoulRegistry.keys()).join(', ');

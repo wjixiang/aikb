@@ -5,9 +5,9 @@
  * routing decisions using LLM and routing tools.
  */
 
-import type { AgentSoulConfig } from '../../../agent/AgentFactory.js';
+import type { AgentBlueprint } from '../../../agent/AgentFactory.js';
 
-export interface RouterAgentSoulConfig {
+export interface RouterAgentBlueprint {
   name?: string;
   description?: string;
   scope?: string | string[];
@@ -36,8 +36,8 @@ Routing Rules:
 `;
 
 export function createRouterAgentSoul(
-  config?: RouterAgentSoulConfig,
-): AgentSoulConfig {
+  config?: RouterAgentBlueprint,
+): AgentBlueprint {
   return {
     agent: {
       sop: ROUTER_SOP,

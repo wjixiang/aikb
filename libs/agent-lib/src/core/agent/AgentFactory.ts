@@ -32,7 +32,7 @@ export interface AgentSoul {
  * This is the lightweight interface returned by createAgentSoul() functions
  * API configuration is managed by Runtime
  */
-export interface AgentSoulConfig {
+export interface AgentBlueprint {
   agent?: AgentSoul;
   components?: DIComponentRegistration[];
 }
@@ -40,7 +40,7 @@ export interface AgentSoulConfig {
 /**
  * Configuration options for creating an Agent
  */
-export interface AgentFactoryOptions extends AgentSoulConfig {
+export interface AgentFactoryOptions extends AgentBlueprint {
   api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;

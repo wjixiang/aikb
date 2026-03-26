@@ -1,4 +1,4 @@
-import { AgentSoulConfig } from 'agent-lib/core';
+import { AgentBlueprint } from 'agent-lib/core';
 import { BibliographySearchComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 展望与新兴疗法文献检索 Agent
@@ -145,7 +145,7 @@ const SOP_CONTENT = `# 展望与新兴疗法文献检索 Agent
 4. **跨学科**：关注材料学、干细胞生物学的交叉研究
 5. **谨慎评估**：注意区分早期实验研究和临床转化研究`;
 
-export function createEmergingTreatmentsAgentSoul(): AgentSoulConfig {
+export function createEmergingTreatmentsAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,

@@ -1,4 +1,4 @@
-import { AgentSoulConfig } from 'agent-lib/core';
+import { AgentBlueprint } from 'agent-lib/core';
 import { BibliographySearchComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 椎间盘突出综述检索策略
@@ -88,7 +88,7 @@ const SOP_CONTENT = `# 椎间盘突出综述检索策略
 2. **筛选文献类型（Article Types）：** 优先筛选 **Systematic Reviews** 和 **Meta-Analyses**，这些文献能为你提供坚实的数据支撑（比如各年龄段的发病率、某种手术的确切疗效）。
 3. **注意术语辨析：** 在引言部分，一定要像骨关节炎这篇综述一样，明确区分"椎间盘退变（Degeneration）"和"椎间盘突出（Herniation）"的概念界限。`;
 
-export function createBibRetrieveAgentSoul(): AgentSoulConfig {
+export function createBibRetrieveAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,

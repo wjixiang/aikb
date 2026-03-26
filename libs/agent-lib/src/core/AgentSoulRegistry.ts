@@ -7,9 +7,9 @@
  * Type definitions and registry - concrete agents are in agent-soul-hub package.
  */
 
-import type { AgentSoulConfig } from './agent/AgentFactory.js';
+import type { AgentBlueprint } from './agent/AgentFactory.js';
 
-export type { AgentSoulConfig } from './agent/AgentFactory.js';
+export type { AgentBlueprint } from './agent/AgentFactory.js';
 
 export type AgentSoulType =
   | 'epidemiology'
@@ -64,7 +64,7 @@ export class AgentSoulRegistry implements IAgentSoulRegistry {
 export const agentSoulRegistry = new AgentSoulRegistry();
 
 // Factory function registry
-type AgentSoulFactory = () => AgentSoulConfig;
+type AgentSoulFactory = () => AgentBlueprint;
 const agentSoulFactories: Partial<Record<AgentSoulType, AgentSoulFactory>> = {};
 
 /**
@@ -89,7 +89,7 @@ export function registerAgentSoulFactory(
 /**
  * Create an agent soul by type - requires factory to be registered first
  */
-export function createAgentSoulByType(type: AgentSoulType): AgentSoulConfig {
+export function createAgentSoulByType(type: AgentSoulType): AgentBlueprint {
   const factory = agentSoulFactories[type];
   if (!factory) {
     throw new Error(

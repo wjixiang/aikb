@@ -6,7 +6,7 @@
  */
 
 // Re-export types from agent-lib
-export type { AgentSoulConfig, AgentSoulType } from 'agent-lib/core';
+export type { AgentBlueprint, AgentSoulType } from 'agent-lib/core';
 
 // Concrete agent factory functions
 export { createBibRetrieveAgentSoul } from './article-retrieve/index.js';

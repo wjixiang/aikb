@@ -1,4 +1,4 @@
-import { AgentSoulConfig } from 'agent-lib/core';
+import { AgentBlueprint } from 'agent-lib/core';
 import { BibliographySearchComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 生活质量与社会负担文献检索 Agent
@@ -142,7 +142,7 @@ const SOP_CONTENT = `# 生活质量与社会负担文献检索 Agent
 3. **PRO研究**：注意收集患者报告结局相关文献
 4. **心理因素**：关注心理健康与生活质量的关联研究`;
 
-export function createQualityOfLifeAgentSoul(): AgentSoulConfig {
+export function createQualityOfLifeAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,
