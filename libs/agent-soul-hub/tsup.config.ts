@@ -4,10 +4,6 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
-    'src/core/index': 'src/core/index.ts',
-    'src/components/index': 'src/components/index.ts',
-    'src/components/ui/index': 'src/components/ui/index.ts',
-    'src/components/utils/index': 'src/components/utils/index.ts',
   },
   format: ['esm'],
   dts: true,
@@ -15,9 +11,10 @@ export default defineConfig({
   clean: true,
   treeshake: true,
   splitting: true,
+  target: 'node16',
   external: [
-    '@prisma/client-runtime-utils',
     'pino',
+    '@anthropic-ai/sdk',
     '@apollo/client',
     'graphql',
     '@apollo/client/dev',

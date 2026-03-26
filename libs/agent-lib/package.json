@@ -74,7 +74,6 @@
     "agent:monitor:runtime": "npx tsx src/cli/index.ts monitor runtime"
   },
   "dependencies": {
-    "agent-components-lib": "workspace:*",
     "@anthropic-ai/sdk": "^0.71.2",
     "@apollo/client": "^3.8.0",
     "@aws-sdk/client-s3": "^3.901.0",

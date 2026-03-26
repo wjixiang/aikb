@@ -3,7 +3,13 @@
  *
  * This registry allows Coordinator agents to discover and instantiate
  * specialized agents for different tasks.
+ *
+ * Type definitions and registry - concrete agents are in agent-soul-hub package.
  */
+
+import type { AgentSoulConfig } from './agent/AgentFactory.js';
+
+export type { AgentSoulConfig } from './agent/AgentFactory.js';
 
 export type AgentSoulType =
   | 'epidemiology'
@@ -57,57 +63,46 @@ export class AgentSoulRegistry implements IAgentSoulRegistry {
 // Global registry instance
 export const agentSoulRegistry = new AgentSoulRegistry();
 
-// Pre-register default agent souls
-agentSoulRegistry.register({
-  type: 'epidemiology',
-  name: 'Epidemiology Agent',
-  description:
-    '检索椎间盘突出的流行病学与危险因素文献，包括发病率、患病率、遗传因素、职业风险等',
-  capabilities: ['literature-search', 'epidemiology'],
-});
+// Factory function registry
+type AgentSoulFactory = () => AgentSoulConfig;
+const agentSoulFactories: Partial<Record<AgentSoulType, AgentSoulFactory>> = {};
 
-agentSoulRegistry.register({
-  type: 'pathophysiology',
-  name: 'Pathophysiology Agent',
-  description:
-    '检索椎间盘突出的病理机制与疼痛通路文献，包括分子机制、炎症反应、神经敏化等',
-  capabilities: ['literature-search', 'pathophysiology'],
-});
+/**
+ * Register an agent soul factory function
+ */
+export function registerAgentSoulFactory(
+  type: AgentSoulType,
+  factory: AgentSoulFactory,
+): void {
+  agentSoulFactories[type] = factory;
+  // Also register metadata if not already registered
+  if (!agentSoulRegistry.get(type)) {
+    agentSoulRegistry.register({
+      type,
+      name: `${type} Agent`,
+      description: `Agent soul of type: ${type}`,
+      capabilities: ['literature-search'],
+    });
+  }
+}
 
-agentSoulRegistry.register({
-  type: 'diagnosis',
-  name: 'Diagnosis Agent',
-  description:
-    '检索椎间盘突出的诊断、筛查与预防文献，包括MRI诊断、体格检查、鉴别诊断等',
-  capabilities: ['literature-search', 'diagnosis'],
-});
+/**
+ * Create an agent soul by type - requires factory to be registered first
+ */
+export function createAgentSoulByType(type: AgentSoulType): AgentSoulConfig {
+  const factory = agentSoulFactories[type];
+  if (!factory) {
+    throw new Error(
+      `Agent soul factory not registered for type: ${type}. ` +
+        `Make sure agent-soul-hub is imported and initialized.`,
+    );
+  }
+  return factory();
+}
 
-agentSoulRegistry.register({
-  type: 'management',
-  name: 'Management Agent',
-  description:
-    '检索椎间盘突出的疾病管理与治疗文献，包括保守治疗、药物治疗、手术治疗等',
-  capabilities: ['literature-search', 'management'],
-});
-
-agentSoulRegistry.register({
-  type: 'quality-of-life',
-  name: 'Quality of Life Agent',
-  description:
-    '检索椎间盘突出的生活质量与社会负担文献，包括疾病负担、经济学成本等',
-  capabilities: ['literature-search', 'quality-of-life'],
-});
-
-agentSoulRegistry.register({
-  type: 'emerging-treatments',
-  name: 'Emerging Treatments Agent',
-  description: '检索椎间盘突出的展望与新兴疗法文献，包括再生医学、干细胞治疗等',
-  capabilities: ['literature-search', 'emerging-treatments'],
-});
-
-agentSoulRegistry.register({
-  type: 'paper-analysis',
-  name: 'Paper Analysis Agent',
-  description: '科学论文分析 Agent，用于文献筛选、质量评估、比较分析',
-  capabilities: ['paper-analysis', 'literature-evaluation'],
-});
+/**
+ * Get all available agent soul types
+ */
+export function getAvailableAgentSoulTypes(): AgentSoulType[] {
+  return Object.keys(agentSoulFactories) as AgentSoulType[];
+}

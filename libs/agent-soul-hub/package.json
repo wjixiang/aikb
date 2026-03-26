@@ -1,0 +1,25 @@
+{
+  "name": "agent-soul-hub",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "agent-lib": "workspace:*",
+    "component-hub": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "tsup": "^8.5.1"
+  }
+}

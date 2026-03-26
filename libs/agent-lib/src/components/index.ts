@@ -6,8 +6,9 @@
  * - TUI rendering primitives
  * - Component Registry
  * - Utility functions
+ * - Built-in components (A2A, RuntimeControl)
  *
- * Domain-specific components are in agent-components-lib package.
+ * Domain-specific components are provided by the component-hub package.
  */
 
 // UI Components
@@ -35,10 +36,10 @@ export type { ComponentRegistration } from './ComponentRegistry.js';
  */
 export * from './core/index.js';
 
-// ==================== Core Components ====================
+// ==================== A2A Task Component ====================
 
 /**
- * A2A Task Component
+ * A2A Task Module
  *
  * A2A task acknowledgment and response management.
  */
@@ -53,6 +54,8 @@ export {
   type A2ATaskToolName,
 } from './A2AComponent/index.js';
 
+// ==================== RuntimeControl Component ====================
+
 /**
  * RuntimeControl Component
  *
@@ -60,3 +63,37 @@ export {
  */
 export { RuntimeControlComponent } from './runtime-control/index.js';
 export type { RuntimeControlState } from './runtime-control/types.js';
+
+// ==================== Bookshelf Components ====================
+
+/**
+ * Bookshelf Module
+ *
+ * Document viewing components.
+ */
+export {
+  BookViewerComponent,
+  WorkspaceInfoComponent,
+} from './bookshelfComponents.js';
+
+// ==================== Knowledge Management Component ====================
+
+/**
+ * Knowledge Management Module
+ *
+ * Knowledge base management component.
+ */
+export { KnowledgeManageComponent } from './knowledgeManageComponent.js';
+
+// Test Components - Re-export for convenience in tests
+// Located in: core/statefulContext/__tests__/testComponents.ts
+export {
+  TestComponent,
+  TestComponent2,
+  AnotherComponent,
+} from '../core/statefulContext/__tests__/testComponents.js';
+export {
+  TestToolComponentA,
+  TestToolComponentB,
+  TestToolComponentC,
+} from '../core/statefulContext/__tests__/testComponents.js';

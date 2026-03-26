@@ -17,33 +17,22 @@ export { Agent, defaultAgentConfig } from './agent/agent.js';
 export * from './config.js';
 export { AgentFactory } from './agent/AgentFactory.js';
 export type { AgentConfig } from './agent/agent.js';
-export type {
-  AgentFactoryOptions,
-  AgentSoulConfig,
-} from './agent/AgentFactory.js';
+export type { AgentFactoryOptions } from './agent/AgentFactory.js';
+export type { AgentSoulConfig } from './AgentSoulRegistry.js';
 export * from './agent/ObservableAgent.js';
 
-// Agent Soul
+// Agent Soul Registry (types and factory registration - concrete agents in agent-soul-hub)
 export {
+  AgentSoulRegistry,
+  agentSoulRegistry,
+  registerAgentSoulFactory,
   createAgentSoulByType,
   getAvailableAgentSoulTypes,
-  createBibRetrieveAgentSoul,
-  createEpidemiologyAgentSoul,
-  createPathophysiologyAgentSoul,
-  createDiagnosisAgentSoul,
-  createManagementAgentSoul,
-  createQualityOfLifeAgentSoul,
-  createEmergingTreatmentsAgentSoul,
-  createCoordinatorAgentSoul,
-  getAgentSoul,
-  getAllAgentSouls,
-  createAgentSoulByToken,
-} from './agent-soul/index.js';
-export type { AgentSoulType, AgentSoulMetadata } from './agent-soul/index.js';
-export { AgentSoulRegistry, agentSoulRegistry } from './AgentSoulRegistry.js';
+} from './AgentSoulRegistry.js';
 export type {
   AgentSoulEntry,
   IAgentSoulRegistry,
+  AgentSoulType,
 } from './AgentSoulRegistry.js';
 
 // Assistant Message
