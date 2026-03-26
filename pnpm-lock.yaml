@@ -1711,6 +1711,9 @@ importers:
       agent-lib:
         specifier: workspace:*
         version: link:../../libs/agent-lib
+      agent-soul-hub:
+        specifier: workspace:*
+        version: link:../../libs/agent-soul-hub
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1

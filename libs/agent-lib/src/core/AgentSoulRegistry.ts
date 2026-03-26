@@ -18,7 +18,9 @@ export type AgentSoulType =
   | 'management'
   | 'quality-of-life'
   | 'emerging-treatments'
-  | 'paper-analysis';
+  | 'paper-analysis'
+  | 'coordinator'
+  | 'bib-retrieve';
 
 export interface AgentSoulEntry {
   type: AgentSoulType;

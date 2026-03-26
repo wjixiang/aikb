@@ -192,7 +192,7 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
         // Register conversation-task mapping for event callbacks
         fastify.agentRuntime.registerConversationTask(
           conversationId,
-          task.id, // runtimeTaskId (Prisma primary key)
+          task.taskId, // user-facing taskId (task_xxx) - used by TaskService lookups
           task.taskId, // user-facing taskId
         );
 

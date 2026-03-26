@@ -116,7 +116,7 @@ async function run() {
     // Step 2: Create agent instance
     console.log('\n🤖 Step 2: Create agent instance');
     const createRes = await request('POST', '/runtime/agent-souls', {
-      token: 'epidemiology',
+      token: 'coordinator',
     });
     console.log(`   Status: ${createRes.status}`);
     if (createRes.status !== 201) {

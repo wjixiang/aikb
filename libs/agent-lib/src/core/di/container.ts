@@ -356,8 +356,14 @@ export class AgentContainer {
 
     // Bind custom component classes if provided
     if (this.config.components && this.config.components.length > 0) {
-      for (const { componentClass } of this.config.components) {
-        this.container.bind(componentClass).toSelf().inSingletonScope();
+      for (const reg of this.config.components) {
+        if (reg.componentInstance) {
+          this.container
+            .bind<ToolComponent>(reg.componentInstance.constructor as any)
+            .toConstantValue(reg.componentInstance);
+        } else if (reg.componentClass) {
+          this.container.bind(reg.componentClass).toSelf().inSingletonScope();
+        }
       }
     }
 
@@ -385,13 +391,20 @@ export class AgentContainer {
 
       // Add custom components from config
       if (this.config.components) {
-        for (const { componentClass, priority } of this.config.components) {
-          components.push({
-            component: this.container.get(
-              componentClass,
-            ) as unknown as ToolComponent,
-            priority,
-          });
+        for (const reg of this.config.components) {
+          if (reg.componentInstance) {
+            components.push({
+              component: reg.componentInstance,
+              priority: reg.priority,
+            });
+          } else if (reg.componentClass) {
+            components.push({
+              component: this.container.get(
+                reg.componentClass,
+              ) as unknown as ToolComponent,
+              priority: reg.priority,
+            });
+          }
         }
       }
 

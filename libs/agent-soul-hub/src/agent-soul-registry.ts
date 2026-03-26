@@ -1,4 +1,5 @@
-import type { AgentBlueprint } from 'agent-lib/core';
+import type { AgentBlueprint, AgentSoulType } from 'agent-lib/core';
+import { registerAgentSoulFactory } from 'agent-lib/core';
 
 export interface AgentSoulMetadata {
   token: string;
@@ -12,6 +13,24 @@ export const agentSoulRegistry: Map<string, AgentSoulMetadata> = new Map();
 
 export function registerAgentSoul(metadata: AgentSoulMetadata): void {
   agentSoulRegistry.set(metadata.token, metadata);
+  if (isAgentSoulType(metadata.token)) {
+    registerAgentSoulFactory(metadata.token, metadata.factory);
+  }
+}
+
+function isAgentSoulType(token: string): token is AgentSoulType {
+  const validTypes: AgentSoulType[] = [
+    'epidemiology',
+    'pathophysiology',
+    'diagnosis',
+    'management',
+    'quality-of-life',
+    'emerging-treatments',
+    'paper-analysis',
+    'coordinator',
+    'bib-retrieve',
+  ];
+  return (validTypes as readonly string[]).includes(token);
 }
 
 export function getAgentSoul(token: string): AgentSoulMetadata | undefined {
