@@ -53,6 +53,25 @@ export interface RuntimeStats {
 }
 
 // =============================================================================
+// ID Type Aliases (for clarity)
+// =============================================================================
+
+/**
+ * Conversation ID - unique identifier for a message conversation session
+ */
+export type ConversationId = string;
+
+/**
+ * A2A Task ID - business-level task identifier
+ */
+export type A2ATaskId = string;
+
+/**
+ * Runtime Task ID - database primary key for task persistence
+ */
+export type RuntimeTaskId = string;
+
+// =============================================================================
 // Task Integration Callbacks
 // =============================================================================
 
@@ -147,6 +166,22 @@ export interface IRuntimeControlClient {
       resultTimeout?: number;
     },
   ): Promise<A2ATaskResult>;
+
+  /**
+   * Send a task and wait only for ACK (asynchronous mode)
+   * Returns after ACK is received with the conversationId
+   */
+  sendA2ATaskAndWaitForAck(
+    targetAgentId: string,
+    taskId: string,
+    description: string,
+    input: Record<string, unknown>,
+    options?: {
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      /** ACK timeout in ms */
+      ackTimeout?: number;
+    },
+  ): Promise<string>;
 
   /**
    * Send a query to another agent via A2A protocol

@@ -197,6 +197,27 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     );
   }
 
+  async sendA2ATaskAndWaitForAck(
+    targetAgentIdOrAlias: string,
+    taskId: string,
+    description: string,
+    input: Record<string, unknown>,
+    options?: {
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      ackTimeout?: number;
+    },
+  ): Promise<string> {
+    const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
+    const a2aClient = this.createDirectA2AClient(options);
+    return a2aClient.sendTaskAndWaitForAck(
+      targetAgentId,
+      taskId,
+      description,
+      input,
+      options,
+    );
+  }
+
   async sendA2AQuery(
     targetAgentIdOrAlias: string,
     query: string,

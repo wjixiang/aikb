@@ -5,7 +5,6 @@
  */
 
 import type { FastifyPluginAsync } from 'fastify';
-import { createA2ATaskMessage, createMessage } from 'agent-lib/core';
 
 const SERVER_INSTANCE_ID = 'swarm-server';
 
@@ -172,46 +171,35 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
         'normal';
 
       try {
-        // 1. Build A2A task message
-        const a2aMessage = createA2ATaskMessage(
-          SERVER_INSTANCE_ID,
+        // Use A2AClient to send task and wait for ACK only
+        const client =
+          fastify.agentRuntime.getRuntimeClient(SERVER_INSTANCE_ID);
+
+        console.log(
+          `[A2A] Sending task ${resolvedTaskId} to ${resolvedTargetId}, waiting for ACK...`,
+        );
+        const conversationId = await client.sendA2ATaskAndWaitForAck(
           resolvedTargetId,
           resolvedTaskId,
           resolvedDescription,
           resolvedInput,
           { priority: resolvedPriority },
         );
-
-        // 2. Convert to topology message for MessageBus
-        const topologyMessage = createMessage(
-          SERVER_INSTANCE_ID,
-          resolvedTargetId,
-          a2aMessage,
-          'request',
-          { conversationId: a2aMessage.conversationId },
-        );
-
-        // 3. Get messageBus and set ACK timeout if specified
-        const messageBus = fastify.agentRuntime.getMessageBus();
-
-        // 4. Send message and wait for ACK (default 60s timeout)
         console.log(
-          `[A2A] Sending task ${resolvedTaskId} to ${resolvedTargetId}, waiting for ACK...`,
+          `[A2A] ACK received for task ${resolvedTaskId}, conversationId: ${conversationId}`,
         );
-        await messageBus.send(topologyMessage);
-        console.log(`[A2A] ACK received for task ${resolvedTaskId}`);
 
-        // 5. ACK received - update task status to processing
+        // Register conversation-task mapping for event callbacks
+        fastify.agentRuntime.registerConversationTask(
+          conversationId,
+          task.id, // runtimeTaskId (Prisma primary key)
+          task.taskId, // user-facing taskId
+        );
+
+        // ACK received - update task status to processing
         await fastify.taskService.markProcessing(taskId);
 
-        // 6. Register conversation-task mapping for callback tracking
-        fastify.agentRuntime.registerConversationTask(
-          a2aMessage.conversationId,
-          resolvedTaskId,
-          taskId,
-        );
-
-        // 7. Return 202 Accepted - Agent will process asynchronously
+        // Return 202 Accepted - Agent will process asynchronously
         return reply.code(202).send({
           success: true,
           taskId,

@@ -26,7 +26,9 @@ import {
 import type { AgentCardRegistry, IAgentCardRegistry } from './AgentCard.js';
 
 export interface IA2AClient {
-  /** Send a task to another agent and wait for result */
+  /**
+   * Send a task to another agent and wait for result (synchronous)
+   */
   sendTask(
     targetAgentId: string,
     taskId: string,
@@ -34,6 +36,21 @@ export interface IA2AClient {
     input: Record<string, unknown>,
     options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
   ): Promise<A2ATaskResult>;
+
+  /**
+   * Send a task and wait only for ACK (asynchronous mode)
+   * Returns after ACK is received with the conversationId
+   */
+  sendTaskAndWaitForAck(
+    targetAgentId: string,
+    taskId: string,
+    description: string,
+    input: Record<string, unknown>,
+    options?: {
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      ackTimeout?: number;
+    },
+  ): Promise<string>;
 
   /** Send a query to another agent and wait for response */
   sendQuery(
@@ -271,6 +288,52 @@ export class A2AClient implements IA2AClient {
   }
 
   /**
+   * Send a task and wait only for ACK (asynchronous mode)
+   * Returns after ACK is received with the conversationId
+   */
+  async sendTaskAndWaitForAck(
+    targetAgentId: string,
+    taskId: string,
+    description: string,
+    input: Record<string, unknown>,
+    options?: {
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      ackTimeout?: number;
+    },
+  ): Promise<string> {
+    this.logger.info(
+      { targetAgentId, taskId, description },
+      'Sending task and waiting for ACK only',
+    );
+
+    const resolvedId = this.agentRegistry.resolveAgentId(targetAgentId);
+    if (!resolvedId) {
+      throw new Error(`Target agent not found: ${targetAgentId}`);
+    }
+
+    const a2aMessage = createA2ATaskMessage(
+      this.instanceId,
+      resolvedId,
+      taskId,
+      description,
+      input,
+      options,
+    );
+
+    const topologyMessage = this.convertToTopologyMessage(a2aMessage);
+
+    // Wait for ACK only
+    await this.messageBus.send(topologyMessage);
+
+    this.logger.info(
+      { taskId, conversationId: a2aMessage.conversationId },
+      'ACK received for task',
+    );
+
+    return a2aMessage.conversationId;
+  }
+
+  /**
    * Send a query to another agent and wait for response
    */
   async sendQuery(
@@ -435,33 +498,71 @@ export class A2AClient implements IA2AClient {
   }
 
   /**
-   * Wait for result message in a conversation
+   * Wait for result message in a conversation (event-driven)
    */
   private async waitForResult(conversationId: string): Promise<any> {
-    const startTime = Date.now();
-    const timeout = this.defaultTimeout;
+    return new Promise((resolve, reject) => {
+      let timeoutId: ReturnType<typeof setTimeout>;
 
-    while (Date.now() - startTime < timeout) {
+      const handleEvent = (event: { type: string; payload: unknown }) => {
+        const payload = event.payload as {
+          conversationId?: string;
+          result?: unknown;
+          error?: string;
+        };
+
+        if (payload.conversationId !== conversationId) {
+          return;
+        }
+
+        if (event.type === 'conversation:completed') {
+          clearTimeout(timeoutId);
+          unsubscribe();
+          resolve(payload.result);
+        } else if (
+          event.type === 'conversation:failed' ||
+          event.type === 'conversation:timeout'
+        ) {
+          clearTimeout(timeoutId);
+          unsubscribe();
+          reject(
+            new Error(
+              `Conversation ${event.type}: ${payload.error || conversationId}`,
+            ),
+          );
+        }
+      };
+
+      const unsubscribe = this.messageBus.onEvent(handleEvent);
+
+      timeoutId = setTimeout(() => {
+        unsubscribe();
+        reject(new Error(`Timeout waiting for result: ${conversationId}`));
+      }, this.defaultTimeout);
+
       const conversation = this.messageBus.getConversation(conversationId);
-
       if (conversation?.status === 'completed' && conversation.result) {
-        return conversation.result;
-      }
-
-      if (
+        clearTimeout(timeoutId);
+        unsubscribe();
+        resolve(conversation.result);
+      } else if (
         conversation?.status === 'failed' ||
         conversation?.status === 'timeout'
       ) {
-        throw new Error(
-          `Conversation ${conversation.status}: ${conversationId}`,
+        clearTimeout(timeoutId);
+        unsubscribe();
+        reject(
+          new Error(`Conversation ${conversation.status}: ${conversationId}`),
         );
       }
+    });
+  }
 
-      // Wait a bit before checking again
-      await this.sleep(100);
-    }
-
-    throw new Error(`Timeout waiting for result: ${conversationId}`);
+  /**
+   * Sleep for a given number of milliseconds
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -475,13 +576,6 @@ export class A2AClient implements IA2AClient {
       error: payload.error,
       metadata: payload.metadata,
     };
-  }
-
-  /**
-   * Sleep helper
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
