@@ -1,5 +1,5 @@
 import { AgentSoulConfig } from '../../agent/AgentFactory';
-import { BibliographySearchComponent } from '../../../components';
+import { BibliographySearchComponent } from 'agent-components-lib';
 
 const SOP_CONTENT = `# 椎间盘突出综述检索策略
 ### 基本检索步骤

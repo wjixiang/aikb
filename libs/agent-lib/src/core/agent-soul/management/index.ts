@@ -1,5 +1,5 @@
 import { AgentSoulConfig } from '../../agent/AgentFactory';
-import { BibliographySearchComponent } from '../../../components';
+import { BibliographySearchComponent } from 'agent-components-lib';
 
 const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 

@@ -2,7 +2,7 @@ import {
   ToolComponent,
   ExportOptions,
   ComponentStateBase,
-} from '../../core/toolComponent.js';
+} from 'agent-lib/core/toolComponent';
 import {
   Tool,
   ToolCallResult,
@@ -11,7 +11,7 @@ import {
   th,
   tp,
   tbr,
-} from '../../ui/index.js';
+} from 'agent-lib/components/ui/index';
 import { ApiClient, type ApiClientConfig } from '../apiClient.js';
 import {
   markdownToolSchemas,

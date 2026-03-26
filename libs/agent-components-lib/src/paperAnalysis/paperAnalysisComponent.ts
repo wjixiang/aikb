@@ -1,7 +1,7 @@
 import { injectable } from 'inversify';
-import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
-import { tdiv } from '../ui/tdiv.js';
-import type { ToolCallResult } from '../core/types.js';
+import { ToolComponent, ExportOptions } from 'agent-lib/core/toolComponent';
+import { tdiv } from 'agent-lib/components/ui/tdiv';
+import type { ToolCallResult } from 'agent-lib/core/types';
 import { z } from 'zod';
 
 /**

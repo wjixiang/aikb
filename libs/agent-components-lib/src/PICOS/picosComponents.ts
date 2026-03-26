@@ -1,7 +1,7 @@
-import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
-import { Tool } from '../core/types.js';
-import { TUIElement, tdiv, th, tp } from '../ui/index.js';
-import type { ToolCallResult } from '../core/types.js';
+import { ToolComponent, ExportOptions } from 'agent-lib/core/toolComponent';
+import { Tool } from 'agent-lib/core/types';
+import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index';
+import type { ToolCallResult } from 'agent-lib/core/types';
 import { createPicosToolSet } from './picosTools.js';
 import type {
   Patient,
@@ -15,7 +15,8 @@ import type {
 export class PicosComponent extends ToolComponent {
   override componentId = 'picos';
   override displayName = 'PICOS Builder';
-  override description = 'Build PICOS clinical questions for evidence-based medicine';
+  override description =
+    'Build PICOS clinical questions for evidence-based medicine';
   override componentPrompt = `## PICOS Clinical Question Builder
 
 This component helps construct PICOS clinical questions for systematic reviews and evidence-based medicine.

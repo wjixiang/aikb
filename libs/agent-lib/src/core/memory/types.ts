@@ -17,10 +17,23 @@ export interface ThinkingBlock {
 }
 
 /**
- * Extended content block type for conversation messages.
- * Includes Anthropic.ContentBlockParam and custom block types like ThinkingBlock.
+ * Extended tool result block with toolName
+ * Extends Anthropic's tool_result with additional metadata
  */
-export type ExtendedContentBlock = Anthropic.ContentBlockParam | ThinkingBlock;
+export interface ToolResultBlock {
+  type: 'tool_result';
+  tool_use_id: string;
+  /** Name of the tool that was executed */
+  toolName: string;
+  content: string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam>;
+  is_error?: boolean;
+}
+
+/**
+ * Extended content block type for conversation messages.
+ * Includes Anthropic.ContentBlockParam and custom block types like ThinkingBlock and ToolResultBlock.
+ */
+export type ExtendedContentBlock = Anthropic.ContentBlockParam | ThinkingBlock | ToolResultBlock;
 
 /**
  * Unified message type for conversation history

@@ -53,7 +53,7 @@ export interface AgentConfig {
   /**
    * Automatically acknowledge task after received A2A request
    */
-  autoAck?: boolean
+  autoAck?: boolean;
 }
 
 export const defaultAgentConfig: AgentConfig = {
@@ -792,7 +792,7 @@ export class Agent {
       );
       this.logger.warn(
         '[MailDriven] Available components: ' +
-        (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
+          (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
       );
       return;
     }

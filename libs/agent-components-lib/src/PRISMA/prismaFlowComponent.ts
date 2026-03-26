@@ -1,7 +1,7 @@
-import { ToolComponent, ExportOptions } from '../core/toolComponent.js';
-import { Tool } from '../core/types.js';
-import { TUIElement, tdiv, th, tp } from '../ui/index.js';
-import type { ToolCallResult } from '../core/types.js';
+import { ToolComponent, ExportOptions } from 'agent-lib/core/toolComponent';
+import { Tool } from 'agent-lib/core/types';
+import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui/index';
+import type { ToolCallResult } from 'agent-lib/core/types';
 import { createPrismaFlowToolSet } from './prismaFlowTools.js'
 import type {
     DatabaseFlow,
