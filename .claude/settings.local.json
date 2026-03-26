@@ -88,7 +88,8 @@
       "Bash(.venv/bin/pip install:*)",
       "WebSearch",
       "Bash(tail -50 ~/.claude/projects/-mnt-disk1-project-project-aikb/e51a89d5-03ed-44c9-ac0c-82a4e55d1e8c/tool-results/*.txt)",
-      "Bash(npx baml-cli:*)"
+      "Bash(npx baml-cli:*)",
+      "Bash(echo \"Test command completed with exit code: $?\")"
     ]
   }
 }

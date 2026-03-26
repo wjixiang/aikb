@@ -15,17 +15,24 @@ export interface ServerConfig {
 }
 
 export interface ApiConfig {
-  provider?: string;
+  apiProvider?: string;
   apiKey?: string;
-  baseUrl?: string;
-  modelId?: string;
+  openAiBaseUrl?: string;
+  apiModelId?: string;
   timeout?: number;
+  zaiApiLine?: string;
 }
 
 export interface AppConfig {
   server: ServerConfig;
   api: ApiConfig;
   messageBus?: AgentRuntimeConfig['messageBus'];
+  /** ACK timeout in ms for message confirmation (default: 5000) */
+  ackTimeout?: number;
+  /** Result timeout in ms for async task completion (default: 60000) */
+  resultTimeout?: number;
+  /** Max retries for failed message delivery (default: 3) */
+  maxRetries?: number;
 }
 
 /**
@@ -66,13 +73,23 @@ export function loadConfig(): AppConfig {
       maxAgents: parseInt(process.env['MAX_AGENTS'] || '50'),
     },
     api: {
-      provider: process.env['API_PROVIDER'] || 'openai',
+      apiProvider: process.env['API_PROVIDER'] || 'openai',
       apiKey: process.env['OPENAI_API_KEY'] || process.env['GLM_API_KEY'] || '',
-      baseUrl: process.env['API_BASE_URL'] || '',
-      modelId: process.env['API_MODEL_ID'] || '',
+      openAiBaseUrl: process.env['API_BASE_URL'] || '',
+      apiModelId: process.env['API_MODEL_ID'] || '',
       timeout: parseInt(process.env['API_TIMEOUT'] || '120000'),
     },
     messageBus,
+    // Topology timeout configuration
+    ...(process.env['A2A_ACK_TIMEOUT']
+      ? { ackTimeout: parseInt(process.env['A2A_ACK_TIMEOUT']) }
+      : {}),
+    ...(process.env['A2A_RESULT_TIMEOUT']
+      ? { resultTimeout: parseInt(process.env['A2A_RESULT_TIMEOUT']) }
+      : {}),
+    ...(process.env['A2A_MAX_RETRIES']
+      ? { maxRetries: parseInt(process.env['A2A_MAX_RETRIES']) }
+      : {}),
   };
 }
 
@@ -85,6 +102,13 @@ export function validateConfig(config: AppConfig): void {
       'API key is required. Set OPENAI_API_KEY or GLM_API_KEY environment variable.',
     );
   }
+
+  console.log('[Config] API Provider:', config.api.apiProvider);
+  console.log('[Config] API Model:', config.api.apiModelId);
+  console.log(
+    '[Config] API Base URL:',
+    config.api.openAiBaseUrl || '(default)',
+  );
 
   if (config.messageBus?.mode === 'redis' && !config.messageBus.redis) {
     throw new Error(

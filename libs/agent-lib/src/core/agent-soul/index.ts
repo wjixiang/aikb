@@ -74,3 +74,13 @@ export function createAgentSoulByType(type: AgentSoulType): AgentSoulConfig {
 export function getAvailableAgentSoulTypes(): AgentSoulType[] {
   return Object.keys(agentSoulFactories) as AgentSoulType[];
 }
+
+// Registry exports
+export {
+  agentSoulRegistry,
+  registerAgentSoul,
+  getAgentSoul,
+  getAllAgentSouls,
+  createAgentSoulByToken,
+  type AgentSoulMetadata,
+} from './agent-soul-registry.js';

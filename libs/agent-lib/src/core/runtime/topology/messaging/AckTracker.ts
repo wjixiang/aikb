@@ -120,6 +120,9 @@ export class AckTracker implements IAckTracker {
   }
 }
 
-export function createAckTracker(): IAckTracker {
+export function createAckTracker(
+  _defaultTimeout?: number,
+  _maxRetries?: number,
+): IAckTracker {
   return new AckTracker();
 }

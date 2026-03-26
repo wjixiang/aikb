@@ -1,12 +1,52 @@
+/**
+ * Runtime Routes
+ *
+ * HTTP API for AgentRuntime management.
+ */
+
 import type { FastifyPluginAsync } from 'fastify';
 import type { AgentStatus } from 'agent-lib/core';
 import {
-  baseResponseSchema,
-  baseArrayResponseSchema,
-  agentFilterSchema,
-  createAgentBodySchema,
-  toFastifySchema,
-} from './schemas.js';
+  getAllAgentSouls,
+  createAgentSoulByToken,
+  type AgentSoulMetadata,
+} from 'agent-lib/core';
+
+const responseSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean' },
+    data: { type: 'object', additionalProperties: true },
+    count: { type: 'number' },
+    serverId: { type: 'string' },
+    error: { type: 'string' },
+  },
+};
+
+const arrayResponseSchema = {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean' },
+    data: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          instanceId: { type: 'string' },
+          alias: { type: 'string' },
+          status: { type: 'string' },
+          name: { type: 'string' },
+          agentType: { type: 'string' },
+          description: { type: 'string' },
+          metadata: { type: 'object' },
+        },
+      },
+    },
+    count: { type: 'number' },
+    serverId: { type: 'string' },
+    error: { type: 'string' },
+  },
+};
 
 export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -15,10 +55,8 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Get runtime statistics including agent counts and status',
-        response: {
-          200: toFastifySchema(baseResponseSchema),
-        },
-      },
+        response: { 200: responseSchema },
+      } as any,
     },
     async (request, reply) => {
       const stats = await fastify.agentRuntime.getStats();
@@ -32,11 +70,19 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'List all agents in the runtime with optional filtering',
-        querystring: toFastifySchema(agentFilterSchema),
-        response: {
-          200: toFastifySchema(baseArrayResponseSchema),
+        querystring: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              description: 'Filter by agent status (running, stopped, idle)',
+            },
+            type: { type: 'string', description: 'Filter by agent type' },
+            name: { type: 'string', description: 'Filter by agent name' },
+          },
         },
-      },
+        response: { 200: arrayResponseSchema },
+      } as any,
     },
     async (request, reply) => {
       const { status, type, name } = request.query as {
@@ -63,12 +109,46 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Create a new agent in the runtime',
-        body: toFastifySchema(createAgentBodySchema),
-        response: {
-          201: toFastifySchema(baseResponseSchema),
-          400: toFastifySchema(baseResponseSchema),
+        body: {
+          type: 'object',
+          properties: {
+            agent: {
+              type: 'object',
+              description: 'Agent configuration',
+              properties: {
+                name: { type: 'string', description: 'Agent name' },
+                type: { type: 'string', description: 'Agent type/class' },
+                description: {
+                  type: 'string',
+                  description: 'Agent description',
+                },
+                sop: {
+                  type: 'string',
+                  description: 'Standard Operating Procedure JSON',
+                },
+              },
+            },
+            api: {
+              type: 'object',
+              description: 'API configuration for the agent',
+              properties: {
+                provider: {
+                  type: 'string',
+                  description: 'API provider (openai, azure, etc.)',
+                },
+                apiKey: { type: 'string', description: 'API key' },
+                baseUrl: { type: 'string', description: 'Base URL for API' },
+                modelId: { type: 'string', description: 'Model identifier' },
+              },
+            },
+            components: {
+              type: 'array',
+              description: 'Runtime components to attach',
+            },
+          },
         },
-      },
+        response: { 201: responseSchema, 400: responseSchema },
+      } as any,
     },
     async (request, reply) => {
       const body = request.body as {
@@ -127,11 +207,8 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             instanceId: { type: 'string', description: 'Agent instance ID' },
           },
         },
-        response: {
-          200: toFastifySchema(baseResponseSchema),
-          404: toFastifySchema(baseResponseSchema),
-        },
-      },
+        response: { 200: responseSchema, 404: responseSchema },
+      } as any,
     },
     async (request, reply) => {
       const { instanceId } = request.params as { instanceId: string };
@@ -172,11 +249,8 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             instanceId: { type: 'string', description: 'Agent instance ID' },
           },
         },
-        response: {
-          200: toFastifySchema(baseResponseSchema),
-          400: toFastifySchema(baseResponseSchema),
-        },
-      },
+        response: { 200: responseSchema, 400: responseSchema },
+      } as any,
     },
     async (request, reply) => {
       const { instanceId } = request.params as { instanceId: string };
@@ -184,6 +258,45 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
         await fastify.agentRuntime.stopAgent(instanceId);
         return { success: true, data: { instanceId, status: 'stopped' } };
       } catch (error) {
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
+
+  fastify.post(
+    '/agents/:instanceId/start',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'Start an idle agent',
+        params: {
+          type: 'object',
+          properties: {
+            instanceId: { type: 'string', description: 'Agent instance ID' },
+          },
+        },
+        response: {
+          200: responseSchema,
+          400: responseSchema,
+          404: responseSchema,
+        },
+      } as any,
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      try {
+        await fastify.agentRuntime.startAgent(instanceId);
+        return { success: true, data: { instanceId, status: 'running' } };
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('not found')) {
+          return reply.code(404).send({
+            success: false,
+            error: error.message,
+          });
+        }
         return reply.code(400).send({
           success: false,
           error: error instanceof Error ? error.message : String(error),
@@ -204,11 +317,8 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             instanceId: { type: 'string', description: 'Agent instance ID' },
           },
         },
-        response: {
-          200: toFastifySchema(baseResponseSchema),
-          400: toFastifySchema(baseResponseSchema),
-        },
-      },
+        response: { 200: responseSchema, 400: responseSchema },
+      } as any,
     },
     async (request, reply) => {
       const { instanceId } = request.params as { instanceId: string };
@@ -230,10 +340,8 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Get the agent topology graph showing agent relationships',
-        response: {
-          200: toFastifySchema(baseResponseSchema),
-        },
-      },
+        response: { 200: responseSchema },
+      } as any,
     },
     async (request, reply) => {
       const topology = fastify.agentRuntime.getTopologyGraph();
@@ -254,14 +362,146 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Get topology statistics',
-        response: {
-          200: toFastifySchema(baseResponseSchema),
-        },
-      },
+        response: { 200: responseSchema },
+      } as any,
     },
     async (request, reply) => {
       const stats = fastify.agentRuntime.getTopologyStats();
       return { success: true, data: stats };
+    },
+  );
+
+  fastify.get(
+    '/agent-souls',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'List all registered agent souls',
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              data: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    token: { type: 'string' },
+                    name: { type: 'string' },
+                    type: { type: 'string' },
+                    description: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      } as any,
+    },
+    async (request, reply) => {
+      const souls = getAllAgentSouls();
+      return {
+        success: true,
+        data: souls.map((s: AgentSoulMetadata) => ({
+          token: s.token,
+          name: s.name,
+          type: s.type,
+          description: s.description,
+        })),
+      };
+    },
+  );
+
+  fastify.post(
+    '/agent-souls',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'Create an agent from a registered agent soul by token',
+        body: {
+          type: 'object',
+          required: ['token'],
+          properties: {
+            token: {
+              type: 'string',
+              description:
+                '[Required] Agent soul token (e.g., epidemiology, diagnosis)',
+            },
+            alias: {
+              type: 'string',
+              description: '[Optional] Custom alias for the agent instance',
+            },
+            api: {
+              type: 'object',
+              description: '[Optional] API configuration overrides',
+              properties: {
+                provider: {
+                  type: 'string',
+                  description: 'LLM provider (e.g., openai, zai)',
+                },
+                apiKey: {
+                  type: 'string',
+                  description: 'API key for the provider',
+                },
+                baseUrl: {
+                  type: 'string',
+                  description: 'Base URL for API requests',
+                },
+                modelId: { type: 'string', description: 'Model ID to use' },
+              },
+            },
+          },
+        },
+        response: {
+          201: responseSchema,
+          400: responseSchema,
+          404: responseSchema,
+        },
+      } as any,
+    },
+    async (request, reply) => {
+      const body = request.body as {
+        token: string;
+        alias?: string;
+        api?: {
+          provider?: string;
+          apiKey?: string;
+          baseUrl?: string;
+          modelId?: string;
+        };
+      };
+
+      try {
+        const soulConfig = createAgentSoulByToken(body.token);
+        const instanceId = await fastify.agentRuntime.createAgent(
+          soulConfig,
+          body.api ? { api: body.api as any } : undefined,
+        );
+        return reply.code(201).send({
+          success: true,
+          data: {
+            instanceId,
+            token: body.token,
+            alias: body.alias,
+            serverId: fastify.serverId,
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.includes('Unknown agent soul token')
+        ) {
+          return reply.code(404).send({
+            success: false,
+            error: error.message,
+          });
+        }
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     },
   );
 };

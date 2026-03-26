@@ -35,8 +35,11 @@ export {
   createQualityOfLifeAgentSoul,
   createEmergingTreatmentsAgentSoul,
   createCoordinatorAgentSoul,
+  getAgentSoul,
+  getAllAgentSouls,
+  createAgentSoulByToken,
 } from './agent-soul/index.js';
-export type { AgentSoulType } from './agent-soul/index.js';
+export type { AgentSoulType, AgentSoulMetadata } from './agent-soul/index.js';
 export { AgentSoulRegistry, agentSoulRegistry } from './AgentSoulRegistry.js';
 export type {
   AgentSoulEntry,

@@ -502,8 +502,10 @@ export class RedisMessageBus implements IMessageBus {
    */
   setConfig(config: TopologyConfig): void {
     this.config = {
-      defaultAckTimeout: config.defaultAckTimeout ?? this.config.defaultAckTimeout,
-      defaultResultTimeout: config.defaultResultTimeout ?? this.config.defaultResultTimeout,
+      defaultAckTimeout:
+        config.defaultAckTimeout ?? this.config.defaultAckTimeout,
+      defaultResultTimeout:
+        config.defaultResultTimeout ?? this.config.defaultResultTimeout,
       maxRetries: config.maxRetries ?? this.config.maxRetries,
       defaultTtl: config.defaultTtl ?? this.config.defaultTtl,
     };
@@ -527,19 +529,23 @@ export class RedisMessageBus implements IMessageBus {
       const timeout = this.config.defaultAckTimeout;
       let settled = false;
 
-      const cleanup = this.ackTracker.track(conversationId, {
-        onTimeout: () => {
-          if (settled) return;
-          settled = true;
-          this.conversationManager.updateStatus(conversationId, 'timeout');
-          reject(new Error(`ACK timeout for conversation ${conversationId}`));
+      const cleanup = this.ackTracker.track(
+        conversationId,
+        {
+          onTimeout: () => {
+            if (settled) return;
+            settled = true;
+            this.conversationManager.updateStatus(conversationId, 'timeout');
+            reject(new Error(`ACK timeout for conversation ${conversationId}`));
+          },
+          onAck: (ack: TopologyMessage) => {
+            if (settled) return;
+            settled = true;
+            resolve(ack);
+          },
         },
-        onAck: (ack: TopologyMessage) => {
-          if (settled) return;
-          settled = true;
-          resolve(ack);
-        },
-      });
+        timeout,
+      );
 
       // Set overall timeout
       setTimeout(() => {

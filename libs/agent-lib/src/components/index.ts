@@ -237,26 +237,9 @@ export {
   type A2ATaskToolName,
 } from './A2AComponent/index.js';
 
-// ==================== Bookshelf Components ====================
 
-/**
- * Bookshelf Module
- *
- * Document viewing components.
- */
-export {
-  BookViewerComponent,
-  WorkspaceInfoComponent,
-} from './bookshelfComponents.js';
 
-// ==================== Knowledge Management Component ====================
 
-/**
- * Knowledge Management Module
- *
- * Knowledge base management component.
- */
-export { KnowledgeManageComponent } from './knowledgeManageComponent.js';
 
 // ==================== FileSystem Module ====================
 

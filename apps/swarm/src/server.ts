@@ -2,7 +2,7 @@
  * Swarm Application - Fastify + AgentRuntime
  */
 
-import 'dotenv/config';
+import { config as envconfig } from 'dotenv'
 import Fastify from 'fastify';
 import { default as cors } from '@fastify/cors';
 import { default as swagger } from '@fastify/swagger';
@@ -10,18 +10,23 @@ import { default as swaggerUi } from '@fastify/swagger-ui';
 import type { AgentRuntimeConfig } from 'agent-lib/core';
 import { createAgentRuntime } from 'agent-lib/core';
 import { agentRuntimePlugin } from './plugins/agent-runtime.js';
+import { prismaPlugin } from './plugins/prisma.js';
 import { runtimeRoutes } from './routes/runtime.js';
 import { agentRoutes } from './routes/agent.js';
 import { a2aRoutes } from './routes/a2a.js';
+import { taskRoutes } from './routes/tasks.js';
 import { healthRoutes } from './routes/health.js';
 import { loadConfig } from './config.js';
-
+envconfig()
 const config = loadConfig();
 
 const runtimeConfig: AgentRuntimeConfig = {
   maxAgents: config.server.maxAgents,
   defaultApiConfig: config.api as any,
   messageBus: config.messageBus as any,
+  ...(config.ackTimeout ? { ackTimeout: config.ackTimeout } : {}),
+  ...(config.resultTimeout ? { resultTimeout: config.resultTimeout } : {}),
+  ...(config.maxRetries ? { maxRetries: config.maxRetries } : {}),
 };
 
 const fastify = Fastify({
@@ -68,6 +73,10 @@ await fastify.register(swagger as any, {
         name: 'a2a',
         description: 'Agent-to-Agent communication - tasks, queries, events',
       },
+      {
+        name: 'tasks',
+        description: 'Task management - create, list, query, and delete tasks',
+      },
     ],
   },
 });
@@ -86,10 +95,14 @@ await fastify.register(agentRuntimePlugin, {
   port: config.server.port,
 });
 
+// Register Prisma plugin for task persistence
+await fastify.register(prismaPlugin);
+
 await fastify.register(healthRoutes, { prefix: '/health' });
 await fastify.register(runtimeRoutes, { prefix: '/api/runtime' });
 await fastify.register(agentRoutes, { prefix: '/api/agents' });
 await fastify.register(a2aRoutes, { prefix: '/api/a2a' });
+await fastify.register(taskRoutes, { prefix: '/api/tasks' });
 
 const port = config.server.port;
 const host = config.server.host;
@@ -100,6 +113,12 @@ try {
   fastify.log.info(`   Server ID: ${config.server.id}`);
   fastify.log.info(`   MessageBus: ${config.messageBus?.mode || 'memory'}`);
   fastify.log.info(`   Max Agents: ${config.server.maxAgents}`);
+  fastify.log.info(
+    `   ACK Timeout: ${config.ackTimeout ?? 5000}ms, Result Timeout: ${config.resultTimeout ?? 60000}ms`,
+  );
+  fastify.log.info(
+    `   Task Persistence: ${fastify.taskService ? 'enabled' : 'disabled (set AGENT_DATABASE_URL)'}`,
+  );
   fastify.log.info(`   API Docs: http://${host}:${port}/docs`);
 } catch (err) {
   fastify.log.error(err);

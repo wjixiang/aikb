@@ -17,7 +17,11 @@
       "Bash(find /mnt/disk1/project/project/aikb/apps/ebm-agent -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\))",
       "Bash(find /mnt/disk1/project/project/aikb/apps/auto-review -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\))",
       "Read(//mnt/disk1/project/project/**)",
-      "Read(//mnt/disk1/project/**)"
+      "Read(//mnt/disk1/project/**)",
+      "Bash(find /mnt/disk1/project/project/aikb/docker -type f -name *.yml -o -name *.yaml)",
+      "Bash(npm info:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)"
     ]
   }
 }

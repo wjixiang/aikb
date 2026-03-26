@@ -3,3 +3,4 @@
  */
 
 export { AgentPrismaService } from './AgentPrismaService.js';
+export { Prisma } from '../../generated/prisma/client.js';

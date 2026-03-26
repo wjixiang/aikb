@@ -159,13 +159,18 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   // A2A Communication
   // ============================================
 
-  private createDirectA2AClient(): IA2AClient {
+  private createDirectA2AClient(options?: {
+    ackTimeout?: number;
+    resultTimeout?: number;
+    timeout?: number;
+  }): IA2AClient {
+    const timeout = options?.resultTimeout ?? options?.timeout ?? 120000;
     return createA2AClient(
       this.runtime.getMessageBus(),
       this.runtime.getRegistry() as any,
       {
         instanceId: this.callerInstanceId,
-        defaultTimeout: 120000,
+        defaultTimeout: timeout,
       },
     );
   }
@@ -175,10 +180,14 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     taskId: string,
     description: string,
     input: Record<string, unknown>,
-    options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
+    options?: {
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      ackTimeout?: number;
+      resultTimeout?: number;
+    },
   ): Promise<A2ATaskResult> {
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const a2aClient = this.createDirectA2AClient();
+    const a2aClient = this.createDirectA2AClient(options);
     return a2aClient.sendTask(
       targetAgentId,
       taskId,
@@ -191,10 +200,13 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   async sendA2AQuery(
     targetAgentIdOrAlias: string,
     query: string,
-    options?: { expectedFormat?: string },
+    options?: {
+      expectedFormat?: string;
+      timeout?: number;
+    },
   ): Promise<unknown> {
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const a2aClient = this.createDirectA2AClient();
+    const a2aClient = this.createDirectA2AClient(options);
     return a2aClient.sendQuery(targetAgentId, query, options);
   }
 

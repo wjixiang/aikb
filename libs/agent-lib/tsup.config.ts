@@ -14,6 +14,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   treeshake: true,
+  splitting: true,
   external: [
     '@prisma/client-runtime-utils',
     'pino',

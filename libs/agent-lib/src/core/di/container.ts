@@ -65,13 +65,19 @@ export class AgentContainer {
   private isRestoring = false;
   private initPromise: Promise<void> | null = null;
 
-  constructor(options: AgentCreationOptions = {}, messageBus: IMessageBus, instanceId?: string) {
+  constructor(
+    options: AgentCreationOptions = {},
+    messageBus: IMessageBus,
+    instanceId?: string,
+  ) {
     this.container = new Container({
       defaultScope: 'Singleton',
     });
 
     // Bind messageBus immediately as required dependency
-    this.container.bind<IMessageBus>(TYPES.IMessageBus).toConstantValue(messageBus);
+    this.container
+      .bind<IMessageBus>(TYPES.IMessageBus)
+      .toConstantValue(messageBus);
 
     if (instanceId) {
       // Restore agent: setup bindings first to get persistence service
@@ -289,14 +295,15 @@ export class AgentContainer {
     // // Persistence Service (if enabled)
     // if (this.config.persistence?.enabled !== false) {
     const databaseUrl =
-      this.config.persistence?.databaseUrl || process.env['DATABASE_URL'];
+      this.config.persistence?.databaseUrl || process.env['AGENT_DATABASE_URL'];
 
     if (databaseUrl) {
       // Prisma Client
       this.container
         .bind<PrismaClient>(TYPES.PrismaClient)
         .toDynamicValue(() => {
-          const connectionString = databaseUrl || process.env['DATABASE_URL'];
+          const connectionString =
+            databaseUrl || process.env['AGENT_DATABASE_URL'];
           if (!connectionString) {
             throw new Error('Database URL not configured');
           }
@@ -360,16 +367,29 @@ export class AgentContainer {
       component: ToolComponent;
       priority?: number;
     }> => {
-      const components: Array<{ component: ToolComponent; priority?: number }> = [
-        { component: this.container.get(A2ATaskComponent) as unknown as ToolComponent, priority: 0 },
-        { component: this.container.get(RuntimeControlComponent) as unknown as ToolComponent, priority: 0 },
-      ];
+      const components: Array<{ component: ToolComponent; priority?: number }> =
+        [
+          {
+            component: this.container.get(
+              A2ATaskComponent,
+            ) as unknown as ToolComponent,
+            priority: 0,
+          },
+          {
+            component: this.container.get(
+              RuntimeControlComponent,
+            ) as unknown as ToolComponent,
+            priority: 0,
+          },
+        ];
 
       // Add custom components from config
       if (this.config.components) {
         for (const { componentClass, priority } of this.config.components) {
           components.push({
-            component: this.container.get(componentClass) as unknown as ToolComponent,
+            component: this.container.get(
+              componentClass,
+            ) as unknown as ToolComponent,
             priority,
           });
         }

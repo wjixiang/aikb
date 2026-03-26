@@ -124,7 +124,13 @@ export interface IRuntimeControlClient {
     taskId: string,
     description: string,
     input: Record<string, unknown>,
-    options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
+    options?: {
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      /** ACK timeout in ms */
+      ackTimeout?: number;
+      /** Result timeout in ms */
+      resultTimeout?: number;
+    },
   ): Promise<A2ATaskResult>;
 
   /**
@@ -133,7 +139,11 @@ export interface IRuntimeControlClient {
   sendA2AQuery(
     targetAgentId: string,
     query: string,
-    options?: { expectedFormat?: string },
+    options?: {
+      expectedFormat?: string;
+      /** Timeout in ms */
+      timeout?: number;
+    },
   ): Promise<unknown>;
 
   /**
@@ -290,6 +300,12 @@ export interface AgentRuntimeConfig {
   persistence?: PersistenceConfig;
   /** MessageBus configuration - defaults to in-memory */
   messageBus?: MessageBusConfig;
+  /** ACK timeout in ms for message confirmation (default: 5000) */
+  ackTimeout?: number;
+  /** Result timeout in ms for async task completion (default: 60000) */
+  resultTimeout?: number;
+  /** Max retries for failed message delivery (default: 3) */
+  maxRetries?: number;
 }
 
 export interface AgentFilter {

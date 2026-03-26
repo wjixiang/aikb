@@ -537,7 +537,9 @@ export class AgentRuntime implements IAgentRuntime {
       mode: config.messageBus?.mode ?? 'memory',
       redis: config.messageBus?.redis,
       topology: {
-        defaultAckTimeout: 120000, // 120 seconds for ACK timeout
+        defaultAckTimeout: config.ackTimeout,
+        defaultResultTimeout: config.resultTimeout,
+        maxRetries: config.maxRetries,
       },
     };
     this.messageBus = createMessageBusFromConfig(messageBusConfig);
@@ -732,6 +734,15 @@ export class AgentRuntime implements IAgentRuntime {
       capabilities: unifiedConfig.agent.capabilities ?? [],
     });
 
+    // Subscribe to Redis channel if using RedisMessageBus
+    // This is required for the agent to receive messages from other processes
+    if (isRedisMessageBus(this.messageBus)) {
+      console.log(
+        `[AgentRuntime.createAgent] Subscribing to Redis channel for agent: ${instanceId}`,
+      );
+      this.messageBus.subscribeAgent(instanceId);
+    }
+
     return instanceId;
   }
 
@@ -756,6 +767,8 @@ export class AgentRuntime implements IAgentRuntime {
     if (currentStatus !== 'idle') {
       throw new Error(`Agent is not idle: ${currentStatus}`);
     }
+
+    await agent.start();
 
     // Update registry
     this.registry.update(instanceId, { status: 'running' });
