@@ -1,0 +1,364 @@
+import { useEffect, useRef, useCallback, useState } from 'react';
+import * as d3 from 'd3';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import {
+  api,
+  type AgentInfo,
+  type TopologyNode,
+  type TopologyEdge,
+} from '@/lib/api';
+import { Network } from 'lucide-react';
+
+interface GraphNode extends d3.SimulationNodeDatum {
+  id: string;
+  label: string;
+  nodeType: string;
+  status?: string;
+  agentType?: string;
+}
+
+interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
+  source: GraphNode | string;
+  target: GraphNode | string;
+  edgeType?: string;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  running: '#22c55e',
+  idle: '#eab308',
+  stopped: '#ef4444',
+};
+
+const NODE_TYPE_COLORS: Record<string, string> = {
+  coordinator: '#6366f1',
+  router: '#8b5cf6',
+  worker: '#3b82f6',
+};
+
+const SOUL_TYPE_COLORS = [
+  '#f97316',
+  '#06b6d4',
+  '#ec4899',
+  '#14b8a6',
+  '#a855f7',
+  '#e11d48',
+  '#0ea5e9',
+  '#84cc16',
+];
+
+function getTypeColor(
+  node: GraphNode,
+  soulColors: Map<string, string>,
+): string {
+  if (node.status && STATUS_COLORS[node.status])
+    return STATUS_COLORS[node.status];
+  if (NODE_TYPE_COLORS[node.nodeType]) return NODE_TYPE_COLORS[node.nodeType];
+  if (node.agentType && soulColors.has(node.agentType))
+    return soulColors.get(node.agentType)!;
+  return '#64748b';
+}
+
+export function AgentTopology() {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(
+    null,
+  );
+  const soulColorsRef = useRef<Map<string, string>>(new Map());
+  const sizeRef = useRef({ width: 800, height: 500 });
+  const [size, setSize] = useState({ width: 800, height: 500 });
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          const newSize = {
+            width: Math.floor(width),
+            height: Math.floor(height),
+          };
+          sizeRef.current = newSize;
+          setSize(newSize);
+        }
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  const render = useCallback(
+    (agents: AgentInfo[], nodes: TopologyNode[], edges: TopologyEdge[]) => {
+      if (!svgRef.current) return;
+
+      const svg = d3.select<SVGSVGElement, unknown>(svgRef.current);
+
+      // Build soul color map
+      const soulColors = soulColorsRef.current;
+      if (soulColors.size === 0) {
+        const types = [...new Set(agents.map((a) => a.agentType))];
+        types.forEach((t, i) =>
+          soulColors.set(t, SOUL_TYPE_COLORS[i % SOUL_TYPE_COLORS.length]),
+        );
+      }
+
+      const agentMap = new Map(agents.map((a) => [a.instanceId, a]));
+
+      const graphNodes: GraphNode[] =
+        agents.length > 0
+          ? agents.map((a) => ({
+              id: a.instanceId,
+              label: a.alias || a.name,
+              nodeType:
+                a.agentType === 'coordinator' ? 'coordinator' : 'worker',
+              status: a.status,
+              agentType: a.agentType,
+            }))
+          : nodes.map((n) => ({
+              id: n.instanceId,
+              label: n.instanceId,
+              nodeType: n.nodeType ?? 'worker',
+              agentType: undefined,
+            }));
+
+      const graphLinks: GraphLink[] = edges.map((e) => ({
+        source: e.from,
+        target: e.to,
+        edgeType: e.edgeType,
+      }));
+
+      // Clean up previous simulation
+      simulationRef.current?.stop();
+
+      // Simulation
+      const simulation = d3
+        .forceSimulation<GraphNode>(graphNodes)
+        .force(
+          'link',
+          d3
+            .forceLink<GraphNode, GraphLink>(graphLinks)
+            .id((d) => d.id)
+            .distance(120),
+        )
+        .force('charge', d3.forceManyBody().strength(-400))
+        .force(
+          'center',
+          d3.forceCenter(sizeRef.current.width / 2, sizeRef.current.height / 2),
+        )
+        .force('collision', d3.forceCollide().radius(40));
+
+      simulationRef.current = simulation;
+
+      svg.selectAll('*').remove();
+
+      // Arrow marker
+      svg
+        .append('defs')
+        .append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 28)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('fill', '#94a3b8')
+        .attr('d', 'M0,-5L10,0L0,5');
+
+      const g = svg.append('g');
+
+      // Zoom
+      const zoom = d3
+        .zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.3, 3])
+        .on('zoom', (event) => g.attr('transform', event.transform));
+      svg.call(zoom);
+
+      // Links
+      const link = g
+        .append('g')
+        .selectAll('line')
+        .data(graphLinks)
+        .join('line')
+        .attr('stroke', '#94a3b8')
+        .attr('stroke-width', 1.5)
+        .attr('stroke-opacity', 0.6)
+        .attr('marker-end', 'url(#arrowhead)');
+
+      // Node groups
+      const node = g
+        .append('g')
+        .selectAll<SVGGElement, GraphNode>('g')
+        .data(graphNodes)
+        .join('g')
+        .call(
+          d3
+            .drag<SVGGElement, GraphNode>()
+            .on('start', (event, d) => {
+              if (!event.active) simulation.alphaTarget(0.3).restart();
+              d.fx = d.x;
+              d.fy = d.y;
+            })
+            .on('drag', (event, d) => {
+              d.fx = event.x;
+              d.fy = event.y;
+            })
+            .on('end', (event, d) => {
+              if (!event.active) simulation.alphaTarget(0);
+              d.fx = null;
+              d.fy = null;
+            }),
+        );
+
+      // Node circles
+      node
+        .append('circle')
+        .attr('r', 18)
+        .attr('fill', (d) => getTypeColor(d, soulColors))
+        .attr('stroke', '#1e293b')
+        .attr('stroke-width', 2)
+        .attr('fill-opacity', 0.85);
+
+      // Status dot
+      node
+        .filter((d) => !!d.status)
+        .append('circle')
+        .attr('cx', 12)
+        .attr('cy', -12)
+        .attr('r', 5)
+        .attr('fill', (d) => STATUS_COLORS[d.status ?? 'stopped'])
+        .attr('stroke', '#1e293b')
+        .attr('stroke-width', 1.5);
+
+      // Labels
+      node
+        .append('text')
+        .text((d) => d.label)
+        .attr('text-anchor', 'middle')
+        .attr('dy', 32)
+        .attr('fill', '#e2e8f0')
+        .attr('font-size', 11)
+        .attr('font-weight', 500)
+        .attr('pointer-events', 'none');
+
+      // Agent type label
+      node
+        .filter((d) => !!(d.agentType && d.agentType !== d.label))
+        .append('text')
+        .text((d) => d.agentType!)
+        .attr('text-anchor', 'middle')
+        .attr('dy', 44)
+        .attr('fill', '#94a3b8')
+        .attr('font-size', 9)
+        .attr('pointer-events', 'none');
+
+      // Tooltip on hover
+      node
+        .on('mouseenter', (_event, d) => {
+          const agent = agentMap.get(d.id);
+          const info = agent
+            ? `${agent.name}\nStatus: ${agent.status}\nType: ${agent.agentType}`
+            : `${d.label}\nType: ${d.nodeType}`;
+          tooltip.text(info).style('display', 'block');
+        })
+        .on('mousemove', (event) => {
+          tooltip
+            .style('left', `${event.offsetX + 12}px`)
+            .style('top', `${event.offsetY - 8}px`);
+        })
+        .on('mouseleave', () => {
+          tooltip.style('display', 'none');
+        });
+
+      // Tooltip element (appended to SVG)
+      const tooltip = svg
+        .append('text')
+        .style('display', 'none')
+        .style('position', 'absolute')
+        .attr('fill', '#f8fafc')
+        .attr('font-size', 11)
+        .attr('pointer-events', 'none');
+
+      // Tick
+      simulation.on('tick', () => {
+        link
+          .attr('x1', (d) => (d.source as GraphNode).x!)
+          .attr('y1', (d) => (d.source as GraphNode).y!)
+          .attr('x2', (d) => (d.target as GraphNode).x!)
+          .attr('y2', (d) => (d.target as GraphNode).y!);
+
+        node.attr('transform', (d) => `translate(${d.x},${d.y})`);
+      });
+    },
+    [size],
+  );
+
+  const prevDataRef = useRef<string>('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [agentsRes, topologyRes] = await Promise.all([
+          api.runtime
+            .agents()
+            .catch(() => ({ success: false, data: [], count: 0 })),
+          api.runtime.topology().catch(() => ({
+            success: false,
+            data: { nodes: [], edges: [], size: { nodes: 0, edges: 0 } },
+          })),
+        ]);
+
+        const agents: AgentInfo[] = agentsRes.success ? agentsRes.data : [];
+        const topology = topologyRes.success
+          ? topologyRes.data
+          : { nodes: [], edges: [], size: { nodes: 0, edges: 0 } };
+
+        const raw = JSON.stringify({ agents, topology });
+        if (raw === prevDataRef.current) return;
+        prevDataRef.current = raw;
+
+        render(agents, topology.nodes, topology.edges);
+      } catch {
+        // silently retry on next interval
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => {
+      clearInterval(interval);
+      simulationRef.current?.stop();
+    };
+  }, [render]);
+
+  return (
+    <Card className="w-full h-full border-2 flex flex-col">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Network className="h-5 w-5" />
+            Agent Topology
+          </span>
+          <span id="topology-count" className="text-xs text-muted-foreground" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col flex-1 min-h-0">
+        <div ref={containerRef} className="flex-1 min-h-0">
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${size.width} ${size.height}`}
+            className="w-full h-full rounded-lg bg-muted/30"
+            preserveAspectRatio="xMidYMid meet"
+            style={{ cursor: 'grab' }}
+          />
+        </div>
+        <div className="mt-2 text-xs text-muted-foreground">
+          Drag nodes to rearrange. Scroll to zoom. Nodes: colored by type,
+          status dot: green=running, yellow=idle, red=stopped.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
