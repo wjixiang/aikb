@@ -86,6 +86,12 @@ export interface IA2AClient {
     conversationId: string,
   ): Promise<void>;
 
+  /** Wait for result of a previously sent task (by conversationId) */
+  waitForResult(
+    conversationId: string,
+    timeoutMs?: number,
+  ): Promise<A2ATaskResult>;
+
   /** Get the client instance ID */
   getInstanceId(): string;
 }
@@ -245,12 +251,12 @@ export class A2AClient implements IA2AClient {
           {
             taskId,
             conversationId: a2aMessage.conversationId,
-            status: (result.content as A2APayload).status,
+            status: result.status,
           },
           'Task result received successfully',
         );
 
-        return this.parseTaskResult(result.content as A2APayload);
+        return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
@@ -366,12 +372,11 @@ export class A2AClient implements IA2AClient {
       // Wait for result
       const result = await this.waitForResult(a2aMessage.conversationId);
 
-      const payload = result.content as A2APayload;
-      if (payload.status === 'failed') {
-        throw new Error(payload.error ?? 'Query failed');
+      if (result.status === 'failed') {
+        throw new Error(result.error ?? 'Query failed');
       }
 
-      return payload.output;
+      return result.output;
     } catch (error) {
       this.logger.error(
         { error, targetAgentId, query },
@@ -500,8 +505,12 @@ export class A2AClient implements IA2AClient {
   /**
    * Wait for result message in a conversation (event-driven)
    */
-  private async waitForResult(conversationId: string): Promise<any> {
-    return new Promise((resolve, reject) => {
+  async waitForResult(
+    conversationId: string,
+    timeoutMs?: number,
+  ): Promise<A2ATaskResult> {
+    const timeout = timeoutMs ?? this.defaultTimeout;
+    const rawResult = await new Promise<unknown>((resolve, reject) => {
       let timeoutId: ReturnType<typeof setTimeout>;
 
       const handleEvent = (event: { type: string; payload: unknown }) => {
@@ -538,7 +547,7 @@ export class A2AClient implements IA2AClient {
       timeoutId = setTimeout(() => {
         unsubscribe();
         reject(new Error(`Timeout waiting for result: ${conversationId}`));
-      }, this.defaultTimeout);
+      }, timeout);
 
       const conversation = this.messageBus.getConversation(conversationId);
       if (conversation?.status === 'completed' && conversation.result) {
@@ -556,6 +565,14 @@ export class A2AClient implements IA2AClient {
         );
       }
     });
+
+    const topologyMsg = rawResult as {
+      content?: { content?: A2APayload };
+    };
+    const maybePayload = topologyMsg.content?.content ?? topologyMsg.content;
+    const a2aPayload =
+      (maybePayload as A2APayload) ?? (rawResult as A2APayload);
+    return this.parseTaskResult(a2aPayload);
   }
 
   /**

@@ -343,6 +343,13 @@ export class AgentContainer {
       .bind<RuntimeControlState>(TYPES.RuntimeControlState)
       .toConstantValue(new RuntimeControlState());
 
+    // Bind RuntimeControlRESTConfig if provided (used by RuntimeControlComponent for topology ops)
+    if (this.config.runtimeControl?.restBaseUrl) {
+      this.container
+        .bind(TYPES.RuntimeControlRESTConfig)
+        .toConstantValue(this.config.runtimeControl);
+    }
+
     // Bind global component classes as singletons
     // These will be resolved with DI when building the ToolComponents array
     this.container.bind(A2ATaskComponent).toSelf().inSingletonScope();

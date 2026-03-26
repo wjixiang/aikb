@@ -3,12 +3,12 @@
  *
  * Provides tools for Agent creation and management.
  *
- * - RuntimeControlComponent: DI-based, uses injected RuntimeControlClient (in-process)
- * - RuntimeControlRESTComponent: REST-based, communicates with swarm server via HTTP
+ * - RuntimeControlComponent: Hybrid (DI for agent lifecycle, REST for topology)
+ * - SwarmAPIClient: Low-level REST client for swarm server
  */
 
 export { RuntimeControlComponent } from './RuntimeControlComponent.js';
-export { RuntimeControlRESTComponent } from './RuntimeControlRESTComponent.js';
-export type { RuntimeControlRESTConfig } from './RuntimeControlRESTComponent.js';
+export { SwarmAPIClient } from './restClient.js';
+export type { RuntimeControlRESTConfig as RESTConfig } from './restClient.js';
 
 export * from './schemas.js';

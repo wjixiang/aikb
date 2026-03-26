@@ -678,6 +678,9 @@ export class AgentRuntime implements IAgentRuntime {
       api: mergedApi,
       workspace: overrides?.workspace,
       observers: overrides?.observers,
+      ...(this.config.runtimeControl
+        ? { runtimeControl: this.config.runtimeControl }
+        : {}),
     };
 
     const parentInstanceId = (
@@ -1467,6 +1470,9 @@ export class AgentRuntime implements IAgentRuntime {
       {
         ...options,
         api: mergedApi,
+        ...(this.config.runtimeControl
+          ? { runtimeControl: this.config.runtimeControl }
+          : {}),
       } as AgentFactoryOptions,
       this.messageBus,
     );

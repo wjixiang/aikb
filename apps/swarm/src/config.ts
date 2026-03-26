@@ -33,6 +33,11 @@ export interface AppConfig {
   resultTimeout?: number;
   /** Max retries for failed message delivery (default: 3) */
   maxRetries?: number;
+  /** Runtime control REST config for topology operations */
+  runtimeControl?: {
+    restBaseUrl?: string;
+    apiKey?: string;
+  };
 }
 
 /**
@@ -64,11 +69,19 @@ export function loadConfig(): AppConfig {
     };
   }
 
+  const serverHost = process.env['SERVER_HOST'] || '0.0.0.0';
+  const serverPort = parseInt(process.env['PORT'] || '9400');
+  const restBaseUrl =
+    process.env['SWARM_REST_BASE_URL'] ||
+    (serverHost === '0.0.0.0'
+      ? `http://localhost:${serverPort}`
+      : `http://${serverHost}:${serverPort}`);
+
   return {
     server: {
       id: serverId,
-      host: process.env['SERVER_HOST'] || '0.0.0.0',
-      port: parseInt(process.env['PORT'] || '9400'),
+      host: serverHost,
+      port: serverPort,
       logLevel: process.env['LOG_LEVEL'] || 'info',
       maxAgents: parseInt(process.env['MAX_AGENTS'] || '50'),
     },
@@ -80,6 +93,12 @@ export function loadConfig(): AppConfig {
       timeout: parseInt(process.env['API_TIMEOUT'] || '120000'),
     },
     messageBus,
+    runtimeControl: {
+      restBaseUrl,
+      ...(process.env['SWARM_API_KEY']
+        ? { apiKey: process.env['SWARM_API_KEY'] }
+        : {}),
+    },
     // Topology timeout configuration
     ...(process.env['A2A_ACK_TIMEOUT']
       ? { ackTimeout: parseInt(process.env['A2A_ACK_TIMEOUT']) }

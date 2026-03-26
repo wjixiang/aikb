@@ -45,6 +45,10 @@ export interface AgentFactoryOptions extends AgentBlueprint {
   workspace?: Partial<VirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;
   messageBus?: IMessageBus;
+  runtimeControl?: {
+    restBaseUrl?: string;
+    apiKey?: string;
+  };
 }
 
 /**
@@ -78,7 +82,10 @@ export class AgentFactory {
    * @param options - Agent creation options
    * @param messageBus - Required message bus for agent communication
    */
-  static create(options: AgentFactoryOptions = {}, messageBus: IMessageBus): AgentContainer {
+  static create(
+    options: AgentFactoryOptions = {},
+    messageBus: IMessageBus,
+  ): AgentContainer {
     return new AgentContainer(options, messageBus);
   }
 
@@ -87,7 +94,10 @@ export class AgentFactory {
    * @param options - Agent creation options
    * @param messageBus - Required message bus for agent communication
    */
-  static async createAgent(options: AgentFactoryOptions = {}, messageBus: IMessageBus): Promise<Agent> {
+  static async createAgent(
+    options: AgentFactoryOptions = {},
+    messageBus: IMessageBus,
+  ): Promise<Agent> {
     const container = this.create(options, messageBus);
     return container.getAgent();
   }

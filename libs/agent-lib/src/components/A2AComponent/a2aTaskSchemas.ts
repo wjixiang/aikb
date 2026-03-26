@@ -1,9 +1,6 @@
 import { z } from 'zod';
 import type { A2ATaskResult } from '../../core/a2a/types.js';
 
-/**
- * Schema for acknowledging a task
- */
 export const acknowledgeTaskParamsSchema = z.object({
   conversationId: z
     .string()
@@ -14,9 +11,6 @@ export const acknowledgeTaskParamsSchema = z.object({
 
 export type AcknowledgeTaskParams = z.infer<typeof acknowledgeTaskParamsSchema>;
 
-/**
- * Schema for completing a task with result
- */
 export const completeTaskParamsSchema = z.object({
   conversationId: z
     .string()
@@ -31,9 +25,6 @@ export const completeTaskParamsSchema = z.object({
 
 export type CompleteTaskParams = z.infer<typeof completeTaskParamsSchema>;
 
-/**
- * Schema for failing a task
- */
 export const failTaskParamsSchema = z.object({
   conversationId: z.string().describe('Conversation ID of the task to fail'),
   error: z.string().describe('Error message describing why the task failed'),
@@ -41,9 +32,6 @@ export const failTaskParamsSchema = z.object({
 
 export type FailTaskParams = z.infer<typeof failTaskParamsSchema>;
 
-/**
- * Schema for sending task result
- */
 export const sendTaskResultParamsSchema = z.object({
   conversationId: z.string().describe('Conversation ID of the task'),
   output: z.unknown().describe('Task output/result data'),
@@ -57,9 +45,6 @@ export const sendTaskResultParamsSchema = z.object({
 
 export type SendTaskResultParams = z.infer<typeof sendTaskResultParamsSchema>;
 
-/**
- * Schema for getting pending tasks
- */
 export const getPendingTasksParamsSchema = z
   .object({
     _placeholder: z
@@ -67,13 +52,10 @@ export const getPendingTasksParamsSchema = z
       .optional()
       .describe('Internal parameter, always use empty object {}'),
   })
-  .passthrough(); // Allow additional properties to be ignored
+  .passthrough();
 
 export type GetPendingTasksParams = z.infer<typeof getPendingTasksParamsSchema>;
 
-/**
- * Schema for sending a task to another agent
- */
 export const sendTaskParamsSchema = z.object({
   targetAgentId: z
     .string()
@@ -94,9 +76,31 @@ export const sendTaskParamsSchema = z.object({
 
 export type SendTaskParams = z.infer<typeof sendTaskParamsSchema>;
 
-/**
- * Tool schema definitions
- */
+export const getSentTasksParamsSchema = z
+  .object({
+    _placeholder: z
+      .string()
+      .optional()
+      .describe('Internal parameter, always use empty object {}'),
+  })
+  .passthrough();
+
+export type GetSentTasksParams = z.infer<typeof getSentTasksParamsSchema>;
+
+interface SentTaskInfo {
+  taskId: string;
+  conversationId: string;
+  targetAgentId: string;
+  description: string;
+  status: 'in-flight' | 'completed' | 'failed' | 'timeout';
+  result?: A2ATaskResult;
+  error?: string;
+  sentAt: number;
+  completedAt?: number;
+}
+
+export type { SentTaskInfo };
+
 export const a2aTaskToolSchemas = {
   acknowledgeTask: {
     toolName: 'acknowledgeTask',
@@ -125,16 +129,18 @@ export const a2aTaskToolSchemas = {
   },
   sendTask: {
     toolName: 'sendTask',
-    desc: 'Send a task to another agent and wait for the result.',
+    desc: 'Send a task to another agent asynchronously. Returns immediately after ACK with conversationId. Task result is tracked in the background - use getSentTasks to check status.',
     paramsSchema: sendTaskParamsSchema,
+  },
+  getSentTasks: {
+    toolName: 'getSentTasks',
+    desc: 'Get the status of all sent tasks. Includes in-flight, completed, and failed tasks.',
+    paramsSchema: getSentTasksParamsSchema,
   },
 } as const;
 
 export type A2ATaskToolName = keyof typeof a2aTaskToolSchemas;
 
-/**
- * Return types for each tool
- */
 export interface A2ATaskToolReturnTypes {
   acknowledgeTask: { success: boolean; conversationId: string };
   completeTask: { success: boolean; conversationId: string };
@@ -156,8 +162,13 @@ export interface A2ATaskToolReturnTypes {
   };
   sendTask: {
     success: boolean;
-    result?: A2ATaskResult;
+    conversationId: string;
+    taskId: string;
+    status: string;
     error?: string;
+  };
+  getSentTasks: {
+    tasks: SentTaskInfo[];
   };
 }
 

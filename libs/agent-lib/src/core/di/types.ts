@@ -359,6 +359,12 @@ export const TYPES = {
    * @scope Singleton - Bound at container creation
    */
   A2AHandlerConfig: Symbol('A2AHandlerConfig'),
+
+  /**
+   * RuntimeControlRESTConfig - REST API config for RuntimeControlComponent topology ops
+   * @scope Singleton - Optional, bound at container creation when runtimeControl config is provided
+   */
+  RuntimeControlRESTConfig: Symbol('RuntimeControlRESTConfig'),
 } as const;
 
 export type TestOverrides = {

@@ -49,6 +49,16 @@ export interface UnifiedAgentConfig {
    * Hook configuration for lifecycle events
    */
   hooks?: HookConfig;
+
+  /**
+   * Runtime control configuration
+   * When restBaseUrl is provided, topology operations use REST API
+   * Agent lifecycle operations always use DI (in-process)
+   */
+  runtimeControl?: {
+    restBaseUrl?: string;
+    apiKey?: string;
+  };
 }
 
 export interface AgentCreationOptions {
@@ -83,6 +93,14 @@ export interface AgentCreationOptions {
    * Hook configuration for lifecycle events
    */
   hooks?: HookConfig;
+
+  /**
+   * Runtime control configuration
+   */
+  runtimeControl?: {
+    restBaseUrl?: string;
+    apiKey?: string;
+  };
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {
@@ -151,6 +169,8 @@ export function mergeWithDefaults(
     components: partial.components,
     // Pass hooks from top-level options
     hooks: partial.hooks,
+    // Pass runtime control config
+    runtimeControl: partial.runtimeControl,
   };
   return result;
 }

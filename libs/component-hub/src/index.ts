@@ -20,8 +20,10 @@ export {
 
 export { RuntimeControlComponent } from './runtime-control/index.js';
 export { RuntimeControlState } from 'agent-lib/core';
-export { RuntimeControlRESTComponent } from './runtime-control/index.js';
-export type { RuntimeControlRESTConfig } from './runtime-control/index.js';
+export {
+  SwarmAPIClient,
+  type RESTConfig as RuntimeControlRESTConfig,
+} from './runtime-control/index.js';
 export {
   runtimeControlToolSchemas,
   type RuntimeControlToolName,

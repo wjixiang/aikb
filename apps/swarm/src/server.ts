@@ -2,7 +2,7 @@
  * Swarm Application - Fastify + AgentRuntime
  */
 
-import { config as envconfig } from 'dotenv'
+import { config as envconfig } from 'dotenv';
 import Fastify from 'fastify';
 import { default as cors } from '@fastify/cors';
 import { default as swagger } from '@fastify/swagger';
@@ -17,13 +17,14 @@ import { a2aRoutes } from './routes/a2a.js';
 import { taskRoutes } from './routes/tasks.js';
 import { healthRoutes } from './routes/health.js';
 import { loadConfig } from './config.js';
-envconfig()
+envconfig();
 const config = loadConfig();
 
 const runtimeConfig: AgentRuntimeConfig = {
   maxAgents: config.server.maxAgents,
   defaultApiConfig: config.api as any,
   messageBus: config.messageBus as any,
+  ...(config.runtimeControl ? { runtimeControl: config.runtimeControl } : {}),
   ...(config.ackTimeout ? { ackTimeout: config.ackTimeout } : {}),
   ...(config.resultTimeout ? { resultTimeout: config.resultTimeout } : {}),
   ...(config.maxRetries ? { maxRetries: config.maxRetries } : {}),
