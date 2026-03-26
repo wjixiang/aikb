@@ -62,6 +62,8 @@ import type {
   RuntimeControlAgentOptions,
   RuntimeStats,
   RuntimeControlProviderSettings,
+  ConversationTaskInfo,
+  TaskCallbacks,
 } from './types.js';
 import type { IAgentRegistry } from './AgentRegistry.js';
 import { AgentRegistry } from './AgentRegistry.js';
@@ -409,6 +411,33 @@ export interface IAgentRuntime {
     userId?: string;
     defaultTimeout?: number;
   }): IUserContext;
+
+  // ============================================
+  // Task Integration
+  // ============================================
+
+  /**
+   * Set task callbacks for tracking task state changes.
+   * Called when conversation events (ACK, completed, failed) occur.
+   */
+  setTaskCallbacks(callbacks: TaskCallbacks): void;
+
+  /**
+   * Register a Runtime Task ID for a conversation.
+   * This allows the runtime to notify task state changes via callbacks.
+   */
+  registerConversationTask(
+    conversationId: string,
+    runtimeTaskId: string,
+    taskId: string,
+  ): void;
+
+  /**
+   * Get conversation info by A2A task ID.
+   */
+  getConversationByTaskId(
+    taskId: string,
+  ): { conversationId: string; runtimeTaskId?: string } | undefined;
 }
 
 /**
@@ -470,6 +499,16 @@ export class AgentRuntime implements IAgentRuntime {
 
   /** Flag indicating if runtime is actively running */
   private running: boolean = false;
+
+  // ============================================
+  // Task Integration
+  // ============================================
+
+  /** Map of conversationId to Runtime Task info */
+  private conversationTaskMap: Map<string, ConversationTaskInfo> = new Map();
+
+  /** Callbacks for task state updates */
+  private taskCallbacks: TaskCallbacks = {};
 
   // ============================================
   // Topology Network (Agent Communication)
@@ -562,11 +601,15 @@ export class AgentRuntime implements IAgentRuntime {
     this.messageRouter.setMessageBus(this.messageBus);
 
     // Route topology events through runtime event dispatcher
+    // Also handle task callbacks for conversation events
     this.messageBus.onEvent((event) => {
       this.eventDispatcher.emitEvent(
         event.type as any,
         event.payload as AgentEventPayload,
       );
+
+      // Handle task callbacks
+      this.handleTaskCallback(event);
     });
 
     // Route topology messages through runtime message handler
@@ -1102,6 +1145,99 @@ export class AgentRuntime implements IAgentRuntime {
       totalAgents: allAgents.length,
       agentsByStatus,
     };
+  }
+
+  // ============================================
+  // Task Integration Implementation
+  // ============================================
+
+  /**
+   * Set task callbacks for tracking task state changes.
+   */
+  setTaskCallbacks(callbacks: TaskCallbacks): void {
+    this.taskCallbacks = callbacks;
+  }
+
+  /**
+   * Register a Runtime Task ID for a conversation.
+   */
+  registerConversationTask(
+    conversationId: string,
+    runtimeTaskId: string,
+    taskId: string,
+  ): void {
+    this.conversationTaskMap.set(conversationId, {
+      runtimeTaskId,
+      taskId,
+    });
+    console.log(
+      `[AgentRuntime] Registered task for conversation ${conversationId}: ${runtimeTaskId} (A2A taskId: ${taskId})`,
+    );
+  }
+
+  /**
+   * Get conversation info by A2A task ID.
+   */
+  getConversationByTaskId(
+    taskId: string,
+  ): { conversationId: string; runtimeTaskId?: string } | undefined {
+    const conversation = this.messageBus.getConversationByTaskId(taskId);
+    if (!conversation) return undefined;
+    const taskInfo = this.conversationTaskMap.get(conversation.conversationId);
+    return {
+      conversationId: conversation.conversationId,
+      runtimeTaskId: taskInfo?.runtimeTaskId,
+    };
+  }
+
+  /**
+   * Handle task callbacks for conversation events.
+   */
+  private handleTaskCallback(event: { type: string; payload: unknown }): void {
+    const payload = event.payload as {
+      conversationId?: string;
+      result?: unknown;
+      error?: string;
+    };
+
+    if (!payload.conversationId) return;
+
+    const taskInfo = this.conversationTaskMap.get(payload.conversationId);
+    if (!taskInfo) {
+      return;
+    }
+
+    switch (event.type) {
+      case 'conversation:ack':
+        if (this.taskCallbacks.onTaskProcessing) {
+          console.log(
+            `[AgentRuntime] Task ${taskInfo.runtimeTaskId} processing (ACK received)`,
+          );
+          this.taskCallbacks.onTaskProcessing(taskInfo);
+        }
+        break;
+
+      case 'conversation:completed':
+        if (this.taskCallbacks.onTaskCompleted) {
+          console.log(
+            `[AgentRuntime] Task ${taskInfo.runtimeTaskId} completed`,
+          );
+          this.taskCallbacks.onTaskCompleted(taskInfo, payload.result);
+        }
+        break;
+
+      case 'conversation:failed':
+        if (this.taskCallbacks.onTaskFailed) {
+          console.log(
+            `[AgentRuntime] Task ${taskInfo.runtimeTaskId} failed: ${payload.error}`,
+          );
+          this.taskCallbacks.onTaskFailed(
+            taskInfo,
+            payload.error || 'Unknown error',
+          );
+        }
+        break;
+    }
   }
 
   // ============================================

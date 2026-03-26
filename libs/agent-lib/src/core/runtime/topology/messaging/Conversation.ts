@@ -23,6 +23,7 @@ export interface IConversationManager {
     },
   ): Conversation;
   get(conversationId: string): Conversation | undefined;
+  getByTaskId(taskId: string): Conversation | undefined;
   setAck(conversationId: string, ack: TopologyMessage): void;
   setResult(conversationId: string, result: TopologyMessage): void;
   updateStatus(conversationId: string, status: ConversationStatus): void;
@@ -52,6 +53,16 @@ export class ConversationManager implements IConversationManager {
 
   get(conversationId: string): Conversation | undefined {
     return this.conversations.get(conversationId);
+  }
+
+  getByTaskId(taskId: string): Conversation | undefined {
+    for (const conversation of this.conversations.values()) {
+      const a2aContent = conversation.request.content as { taskId?: string };
+      if (a2aContent?.taskId === taskId) {
+        return conversation;
+      }
+    }
+    return undefined;
   }
 
   setAck(conversationId: string, ack: TopologyMessage): void {

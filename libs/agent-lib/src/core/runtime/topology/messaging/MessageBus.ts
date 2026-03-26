@@ -46,12 +46,15 @@ export class NullMessageBus implements IMessageBus {
     throw new Error('NullMessageBus: broadcast() called without messageBus');
   }
   onMessage(): () => void {
-    return () => {};
+    return () => { };
   }
   onEvent(): () => void {
-    return () => {};
+    return () => { };
   }
   getConversation(): Conversation | undefined {
+    return undefined;
+  }
+  getConversationByTaskId(_taskId: string): Conversation | undefined {
     return undefined;
   }
   getPendingConversations(): Conversation[] {
@@ -98,6 +101,7 @@ export interface IMessageBus {
   onEvent(handler: EventHandler): () => void;
 
   getConversation(conversationId: string): Conversation | undefined;
+  getConversationByTaskId(taskId: string): Conversation | undefined;
   getPendingConversations(): Conversation[];
   getActiveConversations(): Conversation[];
 
@@ -118,8 +122,8 @@ export class MessageBus implements IMessageBus {
     this.conversationManager = createConversationManager();
     this.ackTracker = createAckTracker();
     this.config = {
-      defaultAckTimeout: config?.defaultAckTimeout ?? 30000,
-      defaultResultTimeout: config?.defaultResultTimeout ?? 60000,
+      defaultAckTimeout: config?.defaultAckTimeout ?? 60000,
+      defaultResultTimeout: config?.defaultResultTimeout ?? 600000,
       maxRetries: config?.maxRetries ?? 3,
       defaultTtl: config?.defaultTtl ?? 10,
     };
@@ -263,6 +267,10 @@ export class MessageBus implements IMessageBus {
 
   getConversation(conversationId: string): Conversation | undefined {
     return this.conversationManager.get(conversationId);
+  }
+
+  getConversationByTaskId(taskId: string): Conversation | undefined {
+    return this.conversationManager.getByTaskId(taskId);
   }
 
   getPendingConversations(): Conversation[] {

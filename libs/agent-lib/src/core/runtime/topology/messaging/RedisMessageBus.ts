@@ -10,15 +10,16 @@ import type {
   TopologyMessage,
   TopologyConfig,
   Conversation,
+  MessageHandler,
+  EventHandler,
 } from '../types.js';
-import type { MessageHandler, EventHandler } from './MessageBus.js';
 import { IMessageBus, MessageBus } from './MessageBus.js';
 import {
   type RedisMessageBusConfig,
   buildRedisOptions,
   DEFAULT_REDIS_CONFIG,
 } from './RedisConfig.js';
-import { createMessage } from '../types.js';
+import { createMessage, createTopologyEvent } from '../types.js';
 import type { IConversationManager } from './Conversation.js';
 import { createConversationManager } from './Conversation.js';
 import type { IAckTracker } from './AckTracker.js';
@@ -157,6 +158,21 @@ export class RedisMessageBus implements IMessageBus {
       // Emit message:received event
       this.emitEvent('message:received', message);
 
+      // If this is an ACK message, also emit conversation:ack and call ackTracker
+      // This is needed because when ACKs come via Redis (cross-process), the sender's
+      // waitForAck is waiting for conversation:ack event
+      if (message.messageType === 'ack') {
+        const content = message.content as
+          | { conversationId?: string }
+          | undefined;
+        const conversationId =
+          content?.conversationId || message.conversationId;
+        if (conversationId) {
+          this.emitEvent('conversation:ack', { conversationId, ack: message });
+          this.ackTracker.acknowledge(conversationId, message);
+        }
+      }
+
       // Dispatch to local handlers
       this.dispatchMessage(message);
     } catch (error) {
@@ -187,7 +203,7 @@ export class RedisMessageBus implements IMessageBus {
    * Emit event to local event handlers
    */
   private emitEvent(type: string, payload: unknown): void {
-    const event = { type, payload, timestamp: Date.now() };
+    const event = createTopologyEvent(type as any, payload);
     for (const handler of this.eventHandlers) {
       try {
         handler(event);
@@ -484,6 +500,13 @@ export class RedisMessageBus implements IMessageBus {
   }
 
   /**
+   * Get conversation by task ID
+   */
+  getConversationByTaskId(taskId: string): Conversation | undefined {
+    return this.conversationManager.getByTaskId(taskId);
+  }
+
+  /**
    * Get pending conversations
    */
   getPendingConversations(): Conversation[] {
@@ -551,7 +574,7 @@ export class RedisMessageBus implements IMessageBus {
       setTimeout(() => {
         if (!settled) {
           settled = true;
-          cleanup();
+          this.ackTracker.untrack(conversationId);
           this.conversationManager.updateStatus(conversationId, 'timeout');
           reject(new Error(`ACK timeout for conversation ${conversationId}`));
         }

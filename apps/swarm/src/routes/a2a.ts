@@ -5,6 +5,7 @@
  */
 
 import type { FastifyPluginAsync } from 'fastify';
+import { createA2ATaskMessage, createMessage } from 'agent-lib/core';
 
 const SERVER_INSTANCE_ID = 'swarm-server';
 
@@ -31,41 +32,27 @@ const a2aArrayResponseSchema = {
   },
 };
 
-// New schema: taskId OR targetInstanceId is required
+// New schema: taskId required, returns 202 after ACK received
 const executeTaskBodySchema = {
   type: 'object',
   properties: {
     taskId: {
       type: 'string',
       description:
-        '[Conditional] ID of the task to execute (must exist in task database). Required if targetInstanceId not provided.',
-    },
-    targetInstanceId: {
-      type: 'string',
-      description:
-        '[Conditional] Target agent instance ID to send task directly. Required if taskId not provided.',
-    },
-    taskDescription: {
-      type: 'string',
-      description:
-        '[Required*] Task description. Required when using targetInstanceId.',
+        '[Required] ID of the task to execute (must exist in task database).',
     },
     taskInput: {
       type: 'object',
-      description: '[Optional] Task input data object',
+      description: '[Optional] Task input data object (overrides task input)',
     },
     priority: {
       type: 'string',
       enum: ['low', 'normal', 'high', 'urgent'],
-      description: '[Optional] Task priority (default: normal)',
+      description: '[Optional] Task priority (default: from task)',
     },
     ackTimeout: {
       type: 'number',
-      description: '[Optional] ACK timeout in ms (overrides server default)',
-    },
-    resultTimeout: {
-      type: 'number',
-      description: '[Optional] Result timeout in ms (overrides server default)',
+      description: '[Optional] ACK timeout in ms (default: 60000)',
     },
   },
 };
@@ -115,141 +102,134 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['a2a'],
         description:
-          'Execute a task. Either provide taskId (task must exist in database) ' +
-          'or provide targetInstanceId with taskDescription to send directly.',
+          'Execute a task. Returns 202 immediately after ACK is received. Poll GET /api/tasks/{taskId} for status.',
         body: executeTaskBodySchema,
         response: {
           200: a2aResponseSchema,
+          202: a2aResponseSchema,
           400: a2aResponseSchema,
           404: a2aResponseSchema,
+          408: a2aResponseSchema,
           503: a2aResponseSchema,
         },
       } as any,
     },
     async (request, reply) => {
-      const {
-        taskId,
-        targetInstanceId,
-        taskDescription,
-        taskInput,
-        priority,
-        ackTimeout,
-        resultTimeout,
-      } = request.body as {
+      const { taskId, taskInput, priority, ackTimeout } = request.body as {
         taskId?: string;
-        targetInstanceId?: string;
-        taskDescription?: string;
         taskInput?: Record<string, unknown>;
         priority?: 'low' | 'normal' | 'high' | 'urgent';
         ackTimeout?: number;
-        resultTimeout?: number;
       };
 
-      let resolvedTargetId: string;
-      let resolvedTaskId: string;
-      let resolvedDescription: string;
-      let resolvedInput: Record<string, unknown>;
-      let resolvedPriority: 'low' | 'normal' | 'high' | 'urgent' =
-        priority ?? 'normal';
-
-      // Mode 1: Use taskId - fetch from database
-      if (taskId) {
-        if (!fastify.taskService) {
-          return reply.code(503).send({
-            success: false,
-            error:
-              'Task persistence is disabled. Cannot use taskId. Use targetInstanceId instead.',
-          });
-        }
-
-        const task = await fastify.taskService.getByTaskId(taskId);
-
-        if (!task) {
-          return reply.code(404).send({
-            success: false,
-            error: `Task not found: ${taskId}. Create it first via POST /api/tasks`,
-          });
-        }
-
-        if (task.status === 'processing') {
-          return reply.code(400).send({
-            success: false,
-            error: `Task ${taskId} is already being processed`,
-          });
-        }
-
-        if (task.status === 'completed') {
-          return reply.code(400).send({
-            success: false,
-            error: `Task ${taskId} has already been completed. Use GET /api/tasks/${taskId}/result to get the result.`,
-          });
-        }
-
-        await fastify.taskService.markProcessing(taskId);
-        resolvedTargetId = fastify.agentRuntime.resolveAgentId(
-          task.targetInstanceId,
-        );
-        resolvedTaskId = task.taskId;
-        resolvedDescription = task.description;
-        resolvedInput = (task.input as Record<string, unknown>) ?? {};
-        resolvedPriority =
-          (task.priority as 'low' | 'normal' | 'high' | 'urgent') ?? 'normal';
-
-        // Mode 2: Use targetInstanceId directly
-      } else if (targetInstanceId) {
-        if (!taskDescription) {
-          return reply.code(400).send({
-            success: false,
-            error: 'taskDescription is required when using targetInstanceId',
-          });
-        }
-        resolvedTargetId =
-          fastify.agentRuntime.resolveAgentId(targetInstanceId);
-        resolvedTaskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        resolvedDescription = taskDescription;
-        resolvedInput = taskInput ?? {};
-      } else {
+      if (!taskId) {
         return reply.code(400).send({
           success: false,
-          error: 'Either taskId or targetInstanceId is required',
+          error: 'taskId is required',
         });
       }
 
-      const client = fastify.agentRuntime.getRuntimeClient(SERVER_INSTANCE_ID);
+      if (!fastify.taskService) {
+        return reply.code(503).send({
+          success: false,
+          error: 'Task persistence is disabled. Cannot use taskId.',
+        });
+      }
 
-      const options: {
-        priority?: 'low' | 'normal' | 'high' | 'urgent';
-        ackTimeout?: number;
-        resultTimeout?: number;
-      } = {
-        priority: resolvedPriority,
-      };
-      if (ackTimeout !== undefined) options.ackTimeout = ackTimeout;
-      if (resultTimeout !== undefined) options.resultTimeout = resultTimeout;
+      const task = await fastify.taskService.getByTaskId(taskId);
+
+      if (!task) {
+        return reply.code(404).send({
+          success: false,
+          error: `Task not found: ${taskId}. Create it first via POST /api/tasks`,
+        });
+      }
+
+      if (task.status === 'processing') {
+        return reply.code(400).send({
+          success: false,
+          error: `Task ${taskId} is already being processed`,
+        });
+      }
+
+      if (task.status === 'completed') {
+        return reply.code(400).send({
+          success: false,
+          error: `Task ${taskId} has already been completed. Use GET /api/tasks/${taskId}/result to get the result.`,
+        });
+      }
+
+      const resolvedTargetId = fastify.agentRuntime.resolveAgentId(
+        task.targetInstanceId,
+      );
+      const resolvedTaskId = task.taskId;
+      const resolvedDescription = task.description;
+      const resolvedInput =
+        taskInput ?? (task.input as Record<string, unknown>) ?? {};
+      const resolvedPriority =
+        priority ??
+        (task.priority as 'low' | 'normal' | 'high' | 'urgent') ??
+        'normal';
 
       try {
-        const result = await client.sendA2ATask(
+        // 1. Build A2A task message
+        const a2aMessage = createA2ATaskMessage(
+          SERVER_INSTANCE_ID,
           resolvedTargetId,
           resolvedTaskId,
           resolvedDescription,
           resolvedInput,
-          options,
+          { priority: resolvedPriority },
         );
 
-        if (taskId && fastify.taskService) {
-          await fastify.taskService.markCompleted(taskId, result);
-        }
+        // 2. Convert to topology message for MessageBus
+        const topologyMessage = createMessage(
+          SERVER_INSTANCE_ID,
+          resolvedTargetId,
+          a2aMessage,
+          'request',
+          { conversationId: a2aMessage.conversationId },
+        );
 
-        return { success: true, data: result };
+        // 3. Get messageBus and set ACK timeout if specified
+        const messageBus = fastify.agentRuntime.getMessageBus();
+
+        // 4. Send message and wait for ACK (default 60s timeout)
+        console.log(
+          `[A2A] Sending task ${resolvedTaskId} to ${resolvedTargetId}, waiting for ACK...`,
+        );
+        await messageBus.send(topologyMessage);
+        console.log(`[A2A] ACK received for task ${resolvedTaskId}`);
+
+        // 5. ACK received - update task status to processing
+        await fastify.taskService.markProcessing(taskId);
+
+        // 6. Register conversation-task mapping for callback tracking
+        fastify.agentRuntime.registerConversationTask(
+          a2aMessage.conversationId,
+          resolvedTaskId,
+          taskId,
+        );
+
+        // 7. Return 202 Accepted - Agent will process asynchronously
+        return reply.code(202).send({
+          success: true,
+          taskId,
+          status: 'processing',
+          message: 'Task acknowledged and processing',
+        });
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
 
-        if (taskId && fastify.taskService) {
+        console.error(`[A2A] Task ${resolvedTaskId} failed: ${errorMessage}`);
+
+        if (fastify.taskService) {
           await fastify.taskService.markFailed(taskId, errorMessage);
         }
 
-        return reply.code(400).send({
+        // Return 408 Request Timeout for ACK failures
+        return reply.code(408).send({
           success: false,
           error: errorMessage,
         });

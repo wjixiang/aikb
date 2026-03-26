@@ -53,6 +53,21 @@ export interface RuntimeStats {
 }
 
 // =============================================================================
+// Task Integration Callbacks
+// =============================================================================
+
+export interface ConversationTaskInfo {
+  runtimeTaskId: string;
+  taskId: string;
+}
+
+export interface TaskCallbacks {
+  onTaskProcessing?: (info: ConversationTaskInfo) => void;
+  onTaskCompleted?: (info: ConversationTaskInfo, result: unknown) => void;
+  onTaskFailed?: (info: ConversationTaskInfo, error: string) => void;
+}
+
+// =============================================================================
 // IRuntimeControlClient (Simplified - No Permissions)
 // =============================================================================
 

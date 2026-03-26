@@ -49,6 +49,11 @@ export interface AgentConfig {
   consecutiveMistakeLimit: number;
   // Memory module configuration (now required, with defaults)
   memory?: Partial<MemoryModuleConfig>;
+
+  /**
+   * Automatically acknowledge task after received A2A request
+   */
+  autoAck?: boolean
 }
 
 export const defaultAgentConfig: AgentConfig = {
@@ -366,8 +371,8 @@ export class Agent {
         };
       }
 
-      // Send acknowledgment for the task
-      await ctx.acknowledge();
+      // Send acknowledgment for the task (When autoAck is enabled in agentConfig)
+      if (this.config.autoAck) await ctx.acknowledge();
 
       // Inject A2A task as a user message so the LLM can process it
       const taskDescription = payload.description || 'Task received';
@@ -787,7 +792,7 @@ export class Agent {
       );
       this.logger.warn(
         '[MailDriven] Available components: ' +
-          (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
+        (this.workspace.getComponentKeys?.()?.join(', ') || 'unknown'),
       );
       return;
     }
@@ -1322,6 +1327,7 @@ export class Agent {
             {
               type: 'tool_result' as const,
               tool_use_id: toolCall.id,
+              toolName: toolCall.name,
               content: resultContent,
             },
           ],
