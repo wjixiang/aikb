@@ -1697,7 +1697,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  apps/swarm:
+  apps/swarm-runtime:
     dependencies:
       '@fastify/cors':
         specifier: ^10.0.1

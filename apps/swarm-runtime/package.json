@@ -1,5 +1,5 @@
 {
-  "name": "swarm",
+  "name": "swarm-runtime",
   "version": "1.0.0",
   "description": "Fastify + AgentRuntime Server - One Server = One Runtime",
   "type": "module",
@@ -14,7 +14,7 @@
     "agent",
     "runtime",
     "fastify",
-    "swarm"
+    "swarm-runtime"
   ],
   "author": "",
   "license": "ISC",
