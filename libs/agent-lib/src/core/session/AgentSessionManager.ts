@@ -13,6 +13,7 @@ import pino from 'pino';
 
 import { TYPES } from '../di/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
+import { AgentStatus } from '../common/types.js';
 import type { ISessionManager } from './ISessionManager.js';
 import type { SessionState } from './types.js';
 
@@ -83,7 +84,8 @@ export class AgentSessionManager implements ISessionManager {
       return;
     }
 
-    const finalStatus = reason === 'aborted' ? 'aborted' : 'completed';
+    const finalStatus =
+      reason === 'aborted' ? AgentStatus.Aborted : AgentStatus.Completed;
 
     try {
       await this.persistenceService.updateSession(state.instanceId, {

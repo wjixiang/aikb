@@ -54,7 +54,6 @@ import {
 import type {
   AgentMetadata,
   AgentRuntimeConfig,
-  AgentStatus,
   RuntimeEvent,
   RuntimeEventType,
   AgentEventPayload,
@@ -65,6 +64,7 @@ import type {
   ConversationTaskInfo,
   TaskCallbacks,
 } from './types.js';
+import { AgentStatus } from './types.js';
 import type { IAgentRegistry } from './AgentRegistry.js';
 import { AgentRegistry } from './AgentRegistry.js';
 import type { IEventDispatcher } from './EventDispatcher.js';
@@ -722,7 +722,7 @@ export class AgentRuntime implements IAgentRuntime {
     const metadata: AgentMetadata = {
       instanceId,
       alias,
-      status: 'idle',
+      status: AgentStatus.Idle,
       name: unifiedConfig.agent.name,
       agentType: unifiedConfig.agent.type,
       description: unifiedConfig.agent.description,
@@ -815,14 +815,14 @@ export class AgentRuntime implements IAgentRuntime {
     const agent = await container.getAgent();
     const currentStatus = agent.status;
 
-    if (currentStatus !== 'idle') {
+    if (currentStatus !== AgentStatus.Idle) {
       throw new Error(`Agent is not idle: ${currentStatus}`);
     }
 
     await agent.start();
 
     // Update registry
-    this.registry.update(instanceId, { status: 'running' });
+    this.registry.update(instanceId, { status: AgentStatus.Running });
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:started', { instanceId });
@@ -845,12 +845,12 @@ export class AgentRuntime implements IAgentRuntime {
     const agent = await container.getAgent();
 
     // Abort running agent if any
-    if (agent.status === 'running') {
+    if (agent.status === AgentStatus.Running) {
       agent.abort('Runtime stop', 'manual');
     }
 
     // Update registry
-    this.registry.update(instanceId, { status: 'idle' });
+    this.registry.update(instanceId, { status: AgentStatus.Idle });
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:stopped', { instanceId });
@@ -1139,10 +1139,10 @@ export class AgentRuntime implements IAgentRuntime {
   async getStats(): Promise<RuntimeStats> {
     const allAgents = this.registry.getAll();
     const agentsByStatus: Record<AgentStatus, number> = {
-      idle: 0,
-      running: 0,
-      completed: 0,
-      aborted: 0,
+      [AgentStatus.Idle]: 0,
+      [AgentStatus.Running]: 0,
+      [AgentStatus.Completed]: 0,
+      [AgentStatus.Aborted]: 0,
     };
 
     for (const agent of allAgents) {
@@ -1521,7 +1521,7 @@ export class AgentRuntime implements IAgentRuntime {
     const metadata: AgentMetadata = {
       instanceId,
       alias,
-      status: 'idle',
+      status: AgentStatus.Idle,
       name: unifiedConfig.agent.name,
       agentType: unifiedConfig.agent.type,
       description: unifiedConfig.agent.description,

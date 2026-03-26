@@ -2,7 +2,8 @@
  * Lifecycle Types - Agent lifecycle management types
  */
 
-export type AgentStatus = 'idle' | 'running' | 'completed' | 'aborted';
+import { AgentStatus } from '../../common/types.js';
+export { AgentStatus };
 
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 

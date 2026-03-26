@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { AgentFactory } from '../AgentFactory.js';
 import type { ApiClient } from '../../api-client/index.js';
+import { AgentStatus } from '../../common/types.js';
 import { MessageBus } from '../../runtime/topology/messaging/MessageBus.js';
 
 // Create a mock messageBus for testing
@@ -28,18 +29,21 @@ describe('Agent - Quick Integration Test', () => {
 
   it('should create agent with mocked ApiClient', async () => {
     const messageBus = createMockMessageBus();
-    const container = AgentFactory.create({
-      agent: { sop: 'Test SOP' },
-      api: {
-        apiProvider: 'zai',
-        apiKey: 'test-key',
-        apiModelId: 'test-model',
+    const container = AgentFactory.create(
+      {
+        agent: { sop: 'Test SOP' },
+        api: {
+          apiProvider: 'zai',
+          apiKey: 'test-key',
+          apiModelId: 'test-model',
+        },
       },
-    }, messageBus);
+      messageBus,
+    );
 
     const agent = await container.getAgent();
     expect(agent).toBeDefined();
-    expect(agent.status).toBe('idle');
+    expect(agent.status).toBe(AgentStatus.Idle);
   });
 
   it('should run agent with mocked ApiClient', async () => {
@@ -63,14 +67,17 @@ describe('Agent - Quick Integration Test', () => {
     } as unknown as ApiClient;
 
     const messageBus = createMockMessageBus();
-    const container = AgentFactory.create({
-      agent: { sop: 'Test SOP' },
-      api: {
-        apiProvider: 'zai',
-        apiKey: 'test-key',
-        apiModelId: 'test-model',
+    const container = AgentFactory.create(
+      {
+        agent: { sop: 'Test SOP' },
+        api: {
+          apiProvider: 'zai',
+          apiKey: 'test-key',
+          apiModelId: 'test-model',
+        },
       },
-    }, messageBus);
+      messageBus,
+    );
 
     const agent = await container.getAgent();
 

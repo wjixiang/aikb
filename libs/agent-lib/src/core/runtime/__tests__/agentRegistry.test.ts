@@ -1,13 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AgentRegistry } from '../AgentRegistry.js';
-import type { AgentMetadata, AgentStatus } from '../types.js';
+import type { AgentMetadata } from '../types.js';
+import { AgentStatus } from '../types.js';
 
 describe('AgentRegistry', () => {
   let registry: AgentRegistry;
 
-  const createTestMetadata = (overrides: Partial<AgentMetadata> = {}): AgentMetadata => ({
+  const createTestMetadata = (
+    overrides: Partial<AgentMetadata> = {},
+  ): AgentMetadata => ({
     instanceId: 'test-instance-1',
-    status: 'idle' as AgentStatus,
+    status: AgentStatus.Idle,
     name: 'Test Agent',
     agentType: 'test',
     description: 'A test agent',
@@ -30,13 +33,13 @@ describe('AgentRegistry', () => {
     });
 
     it('should update agent on re-register with same instanceId', () => {
-      const metadata1 = createTestMetadata({ status: 'idle' });
-      const metadata2 = createTestMetadata({ status: 'running' });
+      const metadata1 = createTestMetadata({ status: AgentStatus.Idle });
+      const metadata2 = createTestMetadata({ status: AgentStatus.Running });
 
       registry.register(metadata1);
       registry.register(metadata2);
 
-      expect(registry.get('test-instance-1')?.status).toBe('running');
+      expect(registry.get('test-instance-1')?.status).toBe(AgentStatus.Running);
     });
   });
 
@@ -73,12 +76,21 @@ describe('AgentRegistry', () => {
 
   describe('findByStatus', () => {
     it('should find agents by status', () => {
-      registry.register(createTestMetadata({ instanceId: 'agent-1', status: 'idle' }));
-      registry.register(createTestMetadata({ instanceId: 'agent-2', status: 'running' }));
-      registry.register(createTestMetadata({ instanceId: 'agent-3', status: 'idle' }));
+      registry.register(
+        createTestMetadata({ instanceId: 'agent-1', status: AgentStatus.Idle }),
+      );
+      registry.register(
+        createTestMetadata({
+          instanceId: 'agent-2',
+          status: AgentStatus.Running,
+        }),
+      );
+      registry.register(
+        createTestMetadata({ instanceId: 'agent-3', status: AgentStatus.Idle }),
+      );
 
-      const idleAgents = registry.findByStatus('idle');
-      const runningAgents = registry.findByStatus('running');
+      const idleAgents = registry.findByStatus(AgentStatus.Idle);
+      const runningAgents = registry.findByStatus(AgentStatus.Running);
 
       expect(idleAgents).toHaveLength(2);
       expect(idleAgents.map((a) => a.instanceId)).toContain('agent-1');
@@ -88,9 +100,9 @@ describe('AgentRegistry', () => {
     });
 
     it('should return empty array when no agents match status', () => {
-      registry.register(createTestMetadata({ status: 'idle' }));
+      registry.register(createTestMetadata({ status: AgentStatus.Idle }));
 
-      const runningAgents = registry.findByStatus('running');
+      const runningAgents = registry.findByStatus(AgentStatus.Running);
 
       expect(runningAgents).toHaveLength(0);
     });
@@ -98,9 +110,18 @@ describe('AgentRegistry', () => {
 
   describe('findIdle', () => {
     it('should return all idle agents', () => {
-      registry.register(createTestMetadata({ instanceId: 'agent-1', status: 'idle' }));
-      registry.register(createTestMetadata({ instanceId: 'agent-2', status: 'running' }));
-      registry.register(createTestMetadata({ instanceId: 'agent-3', status: 'idle' }));
+      registry.register(
+        createTestMetadata({ instanceId: 'agent-1', status: AgentStatus.Idle }),
+      );
+      registry.register(
+        createTestMetadata({
+          instanceId: 'agent-2',
+          status: AgentStatus.Running,
+        }),
+      );
+      registry.register(
+        createTestMetadata({ instanceId: 'agent-3', status: AgentStatus.Idle }),
+      );
 
       const idleAgents = registry.findIdle();
 
@@ -110,9 +131,15 @@ describe('AgentRegistry', () => {
 
   describe('findByType', () => {
     it('should find agents by type', () => {
-      registry.register(createTestMetadata({ instanceId: 'agent-1', agentType: 'worker' }));
-      registry.register(createTestMetadata({ instanceId: 'agent-2', agentType: 'supervisor' }));
-      registry.register(createTestMetadata({ instanceId: 'agent-3', agentType: 'worker' }));
+      registry.register(
+        createTestMetadata({ instanceId: 'agent-1', agentType: 'worker' }),
+      );
+      registry.register(
+        createTestMetadata({ instanceId: 'agent-2', agentType: 'supervisor' }),
+      );
+      registry.register(
+        createTestMetadata({ instanceId: 'agent-3', agentType: 'worker' }),
+      );
 
       const workerAgents = registry.findByType('worker');
 
@@ -124,11 +151,11 @@ describe('AgentRegistry', () => {
 
   describe('update', () => {
     it('should update agent metadata', () => {
-      registry.register(createTestMetadata({ status: 'idle' }));
+      registry.register(createTestMetadata({ status: AgentStatus.Idle }));
 
-      registry.update('test-instance-1', { status: 'running' });
+      registry.update('test-instance-1', { status: AgentStatus.Running });
 
-      expect(registry.get('test-instance-1')?.status).toBe('running');
+      expect(registry.get('test-instance-1')?.status).toBe(AgentStatus.Running);
     });
 
     it('should update updatedAt timestamp', () => {
@@ -136,14 +163,18 @@ describe('AgentRegistry', () => {
       registry.register(createTestMetadata({ updatedAt: originalDate }));
 
       const beforeUpdate = new Date();
-      registry.update('test-instance-1', { status: 'running' });
+      registry.update('test-instance-1', { status: AgentStatus.Running });
 
       const updated = registry.get('test-instance-1');
-      expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime());
+      expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        beforeUpdate.getTime(),
+      );
     });
 
     it('should not throw when updating non-existent agent', () => {
-      expect(() => registry.update('non-existent', { status: 'running' })).not.toThrow();
+      expect(() =>
+        registry.update('non-existent', { status: AgentStatus.Running }),
+      ).not.toThrow();
     });
   });
 
@@ -192,10 +223,27 @@ describe('AgentRegistry', () => {
 
   describe('hierarchy methods', () => {
     beforeEach(() => {
-      registry.register(createTestMetadata({ instanceId: 'parent', name: 'Parent Agent' }));
-      registry.register(createTestMetadata({ instanceId: 'child-1', parentInstanceId: 'parent' }));
-      registry.register(createTestMetadata({ instanceId: 'child-2', parentInstanceId: 'parent' }));
-      registry.register(createTestMetadata({ instanceId: 'grandchild', parentInstanceId: 'child-1' }));
+      registry.register(
+        createTestMetadata({ instanceId: 'parent', name: 'Parent Agent' }),
+      );
+      registry.register(
+        createTestMetadata({
+          instanceId: 'child-1',
+          parentInstanceId: 'parent',
+        }),
+      );
+      registry.register(
+        createTestMetadata({
+          instanceId: 'child-2',
+          parentInstanceId: 'parent',
+        }),
+      );
+      registry.register(
+        createTestMetadata({
+          instanceId: 'grandchild',
+          parentInstanceId: 'child-1',
+        }),
+      );
       registry.register(createTestMetadata({ instanceId: 'orphan' }));
     });
 
@@ -281,11 +329,15 @@ describe('AgentRegistry', () => {
         registry.addChildRelation('parent', 'child-1');
 
         const parent = registry.get('parent');
-        expect(parent?.childInstanceIds?.filter((id) => id === 'child-1')).toHaveLength(1);
+        expect(
+          parent?.childInstanceIds?.filter((id) => id === 'child-1'),
+        ).toHaveLength(1);
       });
 
       it('should not throw when adding relation to non-existent parent', () => {
-        expect(() => registry.addChildRelation('non-existent', 'child-1')).not.toThrow();
+        expect(() =>
+          registry.addChildRelation('non-existent', 'child-1'),
+        ).not.toThrow();
       });
     });
 
@@ -299,11 +351,15 @@ describe('AgentRegistry', () => {
       });
 
       it('should not throw when removing non-existent relation', () => {
-        expect(() => registry.removeChildRelation('parent', 'non-existent')).not.toThrow();
+        expect(() =>
+          registry.removeChildRelation('parent', 'non-existent'),
+        ).not.toThrow();
       });
 
       it('should not throw when parent does not exist', () => {
-        expect(() => registry.removeChildRelation('non-existent', 'child-1')).not.toThrow();
+        expect(() =>
+          registry.removeChildRelation('non-existent', 'child-1'),
+        ).not.toThrow();
       });
     });
   });
@@ -312,7 +368,9 @@ describe('AgentRegistry', () => {
     describe('syncFromDatabase', () => {
       it('should not throw when no persistence service is available', async () => {
         const registryNoPersistence = new AgentRegistry();
-        await expect(registryNoPersistence.syncFromDatabase()).resolves.not.toThrow();
+        await expect(
+          registryNoPersistence.syncFromDatabase(),
+        ).resolves.not.toThrow();
       });
     });
 
@@ -321,7 +379,9 @@ describe('AgentRegistry', () => {
         const registryNoPersistence = new AgentRegistry();
         registryNoPersistence.register(createTestMetadata());
 
-        await expect(registryNoPersistence.syncToDatabase('test-instance-1')).resolves.not.toThrow();
+        await expect(
+          registryNoPersistence.syncToDatabase('test-instance-1'),
+        ).resolves.not.toThrow();
       });
     });
   });

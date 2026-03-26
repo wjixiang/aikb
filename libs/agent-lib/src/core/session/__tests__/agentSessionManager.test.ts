@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AgentSessionManager } from '../AgentSessionManager.js';
 import type { IPersistenceService } from '../../persistence/types.js';
 import type { SessionState, AbortInfo } from '../types.js';
-import type { AgentStatus } from '../../common/types.js';
+import { AgentStatus } from '../../common/types.js';
 
 // Mock pino
 vi.mock('pino', () => {
@@ -26,10 +26,12 @@ describe('AgentSessionManager', () => {
   let mockPersistenceService: IPersistenceService;
   let sessionManager: AgentSessionManager;
 
-  const createMockSessionState = (overrides: Partial<SessionState> = {}): SessionState => {
+  const createMockSessionState = (
+    overrides: Partial<SessionState> = {},
+  ): SessionState => {
     const defaultState: SessionState = {
       instanceId: 'test-instance-123',
-      status: 'running' as AgentStatus,
+      status: AgentStatus.Running,
       tokenUsage: {
         totalTokensIn: 1000,
         totalTokensOut: 500,
@@ -52,7 +54,9 @@ describe('AgentSessionManager', () => {
       updateSession: vi.fn().mockResolvedValue(undefined),
       deleteSession: vi.fn().mockResolvedValue(undefined),
       listSessions: vi.fn().mockResolvedValue([]),
-      getStats: vi.fn().mockResolvedValue({ totalSessions: 0, byStatus: {}, totalCost: 0 }),
+      getStats: vi
+        .fn()
+        .mockResolvedValue({ totalSessions: 0, byStatus: {}, totalCost: 0 }),
       saveMemory: vi.fn().mockResolvedValue(undefined),
       loadMemory: vi.fn().mockResolvedValue(null),
       saveInstanceMetadata: vi.fn().mockResolvedValue(undefined),
@@ -116,13 +120,17 @@ describe('AgentSessionManager', () => {
       const state = createMockSessionState();
 
       // Should not throw
-      await expect(managerWithoutPersistence.createSession(state)).resolves.not.toThrow();
+      await expect(
+        managerWithoutPersistence.createSession(state),
+      ).resolves.not.toThrow();
       expect(mockPersistenceService.createSession).not.toHaveBeenCalled();
     });
 
     it('should log error when persistence createSession fails', async () => {
       const state = createMockSessionState();
-      mockPersistenceService.createSession = vi.fn().mockRejectedValue(new Error('DB error'));
+      mockPersistenceService.createSession = vi
+        .fn()
+        .mockRejectedValue(new Error('DB error'));
 
       await sessionManager.createSession(state);
 
@@ -134,11 +142,11 @@ describe('AgentSessionManager', () => {
   describe('persistState', () => {
     it('should persist state with all fields', async () => {
       const state = createMockSessionState({
-        status: 'running',
+        status: AgentStatus.Running,
         tokenUsage: {
           totalTokensIn: 2000,
           totalTokensOut: 1000,
-          totalCost: 0.10,
+          totalCost: 0.1,
         },
         toolUsage: {
           'search-tool': { attempts: 5, failures: 1 },
@@ -153,10 +161,10 @@ describe('AgentSessionManager', () => {
       expect(mockPersistenceService.updateSession).toHaveBeenCalledWith(
         state.instanceId,
         expect.objectContaining({
-          status: 'running',
+          status: AgentStatus.Running,
           totalTokensIn: 2000,
           totalTokensOut: 1000,
-          totalCost: 0.10,
+          totalCost: 0.1,
           toolUsage: { 'search-tool': { attempts: 5, failures: 1 } },
           consecutiveMistakeCount: 2,
           collectedErrors: ['some-error'],
@@ -173,7 +181,7 @@ describe('AgentSessionManager', () => {
       };
       const state = createMockSessionState({
         abortInfo,
-        status: 'aborted' as AgentStatus,
+        status: AgentStatus.Aborted,
       });
 
       await sessionManager.persistState(state);
@@ -196,13 +204,17 @@ describe('AgentSessionManager', () => {
 
       const state = createMockSessionState();
 
-      await expect(managerWithoutPersistence.persistState(state)).resolves.not.toThrow();
+      await expect(
+        managerWithoutPersistence.persistState(state),
+      ).resolves.not.toThrow();
       expect(mockPersistenceService.updateSession).not.toHaveBeenCalled();
     });
 
     it('should log error when persistence updateSession fails', async () => {
       const state = createMockSessionState();
-      mockPersistenceService.updateSession = vi.fn().mockRejectedValue(new Error('Update failed'));
+      mockPersistenceService.updateSession = vi
+        .fn()
+        .mockRejectedValue(new Error('Update failed'));
 
       await sessionManager.persistState(state);
 
@@ -212,52 +224,58 @@ describe('AgentSessionManager', () => {
 
   describe('endSession', () => {
     it('should end session with completed status when no reason provided', async () => {
-      const state = createMockSessionState({ status: 'running' as AgentStatus });
+      const state = createMockSessionState({
+        status: AgentStatus.Running,
+      });
 
       await sessionManager.endSession(state);
 
       expect(mockPersistenceService.updateSession).toHaveBeenCalledWith(
         state.instanceId,
         expect.objectContaining({
-          status: 'completed',
+          status: AgentStatus.Completed,
           abortReason: undefined,
           abortSource: 'system',
         }),
       );
-      expect(mockPersistenceService.updateInstanceMetadata).toHaveBeenCalledWith(
-        state.instanceId,
-        { status: 'completed' },
-      );
+      expect(
+        mockPersistenceService.updateInstanceMetadata,
+      ).toHaveBeenCalledWith(state.instanceId, {
+        status: AgentStatus.Completed,
+      });
     });
 
     it('should end session with aborted status when reason is aborted', async () => {
-      const state = createMockSessionState({ status: 'running' as AgentStatus });
+      const state = createMockSessionState({
+        status: AgentStatus.Running,
+      });
 
       await sessionManager.endSession(state, 'aborted');
 
       expect(mockPersistenceService.updateSession).toHaveBeenCalledWith(
         state.instanceId,
         expect.objectContaining({
-          status: 'aborted',
+          status: AgentStatus.Aborted,
           abortReason: 'aborted',
           abortSource: 'system',
         }),
       );
-      expect(mockPersistenceService.updateInstanceMetadata).toHaveBeenCalledWith(
-        state.instanceId,
-        { status: 'aborted' },
-      );
+      expect(
+        mockPersistenceService.updateInstanceMetadata,
+      ).toHaveBeenCalledWith(state.instanceId, { status: AgentStatus.Aborted });
     });
 
     it('should end session with completed status for other reasons', async () => {
-      const state = createMockSessionState({ status: 'running' as AgentStatus });
+      const state = createMockSessionState({
+        status: AgentStatus.Running,
+      });
 
       await sessionManager.endSession(state, 'timeout');
 
       expect(mockPersistenceService.updateSession).toHaveBeenCalledWith(
         state.instanceId,
         expect.objectContaining({
-          status: 'completed',
+          status: AgentStatus.Completed,
           abortReason: 'timeout',
           abortSource: 'system',
         }),
@@ -266,7 +284,7 @@ describe('AgentSessionManager', () => {
 
     it('should end session with all token usage data', async () => {
       const state = createMockSessionState({
-        status: 'running',
+        status: AgentStatus.Running,
         tokenUsage: {
           totalTokensIn: 5000,
           totalTokensOut: 2500,
@@ -303,14 +321,20 @@ describe('AgentSessionManager', () => {
 
       const state = createMockSessionState();
 
-      await expect(managerWithoutPersistence.endSession(state)).resolves.not.toThrow();
+      await expect(
+        managerWithoutPersistence.endSession(state),
+      ).resolves.not.toThrow();
       expect(mockPersistenceService.updateSession).not.toHaveBeenCalled();
-      expect(mockPersistenceService.updateInstanceMetadata).not.toHaveBeenCalled();
+      expect(
+        mockPersistenceService.updateInstanceMetadata,
+      ).not.toHaveBeenCalled();
     });
 
     it('should continue even if updateSession fails', async () => {
       const state = createMockSessionState();
-      mockPersistenceService.updateSession = vi.fn().mockRejectedValue(new Error('Update failed'));
+      mockPersistenceService.updateSession = vi
+        .fn()
+        .mockRejectedValue(new Error('Update failed'));
 
       await sessionManager.endSession(state);
 
@@ -344,10 +368,12 @@ describe('ISessionManager Interface', () => {
 
   let mockPersistenceService: IPersistenceService;
 
-  const createMockSessionState = (overrides: Partial<SessionState> = {}): SessionState => {
+  const createMockSessionState = (
+    overrides: Partial<SessionState> = {},
+  ): SessionState => {
     return {
       instanceId: 'test-instance-456',
-      status: 'running' as AgentStatus,
+      status: AgentStatus.Running,
       tokenUsage: {
         totalTokensIn: 500,
         totalTokensOut: 250,

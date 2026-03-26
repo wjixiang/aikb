@@ -1,7 +1,7 @@
 import { injectable, inject, optional } from 'inversify';
 
 import { ApiMessage } from '../memory/types.js';
-import type { AgentStatus } from '../common/types.js';
+import { AgentStatus } from '../common/types.js';
 import { MessageTokenUsage, ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
@@ -126,7 +126,7 @@ interface MailDrivenConfig {
 @injectable()
 export class Agent {
   workspace: VirtualWorkspace;
-  private _status: AgentStatus = 'idle';
+  private _status: AgentStatus = AgentStatus.Idle;
   private _taskId: string;
   private _tokenUsage: MessageTokenUsage = {
     totalTokensIn: 0,
@@ -355,14 +355,17 @@ export class Agent {
           '[Agent] Received start task, auto-responding',
         );
         // Transition to running if idle
-        if (this._status === 'idle' || this._status === 'completed') {
-          this._status = 'running';
+        if (
+          this._status === AgentStatus.Idle ||
+          this._status === AgentStatus.Completed
+        ) {
+          this._status = AgentStatus.Running;
         }
         // Send ACK for start task
         await ctx.acknowledge();
         return {
           taskId: payload.taskId || '',
-          status: 'completed' as const,
+          status: AgentStatus.Completed as const,
           output: { started: true, message: 'Agent started' },
         };
       }
@@ -395,8 +398,11 @@ export class Agent {
       let taskOutput: unknown = null;
       let taskStatus: 'completed' | 'failed' = 'completed';
 
-      if (this._status === 'idle' || this._status === 'completed') {
-        this._status = 'running';
+      if (
+        this._status === AgentStatus.Idle ||
+        this._status === AgentStatus.Completed
+      ) {
+        this._status = AgentStatus.Running;
 
         // Start processing and wait for completeTask to be called
         // Run requestLoop in background and wait for completion
@@ -428,7 +434,7 @@ export class Agent {
       // Return the task result
       return {
         taskId: payload.taskId || '',
-        status: this._status === 'aborted' ? 'failed' : taskStatus,
+        status: this._status === AgentStatus.Aborted ? 'failed' : taskStatus,
         output: taskOutput,
       };
     });
@@ -594,7 +600,7 @@ export class Agent {
       instanceId: this.instanceId,
     });
 
-    this._status = 'running';
+    this._status = AgentStatus.Running;
     void this.sessionManager.persistState(this.getSessionState());
 
     // Note: Initial user message will be added in requestLoop after startTurn()
@@ -624,7 +630,7 @@ export class Agent {
       instanceId: this.instanceId,
     });
 
-    this._status = 'completed';
+    this._status = AgentStatus.Completed;
     void this.sessionManager.persistState(this.getSessionState());
     void this.endSession();
 
@@ -656,7 +662,7 @@ export class Agent {
       source,
     });
 
-    this._status = 'aborted';
+    this._status = AgentStatus.Aborted;
     this._abortInfo = {
       reason: abortReason,
       timestamp: Date.now(),
@@ -689,8 +695,11 @@ export class Agent {
     // We just need to trigger the agent to run with a prompt that tells it to check mail
 
     // Reset status to running if it was completed
-    if (this._status === 'completed' || this._status === 'idle') {
-      this._status = 'running';
+    if (
+      this._status === AgentStatus.Completed ||
+      this._status === AgentStatus.Idle
+    ) {
+      this._status = AgentStatus.Running;
     }
 
     // Trigger agent to check mailbox
@@ -706,8 +715,11 @@ export class Agent {
     this.logger.info(`Waking up agent for task processing: ${task.taskId}`);
 
     // Reset status to running if it was completed
-    if (this._status === 'completed' || this._status === 'idle') {
-      this._status = 'running';
+    if (
+      this._status === AgentStatus.Completed ||
+      this._status === AgentStatus.Idle
+    ) {
+      this._status = AgentStatus.Running;
     }
 
     // Trigger agent to process the task
@@ -811,7 +823,8 @@ export class Agent {
       while (this._isMailDrivenRunning) {
         const agentStatus = this.status;
         const isAgentIdle =
-          agentStatus === 'idle' || agentStatus === 'completed';
+          agentStatus === AgentStatus.Idle ||
+          agentStatus === AgentStatus.Completed;
 
         this.logger.debug(
           `[MailDriven] poll check: status=${agentStatus}, isIdle=${isAgentIdle}`,
@@ -837,7 +850,7 @@ export class Agent {
       this.logger.error(`Agent mail-driven polling error: ${error}`);
     } finally {
       this._isMailDrivenRunning = false;
-      this._status = 'idle';
+      this._status = AgentStatus.Idle;
       this.logger.info('Agent stopped mail-driven mode');
     }
   }
@@ -944,7 +957,7 @@ export class Agent {
       return;
     }
     this._isMailDrivenRunning = false;
-    this._status = 'idle';
+    this._status = AgentStatus.Idle;
     this.logger.info('Stopping mail-driven mode');
   }
 
@@ -1079,7 +1092,7 @@ export class Agent {
           this.handleConsecutiveError({ errorMessage });
 
           // Check if we've aborted due to too many consecutive errors
-          if (this._status === 'aborted') {
+          if (this._status === AgentStatus.Aborted) {
             needsNewTurn = false;
             break;
           }
@@ -1109,7 +1122,7 @@ export class Agent {
           );
 
           // Check if we've aborted due to too many consecutive errors
-          if (this._status === 'aborted') {
+          if (this._status === AgentStatus.Aborted) {
             needsNewTurn = false;
             break;
           }
@@ -1137,8 +1150,8 @@ export class Agent {
       // Return last workspace state if available, or error message
       resultContext = `[Agent Error: ${errorMessage}]`;
       // Still mark as completed to avoid hanging
-      if (this._status !== 'aborted') {
-        this._status = 'completed';
+      if (this._status !== AgentStatus.Aborted) {
+        this._status = AgentStatus.Completed;
       }
     }
     return resultContext;
@@ -1542,7 +1555,7 @@ ${desc}${examplesStr}`;
    * Check if task is aborted
    */
   private isAborted(): boolean {
-    return this._status === 'aborted';
+    return this._status === AgentStatus.Aborted;
   }
 
   // ==================== Agent-Specific Methods ====================

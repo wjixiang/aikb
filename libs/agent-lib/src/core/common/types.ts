@@ -14,7 +14,12 @@ import type Anthropic from '@anthropic-ai/sdk';
 /**
  * Agent execution status
  */
-export type AgentStatus = 'idle' | 'running' | 'completed' | 'aborted';
+export enum AgentStatus {
+  Idle = 'idle',
+  Running = 'running',
+  Completed = 'completed',
+  Aborted = 'aborted',
+}
 
 /**
  * Legacy alias for backward compatibility
@@ -46,7 +51,7 @@ export interface TaskMetadata {
  */
 export type TaskStatusChangedCallback = (
   taskId: string,
-  changedStatus: TaskStatus
+  changedStatus: TaskStatus,
 ) => void;
 
 /**

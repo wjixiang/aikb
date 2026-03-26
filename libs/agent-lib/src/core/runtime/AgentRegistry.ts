@@ -5,7 +5,8 @@
  * Synchronized with AgentInstance database table.
  */
 
-import type { AgentMetadata, AgentStatus } from './types.js';
+import type { AgentMetadata } from './types.js';
+import { AgentStatus } from './types.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import { TYPES } from '../di/types.js';
 import type { Container } from 'inversify';
@@ -254,7 +255,7 @@ export class AgentRegistry implements IAgentRegistry {
   }
 
   findIdle(): AgentMetadata[] {
-    return this.findByStatus('idle');
+    return this.findByStatus(AgentStatus.Idle);
   }
 
   findByType(agentType: string): AgentMetadata[] {

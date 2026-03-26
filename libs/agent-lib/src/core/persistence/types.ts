@@ -3,17 +3,19 @@
  */
 
 import type { AgentConfig } from '../agent/agent.js';
-import type { AgentStatus } from '../common/types.js';
+import { AgentStatus } from '../common/types.js';
 import type { ApiMessage, WorkspaceContextEntry } from '../memory/types.js';
+
+export { AgentStatus };
 
 /**
  * Agent Instance 元数据结构
  */
 export interface InstanceMetadata {
   instanceId: string;
-  status: 'idle' | 'running' | 'completed' | 'aborted';
+  status: AgentStatus;
   config?: unknown; // UnifiedAgentConfig
-  name?: string;    // Agent 友好名称
+  name?: string; // Agent 友好名称
   agentType?: string; // Agent 类型标识
   createdAt: Date;
   updatedAt: Date;
@@ -66,7 +68,10 @@ export interface IPersistenceService {
   /**
    * 更新 Session 数据（支持部分更新）
    */
-  updateSession(instanceId: string, data: Partial<AgentSessionData>): Promise<void>;
+  updateSession(
+    instanceId: string,
+    data: Partial<AgentSessionData>,
+  ): Promise<void>;
 
   /**
    * 删除 Session
@@ -110,9 +115,7 @@ export interface IPersistenceService {
   /**
    * 加载 Memory 快照
    */
-  loadMemory(
-    instanceId: string,
-  ): Promise<{
+  loadMemory(instanceId: string): Promise<{
     messages: ApiMessage[];
     workspaceContexts: WorkspaceContextEntry[];
     config: unknown;
@@ -138,7 +141,9 @@ export interface IPersistenceService {
    */
   updateInstanceMetadata(
     instanceId: string,
-    data: Partial<Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>>,
+    data: Partial<
+      Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>
+    >,
   ): Promise<void>;
 
   // ==================== ComponentState 持久化 (Phase 3) ====================
@@ -163,17 +168,12 @@ export interface IPersistenceService {
   /**
    * 获取所有组件状态
    */
-  getAllComponentStates(
-    instanceId: string,
-  ): Promise<Record<string, unknown>>;
+  getAllComponentStates(instanceId: string): Promise<Record<string, unknown>>;
 
   /**
    * 删除组件状态
    */
-  deleteComponentState(
-    instanceId: string,
-    componentId: string,
-  ): Promise<void>;
+  deleteComponentState(instanceId: string, componentId: string): Promise<void>;
 
   // ==================== Result Export 持久化 (Phase 4) ====================
 

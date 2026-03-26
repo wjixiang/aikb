@@ -3,13 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ToolComponent } from '../../../components/core/toolComponent.js';
 import type { ObservableAgentCallbacks } from '../ObservableAgent.js';
 import type { ProviderSettings } from '../../types/provider-settings.js';
+import { AgentStatus } from '../../common/types.js';
 
 // Use vi.hoisted with an inline factory function
 const MockAgentContainer = vi.hoisted(() => {
   class MockAgentContainer {
     getAgent = vi.fn().mockResolvedValue({
       getTaskId: 'mock-task-id',
-      status: 'idle',
+      status: AgentStatus.Idle,
       workspace: {},
       getMemoryModule: vi.fn().mockReturnValue({}),
     });
@@ -28,7 +29,12 @@ vi.mock('../../di/container.js', () => ({
 }));
 
 // Import after mocking
-import { AgentFactory, type AgentFactoryOptions, type AgentSoul, type ComponentRegistration } from '../AgentFactory.js';
+import {
+  AgentFactory,
+  type AgentFactoryOptions,
+  type AgentSoul,
+  type ComponentRegistration,
+} from '../AgentFactory.js';
 
 describe('AgentFactory', () => {
   beforeEach(() => {
@@ -93,8 +99,12 @@ describe('AgentFactory', () => {
     });
 
     it('should create multiple independent containers', () => {
-      const container1 = AgentFactory.create({ agent: { taskId: 'container-1' } });
-      const container2 = AgentFactory.create({ agent: { taskId: 'container-2' } });
+      const container1 = AgentFactory.create({
+        agent: { taskId: 'container-1' },
+      });
+      const container2 = AgentFactory.create({
+        agent: { taskId: 'container-2' },
+      });
 
       expect(container1).not.toBe(container2);
     });

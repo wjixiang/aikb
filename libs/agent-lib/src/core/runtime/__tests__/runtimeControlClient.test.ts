@@ -6,6 +6,7 @@ import type {
   RuntimeStats,
   RuntimeControlAgentOptions,
 } from '../types.js';
+import { AgentStatus } from '../types.js';
 import type { Agent } from '../../agent/agent.js';
 import type { AgentRuntime } from '../AgentRuntime.js';
 
@@ -118,14 +119,14 @@ describe('RuntimeControlClientImpl', () => {
         {
           instanceId: 'agent-1',
           alias: 'agent-1-alias',
-          status: 'idle',
+          status: AgentStatus.Idle,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
           instanceId: 'agent-2',
           alias: 'agent-2-alias',
-          status: 'running',
+          status: AgentStatus.Running,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -139,7 +140,7 @@ describe('RuntimeControlClientImpl', () => {
     });
 
     it('should pass filter to runtime', async () => {
-      const filter: AgentFilter = { status: 'idle' };
+      const filter: AgentFilter = { status: AgentStatus.Idle };
       vi.mocked(mockRuntime.listAgents).mockResolvedValue([]);
 
       await client.listAgents(filter);
@@ -160,7 +161,7 @@ describe('RuntimeControlClientImpl', () => {
         instanceId: callerInstanceId,
         alias: 'parent-alias',
         parentInstanceId: 'grandparent',
-        status: 'idle',
+        status: AgentStatus.Idle,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -172,7 +173,7 @@ describe('RuntimeControlClientImpl', () => {
       vi.mocked(mockRuntime.getAgentMetadata).mockReturnValue({
         instanceId: callerInstanceId,
         alias: 'parent-alias',
-        status: 'idle',
+        status: AgentStatus.Idle,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -187,7 +188,7 @@ describe('RuntimeControlClientImpl', () => {
         {
           instanceId: 'child-1',
           alias: 'child-1-alias',
-          status: 'idle',
+          status: AgentStatus.Idle,
           createdAt: new Date(),
           updatedAt: new Date(),
         },

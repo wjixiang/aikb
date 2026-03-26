@@ -414,4 +414,4 @@ export function generateEventId(): string {
 }
 
 // Re-export
-export type { AgentStatus } from '../common/types.js';
+export { AgentStatus } from '../common/types.js';

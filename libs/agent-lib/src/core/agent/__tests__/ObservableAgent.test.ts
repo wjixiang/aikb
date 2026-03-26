@@ -6,6 +6,7 @@ import {
   type ObservableAgentCallbacks,
 } from '../ObservableAgent.js';
 import { AgentFactory } from '../AgentFactory.js';
+import { AgentStatus } from '../../common/types.js';
 import { MessageBus } from '../../runtime/topology/messaging/MessageBus.js';
 
 // Create a mock messageBus for testing
@@ -18,10 +19,13 @@ describe('ObservableAgent', () => {
 
   beforeEach(async () => {
     const messageBus = createMockMessageBus();
-    agent = await AgentFactory.createAgent({
-      agent: { sop: 'Test SOP' },
-      api: { apiKey: 'test-key' },
-    }, messageBus);
+    agent = await AgentFactory.createAgent(
+      {
+        agent: { sop: 'Test SOP' },
+        api: { apiKey: 'test-key' },
+      },
+      messageBus,
+    );
   });
 
   describe('createObservableAgent', () => {
@@ -32,7 +36,7 @@ describe('ObservableAgent', () => {
       const observableAgent = createObservableAgent(agent, callbacks);
 
       expect(observableAgent).toBeDefined();
-      expect(observableAgent.status).toBe('idle');
+      expect(observableAgent.status).toBe(AgentStatus.Idle);
     });
 
     it('should notify onStatusChanged when status changes', () => {
@@ -43,11 +47,11 @@ describe('ObservableAgent', () => {
       const observableAgent = createObservableAgent(agent, callbacks);
 
       // Directly set _status to test the proxy
-      (observableAgent as any)._status = 'running';
+      (observableAgent as any)._status = AgentStatus.Running;
 
       expect(onStatusChanged).toHaveBeenCalledWith(
         observableAgent.getTaskId,
-        'running',
+        AgentStatus.Running,
       );
     });
 
@@ -59,7 +63,7 @@ describe('ObservableAgent', () => {
       const observableAgent = createObservableAgent(agent, callbacks);
 
       // Simulate completion
-      (observableAgent as any)._status = 'completed';
+      (observableAgent as any)._status = AgentStatus.Completed;
 
       expect(onTaskCompleted).toHaveBeenCalledWith(observableAgent.getTaskId);
     });
@@ -72,7 +76,7 @@ describe('ObservableAgent', () => {
       const observableAgent = createObservableAgent(agent, callbacks);
 
       // Simulate abortion
-      (observableAgent as any)._status = 'aborted';
+      (observableAgent as any)._status = AgentStatus.Aborted;
 
       expect(onTaskAborted).toHaveBeenCalledWith(
         observableAgent.getTaskId,
@@ -134,11 +138,11 @@ describe('ObservableAgent', () => {
 
       const observableAgent = factory.create(agent);
 
-      (observableAgent as any)._status = 'completed';
+      (observableAgent as any)._status = AgentStatus.Completed;
 
       expect(onStatusChanged).toHaveBeenCalledWith(
         observableAgent.getTaskId,
-        'completed',
+        AgentStatus.Completed,
       );
       expect(onTaskCompleted).toHaveBeenCalledWith(observableAgent.getTaskId);
     });
@@ -166,11 +170,11 @@ describe('ObservableAgent', () => {
         onStatusChanged,
       });
 
-      (observableAgent as any)._status = 'running';
+      (observableAgent as any)._status = AgentStatus.Running;
 
       expect(onStatusChanged).toHaveBeenCalledWith(
         observableAgent.getTaskId,
-        'running',
+        AgentStatus.Running,
       );
     });
   });
@@ -189,10 +193,10 @@ describe('ObservableAgent', () => {
 
       expect(onStatusChanged).toHaveBeenCalledWith(
         observableAgent.getTaskId,
-        'completed',
+        AgentStatus.Completed,
       );
       expect(onTaskCompleted).toHaveBeenCalledWith(observableAgent.getTaskId);
-      expect(observableAgent.status).toBe('completed');
+      expect(observableAgent.status).toBe(AgentStatus.Completed);
     });
 
     it('should work with abort() method', () => {
@@ -208,13 +212,13 @@ describe('ObservableAgent', () => {
 
       expect(onStatusChanged).toHaveBeenCalledWith(
         observableAgent.getTaskId,
-        'aborted',
+        AgentStatus.Aborted,
       );
       expect(onTaskAborted).toHaveBeenCalledWith(
         observableAgent.getTaskId,
         'Test abort reason',
       );
-      expect(observableAgent.status).toBe('aborted');
+      expect(observableAgent.status).toBe(AgentStatus.Aborted);
     });
   });
 
@@ -230,9 +234,12 @@ describe('ObservableAgent', () => {
         onStatusChanged: observer2,
       });
 
-      (agent1 as any)._status = 'running';
+      (agent1 as any)._status = AgentStatus.Running;
 
-      expect(observer1).toHaveBeenCalledWith(agent1.getTaskId, 'running');
+      expect(observer1).toHaveBeenCalledWith(
+        agent1.getTaskId,
+        AgentStatus.Running,
+      );
       expect(observer2).not.toHaveBeenCalled();
     });
   });

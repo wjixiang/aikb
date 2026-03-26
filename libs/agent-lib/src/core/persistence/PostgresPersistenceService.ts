@@ -12,6 +12,7 @@ import type {
 } from './types.js';
 import type { ApiMessage, WorkspaceContextEntry } from '../memory/types.js';
 import { TYPES } from '../di/types.js';
+import { AgentStatus } from '../common/types.js';
 import pino from 'pino';
 
 @injectable()
@@ -25,9 +26,7 @@ export class PostgresPersistenceService implements IPersistenceService {
   ) {
     this.config = { autoCommit: true, ...config };
     this.logger = pino({ level: process.env['LOG_LEVEL'] || 'info' });
-    this.logger.info(
-      '[PersistenceService] Initialized',
-    );
+    this.logger.info('[PersistenceService] Initialized');
   }
 
   async createSession(data: AgentSessionData): Promise<string> {
@@ -105,7 +104,10 @@ export class PostgresPersistenceService implements IPersistenceService {
       updateData.collectedErrors = data.collectedErrors;
 
     // 自动设置 completedAt
-    if (data.status === 'completed' || data.status === 'aborted') {
+    if (
+      data.status === AgentStatus.Completed ||
+      data.status === AgentStatus.Aborted
+    ) {
       updateData.completedAt = new Date();
     }
 
@@ -236,7 +238,8 @@ export class PostgresPersistenceService implements IPersistenceService {
 
     return {
       messages: memory.messages as unknown as ApiMessage[],
-      workspaceContexts: memory.workspaceContexts as unknown as WorkspaceContextEntry[],
+      workspaceContexts:
+        memory.workspaceContexts as unknown as WorkspaceContextEntry[],
       config: memory.config,
     };
   }
@@ -289,7 +292,9 @@ export class PostgresPersistenceService implements IPersistenceService {
 
   async updateInstanceMetadata(
     instanceId: string,
-    data: Partial<Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>>,
+    data: Partial<
+      Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>
+    >,
   ): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {};
@@ -300,7 +305,10 @@ export class PostgresPersistenceService implements IPersistenceService {
     if (data.agentType !== undefined) updateData.agentType = data.agentType;
 
     // 自动设置 completedAt
-    if (data.status === 'completed' || data.status === 'aborted') {
+    if (
+      data.status === AgentStatus.Completed ||
+      data.status === AgentStatus.Aborted
+    ) {
       updateData.completedAt = new Date();
     }
 

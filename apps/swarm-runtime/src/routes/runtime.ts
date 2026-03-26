@@ -5,7 +5,7 @@
  */
 
 import type { FastifyPluginAsync } from 'fastify';
-import type { AgentStatus } from 'agent-lib/core';
+import { AgentStatus } from 'agent-lib/core';
 import {
   getAllAgentSouls,
   createAgentSoulByToken,
@@ -387,8 +387,7 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
     {
       schema: {
         tags: ['runtime'],
-        description:
-          'Get A2A conversation activity grouped by topology edges',
+        description: 'Get A2A conversation activity grouped by topology edges',
         response: { 200: responseSchema },
       } as any,
     },
@@ -428,30 +427,30 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
 
       const data = Array.from(edgeMap.values())
         .map((entry) => {
-        // Sort by createdAt descending to find latest
-        const sorted = entry.conversations.sort(
-          (a, b) => b.createdAt - a.createdAt,
-        );
-        const latest = sorted[0];
-        if (!latest) return null;
+          // Sort by createdAt descending to find latest
+          const sorted = entry.conversations.sort(
+            (a, b) => b.createdAt - a.createdAt,
+          );
+          const latest = sorted[0];
+          if (!latest) return null;
 
-        let status: 'active' | 'completed' | 'failed';
-        if (latest.status === 'pending' || latest.status === 'acknowledged') {
-          status = 'active';
-        } else if (latest.status === 'completed') {
-          status = 'completed';
-        } else {
-          status = 'failed';
-        }
+          let status: 'active' | 'completed' | 'failed';
+          if (latest.status === 'pending' || latest.status === 'acknowledged') {
+            status = 'active';
+          } else if (latest.status === 'completed') {
+            status = 'completed';
+          } else {
+            status = 'failed';
+          }
 
-        return {
-          from: entry.from,
-          to: entry.to,
-          status,
-          conversationCount: entry.conversations.length,
-          lastActivityAt: latest.createdAt,
-        };
-      })
+          return {
+            from: entry.from,
+            to: entry.to,
+            status,
+            conversationCount: entry.conversations.length,
+            lastActivityAt: latest.createdAt,
+          };
+        })
         .filter(Boolean);
 
       return { success: true, data };
@@ -742,15 +741,12 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const soulConfig = createAgentSoulByToken(body.token);
-        const instanceId = await fastify.agentRuntime.createAgent(
-          soulConfig,
-          {
-            ...(body.api ? { api: body.api as any } : {}),
-            ...(body.parentInstanceId
-              ? { parentInstanceId: body.parentInstanceId }
-              : {}),
-          },
-        );
+        const instanceId = await fastify.agentRuntime.createAgent(soulConfig, {
+          ...(body.api ? { api: body.api as any } : {}),
+          ...(body.parentInstanceId
+            ? { parentInstanceId: body.parentInstanceId }
+            : {}),
+        });
         return reply.code(201).send({
           success: true,
           data: {

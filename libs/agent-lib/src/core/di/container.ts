@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { Container } from 'inversify';
 import { TYPES } from './types.js';
 import { Agent } from '../agent/agent.js';
+import { AgentStatus } from '../common/types.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
@@ -157,7 +158,7 @@ export class AgentContainer {
       // Exclude non-serializable components from config
       const { components, ...serializableConfig } = this.config;
       await persistenceService.saveInstanceMetadata(this.instanceId, {
-        status: 'idle',
+        status: AgentStatus.Idle,
         config: serializableConfig,
         name: this.config.agent.name,
         agentType: this.config.agent.type,
