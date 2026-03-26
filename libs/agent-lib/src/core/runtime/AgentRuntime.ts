@@ -780,6 +780,11 @@ export class AgentRuntime implements IAgentRuntime {
       capabilities: unifiedConfig.agent.capabilities ?? [],
     });
 
+    // Auto-create parent-child edge if this agent has a parent
+    if (parentInstanceId) {
+      this.connectAgents(parentInstanceId, instanceId, 'parent-child');
+    }
+
     // Subscribe to Redis channel if using RedisMessageBus
     // This is required for the agent to receive messages from other processes
     if (isRedisMessageBus(this.messageBus)) {
@@ -1570,6 +1575,9 @@ export class AgentRuntime implements IAgentRuntime {
       nodeType: 'worker',
       capabilities: unifiedConfig.agent.capabilities ?? [],
     });
+
+    // Auto-create parent-child edge
+    this.connectAgents(parentInstanceId, instanceId, 'parent-child');
 
     // Subscribe to Redis channel if using RedisMessageBus
     // This is required for the agent to receive messages from other processes

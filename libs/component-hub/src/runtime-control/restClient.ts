@@ -54,8 +54,14 @@ export class SwarmAPIClient {
     return this.request<any>('GET', `/api/runtime/agents/${id}`);
   }
 
-  createAgent(agent: Record<string, unknown>) {
-    return this.request<any>('POST', '/api/runtime/agents', { agent });
+  createAgent(
+    agent: Record<string, unknown>,
+    parentInstanceId?: string,
+  ) {
+    return this.request<any>('POST', '/api/runtime/agents', {
+      agent,
+      ...(parentInstanceId ? { parentInstanceId } : {}),
+    });
   }
 
   destroyAgent(id: string, cascade?: boolean) {
@@ -85,11 +91,17 @@ export class SwarmAPIClient {
     return this.request<any>('GET', '/api/runtime/agent-souls');
   }
 
-  createAgentBySoul(token: string, alias?: string, api?: unknown) {
+  createAgentBySoul(
+    token: string,
+    alias?: string,
+    api?: unknown,
+    parentInstanceId?: string,
+  ) {
     return this.request<any>('POST', '/api/runtime/agent-souls', {
       token,
       alias,
       api,
+      ...(parentInstanceId ? { parentInstanceId } : {}),
     });
   }
 

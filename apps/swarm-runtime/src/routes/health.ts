@@ -4,6 +4,7 @@
  * Health check and server status endpoints.
  */
 
+import os from 'node:os';
 import type { FastifyPluginAsync } from 'fastify';
 
 const healthResponseSchema = {
@@ -27,7 +28,39 @@ const metricsResponseSchema = {
         id: { type: 'string' },
         port: { type: 'number' },
         uptime: { type: 'number' },
-        memory: { type: 'object' },
+        memory: {
+          type: 'object',
+          properties: {
+            rss: { type: 'number' },
+            heapTotal: { type: 'number' },
+            heapUsed: { type: 'number' },
+            external: { type: 'number' },
+            arrayBuffers: { type: 'number' },
+          },
+        },
+        cpu: {
+          type: 'object',
+          properties: {
+            usagePercent: { type: 'number' },
+            cores: { type: 'number' },
+            model: { type: 'string' },
+            loadAvg: {
+              type: 'array',
+              items: { type: 'number' },
+            },
+          },
+        },
+        system: {
+          type: 'object',
+          properties: {
+            hostname: { type: 'string' },
+            platform: { type: 'string' },
+            arch: { type: 'string' },
+            totalMemory: { type: 'number' },
+            freeMemory: { type: 'number' },
+            usedMemory: { type: 'number' },
+          },
+        },
         timestamp: { type: 'string' },
       },
     },
@@ -41,6 +74,19 @@ const metricsResponseSchema = {
     },
   },
 };
+
+function getCpuUsagePercent(): number {
+  const cpus = os.cpus();
+  let totalIdle = 0;
+  let totalTick = 0;
+  for (const cpu of cpus) {
+    for (const type in cpu.times) {
+      totalTick += cpu.times[type as keyof typeof cpu.times];
+    }
+    totalIdle += cpu.times.idle;
+  }
+  return Math.round(((totalTick - totalIdle) / totalTick) * 1000) / 10;
+}
 
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -121,12 +167,35 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const runtime = fastify.agentRuntime;
+      const mem = process.memoryUsage();
+      const totalMem = os.totalmem();
+      const freeMem = os.freemem();
       return {
         server: {
           id: fastify.serverId,
           port: fastify.serverPort,
           uptime: process.uptime(),
-          memory: process.memoryUsage(),
+          memory: {
+            rss: mem.rss,
+            heapTotal: mem.heapTotal,
+            heapUsed: mem.heapUsed,
+            external: mem.external,
+            arrayBuffers: mem.arrayBuffers,
+          },
+          cpu: {
+            usagePercent: getCpuUsagePercent(),
+            cores: os.cpus().length,
+            model: os.cpus()[0]?.model ?? 'unknown',
+            loadAvg: os.loadavg(),
+          },
+          system: {
+            hostname: os.hostname(),
+            platform: os.platform(),
+            arch: os.arch(),
+            totalMemory: totalMem,
+            freeMemory: freeMem,
+            usedMemory: totalMem - freeMem,
+          },
           timestamp: new Date().toISOString(),
         },
         runtime: runtime

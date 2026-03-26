@@ -145,6 +145,11 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
               type: 'array',
               description: 'Runtime components to attach',
             },
+            parentInstanceId: {
+              type: 'string',
+              description:
+                '[Optional] Creator agent instance ID - automatically establishes parent-child topology edge',
+            },
           },
         },
         response: { 201: responseSchema, 400: responseSchema },
@@ -165,6 +170,7 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
           modelId?: string;
         };
         components?: unknown[];
+        parentInstanceId?: string;
       };
       try {
         const agentSoul: {
@@ -180,7 +186,12 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
           agentSoul.description = body.agent.description;
         const instanceId = await fastify.agentRuntime.createAgent(
           { agent: agentSoul, components: body.components as any[] },
-          body.api ? { api: body.api as any } : undefined,
+          {
+            ...(body.api ? { api: body.api as any } : {}),
+            ...(body.parentInstanceId
+              ? { parentInstanceId: body.parentInstanceId }
+              : {}),
+          },
         );
         return reply.code(201).send({
           success: true,
@@ -626,6 +637,11 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
                 modelId: { type: 'string', description: 'Model ID to use' },
               },
             },
+            parentInstanceId: {
+              type: 'string',
+              description:
+                '[Optional] Creator agent instance ID - automatically establishes parent-child topology edge',
+            },
           },
         },
         response: {
@@ -645,13 +661,19 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
           baseUrl?: string;
           modelId?: string;
         };
+        parentInstanceId?: string;
       };
 
       try {
         const soulConfig = createAgentSoulByToken(body.token);
         const instanceId = await fastify.agentRuntime.createAgent(
           soulConfig,
-          body.api ? { api: body.api as any } : undefined,
+          {
+            ...(body.api ? { api: body.api as any } : {}),
+            ...(body.parentInstanceId
+              ? { parentInstanceId: body.parentInstanceId }
+              : {}),
+          },
         );
         return reply.code(201).send({
           success: true,

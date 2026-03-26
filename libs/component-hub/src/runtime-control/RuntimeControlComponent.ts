@@ -275,12 +275,15 @@ This component enables creation and management of child agents via REST API.
     if (!this.restClient) return this.noClient();
 
     try {
-      const result = await this.restClient.createAgent({
-        name: params.name,
-        type: params.agentType,
-        description: params.description,
-        sop: params.sop,
-      });
+      const result = await this.restClient.createAgent(
+        {
+          name: params.name,
+          type: params.agentType,
+          description: params.description,
+          sop: params.sop,
+        },
+        this.instanceId,
+      );
       return {
         success: true,
         data: {
@@ -452,6 +455,8 @@ This component enables creation and management of child agents via REST API.
       const result = await this.restClient.createAgentBySoul(
         params.soulType,
         params.name,
+        undefined,
+        this.instanceId,
       );
       return {
         success: true,

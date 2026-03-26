@@ -62,7 +62,36 @@ export const metricsResponseSchema = {
         id: { type: 'string' },
         port: { type: 'number' },
         uptime: { type: 'number' },
-        memory: { type: 'object', additionalProperties: true },
+        memory: {
+          type: 'object',
+          properties: {
+            rss: { type: 'number' },
+            heapTotal: { type: 'number' },
+            heapUsed: { type: 'number' },
+            external: { type: 'number' },
+            arrayBuffers: { type: 'number' },
+          },
+        },
+        cpu: {
+          type: 'object',
+          properties: {
+            usagePercent: { type: 'number' },
+            cores: { type: 'number' },
+            model: { type: 'string' },
+            loadAvg: { type: 'array', items: { type: 'number' } },
+          },
+        },
+        system: {
+          type: 'object',
+          properties: {
+            hostname: { type: 'string' },
+            platform: { type: 'string' },
+            arch: { type: 'string' },
+            totalMemory: { type: 'number' },
+            freeMemory: { type: 'number' },
+            usedMemory: { type: 'number' },
+          },
+        },
         timestamp: { type: 'string' },
       },
     },
