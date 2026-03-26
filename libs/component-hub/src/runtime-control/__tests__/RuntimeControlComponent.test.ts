@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RuntimeControlComponent, RuntimeControlState } from '../index.js';
-import type {
-  IRuntimeControlClient,
-  AgentMetadata,
-} from '../../../core/runtime/types.js';
+import { RuntimeControlComponent } from '../index.js';
+import { RuntimeControlState } from 'agent-lib/core';
+import type { IRuntimeControlClient, AgentMetadata } from 'agent-lib/core';
 
 describe('RuntimeControlComponent', () => {
   let component: RuntimeControlComponent;

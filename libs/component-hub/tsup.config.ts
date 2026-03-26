@@ -23,5 +23,10 @@ export default defineConfig({
     'inversify',
     'reflect-metadata',
     'bibliography-search',
+    'agent-lib',
+    'agent-lib/core',
+    'agent-lib/components',
+    'agent-lib/components/ui',
+    'zod',
   ],
 });

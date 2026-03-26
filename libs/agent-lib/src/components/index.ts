@@ -54,18 +54,6 @@ export {
   type A2ATaskToolName,
 } from './A2AComponent/index.js';
 
-// ==================== RuntimeControl Component ====================
-
-/**
- * RuntimeControl Component
- *
- * Tools for Agent creation and management.
- */
-export { RuntimeControlComponent } from './runtime-control/index.js';
-export type { RuntimeControlState } from './runtime-control/types.js';
-
-
-
 // Test Components - Re-export for convenience in tests
 // Located in: core/statefulContext/__tests__/testComponents.ts
 export {

@@ -105,6 +105,10 @@ export type {
   HookConfig as RuntimeHookConfig,
   RuntimeControlProviderSettings,
   RuntimeControlVirtualWorkspaceConfig,
+  RuntimeStats,
+  TopologyNode,
+  TopologyEdge,
+  RoutingStats,
 } from './runtime/index.js';
 export {
   generateEventId,
@@ -115,4 +119,5 @@ export {
   AgentRuntime,
   createAgentRuntime,
   RuntimeControlClientImpl,
+  RuntimeControlState,
 } from './runtime/index.js';

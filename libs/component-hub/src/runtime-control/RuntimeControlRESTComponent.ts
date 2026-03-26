@@ -10,10 +10,10 @@ import {
   ToolComponent,
   ExportOptions,
   type ExportResult,
-} from '../core/toolComponent.js';
-import type { Tool, ToolCallResult } from '../core/types.js';
-import type { TUIElement } from '../ui/TUIElement.js';
-import { th, tdiv } from '../ui/index.js';
+} from 'agent-lib/components';
+import type { Tool, ToolCallResult } from 'agent-lib/components';
+import type { TUIElement } from 'agent-lib/components/ui';
+import { th, tdiv } from 'agent-lib/components/ui';
 import {
   runtimeControlToolSchemas,
   type RuntimeControlToolName,

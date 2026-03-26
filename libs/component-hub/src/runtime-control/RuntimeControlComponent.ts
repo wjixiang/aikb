@@ -28,12 +28,11 @@ import {
   ToolComponent,
   ExportOptions,
   type ExportResult,
-} from '../core/toolComponent.js';
-import type { Tool, ToolCallResult } from '../core/types.js';
-import type { TUIElement } from '../ui/TUIElement.js';
-import { th, tdiv } from '../ui/index.js';
-import { TYPES } from '../../core/di/types.js';
-import type { RuntimeControlState } from './types.js';
+} from 'agent-lib/components';
+import type { Tool, ToolCallResult } from 'agent-lib/components';
+import type { TUIElement } from 'agent-lib/components/ui';
+import { th, tdiv } from 'agent-lib/components/ui';
+import { TYPES, RuntimeControlState } from 'agent-lib/core';
 import {
   runtimeControlToolSchemas,
   type RuntimeControlToolName,
@@ -59,8 +58,8 @@ import type {
   TopologyNode,
   TopologyEdge,
   RoutingStats,
-} from '../../core/runtime/types.js';
-import { agentSoulRegistry, createAgentSoulByType } from '../../core/index.js';
+} from 'agent-lib/core';
+import { agentSoulRegistry, createAgentSoulByType } from 'agent-lib/core';
 
 /**
  * RuntimeControlComponent - Provides tools for Agent lifecycle management

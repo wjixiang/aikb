@@ -35,10 +35,7 @@ import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
 import type { IA2AClient } from '../a2a/index.js';
 import { getGlobalAgentRegistry } from '../a2a/index.js';
 import { A2ATaskComponent } from '../../components/A2AComponent/A2ATaskComponent.js';
-import {
-  RuntimeControlComponent,
-  RuntimeControlState,
-} from '../../components/runtime-control/index.js';
+import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
 
 type Logger = ReturnType<typeof pino>;
 
@@ -341,18 +338,14 @@ export class AgentContainer {
       .bind<Container>(TYPES.Container)
       .toConstantValue(this.container);
 
-    // Create shared state for RuntimeControlComponent
-    const runtimeControlState = new RuntimeControlState();
-
-    // Bind RuntimeControlState for DI
+    // Bind RuntimeControlState for DI (used by RuntimeControlComponent when injected)
     this.container
       .bind<RuntimeControlState>(TYPES.RuntimeControlState)
-      .toConstantValue(runtimeControlState);
+      .toConstantValue(new RuntimeControlState());
 
     // Bind global component classes as singletons
     // These will be resolved with DI when building the ToolComponents array
     this.container.bind(A2ATaskComponent).toSelf().inSingletonScope();
-    this.container.bind(RuntimeControlComponent).toSelf().inSingletonScope();
 
     // Bind custom component classes if provided
     if (this.config.components && this.config.components.length > 0) {
@@ -378,12 +371,6 @@ export class AgentContainer {
           {
             component: this.container.get(
               A2ATaskComponent,
-            ) as unknown as ToolComponent,
-            priority: 0,
-          },
-          {
-            component: this.container.get(
-              RuntimeControlComponent,
             ) as unknown as ToolComponent,
             priority: 0,
           },

@@ -22,14 +22,17 @@ function createTestWorkspace(
   diComponents?: DIComponentRegistration[],
 ): Promise<{ workspace: VirtualWorkspace; container: AgentContainer }> {
   const messageBus = createMockMessageBus();
-  const container = new AgentContainer({
-    api: { apiKey: 'test-key' },
-    workspace: {
-      id: config.id ?? 'test-workspace',
-      name: config.name ?? 'Test Workspace',
+  const container = new AgentContainer(
+    {
+      api: { apiKey: 'test-key' },
+      workspace: {
+        id: config.id ?? 'test-workspace',
+        name: config.name ?? 'Test Workspace',
+      },
+      components: diComponents,
     },
-    components: diComponents,
-  }, messageBus);
+    messageBus,
+  );
 
   return container.getAgent().then((agent) => ({
     workspace: agent.workspace as VirtualWorkspace,
@@ -40,7 +43,9 @@ function createTestWorkspace(
 describe('VirtualWorkspace (Component-based)', () => {
   describe('Component Registration', () => {
     it('should register a component via DI', async () => {
-      const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const diComponents: DIComponentRegistration[] = [
+        { componentClass: TestComponent },
+      ];
 
       const { workspace } = await createTestWorkspace(
         { id: 'di-test', name: 'DI Test' },
@@ -87,7 +92,9 @@ describe('VirtualWorkspace (Component-based)', () => {
 
   describe('Rendering', () => {
     it('should render workspace with registered components', async () => {
-      const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const diComponents: DIComponentRegistration[] = [
+        { componentClass: TestComponent },
+      ];
 
       const { workspace } = await createTestWorkspace(
         { id: 'render-test', name: 'Render Test' },
@@ -100,7 +107,9 @@ describe('VirtualWorkspace (Component-based)', () => {
     });
 
     it('should render components section', async () => {
-      const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const diComponents: DIComponentRegistration[] = [
+        { componentClass: TestComponent },
+      ];
 
       const { workspace } = await createTestWorkspace(
         { id: 'section-test', name: 'Section Test' },
@@ -115,7 +124,9 @@ describe('VirtualWorkspace (Component-based)', () => {
 
   describe('Tool Management', () => {
     it('should get available tools from components', async () => {
-      const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const diComponents: DIComponentRegistration[] = [
+        { componentClass: TestComponent },
+      ];
 
       const { workspace } = await createTestWorkspace(
         { id: 'tool-test', name: 'Tool Test' },
@@ -128,7 +139,9 @@ describe('VirtualWorkspace (Component-based)', () => {
     });
 
     it('should check if tool is available', async () => {
-      const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const diComponents: DIComponentRegistration[] = [
+        { componentClass: TestComponent },
+      ];
 
       const { workspace } = await createTestWorkspace(
         { id: 'avail-test', name: 'Avail Test' },
@@ -140,7 +153,9 @@ describe('VirtualWorkspace (Component-based)', () => {
     });
 
     it('should execute tool call', async () => {
-      const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const diComponents: DIComponentRegistration[] = [
+        { componentClass: TestComponent },
+      ];
 
       const { workspace } = await createTestWorkspace(
         { id: 'exec-test', name: 'Exec Test' },
@@ -165,7 +180,9 @@ describe('VirtualWorkspace (Component-based)', () => {
     });
 
     it('should get workspace stats', async () => {
-      const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const diComponents: DIComponentRegistration[] = [
+        { componentClass: TestComponent },
+      ];
 
       const { workspace } = await createTestWorkspace(
         { id: 'stats-test', name: 'Stats Test' },
@@ -173,28 +190,32 @@ describe('VirtualWorkspace (Component-based)', () => {
       );
 
       const stats = workspace.getStats();
-      // componentCount includes global A2ATaskComponent + RuntimeControlComponent + test-component
-      expect(stats.componentCount).toBe(3);
+      // componentCount includes global A2ATaskComponent + test-component
+      expect(stats.componentCount).toBe(2);
       expect(stats.componentKeys).toContain('test-component');
       expect(stats.componentKeys).toContain('a2a-task');
-      expect(stats.componentKeys).toContain('runtime-control');
     });
   });
 
   describe('render component according to render mode', () => {
     it('should render in markdown', async () => {
-      const diComponents: DIComponentRegistration[] = [{ componentClass: TestComponent }];
+      const diComponents: DIComponentRegistration[] = [
+        { componentClass: TestComponent },
+      ];
       const messageBus = createMockMessageBus();
 
-      const container = new AgentContainer({
-        api: { apiKey: 'test-key' },
-        workspace: {
-          id: 'markdown-test',
-          name: 'Markdown Test',
-          renderMode: 'markdown',
+      const container = new AgentContainer(
+        {
+          api: { apiKey: 'test-key' },
+          workspace: {
+            id: 'markdown-test',
+            name: 'Markdown Test',
+            renderMode: 'markdown',
+          },
+          components: diComponents,
         },
-        components: diComponents,
-      }, messageBus);
+        messageBus,
+      );
 
       const agent = await container.getAgent();
       const workspace = agent.workspace as VirtualWorkspace;

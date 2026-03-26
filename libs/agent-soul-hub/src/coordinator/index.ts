@@ -1,4 +1,5 @@
 import { AgentBlueprint } from 'agent-lib/core';
+import { RuntimeControlComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
 
@@ -111,7 +112,7 @@ export function createCoordinatorAgentSoul(): AgentBlueprint {
       type: 'coordinator',
       description: '文献调查协调者，负责协调多个专业 Agent 完成系统性文献调查',
     },
-    components: [],
+    components: [{ componentClass: RuntimeControlComponent, priority: 0 }],
   };
 }
 

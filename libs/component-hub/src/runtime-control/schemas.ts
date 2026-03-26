@@ -5,7 +5,7 @@ import type {
   TopologyNode,
   TopologyEdge,
   RoutingStats,
-} from '../../core/runtime/types.js';
+} from 'agent-lib/core';
 
 /**
  * Schema for creating an agent via tool call

@@ -36,11 +36,7 @@ import type { ISessionManager } from '../session/ISessionManager.js';
 import type { SessionState } from '../session/types.js';
 import pino from 'pino';
 import type { IRuntimeControlClient } from '../runtime/types.js';
-import {
-  RuntimeControlComponent,
-  RuntimeControlState,
-  type RuntimeControlComponentConfig,
-} from '../../components/runtime-control/index.js';
+import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
 
 export interface AgentConfig {
   apiRequestTimeout: number;
