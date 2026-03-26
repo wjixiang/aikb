@@ -142,3 +142,30 @@ model RuntimeTask {
   @@index([targetInstanceId])
   @@index([createdAt])
 }
+
+/// A2A conversation log — event-sourced from TopologyEvent
+model A2AConversationLog {
+  id              String   @id @default(uuid())
+  conversationId  String   @unique
+
+  /// Source agent instance ID
+  fromInstanceId  String
+  /// Target agent instance ID
+  toInstanceId    String
+
+  /// pending | acknowledged | completed | failed | timeout
+  status          String   @default("pending")
+
+  /// Optional link to RuntimeTask
+  runtimeTaskId   String?
+
+  error           String?
+
+  createdAt       DateTime @default(now())
+  ackAt           DateTime?
+  completedAt     DateTime?
+
+  @@index([fromInstanceId, toInstanceId])
+  @@index([status])
+  @@index([createdAt])
+}

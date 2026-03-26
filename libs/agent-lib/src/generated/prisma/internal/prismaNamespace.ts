@@ -388,7 +388,8 @@ export const ModelName = {
   AgentMemory: 'AgentMemory',
   ComponentState: 'ComponentState',
   AgentInstance: 'AgentInstance',
-  RuntimeTask: 'RuntimeTask'
+  RuntimeTask: 'RuntimeTask',
+  A2AConversationLog: 'A2AConversationLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -404,7 +405,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agentSession" | "agentMemory" | "componentState" | "agentInstance" | "runtimeTask"
+    modelProps: "agentSession" | "agentMemory" | "componentState" | "agentInstance" | "runtimeTask" | "a2AConversationLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -778,6 +779,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    A2AConversationLog: {
+      payload: Prisma.$A2AConversationLogPayload<ExtArgs>
+      fields: Prisma.A2AConversationLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.A2AConversationLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.A2AConversationLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>
+        }
+        findFirst: {
+          args: Prisma.A2AConversationLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.A2AConversationLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>
+        }
+        findMany: {
+          args: Prisma.A2AConversationLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>[]
+        }
+        create: {
+          args: Prisma.A2AConversationLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>
+        }
+        createMany: {
+          args: Prisma.A2AConversationLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.A2AConversationLogCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>[]
+        }
+        delete: {
+          args: Prisma.A2AConversationLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>
+        }
+        update: {
+          args: Prisma.A2AConversationLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.A2AConversationLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.A2AConversationLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.A2AConversationLogUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>[]
+        }
+        upsert: {
+          args: Prisma.A2AConversationLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$A2AConversationLogPayload>
+        }
+        aggregate: {
+          args: Prisma.A2AConversationLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateA2AConversationLog>
+        }
+        groupBy: {
+          args: Prisma.A2AConversationLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.A2AConversationLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.A2AConversationLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.A2AConversationLogCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -896,6 +971,22 @@ export const RuntimeTaskScalarFieldEnum = {
 } as const
 
 export type RuntimeTaskScalarFieldEnum = (typeof RuntimeTaskScalarFieldEnum)[keyof typeof RuntimeTaskScalarFieldEnum]
+
+
+export const A2AConversationLogScalarFieldEnum = {
+  id: 'id',
+  conversationId: 'conversationId',
+  fromInstanceId: 'fromInstanceId',
+  toInstanceId: 'toInstanceId',
+  status: 'status',
+  runtimeTaskId: 'runtimeTaskId',
+  error: 'error',
+  createdAt: 'createdAt',
+  ackAt: 'ackAt',
+  completedAt: 'completedAt'
+} as const
+
+export type A2AConversationLogScalarFieldEnum = (typeof A2AConversationLogScalarFieldEnum)[keyof typeof A2AConversationLogScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1105,6 +1196,7 @@ export type GlobalOmitConfig = {
   componentState?: Prisma.ComponentStateOmit
   agentInstance?: Prisma.AgentInstanceOmit
   runtimeTask?: Prisma.RuntimeTaskOmit
+  a2AConversationLog?: Prisma.A2AConversationLogOmit
 }
 
 /* Types for Logging */

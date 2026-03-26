@@ -55,7 +55,8 @@ export const ModelName = {
   AgentMemory: 'AgentMemory',
   ComponentState: 'ComponentState',
   AgentInstance: 'AgentInstance',
-  RuntimeTask: 'RuntimeTask'
+  RuntimeTask: 'RuntimeTask',
+  A2AConversationLog: 'A2AConversationLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -153,6 +154,22 @@ export const RuntimeTaskScalarFieldEnum = {
 } as const
 
 export type RuntimeTaskScalarFieldEnum = (typeof RuntimeTaskScalarFieldEnum)[keyof typeof RuntimeTaskScalarFieldEnum]
+
+
+export const A2AConversationLogScalarFieldEnum = {
+  id: 'id',
+  conversationId: 'conversationId',
+  fromInstanceId: 'fromInstanceId',
+  toInstanceId: 'toInstanceId',
+  status: 'status',
+  runtimeTaskId: 'runtimeTaskId',
+  error: 'error',
+  createdAt: 'createdAt',
+  ackAt: 'ackAt',
+  completedAt: 'completedAt'
+} as const
+
+export type A2AConversationLogScalarFieldEnum = (typeof A2AConversationLogScalarFieldEnum)[keyof typeof A2AConversationLogScalarFieldEnum]
 
 
 export const SortOrder = {

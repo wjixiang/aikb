@@ -388,71 +388,14 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       schema: {
         tags: ['runtime'],
         description: 'Get A2A conversation activity grouped by topology edges',
-        response: { 200: responseSchema },
       } as any,
     },
     async (request, reply) => {
-      const messageBus = fastify.agentRuntime.getMessageBus();
-      const conversations = messageBus.getAllConversations();
-
-      // Group by (from, to) edge pair
-      const edgeMap = new Map<
-        string,
-        {
-          from: string;
-          to: string;
-          conversations: {
-            status: string;
-            createdAt: number;
-          }[];
-        }
-      >();
-
-      for (const conv of conversations) {
-        const key = `${conv.request.from}->${conv.request.to}`;
-        let entry = edgeMap.get(key);
-        if (!entry) {
-          entry = {
-            from: conv.request.from,
-            to: conv.request.to,
-            conversations: [],
-          };
-          edgeMap.set(key, entry);
-        }
-        entry.conversations.push({
-          status: conv.status,
-          createdAt: conv.createdAt,
-        });
+      if (!fastify.a2aLogService) {
+        return { success: true, data: [] };
       }
 
-      const data = Array.from(edgeMap.values())
-        .map((entry) => {
-          // Sort by createdAt descending to find latest
-          const sorted = entry.conversations.sort(
-            (a, b) => b.createdAt - a.createdAt,
-          );
-          const latest = sorted[0];
-          if (!latest) return null;
-
-          let status: 'active' | 'completed' | 'failed';
-          if (latest.status === 'pending' || latest.status === 'acknowledged') {
-            status = 'active';
-          } else if (latest.status === 'completed') {
-            status = 'completed';
-          } else {
-            status = 'failed';
-          }
-
-          return {
-            from: entry.from,
-            to: entry.to,
-            status,
-            conversationCount: entry.conversations.length,
-            lastActivityAt: latest.createdAt,
-          };
-        })
-        .filter(Boolean);
-
+      const data = await fastify.a2aLogService.getActiveEdges();
       return { success: true, data };
     },
   );
