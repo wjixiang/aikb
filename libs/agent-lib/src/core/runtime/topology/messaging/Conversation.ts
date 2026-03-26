@@ -30,6 +30,7 @@ export interface IConversationManager {
   incrementRetry(conversationId: string): number;
   getPending(): Conversation[];
   getActive(): Conversation[];
+  getAll(): Conversation[];
   remove(conversationId: string): void;
   onConversationUpdate(handler: (conversation: Conversation) => void): void;
 }
@@ -111,6 +112,10 @@ export class ConversationManager implements IConversationManager {
     return Array.from(this.conversations.values()).filter(
       (c) => c.status === 'pending' || c.status === 'acknowledged',
     );
+  }
+
+  getAll(): Conversation[] {
+    return Array.from(this.conversations.values());
   }
 
   remove(conversationId: string): void {

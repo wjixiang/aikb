@@ -6,6 +6,7 @@ import {
   type AgentInfo,
   type TopologyNode,
   type TopologyEdge,
+  type EdgeActivity,
 } from '@/lib/api';
 import { Network } from 'lucide-react';
 
@@ -17,10 +18,14 @@ interface GraphNode extends d3.SimulationNodeDatum {
   agentType?: string;
 }
 
+type EdgeActivityStatus = 'active' | 'completed' | 'failed';
+
 interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
   source: GraphNode | string;
   target: GraphNode | string;
   edgeType?: string;
+  activity?: EdgeActivityStatus;
+  conversationCount?: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -46,6 +51,28 @@ const SOUL_TYPE_COLORS = [
   '#84cc16',
 ];
 
+const EDGE_ACTIVITY_STYLES: Record<
+  string,
+  { stroke: string; width: number; opacity: number; dasharray?: string }
+> = {
+  active: {
+    stroke: '#22c55e',
+    width: 2.5,
+    opacity: 1,
+    dasharray: '8 4',
+  },
+  completed: {
+    stroke: '#3b82f6',
+    width: 2,
+    opacity: 0.8,
+  },
+  failed: {
+    stroke: '#ef4444',
+    width: 2,
+    opacity: 0.8,
+  },
+};
+
 function getTypeColor(
   node: GraphNode,
   soulColors: Map<string, string>,
@@ -67,6 +94,7 @@ export function AgentTopology() {
   const soulColorsRef = useRef<Map<string, string>>(new Map());
   const sizeRef = useRef({ width: 800, height: 500 });
   const [size, setSize] = useState({ width: 800, height: 500 });
+  const activityRef = useRef<Map<string, EdgeActivity>>(new Map());
 
   useEffect(() => {
     const container = containerRef.current;
@@ -88,8 +116,33 @@ export function AgentTopology() {
     return () => observer.disconnect();
   }, []);
 
+  // Inject CSS animation for active edges
+  useEffect(() => {
+    const styleId = 'edge-activity-styles';
+    if (document.getElementById(styleId)) return;
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      @keyframes dash-flow {
+        to { stroke-dashoffset: -24; }
+      }
+      .edge-active {
+        animation: dash-flow 0.8s linear infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.getElementById(styleId)?.remove();
+    };
+  }, []);
+
   const render = useCallback(
-    (agents: AgentInfo[], nodes: TopologyNode[], edges: TopologyEdge[]) => {
+    (
+      agents: AgentInfo[],
+      nodes: TopologyNode[],
+      edges: TopologyEdge[],
+      activities: EdgeActivity[],
+    ) => {
       if (!svgRef.current) return;
 
       const svg = d3.select<SVGSVGElement, unknown>(svgRef.current);
@@ -104,6 +157,13 @@ export function AgentTopology() {
       }
 
       const agentMap = new Map(agents.map((a) => [a.instanceId, a]));
+
+      // Build activity map
+      const activityMap = new Map<string, EdgeActivity>();
+      for (const a of activities) {
+        activityMap.set(`${a.from}->${a.to}`, a);
+      }
+      activityRef.current = activityMap;
 
       const graphNodes: GraphNode[] =
         agents.length > 0
@@ -122,11 +182,16 @@ export function AgentTopology() {
               agentType: undefined,
             }));
 
-      const graphLinks: GraphLink[] = edges.map((e) => ({
-        source: e.from,
-        target: e.to,
-        edgeType: e.edgeType,
-      }));
+      const graphLinks: GraphLink[] = edges.map((e) => {
+        const activity = activityMap.get(`${e.from}->${e.to}`);
+        return {
+          source: e.from,
+          target: e.to,
+          edgeType: e.edgeType,
+          activity: activity?.status,
+          conversationCount: activity?.conversationCount,
+        };
+      });
 
       // Clean up previous simulation
       simulationRef.current?.stop();
@@ -152,20 +217,28 @@ export function AgentTopology() {
 
       svg.selectAll('*').remove();
 
-      // Arrow marker
-      svg
-        .append('defs')
-        .append('marker')
-        .attr('id', 'arrowhead')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 28)
-        .attr('refY', 0)
-        .attr('markerWidth', 6)
-        .attr('markerHeight', 6)
-        .attr('orient', 'auto')
-        .append('path')
-        .attr('fill', '#94a3b8')
-        .attr('d', 'M0,-5L10,0L0,5');
+      // Arrow markers - one per status + default
+      const defs = svg.append('defs');
+      const markerConfigs = [
+        { id: 'arrowhead', fill: '#94a3b8' },
+        { id: 'arrowhead-active', fill: '#22c55e' },
+        { id: 'arrowhead-completed', fill: '#3b82f6' },
+        { id: 'arrowhead-failed', fill: '#ef4444' },
+      ];
+      for (const mc of markerConfigs) {
+        defs
+          .append('marker')
+          .attr('id', mc.id)
+          .attr('viewBox', '0 -5 10 10')
+          .attr('refX', 28)
+          .attr('refY', 0)
+          .attr('markerWidth', 6)
+          .attr('markerHeight', 6)
+          .attr('orient', 'auto')
+          .append('path')
+          .attr('fill', mc.fill)
+          .attr('d', 'M0,-5L10,0L0,5');
+      }
 
       const g = svg.append('g');
 
@@ -179,13 +252,61 @@ export function AgentTopology() {
       // Links
       const link = g
         .append('g')
-        .selectAll('line')
+        .selectAll<SVGLineElement, GraphLink>('line')
         .data(graphLinks)
         .join('line')
-        .attr('stroke', '#94a3b8')
-        .attr('stroke-width', 1.5)
-        .attr('stroke-opacity', 0.6)
-        .attr('marker-end', 'url(#arrowhead)');
+        .attr('stroke', (d) => {
+          const style = d.activity ? EDGE_ACTIVITY_STYLES[d.activity] : null;
+          return style?.stroke ?? '#94a3b8';
+        })
+        .attr('stroke-width', (d) => {
+          const style = d.activity ? EDGE_ACTIVITY_STYLES[d.activity] : null;
+          return style?.width ?? 1.5;
+        })
+        .attr('stroke-opacity', (d) => {
+          const style = d.activity ? EDGE_ACTIVITY_STYLES[d.activity] : null;
+          return style?.opacity ?? 0.6;
+        })
+        .attr('stroke-dasharray', (d) => {
+          const style = d.activity ? EDGE_ACTIVITY_STYLES[d.activity] : null;
+          return style?.dasharray ?? null;
+        })
+        .attr('marker-end', (d) => {
+          if (d.activity) return `url(#arrowhead-${d.activity})`;
+          return 'url(#arrowhead)';
+        })
+        .classed('edge-active', (d) => d.activity === 'active');
+
+      // Edge tooltip on hover
+      const edgeTooltip = svg
+        .append('text')
+        .style('display', 'none')
+        .style('position', 'absolute')
+        .attr('fill', '#f8fafc')
+        .attr('font-size', 11)
+        .attr('pointer-events', 'none');
+
+      link
+        .on('mouseenter', (_event, d) => {
+          const src = typeof d.source === 'string' ? d.source : d.source.id;
+          const tgt = typeof d.target === 'string' ? d.target : d.target.id;
+          const statusLabel = d.activity ?? 'idle';
+          const countLabel =
+            d.conversationCount !== undefined
+              ? ` (${d.conversationCount} msgs)`
+              : '';
+          edgeTooltip
+            .text(`${src} -> ${tgt}: ${statusLabel}${countLabel}`)
+            .style('display', 'block');
+        })
+        .on('mousemove', (event) => {
+          edgeTooltip
+            .style('left', `${event.offsetX + 12}px`)
+            .style('top', `${event.offsetY - 8}px`);
+        })
+        .on('mouseleave', () => {
+          edgeTooltip.style('display', 'none');
+        });
 
       // Node groups
       const node = g
@@ -255,6 +376,14 @@ export function AgentTopology() {
         .attr('pointer-events', 'none');
 
       // Tooltip on hover
+      const tooltip = svg
+        .append('text')
+        .style('display', 'none')
+        .style('position', 'absolute')
+        .attr('fill', '#f8fafc')
+        .attr('font-size', 11)
+        .attr('pointer-events', 'none');
+
       node
         .on('mouseenter', (_event, d) => {
           const agent = agentMap.get(d.id);
@@ -271,15 +400,6 @@ export function AgentTopology() {
         .on('mouseleave', () => {
           tooltip.style('display', 'none');
         });
-
-      // Tooltip element (appended to SVG)
-      const tooltip = svg
-        .append('text')
-        .style('display', 'none')
-        .style('position', 'absolute')
-        .attr('fill', '#f8fafc')
-        .attr('font-size', 11)
-        .attr('pointer-events', 'none');
 
       // Tick
       simulation.on('tick', () => {
@@ -300,7 +420,7 @@ export function AgentTopology() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [agentsRes, topologyRes] = await Promise.all([
+        const [agentsRes, topologyRes, activityRes] = await Promise.all([
           api.runtime
             .agents()
             .catch(() => ({ success: false, data: [], count: 0 })),
@@ -308,18 +428,24 @@ export function AgentTopology() {
             success: false,
             data: { nodes: [], edges: [], size: { nodes: 0, edges: 0 } },
           })),
+          api.runtime
+            .edgeActivity()
+            .catch(() => ({ success: false, data: [] })),
         ]);
 
         const agents: AgentInfo[] = agentsRes.success ? agentsRes.data : [];
         const topology = topologyRes.success
           ? topologyRes.data
           : { nodes: [], edges: [], size: { nodes: 0, edges: 0 } };
+        const activities: EdgeActivity[] = activityRes.success
+          ? activityRes.data
+          : [];
 
-        const raw = JSON.stringify({ agents, topology });
+        const raw = JSON.stringify({ agents, topology, activities });
         if (raw === prevDataRef.current) return;
         prevDataRef.current = raw;
 
-        render(agents, topology.nodes, topology.edges);
+        render(agents, topology.nodes, topology.edges, activities);
       } catch {
         // silently retry on next interval
       }
@@ -354,9 +480,42 @@ export function AgentTopology() {
             style={{ cursor: 'grab' }}
           />
         </div>
-        <div className="mt-2 text-xs text-muted-foreground">
-          Drag nodes to rearrange. Scroll to zoom. Nodes: colored by type,
-          status dot: green=running, yellow=idle, red=stopped.
+        <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+          <span>
+            Drag nodes to rearrange. Scroll to zoom.
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-4 h-0.5"
+              style={{ backgroundColor: '#94a3b8' }}
+            />
+            idle
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-4 h-0.5"
+              style={{
+                backgroundColor: '#22c55e',
+                borderTop: '1px dashed #22c55e',
+                height: 0,
+              }}
+            />
+            active
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-4 h-0.5"
+              style={{ backgroundColor: '#3b82f6' }}
+            />
+            completed
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-4 h-0.5"
+              style={{ backgroundColor: '#ef4444' }}
+            />
+            failed
+          </span>
         </div>
       </CardContent>
     </Card>

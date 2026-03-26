@@ -17,6 +17,7 @@ export const apiConfig = {
     runtimeStats: `${BASE_URL}/api/runtime/stats`,
     runtimeAgents: `${BASE_URL}/api/runtime/agents`,
     runtimeTopology: `${BASE_URL}/api/runtime/topology`,
+    runtimeEdgeActivity: `${BASE_URL}/api/runtime/topology/edge-activity`,
     // Tasks
     tasks: `${BASE_URL}/api/tasks/`,
     taskStats: `${BASE_URL}/api/tasks/stats`,
@@ -110,6 +111,14 @@ export interface TopologyEdge {
   edgeType?: string
 }
 
+export interface EdgeActivity {
+  from: string
+  to: string
+  status: 'active' | 'completed' | 'failed'
+  conversationCount: number
+  lastActivityAt: number
+}
+
 export interface TopologyData {
   nodes: TopologyNode[]
   edges: TopologyEdge[]
@@ -176,6 +185,7 @@ export const api = {
       )
     },
     topology: () => apiFetch<{ success: boolean; data: TopologyData }>('/api/runtime/topology'),
+    edgeActivity: () => apiFetch<{ success: boolean; data: EdgeActivity[] }>('/api/runtime/topology/edge-activity'),
     agentSouls: () => apiFetch<{ success: boolean; data: AgentSoulInfo[] }>('/api/runtime/agent-souls'),
   },
   tasks: {

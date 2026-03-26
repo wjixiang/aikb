@@ -63,6 +63,9 @@ export class NullMessageBus implements IMessageBus {
   getActiveConversations(): Conversation[] {
     return [];
   }
+  getAllConversations(): Conversation[] {
+    return [];
+  }
   setConfig(): void {
     // no-op
   }
@@ -104,6 +107,7 @@ export interface IMessageBus {
   getConversationByTaskId(taskId: string): Conversation | undefined;
   getPendingConversations(): Conversation[];
   getActiveConversations(): Conversation[];
+  getAllConversations(): Conversation[];
 
   setConfig(config: TopologyConfig): void;
   getConfig(): Required<TopologyConfig>;
@@ -279,6 +283,10 @@ export class MessageBus implements IMessageBus {
 
   getActiveConversations(): Conversation[] {
     return this.conversationManager.getActive();
+  }
+
+  getAllConversations(): Conversation[] {
+    return this.conversationManager.getAll();
   }
 
   setConfig(config: TopologyConfig): void {
