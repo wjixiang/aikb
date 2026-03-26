@@ -18,7 +18,7 @@ export * from './config.js';
 export { AgentFactory } from './agent/AgentFactory.js';
 export type { AgentConfig } from './agent/agent.js';
 export type { AgentFactoryOptions } from './agent/AgentFactory.js';
-export type { AgentBlueprint } from './AgentSoulRegistry.js';
+export type { AgentBlueprint } from './agent/AgentFactory.js';
 export * from './agent/ObservableAgent.js';
 
 // Agent Soul Registry (types and factory registration - concrete agents in agent-soul-hub)

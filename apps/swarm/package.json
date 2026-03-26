@@ -10,7 +10,12 @@
     "start": "node dist/server.js",
     "type-check": "tsc --noEmit"
   },
-  "keywords": ["agent", "runtime", "fastify", "swarm"],
+  "keywords": [
+    "agent",
+    "runtime",
+    "fastify",
+    "swarm"
+  ],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.7.0",
@@ -19,6 +24,7 @@
     "@fastify/swagger": "^9.0.0",
     "@fastify/swagger-ui": "^5.0.1",
     "agent-lib": "workspace:*",
+    "agent-soul-hub": "workspace:*",
     "dotenv": "^17.3.1",
     "fastify": "^5.8.4",
     "fastify-plugin": "^4.5.1"

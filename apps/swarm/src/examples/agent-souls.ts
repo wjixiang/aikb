@@ -4,12 +4,12 @@
  * 示例 Agent 配置，用于通过 API 创建 Agent
  */
 
-import type { AgentSoulConfig } from 'agent-lib/core';
+import type { AgentBlueprint } from 'agent-lib/core';
 
 /**
  * 流行病学文献检索 Agent
  */
-export const epidemiologyAgentExample: AgentSoulConfig = {
+export const epidemiologyAgentExample: AgentBlueprint = {
   agent: {
     name: 'Epidemiology Search',
     type: 'epidemiology',
@@ -32,7 +32,7 @@ export const epidemiologyAgentExample: AgentSoulConfig = {
 /**
  * 诊断文献检索 Agent
  */
-export const diagnosisAgentExample: AgentSoulConfig = {
+export const diagnosisAgentExample: AgentBlueprint = {
   agent: {
     name: 'Diagnosis Search',
     type: 'diagnosis',
@@ -49,7 +49,7 @@ export const diagnosisAgentExample: AgentSoulConfig = {
 /**
  * 治疗管理 Agent
  */
-export const managementAgentExample: AgentSoulConfig = {
+export const managementAgentExample: AgentBlueprint = {
   agent: {
     name: 'Management Search',
     type: 'management',
@@ -66,7 +66,7 @@ export const managementAgentExample: AgentSoulConfig = {
 /**
  * 协调 Agent
  */
-export const coordinatorAgentExample: AgentSoulConfig = {
+export const coordinatorAgentExample: AgentBlueprint = {
   agent: {
     name: 'Literature Coordinator',
     type: 'coordinator',
@@ -89,7 +89,7 @@ export const coordinatorAgentExample: AgentSoulConfig = {
 /**
  * 通用检索 Agent
  */
-export const generalAgentExample: AgentSoulConfig = {
+export const generalAgentExample: AgentBlueprint = {
   agent: {
     name: 'General Research',
     type: 'bib-retrieve',

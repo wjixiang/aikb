@@ -64,26 +64,7 @@ export {
 export { RuntimeControlComponent } from './runtime-control/index.js';
 export type { RuntimeControlState } from './runtime-control/types.js';
 
-// ==================== Bookshelf Components ====================
 
-/**
- * Bookshelf Module
- *
- * Document viewing components.
- */
-export {
-  BookViewerComponent,
-  WorkspaceInfoComponent,
-} from './bookshelfComponents.js';
-
-// ==================== Knowledge Management Component ====================
-
-/**
- * Knowledge Management Module
- *
- * Knowledge base management component.
- */
-export { KnowledgeManageComponent } from './knowledgeManageComponent.js';
 
 // Test Components - Re-export for convenience in tests
 // Located in: core/statefulContext/__tests__/testComponents.ts

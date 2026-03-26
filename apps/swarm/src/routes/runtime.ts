@@ -10,7 +10,7 @@ import {
   getAllAgentSouls,
   createAgentSoulByToken,
   type AgentSoulMetadata,
-} from 'agent-lib/core';
+} from 'agent-soul-hub';
 
 const responseSchema = {
   type: 'object',
