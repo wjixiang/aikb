@@ -1312,7 +1312,9 @@ export class Agent {
               {
                 type: 'tool_result' as const,
                 tool_use_id: response.toolCalls[0].id,
+                toolName: response.toolCalls[0].name,
                 content: `Error: ${errorMsg}`,
+                is_error: true,
               },
             ],
             ts: Date.now(),
@@ -1407,9 +1409,6 @@ export class Agent {
         };
         results.push(toolResult);
 
-        // Record in memory
-        this.memoryModule.recordToolCall(toolCall.name, true, result);
-
         // Add tool result message to memory
         const toolResultMsg: ApiMessage = {
           role: 'system',
@@ -1457,8 +1456,21 @@ export class Agent {
           ),
         ]);
 
-        // Record failure in memory
-        this.memoryModule.recordToolCall(toolCall.name, false, errorMessage);
+        // Record failure in memory as tool_result message
+        const errorToolResultMsg: ApiMessage = {
+          role: 'system',
+          content: [
+            {
+              type: 'tool_result' as const,
+              tool_use_id: toolCall.id,
+              toolName: toolCall.name,
+              content: `Error: ${errorMessage}`,
+              is_error: true,
+            },
+          ],
+          ts: Date.now(),
+        };
+        await this.memoryModule.addMessage(errorToolResultMsg);
 
         // Track tool usage
         if (!this._toolUsage[toolCall.name]) {

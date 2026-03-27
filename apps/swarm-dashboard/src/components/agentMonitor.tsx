@@ -116,17 +116,30 @@ function ContentBlock({ block }: { block: MemoryMessage['content'][0] }) {
 
     const formatted = tryFormatJson(raw);
 
-    if (formatted) {
-      return (
-        <pre className="text-left whitespace-pre-wrap break-words font-mono text-[11px] bg-muted/50 dark:bg-muted/30 rounded px-2 py-1.5 my-0.5 overflow-x-auto overflow-y-auto leading-relaxed max-h-60">
-          {formatted}
-        </pre>
-      );
-    }
-
     return (
-      <div className="text-left whitespace-pre-wrap break-words text-[11px] leading-relaxed text-muted-foreground">
-        {raw.length > 500 ? raw.slice(0, 500) + '...' : raw}
+      <div>
+        {block.toolName && (
+          <div className="flex items-center gap-1.5 text-[11px] font-mono mb-0.5">
+            <Wrench className="h-3 w-3 text-orange-500 shrink-0" />
+            <span className="text-orange-600 dark:text-orange-400 font-medium">
+              {block.toolName}
+            </span>
+            {block.is_error && (
+              <span className="text-red-500 dark:text-red-400 text-[10px]">
+                failed
+              </span>
+            )}
+          </div>
+        )}
+        {formatted ? (
+          <pre className="text-left whitespace-pre-wrap break-words font-mono text-[11px] bg-muted/50 dark:bg-muted/30 rounded px-2 py-1.5 my-0.5 overflow-x-auto overflow-y-auto leading-relaxed max-h-60">
+            {formatted}
+          </pre>
+        ) : (
+          <div className="text-left whitespace-pre-wrap break-words text-[11px] leading-relaxed text-muted-foreground">
+            {raw.length > 500 ? raw.slice(0, 500) + '...' : raw}
+          </div>
+        )}
       </div>
     );
   }

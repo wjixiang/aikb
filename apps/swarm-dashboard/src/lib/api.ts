@@ -154,6 +154,8 @@ export interface MemoryMessage {
     name?: string;
     id?: string;
     tool_use_id?: string;
+    toolName?: string;
+    is_error?: boolean;
     content?: string | unknown;
     thinking?: string;
   }>;

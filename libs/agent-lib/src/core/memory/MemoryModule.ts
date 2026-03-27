@@ -236,13 +236,6 @@ export class MemoryModule implements IMemoryModule {
     return message;
   }
 
-  /**
-   * Record tool call result (no-op - already handled by addMessage)
-   */
-  recordToolCall(toolName: string, success: boolean, result: any): void {
-    // No-op
-  }
-
   // ==================== History Retrieval ====================
 
   /**

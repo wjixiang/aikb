@@ -24,7 +24,7 @@ export interface ToolResultBlock {
   type: 'tool_result';
   tool_use_id: string;
   /** Name of the tool that was executed */
-  toolName: string;
+  toolName?: string;
   content: string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam>;
   is_error?: boolean;
 }
@@ -171,11 +171,6 @@ export interface IMemoryModule {
    * Add message to storage
    */
   addMessage(message: ApiMessage): Promise<ApiMessage>;
-
-  /**
-   * Record tool call result (no-op in simplified mode)
-   */
-  recordToolCall(toolName: string, success: boolean, result: any): void;
 
   /**
    * Get all historical messages

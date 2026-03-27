@@ -298,6 +298,8 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
               return {
                 type: 'tool_result',
                 tool_use_id: block.tool_use_id,
+                ...(block.toolName ? { toolName: block.toolName } : {}),
+                ...(block.is_error ? { is_error: block.is_error } : {}),
                 content:
                   typeof block.content === 'string'
                     ? block.content.slice(0, 500)
