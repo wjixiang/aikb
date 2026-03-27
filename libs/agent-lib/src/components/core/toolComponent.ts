@@ -1,10 +1,23 @@
+import { proxy, subscribe, snapshot as takeSnapshot } from 'valtio';
 import { injectable, type Container } from 'inversify';
+import { z } from 'zod';
 import { renderToolSection } from '../utils/toolRendering.js';
-import { Tool, ToolCallResult } from './types.js';
+import type { Tool, ToolCallResult } from './types.js';
 import { tdiv } from '../ui/tdiv.js';
 import { TUIElement } from '../ui/TUIElement.js';
 import { MdDiv } from '../ui/markdown/MdDiv.js';
 import { MdElement } from '../ui/markdown/MdElement.js';
+
+/**
+ * Tool definition for declarative tool registration.
+ */
+export interface ToolDef {
+  desc: string;
+  paramsSchema: z.ZodTypeAny;
+  examples?: Tool['examples'];
+}
+
+type ToolDefs = Record<string, ToolDef>;
 
 /**
  * Component state base interface for persistence
@@ -18,11 +31,8 @@ export interface ComponentStateBase {
  * Result of an export operation
  */
 export interface ExportResult<T = unknown> {
-  /** Exported data */
   data: T;
-  /** Export format used */
   format: string;
-  /** Optional metadata about the export */
   metadata?: Record<string, unknown>;
 }
 
@@ -30,205 +40,271 @@ export interface ExportResult<T = unknown> {
  * Options for export operations
  */
 export interface ExportOptions {
-  /** Target format (e.g., 'json', 'csv', 'xml') */
   format?: string;
-  /** Optional filter criteria */
   filter?: Record<string, unknown>;
-  /** Additional export parameters */
   params?: Record<string, unknown>;
 }
 
 /**
- * ToolComponent - Abstract base class for components that provide tools
+ * ToolComponent - Base class for components that provide tools.
  *
- * Components can be managed by Skills, which control their lifecycle
- * and tool availability. Components can define their own state, lifecycle hooks,
- * rendering logic, and custom export functionality.
+ * Features:
+ * - **valtio reactive state** via `initialState()` / `reactive` / `snapshot`
+ * - **Auto-dispatch** - tool calls route to `on<ToolName>()` methods by convention
+ * - **Declarative tools** - `toolDefs()` replaces verbose `new Map()` construction
+ * - **Built-in export** - `exportData` uses valtio snapshot by default
+ * - **State subscription** - `subscribeState()` for side-effect wiring
  *
- * @note This class is decorated with @injectable() for InversifyJS IoC integration.
- * Components can use standard @inject() decorator in their constructors for DI.
- *
- * ## Dependency Injection
- *
- * Components can use standard @inject() decorator in constructor:
+ * @example
  * ```typescript
- * class MyComponent extends ToolComponent {
- *   private a2aHandler: IA2AHandler;
+ * class BookViewer extends ToolComponent<{
+ *   books: BookInfo[];
+ *   selected: string | null;
+ *   results: string[];
+ * }> {
+ *   componentId = 'book-viewer';
+ *   componentPrompt = 'Browse and search books...';
  *
- *   constructor(
- *     @inject(TYPES.IA2AHandler) a2aHandler: IA2AHandler,
- *   ) {
- *     super();
- *     this.a2aHandler = a2aHandler;
+ *   protected initialState() {
+ *     return { books: [], selected: null, results: [] };
  *   }
+ *
+ *   protected toolDefs() {
+ *     return {
+ *       selectBook: {
+ *         desc: 'Select a book',
+ *         paramsSchema: z.object({ bookName: z.string() }),
+ *       },
+ *       search: {
+ *         desc: 'Search content',
+ *         paramsSchema: z.object({ query: z.string() }),
+ *       },
+ *     };
+ *   }
+ *
+ *   async onSelectBook(params: { bookName: string }) {
+ *     this.reactive.selected = params.bookName;
+ *     return { success: true, data: { selected: params.bookName } };
+ *   }
+ *
+ *   async onSearch(params: { query: string }) {
+ *     this.reactive.results = await doSearch(params.query);
+ *     return { success: true, data: { count: this.snapshot.results.length } };
+ *   }
+ *
+ *   renderImply = async () => {
+ *     const s = this.snapshot;
+ *     return [
+ *       new tdiv({ content: `Selected: ${s.selected ?? 'None'}` }),
+ *       new tdiv({ content: `Results: ${s.results.length}` }),
+ *     ];
+ *   };
  * }
  * ```
  */
 @injectable()
-export abstract class ToolComponent {
-  /** Map of tool names to tool definitions */
-  abstract toolSet: Map<string, Tool>;
+export abstract class ToolComponent<
+  TState extends Record<string, any> = Record<string, any>,
+> {
+  private readonly _reactive = proxy<TState>(this.initialState());
+  private _unsubscribers: (() => void)[] = [];
 
-  /** Unique identifier for this component (default: class name) */
+  /** Unique identifier (default: class name) */
   readonly componentId: string = this.constructor.name;
 
   /** Display name for UI (default: componentId) */
   readonly displayName: string = this.constructor.name;
 
-  /** Description of what this component does (default: empty string) */
+  /** Description (default: empty string) */
   readonly description: string = '';
 
   /**
-   * Component-level prompt injected into system prompt (optional)
-   * Use this to provide component-specific context, workflows, or guidelines
-   * that should be included in the agent's system prompt
+   * Component-level prompt injected into system prompt.
    */
   abstract componentPrompt: string;
 
-  // ==================== Centralized State Management (Phase 3) ====================
+  // ==================== Reactive State ====================
 
-  /** Centralized state storage */
-  protected _state: ComponentStateBase = {
-    version: 1,
-    updatedAt: Date.now(),
+  /**
+   * Define initial reactive state. Override in subclass.
+   */
+  protected initialState(): TState {
+    return {} as TState;
+  }
+
+  /** Write reactive state (mutations are tracked by valtio). */
+  protected get reactive(): TState {
+    return this._reactive;
+  }
+
+  /** Read a frozen snapshot of reactive state. */
+  protected get snapshot(): TState {
+    return takeSnapshot(this._reactive) as TState;
+  }
+
+  /**
+   * Subscribe to state changes. Auto-cleanup on deactivate.
+   * @returns Unsubscribe function
+   */
+  protected subscribeState(callback: () => void): () => void {
+    const unsub = subscribe(this._reactive, callback);
+    this._unsubscribers.push(unsub);
+    return unsub;
+  }
+
+  // ==================== Declarative Tools ====================
+
+  /**
+   * Define tools as a plain object. Override in subclass.
+   * Auto-converted to `Map<string, Tool>` via the `toolSet` getter.
+   */
+  protected toolDefs(): ToolDefs {
+    return {};
+  }
+
+  /**
+   * Map of tool names to tool definitions (auto-built from `toolDefs()`).
+   * For advanced use cases, override this getter directly.
+   */
+  get toolSet(): Map<string, Tool> {
+    const map = new Map<string, Tool>();
+    for (const [name, def] of Object.entries(this.toolDefs())) {
+      map.set(name, {
+        toolName: name,
+        paramsSchema: def.paramsSchema,
+        desc: def.desc,
+        examples: def.examples,
+      });
+    }
+    return map;
+  }
+
+  // ==================== Auto-Dispatch ====================
+
+  /**
+   * Handle tool call - auto-routes to `on<ToolName>()` methods.
+   *
+   * For advanced use cases (e.g. typed overloads), override this directly.
+   */
+  handleToolCall = async (
+    toolName: string,
+    params: any,
+  ): Promise<ToolCallResult<any>> => {
+    const handlerName =
+      'on' + toolName.charAt(0).toUpperCase() + toolName.slice(1);
+    const handler = (this as any)[handlerName];
+    if (typeof handler !== 'function') {
+      return {
+        success: false,
+        data: { error: `Unknown tool: ${toolName}` },
+        summary: `[${this.componentId}] Unknown tool: ${toolName}`,
+      };
+    }
+    return handler.call(this, params);
   };
 
-  /** State change callback for persistence */
-  onStateChange?: (newState: ComponentStateBase) => void;
+  // ==================== Lifecycle ====================
 
-  /**
-   * Get state (readonly)
-   */
-  get state(): ComponentStateBase {
-    return { ...this._state };
-  }
+  /** Optional hook called when component is activated by a skill */
+  onActivate = async (): Promise<void> => {
+    this._unsubscribers = [];
+  };
 
-  /**
-   * Update state with partial data
-   */
-  protected updateState(partial: Partial<ComponentStateBase>): void {
-    this._state = {
-      ...this._state,
-      ...partial,
-      updatedAt: Date.now(),
-    };
-    this.onStateChange?.(this._state);
-  }
+  /** Optional hook called when component is deactivated by a skill */
+  onDeactivate = async (): Promise<void> => {
+    for (const unsub of this._unsubscribers) {
+      unsub();
+    }
+    this._unsubscribers = [];
+  };
 
-  /**
-   * Restore state from persistence (override in subclass)
-   */
-  restoreState(state: ComponentStateBase): void {
-    this._state = { ...state };
-  }
+  // ==================== Rendering ====================
 
-  /**
-   * Export state for persistence (can override in subclass for custom state)
-   */
-  exportState(): ComponentStateBase {
-    return { ...this._state };
-  }
-
-  /**
-   * Inject dependencies from DI container
-   *
-   * @deprecated This method is kept for backward compatibility but is now a no-op.
-   * Components should use @inject() decorator in constructor for DI.
-   *
-   * @param container - The DI container (not used anymore)
-   */
-  protected injectDependencies(container: Container): void {
-    // No-op: Components now use @inject() in constructor
-    // This method is kept for backward compatibility
-  }
-
-  /**
-   * Internal method called by AgentContainer to inject dependencies
-   * @deprecated Use constructor injection with @inject() decorator instead
-   * @internal
-   */
-  _injectDependencies(container: Container): void {
-    this.injectDependencies(container);
-  }
-
-  // ==================== Abstract Methods ====================
-
-  /** Abstract method to render component content */
+  /** Render component content. Override in subclass. */
   abstract renderImply: () => Promise<TUIElement[]>;
 
   /**
-   * Handle tool call and return result with optional custom summary
-   * @param toolName - The name of the tool to execute
-   * @param params - The parameters passed to the tool
-   * @returns ToolCallResult containing the result data and optional custom summary for LOG section
+   * Render component as a UI element (wraps renderImply in MdDiv or tdiv).
    */
-  abstract handleToolCall: (
-    toolName: string,
-    params: any,
-  ) => Promise<ToolCallResult<any>>;
+  async render(): Promise<TUIElement | MdElement> {
+    const body = await this.renderImply();
 
-  /** Optional hook called when component is activated by a skill */
-  onActivate?: () => Promise<void>;
+    if (body.length > 0 && body[0] instanceof MdElement) {
+      const mdChildren = body as any as MdElement[];
+      return new MdDiv({ styles: { showBorder: true } }, mdChildren);
+    }
 
-  /** Optional hook called when component is deactivated by a skill */
-  onDeactivate?: () => Promise<void>;
+    const container = new tdiv({ styles: { showBorder: true } }, body);
+    return container;
+  }
 
   /**
-   * Get component state for serialization
-   * @returns Current state of the component
+   * Render tool section for this component.
+   */
+  renderToolSection() {
+    const tools: Tool[] = [];
+    this.toolSet.forEach((value: Tool) => tools.push(value));
+    return renderToolSection(tools);
+  }
+
+  // ==================== Persistence ====================
+
+  /**
+   * Export state for persistence (includes reactive state snapshot).
+   */
+  exportState(): ComponentStateBase {
+    return {
+      version: 1,
+      updatedAt: Date.now(),
+      ...(takeSnapshot(this._reactive) as Record<string, unknown>),
+    };
+  }
+
+  /**
+   * Restore state from persistence.
+   */
+  restoreState(state: ComponentStateBase): void {
+    const keys = Object.keys(this.initialState());
+    const saved = Object.fromEntries(
+      keys.filter((k) => k in state).map((k) => [k, (state as any)[k]]),
+    );
+    if (Object.keys(saved).length > 0) {
+      Object.assign(this._reactive, saved);
+    }
+  }
+
+  /**
+   * Export component data. Default implementation uses valtio snapshot.
+   * Override for custom export logic.
+   */
+  async exportData(options?: ExportOptions): Promise<ExportResult> {
+    return {
+      data: takeSnapshot(this._reactive),
+      format: options?.format ?? 'json',
+      metadata: {
+        componentId: this.componentId,
+        exportedAt: new Date().toISOString(),
+      },
+    };
+  }
+
+  // ==================== Legacy ====================
+
+  /**
+   * @deprecated Use constructor injection with @inject() decorator instead
+   * @internal
+   */
+  _injectDependencies(_container: Container): void {}
+
+  /**
+   * @deprecated Use reactive state via initialState()/reactive/snapshot instead
    */
   getState(): any {
     return {};
   }
 
   /**
-   * Set component state from serialized data
-   * @param state - State to restore
+   * @deprecated Use reactive state via initialState()/reactive/snapshot instead
    */
-  setState(state: any): void {
-    // Override in subclasses to implement state restoration
-  }
-
-  /**
-   * Export component data with custom logic
-   * @param options - Export options (format, filter, params)
-   * @returns ExportResult containing exported data and metadata
-   */
-  abstract exportData(options?: ExportOptions): Promise<ExportResult>;
-
-  /**
-   * Render tool section for this component
-   * @returns TUIElement displaying available tools
-   */
-  renderToolSection() {
-    const tools: Tool[] = [];
-    this.toolSet.forEach((value: Tool) => tools.push(value));
-    const toolSection = renderToolSection(tools);
-    return toolSection;
-  }
-
-  /**
-   * Render component as a UI element
-   * @returns TUIElement or MdElement with component content
-   */
-  async render(): Promise<TUIElement | MdElement> {
-    const body = await this.renderImply();
-
-    // Check if body contains MdElements (Markdown mode)
-    if (body.length > 0 && body[0] instanceof MdElement) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mdChildren = body as any as MdElement[];
-      return new MdDiv({ styles: { showBorder: true } }, mdChildren);
-    }
-
-    // Default to TUI rendering
-    const container = new tdiv(
-      {
-        styles: { showBorder: true },
-      },
-      body,
-    );
-
-    return container;
-  }
+  setState(_state: any): void {}
 }

@@ -1,7 +1,4 @@
-import {
-  ReactiveToolComponent,
-  type ExportOptions,
-} from 'agent-lib/components';
+import { ToolComponent, type ExportOptions } from 'agent-lib/components';
 import type { ToolCallResult } from 'agent-lib/components';
 import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui';
 import { createPicosToolSet } from './picosTools.js';
@@ -25,12 +22,11 @@ interface PicosState {
   exportResult: string | null;
 }
 
-export class PicosComponent extends ReactiveToolComponent<PicosState> {
-  override componentId = 'picos';
-  override displayName = 'PICOS Builder';
-  override description =
-    'Build PICOS clinical questions for evidence-based medicine';
-  override componentPrompt = `## PICOS Clinical Question Builder
+export class PicosComponent extends ToolComponent<PicosState> {
+  componentId = 'picos';
+  displayName = 'PICOS Builder';
+  description = 'Build PICOS clinical questions for evidence-based medicine';
+  componentPrompt = `## PICOS Clinical Question Builder
 
 This component helps construct PICOS clinical questions for systematic reviews and evidence-based medicine.
 
@@ -58,7 +54,7 @@ This component helps construct PICOS clinical questions for systematic reviews a
     super();
   }
 
-  protected override initialState(): PicosState {
+  protected initialState(): PicosState {
     return {
       currentPicos: {},
       generatedQuestion: null,
@@ -67,7 +63,7 @@ This component helps construct PICOS clinical questions for systematic reviews a
     };
   }
 
-  protected override toolDefs() {
+  protected toolDefs() {
     const tools = createPicosToolSet();
     const defs: Record<
       string,
@@ -650,7 +646,7 @@ This component helps construct PICOS clinical questions for systematic reviews a
     return searchParts.join(' AND ');
   }
 
-  override async exportData(options?: ExportOptions) {
+  async exportData(options?: ExportOptions) {
     const s = this.snapshot;
     return {
       data: {

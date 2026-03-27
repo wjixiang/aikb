@@ -1,4 +1,4 @@
-import { ReactiveToolComponent, ExportOptions } from 'agent-lib/components';
+import { ToolComponent, ExportOptions } from 'agent-lib/components';
 import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui';
 import type { ToolCallResult } from 'agent-lib/components';
 import { createPrismaToolSet } from './prismaTools.js';
@@ -46,12 +46,11 @@ interface PrismaChecklistState {
   filteredItems: PrismaChecklistItem[] | null;
 }
 
-export class PrismaCheckListComponent extends ReactiveToolComponent<PrismaChecklistState> {
-  override componentId = 'prisma-checklist';
-  override displayName = 'PRISMA Checklist';
-  override description =
-    'PRISMA 2020 checklist for systematic review reporting';
-  override componentPrompt = `## PRISMA Checklist
+export class PrismaCheckListComponent extends ToolComponent<PrismaChecklistState> {
+  componentId = 'prisma-checklist';
+  displayName = 'PRISMA Checklist';
+  description = 'PRISMA 2020 checklist for systematic review reporting';
+  componentPrompt = `## PRISMA Checklist
 
 This component provides the PRISMA 2020 checklist for systematic review and meta-analysis reporting.
 
@@ -83,7 +82,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     this.initializeDefaultItems();
   }
 
-  protected override initialState(): PrismaChecklistState {
+  protected initialState(): PrismaChecklistState {
     return {
       metadata: {},
       validationResult: null,
@@ -93,7 +92,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     };
   }
 
-  protected override toolDefs() {
+  protected toolDefs() {
     const tools = createPrismaToolSet();
     const defs: Record<
       string,
@@ -884,7 +883,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     return { ...this.snapshot.metadata };
   }
 
-  override async exportData(options?: ExportOptions) {
+  async exportData(options?: ExportOptions) {
     return {
       data: this.getChecklist(),
       format: options?.format ?? 'json',

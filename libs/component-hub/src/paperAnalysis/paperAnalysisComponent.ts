@@ -1,18 +1,18 @@
 import { injectable } from 'inversify';
-import { ReactiveToolComponent } from 'agent-lib/components';
+import { ToolComponent } from 'agent-lib/components';
 import { tdiv } from 'agent-lib/components/ui';
 import type { ToolCallResult } from 'agent-lib/components';
 import { z } from 'zod';
 
 @injectable()
-export class PaperAnalysisComponent extends ReactiveToolComponent<{
+export class PaperAnalysisComponent extends ToolComponent<{
   analysisResults: any[];
 }> {
-  override componentId = 'paper-analyzer';
-  override displayName = 'Paper Analyzer';
-  override description =
+  componentId = 'paper-analyzer';
+  displayName = 'Paper Analyzer';
+  description =
     'Analyzes academic papers for complexity, citations, and comparisons';
-  override componentPrompt = `## Paper Analysis
+  componentPrompt = `## Paper Analysis
 
 This component analyzes academic papers for complexity, citations, and comparisons.
 
@@ -26,11 +26,11 @@ This component analyzes academic papers for complexity, citations, and compariso
 - Extract key citations to build literature review foundations
 - Compare papers to avoid redundancy in literature survey`;
 
-  protected override initialState() {
+  protected initialState() {
     return { analysisResults: [] };
   }
 
-  protected override toolDefs() {
+  protected toolDefs() {
     return {
       calculate_complexity: {
         desc: 'Calculate paper complexity scores across multiple dimensions (technical, mathematical, conceptual, experimental)',

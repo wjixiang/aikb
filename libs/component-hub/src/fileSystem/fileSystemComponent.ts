@@ -1,10 +1,10 @@
-import { ReactiveToolComponent, tdiv } from 'agent-lib/components';
+import { ToolComponent, tdiv } from 'agent-lib/components';
 import type { TUIElement } from 'agent-lib/components/ui';
 
-export class FileSystemComponent extends ReactiveToolComponent {
+export class FileSystemComponent extends ToolComponent {
   componentPrompt: string = '';
 
-  protected override toolDefs() {
+  protected toolDefs() {
     return {};
   }
 

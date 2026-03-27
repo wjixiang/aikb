@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { injectable, inject, optional } from 'inversify';
-import { ReactiveToolComponent, type ExportResult } from 'agent-lib/components';
+import { ToolComponent, type ExportResult } from 'agent-lib/components';
 import type { ToolCallResult } from 'agent-lib/components';
 import type { TUIElement } from 'agent-lib/components/ui';
 import { th, tdiv } from 'agent-lib/components/ui';
@@ -29,11 +29,11 @@ type RuntimeControlToolReturnType<T extends RuntimeControlToolName> =
   RuntimeControlToolReturnTypes[T];
 
 @injectable()
-export class RuntimeControlComponent extends ReactiveToolComponent<{}> {
-  override componentId = 'runtime-control';
-  override displayName = 'Runtime Control';
-  override description = 'Create and manage child agents';
-  override componentPrompt = `## Runtime Control
+export class RuntimeControlComponent extends ToolComponent<{}> {
+  componentId = 'runtime-control';
+  displayName = 'Runtime Control';
+  description = 'Create and manage child agents';
+  componentPrompt = `## Runtime Control
 
 This component enables creation and management of child agents via REST API.
 
@@ -69,11 +69,11 @@ This component enables creation and management of child agents via REST API.
     }
   }
 
-  protected override initialState() {
+  protected initialState() {
     return {};
   }
 
-  protected override toolDefs() {
+  protected toolDefs() {
     return {
       createAgent: {
         desc: runtimeControlToolSchemas.createAgent.desc,
@@ -143,7 +143,7 @@ This component enables creation and management of child agents via REST API.
     };
   }
 
-  override handleToolCall: {
+  handleToolCall: {
     <T extends RuntimeControlToolName>(
       toolName: T,
       params: unknown,
@@ -219,7 +219,7 @@ This component enables creation and management of child agents via REST API.
   // Render
   // ============================================
 
-  override renderImply = async (): Promise<TUIElement[]> => {
+  renderImply = async (): Promise<TUIElement[]> => {
     const elements: TUIElement[] = [];
 
     elements.push(
@@ -282,7 +282,7 @@ This component enables creation and management of child agents via REST API.
   // Export
   // ============================================
 
-  override async exportData(_options?: any): Promise<ExportResult> {
+  async exportData(_options?: any): Promise<ExportResult> {
     return {
       data: {
         instanceId: this.instanceId,

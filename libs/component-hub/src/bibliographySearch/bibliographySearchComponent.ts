@@ -1,7 +1,4 @@
-import {
-  ReactiveToolComponent,
-  type ExportOptions,
-} from 'agent-lib/components';
+import { ToolComponent, type ExportOptions } from 'agent-lib/components';
 import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui';
 import type { ToolCallResult } from 'agent-lib/components';
 import {
@@ -34,11 +31,11 @@ interface BibliographySearchState {
   savedArticles: Map<string, SavedArticle>;
 }
 
-export class BibliographySearchComponent extends ReactiveToolComponent<BibliographySearchState> {
-  override componentId = 'bibliography-search';
-  override displayName = 'Bibliography Search';
-  override description = 'Search and manage PubMed literature';
-  override componentPrompt = `## Bibliography Search
+export class BibliographySearchComponent extends ToolComponent<BibliographySearchState> {
+  componentId = 'bibliography-search';
+  displayName = 'Bibliography Search';
+  description = 'Search and manage PubMed literature';
+  componentPrompt = `## Bibliography Search
 
 This component provides access to PubMed literature database for evidence-based medicine research.
 
@@ -62,7 +59,7 @@ This component provides access to PubMed literature database for evidence-based 
     this.pubmedService = new PubmedService();
   }
 
-  protected override initialState(): BibliographySearchState {
+  protected initialState(): BibliographySearchState {
     return {
       currentResults: null,
       currentArticleDetail: null,
@@ -73,7 +70,7 @@ This component provides access to PubMed literature database for evidence-based 
     };
   }
 
-  protected override toolDefs() {
+  protected toolDefs() {
     const tools = createBibliographySearchToolSet();
     const defs: Record<
       string,
@@ -770,7 +767,7 @@ This component provides access to PubMed literature database for evidence-based 
     };
   }
 
-  override async exportData(options?: ExportOptions) {
+  async exportData(options?: ExportOptions) {
     const s = this.snapshot;
     return {
       data: {

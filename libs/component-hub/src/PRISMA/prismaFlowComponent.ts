@@ -1,4 +1,4 @@
-import { ReactiveToolComponent } from 'agent-lib/components';
+import { ToolComponent } from 'agent-lib/components';
 import type { ExportOptions, ToolCallResult } from 'agent-lib/components';
 import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui';
 import { createPrismaFlowToolSet } from './prismaFlowTools.js';
@@ -24,12 +24,11 @@ interface PrismaFlowState {
   exportResult: string | null;
 }
 
-export class PrismaFlowComponent extends ReactiveToolComponent<PrismaFlowState> {
-  override componentId = 'prisma-flow';
-  override displayName = 'PRISMA Flow Diagram';
-  override description =
-    'Build PRISMA 2020 flow diagrams for systematic reviews';
-  override componentPrompt = `## PRISMA Flow Diagram
+export class PrismaFlowComponent extends ToolComponent<PrismaFlowState> {
+  componentId = 'prisma-flow';
+  displayName = 'PRISMA Flow Diagram';
+  description = 'Build PRISMA 2020 flow diagrams for systematic reviews';
+  componentPrompt = `## PRISMA Flow Diagram
 
 This component builds PRISMA 2020 flow diagrams for systematic reviews and meta-analyses.
 
@@ -51,7 +50,7 @@ This component builds PRISMA 2020 flow diagrams for systematic reviews and meta-
     super();
   }
 
-  protected override initialState(): PrismaFlowState {
+  protected initialState(): PrismaFlowState {
     return {
       databaseFlow: {},
       otherMethodsFlow: {},
@@ -61,7 +60,7 @@ This component builds PRISMA 2020 flow diagrams for systematic reviews and meta-
     };
   }
 
-  protected override toolDefs() {
+  protected toolDefs() {
     const tools = createPrismaFlowToolSet();
     const defs: Record<
       string,
