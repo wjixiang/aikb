@@ -160,10 +160,6 @@ export interface IRuntimeControlClient {
     input: Record<string, unknown>,
     options?: {
       priority?: 'low' | 'normal' | 'high' | 'urgent';
-      /** ACK timeout in ms */
-      ackTimeout?: number;
-      /** Result timeout in ms */
-      resultTimeout?: number;
     },
   ): Promise<A2ATaskResult>;
 
@@ -352,8 +348,6 @@ export interface AgentRuntimeConfig {
   messageBus?: MessageBusConfig;
   /** ACK timeout in ms for message confirmation (default: 5000) */
   ackTimeout?: number;
-  /** Result timeout in ms for async task completion (default: 60000) */
-  resultTimeout?: number;
   /** Max retries for failed message delivery (default: 3) */
   maxRetries?: number;
   /** Runtime control config - when restBaseUrl is set, topology tools use REST API */

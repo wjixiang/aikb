@@ -91,7 +91,11 @@ function getTypeColor(
   return '#64748b';
 }
 
-export function AgentTopology() {
+export function AgentTopology({
+  onSelectAgent,
+}: {
+  onSelectAgent?: (instanceId: string) => void;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(
@@ -354,7 +358,8 @@ export function AgentTopology() {
         .attr('fill', (d) => getTypeColor(d, soulColors))
         .attr('stroke', '#1e293b')
         .attr('stroke-width', 2)
-        .attr('fill-opacity', 0.85);
+        .attr('fill-opacity', 0.85)
+        .style('cursor', 'pointer');
 
       // Status dot
       node
@@ -415,6 +420,10 @@ export function AgentTopology() {
           tooltip.style('display', 'none');
         });
 
+      node.on('click', (_event, d) => {
+        if (onSelectAgent) onSelectAgent(d.id);
+      });
+
       // Tick
       simulation.on('tick', () => {
         link
@@ -426,7 +435,7 @@ export function AgentTopology() {
         node.attr('transform', (d) => `translate(${d.x},${d.y})`);
       });
     },
-    [size],
+    [size, onSelectAgent],
   );
 
   const prevDataRef = useRef<string>('');
@@ -495,9 +504,7 @@ export function AgentTopology() {
           />
         </div>
         <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-          <span>
-            Drag nodes to rearrange. Scroll to zoom.
-          </span>
+          <span>Drag nodes to rearrange. Scroll to zoom.</span>
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-4 h-0.5"

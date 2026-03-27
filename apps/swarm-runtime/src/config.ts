@@ -29,8 +29,6 @@ export interface AppConfig {
   messageBus?: AgentRuntimeConfig['messageBus'];
   /** ACK timeout in ms for message confirmation (default: 5000) */
   ackTimeout?: number;
-  /** Result timeout in ms for async task completion (default: 60000) */
-  resultTimeout?: number;
   /** Max retries for failed message delivery (default: 3) */
   maxRetries?: number;
   /** Runtime control REST config for topology operations */
@@ -38,6 +36,33 @@ export interface AppConfig {
     restBaseUrl?: string;
     apiKey?: string;
   };
+}
+
+/**
+ * Provider → env var mapping for API keys.
+ * Falls back to OPENAI_API_KEY / GLM_API_KEY for backward compatibility.
+ */
+const PROVIDER_KEY_ENV: Record<string, string[]> = {
+  anthropic: ['ANTHROPIC_API_KEY'],
+  openai: ['OPENAI_API_KEY', 'GLM_API_KEY'],
+  'openai-native': ['OPENAI_API_KEY'],
+  minimax: ['MINIMAX_API_KEY'],
+  moonshot: ['KIMI_API_KEY', 'MOONSHOT_API_KEY'],
+  ollama: [],
+  lmstudio: [],
+  zai: ['ZAI_API_KEY'],
+};
+
+function resolveApiKey(provider: string): string {
+  const candidates = PROVIDER_KEY_ENV[provider];
+  if (candidates) {
+    for (const envVar of candidates) {
+      const val = process.env[envVar];
+      if (val) return val;
+    }
+  }
+  // Backward compatibility fallback
+  return process.env['OPENAI_API_KEY'] || process.env['GLM_API_KEY'] || '';
 }
 
 /**
@@ -87,7 +112,7 @@ export function loadConfig(): AppConfig {
     },
     api: {
       apiProvider: process.env['API_PROVIDER'] || 'openai',
-      apiKey: process.env['OPENAI_API_KEY'] || process.env['GLM_API_KEY'] || '',
+      apiKey: resolveApiKey(process.env['API_PROVIDER'] || 'openai'),
       openAiBaseUrl: process.env['API_BASE_URL'] || '',
       apiModelId: process.env['API_MODEL_ID'] || '',
       timeout: parseInt(process.env['API_TIMEOUT'] || '120000'),
@@ -102,9 +127,6 @@ export function loadConfig(): AppConfig {
     // Topology timeout configuration
     ...(process.env['A2A_ACK_TIMEOUT']
       ? { ackTimeout: parseInt(process.env['A2A_ACK_TIMEOUT']) }
-      : {}),
-    ...(process.env['A2A_RESULT_TIMEOUT']
-      ? { resultTimeout: parseInt(process.env['A2A_RESULT_TIMEOUT']) }
       : {}),
     ...(process.env['A2A_MAX_RETRIES']
       ? { maxRetries: parseInt(process.env['A2A_MAX_RETRIES']) }

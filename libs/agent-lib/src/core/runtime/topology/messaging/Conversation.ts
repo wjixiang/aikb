@@ -18,7 +18,6 @@ export interface IConversationManager {
     request: TopologyMessage,
     config?: {
       ackTimeout?: number;
-      resultTimeout?: number;
       maxRetries?: number;
     },
   ): Conversation;
@@ -43,7 +42,6 @@ export class ConversationManager implements IConversationManager {
     request: TopologyMessage,
     config?: {
       ackTimeout?: number;
-      resultTimeout?: number;
       maxRetries?: number;
     },
   ): Conversation {

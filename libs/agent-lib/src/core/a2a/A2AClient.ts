@@ -87,10 +87,7 @@ export interface IA2AClient {
   ): Promise<void>;
 
   /** Wait for result of a previously sent task (by conversationId) */
-  waitForResult(
-    conversationId: string,
-    timeoutMs?: number,
-  ): Promise<A2ATaskResult>;
+  waitForResult(conversationId: string): Promise<A2ATaskResult>;
 
   /** Get the client instance ID */
   getInstanceId(): string;
@@ -107,7 +104,6 @@ export class A2AClient implements IA2AClient {
   private readonly instanceId: string;
   private readonly messageBus: IMessageBus;
   private readonly agentRegistry: IAgentCardRegistry;
-  private readonly defaultTimeout: number;
   private readonly retryConfig?: { maxAttempts: number; backoffMs: number };
 
   constructor(
@@ -122,7 +118,6 @@ export class A2AClient implements IA2AClient {
     this.instanceId = config.instanceId;
     this.messageBus = messageBus;
     this.agentRegistry = agentRegistry;
-    this.defaultTimeout = config.defaultTimeout ?? 60000;
     this.retryConfig = config.retry;
   }
 
@@ -240,7 +235,6 @@ export class A2AClient implements IA2AClient {
           {
             taskId,
             conversationId: a2aMessage.conversationId,
-            timeoutMs: this.defaultTimeout,
           },
           'Waiting for task result',
         );
@@ -260,27 +254,6 @@ export class A2AClient implements IA2AClient {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
-        // Check if it's a timeout error and we have retries left
-        const isTimeout = lastError.message.includes('Timeout');
-        const hasRetries = attempt < maxAttempts;
-
-        if (isTimeout && hasRetries) {
-          this.logger.warn(
-            {
-              attempt,
-              maxAttempts,
-              backoffMs: backoffMs * attempt,
-              error: lastError.message,
-              taskId,
-              conversationId: a2aMessage.conversationId,
-            },
-            'Task timed out, retrying with backoff',
-          );
-          await this.sleep(backoffMs * attempt); // Exponential backoff
-          continue;
-        }
-
-        // Non-timeout error or no retries left
         this.logger.error(
           { error, targetAgentId, taskId, attempt },
           'Failed to send task',
@@ -507,12 +480,8 @@ export class A2AClient implements IA2AClient {
    */
   async waitForResult(
     conversationId: string,
-    timeoutMs?: number,
   ): Promise<A2ATaskResult> {
-    const timeout = timeoutMs ?? this.defaultTimeout;
     const rawResult = await new Promise<unknown>((resolve, reject) => {
-      let timeoutId: ReturnType<typeof setTimeout>;
-
       const handleEvent = (event: { type: string; payload: unknown }) => {
         const payload = event.payload as {
           conversationId?: string;
@@ -525,14 +494,12 @@ export class A2AClient implements IA2AClient {
         }
 
         if (event.type === 'conversation:completed') {
-          clearTimeout(timeoutId);
           unsubscribe();
           resolve(payload.result);
         } else if (
           event.type === 'conversation:failed' ||
           event.type === 'conversation:timeout'
         ) {
-          clearTimeout(timeoutId);
           unsubscribe();
           reject(
             new Error(
@@ -544,21 +511,14 @@ export class A2AClient implements IA2AClient {
 
       const unsubscribe = this.messageBus.onEvent(handleEvent);
 
-      timeoutId = setTimeout(() => {
-        unsubscribe();
-        reject(new Error(`Timeout waiting for result: ${conversationId}`));
-      }, timeout);
-
       const conversation = this.messageBus.getConversation(conversationId);
       if (conversation?.status === 'completed' && conversation.result) {
-        clearTimeout(timeoutId);
         unsubscribe();
         resolve(conversation.result);
       } else if (
         conversation?.status === 'failed' ||
         conversation?.status === 'timeout'
       ) {
-        clearTimeout(timeoutId);
         unsubscribe();
         reject(
           new Error(`Conversation ${conversation.status}: ${conversationId}`),

@@ -192,35 +192,35 @@ describe('ApiClientFactory', () => {
             expect(client.config.baseURL).toBe('https://custom.moonshot.cn/v1');
         });
 
-        it('should create MiniMax client', () => {
+        it('should create MiniMax client with Anthropic-compatible API', () => {
             const config: ProviderSettings = {
                 apiProvider: 'minimax',
                 apiKey: 'test-key',
-                apiModelId: 'abab5.5-chat',
+                apiModelId: 'Minimax-M2.7-highspeed',
             };
             const client = ApiClientFactory.create(config);
-            expect(client).toBeInstanceOf(OpenaiCompatibleApiClient);
+            expect(client).toBeInstanceOf(AnthropicCompatibleApiClient);
         });
 
-        it('should use default MiniMax baseURL', () => {
+        it('should use default MiniMax baseURL (Token Plan)', () => {
             const config: ProviderSettings = {
                 apiProvider: 'minimax',
                 apiKey: 'test-key',
-                apiModelId: 'abab5.5-chat',
+                apiModelId: 'Minimax-M2.7-highspeed',
             };
             const client = ApiClientFactory.create(config) as any;
-            expect(client.config.baseURL).toBe('https://api.minimax.chat/v1');
+            expect(client.config.baseURL).toBe('https://api.minimaxi.com/anthropic');
         });
 
         it('should use custom MiniMax baseURL', () => {
             const config: ProviderSettings = {
                 apiProvider: 'minimax',
                 apiKey: 'test-key',
-                apiModelId: 'abab5.5-chat',
-                minimaxBaseUrl: 'https://custom.minimax.chat/v1',
+                apiModelId: 'Minimax-M2.7-highspeed',
+                minimaxBaseUrl: 'https://custom.minimaxi.com/anthropic',
             };
             const client = ApiClientFactory.create(config) as any;
-            expect(client.config.baseURL).toBe('https://custom.minimax.chat/v1');
+            expect(client.config.baseURL).toBe('https://custom.minimaxi.com/anthropic');
         });
 
         it('should default to OpenaiCompatibleApiClient for unknown provider', () => {

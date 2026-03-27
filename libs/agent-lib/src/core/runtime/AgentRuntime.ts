@@ -577,7 +577,6 @@ export class AgentRuntime implements IAgentRuntime {
       redis: config.messageBus?.redis,
       topology: {
         defaultAckTimeout: config.ackTimeout,
-        defaultResultTimeout: config.resultTimeout,
         maxRetries: config.maxRetries,
       },
     };

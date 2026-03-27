@@ -127,7 +127,6 @@ export class MessageBus implements IMessageBus {
     this.ackTracker = createAckTracker();
     this.config = {
       defaultAckTimeout: config?.defaultAckTimeout ?? 60000,
-      defaultResultTimeout: config?.defaultResultTimeout ?? 600000,
       maxRetries: config?.maxRetries ?? 3,
       defaultTtl: config?.defaultTtl ?? 10,
     };
@@ -140,7 +139,6 @@ export class MessageBus implements IMessageBus {
 
     const conversation = this.conversationManager.create(message, {
       ackTimeout: this.config.defaultAckTimeout,
-      resultTimeout: this.config.defaultResultTimeout,
       maxRetries: this.config.maxRetries,
     });
 

@@ -23,7 +23,6 @@ export interface Conversation {
   status: ConversationStatus;
   createdAt: number;
   ackTimeout: number;
-  resultTimeout: number;
   retryCount: number;
   maxRetries: number;
 }
@@ -95,7 +94,6 @@ export interface TopologyEdge {
 
 export interface TopologyConfig {
   defaultAckTimeout?: number;
-  defaultResultTimeout?: number;
   maxRetries?: number;
   defaultTtl?: number;
 }

@@ -180,8 +180,6 @@ export interface A2AEventMessage extends Omit<A2AMessage, 'content'> {
 export interface A2AClientConfig {
   /** This agent's instance ID */
   instanceId: string;
-  /** Default timeout for requests in ms */
-  defaultTimeout?: number;
   /** Retry configuration */
   retry?: {
     maxAttempts: number;

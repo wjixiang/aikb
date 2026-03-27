@@ -295,7 +295,6 @@ async function demoA2ACommunication() {
   // ============================================================
   const clientAlpha = new A2AClient(messageBus, registry, {
     instanceId: agentAlpha.instanceId,
-    defaultTimeout: 10000,
   });
 
   logger.info('[Step 4] Agent Alpha A2A Client initialized');

@@ -89,7 +89,6 @@ export interface Conversation {
   status: ConversationStatus;
   createdAt: number;
   ackTimeout: number;
-  resultTimeout: number;
   retryCount: number;
   maxRetries: number;
 }
@@ -98,7 +97,6 @@ export function createConversation(
   request: TopologyMessage,
   config: {
     ackTimeout?: number;
-    resultTimeout?: number;
     maxRetries?: number;
   } = {},
 ): Conversation {
@@ -108,7 +106,6 @@ export function createConversation(
     status: 'pending',
     createdAt: Date.now(),
     ackTimeout: config.ackTimeout ?? 5000,
-    resultTimeout: config.resultTimeout ?? 60000,
     retryCount: 0,
     maxRetries: config.maxRetries ?? 3,
   };

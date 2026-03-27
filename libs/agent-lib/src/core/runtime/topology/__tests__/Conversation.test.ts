@@ -34,12 +34,10 @@ describe('ConversationManager', () => {
 
       const conversation = manager.create(request, {
         ackTimeout: 10000,
-        resultTimeout: 120000,
         maxRetries: 5,
       });
 
       expect(conversation.ackTimeout).toBe(10000);
-      expect(conversation.resultTimeout).toBe(120000);
       expect(conversation.maxRetries).toBe(5);
     });
   });

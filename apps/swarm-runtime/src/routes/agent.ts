@@ -242,4 +242,91 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
       };
     },
   );
+
+  fastify.get(
+    '/:instanceId/memory',
+    {
+      schema: {
+        tags: ['agents'],
+        description:
+          'Get agent memory (conversation messages and workspace contexts)',
+        params: {
+          type: 'object',
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
+        },
+        querystring: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              default: 50,
+              description: 'Max messages to return',
+            },
+          },
+        },
+        response: { 200: responseSchema, 404: responseSchema },
+      } as any,
+    },
+    async (request: any, reply: any) => {
+      const { instanceId } = request.params;
+      const { limit = 50 } = request.query ?? {};
+      try {
+        const resolvedId = fastify.agentRuntime.resolveAgentId(instanceId);
+        const agent = await fastify.agentRuntime.getAgent(resolvedId);
+        if (!agent)
+          return reply
+            .code(404)
+            .send({ success: false, error: 'Agent not found' });
+
+        const memoryModule = agent.getMemoryModule();
+        const allMessages = memoryModule.getAllMessages();
+        const workspaceContexts = memoryModule.getWorkspaceContexts();
+
+        const messages = allMessages.slice(-limit).map((msg) => ({
+          role: msg.role,
+          content: msg.content.map((block: any) => {
+            if (block.type === 'text')
+              return { type: 'text', text: block.text };
+            if (block.type === 'tool_use')
+              return { type: 'tool_use', name: block.name, id: block.id };
+            if (block.type === 'tool_result')
+              return {
+                type: 'tool_result',
+                tool_use_id: block.tool_use_id,
+                content:
+                  typeof block.content === 'string'
+                    ? block.content.slice(0, 500)
+                    : block.content,
+              };
+            if (block.type === 'thinking')
+              return {
+                type: 'thinking',
+                thinking: block.thinking?.slice(0, 300),
+              };
+            return { type: block.type };
+          }),
+          ts: msg.ts,
+        }));
+
+        return {
+          success: true,
+          data: {
+            messages,
+            totalMessages: allMessages.length,
+            workspaceContextCount: workspaceContexts.length,
+            config: memoryModule.getConfig(),
+          },
+        };
+      } catch {
+        return reply
+          .code(404)
+          .send({ success: false, error: 'Agent not found' });
+      }
+    },
+  );
 };

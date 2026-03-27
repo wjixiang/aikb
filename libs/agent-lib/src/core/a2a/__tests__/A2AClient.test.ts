@@ -85,7 +85,6 @@ describe('A2AClient', () => {
     registry = new AgentCardRegistry();
     client = new A2AClient(messageBus, registry, {
       instanceId: 'test-agent-001',
-      defaultTimeout: 5000,
     });
   });
 

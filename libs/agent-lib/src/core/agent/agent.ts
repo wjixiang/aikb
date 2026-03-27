@@ -176,7 +176,6 @@ export class Agent {
     string,
     {
       resolve: (result: { output: unknown; status: string }) => void;
-      timeoutId: NodeJS.Timeout;
     }
   > = new Map();
 
@@ -408,12 +407,11 @@ export class Agent {
         // Run requestLoop in background and wait for completion
         const processingPromise = this.requestLoop();
 
-        // Wait for either completeTask or timeout
+        // Wait for either completeTask or requestLoop to finish
         try {
           const result = await Promise.race([
             this.waitForA2ATaskCompletion(
               ctx.message.conversationId,
-              this.config.apiRequestTimeout * 5,
             ),
             processingPromise, // Fallback: if requestLoop finishes first, use its result
           ]);
@@ -559,7 +557,6 @@ export class Agent {
   ): void {
     const completion = this._a2aTaskCompletions.get(conversationId);
     if (completion) {
-      clearTimeout(completion.timeoutId);
       completion.resolve({ output, status });
       this._a2aTaskCompletions.delete(conversationId);
       this.logger.debug(
@@ -574,15 +571,9 @@ export class Agent {
    */
   private waitForA2ATaskCompletion(
     conversationId: string,
-    timeoutMs: number = 300000,
   ): Promise<{ output: unknown; status: string }> {
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        this._a2aTaskCompletions.delete(conversationId);
-        reject(new Error(`A2A task completion timeout: ${conversationId}`));
-      }, timeoutMs);
-
-      this._a2aTaskCompletions.set(conversationId, { resolve, timeoutId });
+    return new Promise((resolve) => {
+      this._a2aTaskCompletions.set(conversationId, { resolve });
     });
   }
 

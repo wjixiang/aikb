@@ -161,16 +161,16 @@ export class ApiClientFactory {
         });
       }
       case 'minimax': {
-        // MiniMax API - uses the MiniMax base URL
-        // MiniMax API endpoint format: https://api.minimax.chat/v1/text/chatcompletion_v2
-        const baseURL = config.minimaxBaseUrl || 'https://api.minimax.chat/v1';
+        // MiniMax Token Plan uses Anthropic-compatible API
+        // https://platform.minimaxi.com/docs/token-plan/quickstart
+        const baseURL = config.minimaxBaseUrl || 'https://api.minimaxi.com/anthropic';
         console.log(
-          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
+          '[ApiClientFactory.create] Creating AnthropicCompatibleApiClient for MiniMax with model:',
           model,
           'baseURL:',
           baseURL,
         );
-        return new OpenaiCompatibleApiClient({
+        return new AnthropicCompatibleApiClient({
           apiKey,
           model,
           baseURL,

@@ -26,7 +26,6 @@ const runtimeConfig: AgentRuntimeConfig = {
   messageBus: config.messageBus as any,
   ...(config.runtimeControl ? { runtimeControl: config.runtimeControl } : {}),
   ...(config.ackTimeout ? { ackTimeout: config.ackTimeout } : {}),
-  ...(config.resultTimeout ? { resultTimeout: config.resultTimeout } : {}),
   ...(config.maxRetries ? { maxRetries: config.maxRetries } : {}),
 };
 
@@ -115,7 +114,7 @@ try {
   fastify.log.info(`   MessageBus: ${config.messageBus?.mode || 'memory'}`);
   fastify.log.info(`   Max Agents: ${config.server.maxAgents}`);
   fastify.log.info(
-    `   ACK Timeout: ${config.ackTimeout ?? 5000}ms, Result Timeout: ${config.resultTimeout ?? 60000}ms`,
+    `   ACK Timeout: ${config.ackTimeout ?? 5000}ms`,
   );
   fastify.log.info(
     `   Task Persistence: ${fastify.taskService ? 'enabled' : 'disabled (set AGENT_DATABASE_URL)'}`,

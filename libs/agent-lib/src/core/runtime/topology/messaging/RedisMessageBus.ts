@@ -58,7 +58,6 @@ export class RedisMessageBus implements IMessageBus {
 
     this.config = {
       defaultAckTimeout: topologyConfig.defaultAckTimeout ?? 30000,
-      defaultResultTimeout: topologyConfig.defaultResultTimeout ?? 60000,
       maxRetries: topologyConfig.maxRetries ?? 3,
       defaultTtl: topologyConfig.defaultTtl ?? 10,
     };
@@ -321,7 +320,6 @@ export class RedisMessageBus implements IMessageBus {
     // Create conversation
     const conversation = this.conversationManager.create(message, {
       ackTimeout: this.config.defaultAckTimeout,
-      resultTimeout: this.config.defaultResultTimeout,
       maxRetries: this.config.maxRetries,
     });
 
