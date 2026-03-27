@@ -1,257 +1,239 @@
-import { ToolComponent, type Tool, type ToolCallResult, type TUIElement, type ExportOptions, tdiv } from '../../../components/index.js';
+import {
+  ReactiveToolComponent,
+  type ToolCallResult,
+  type TUIElement,
+  tdiv,
+} from '../../../components/index.js';
 import * as z from 'zod';
 
 /**
  * Basic TestComponent - Simple component for testing registration
  * Has a single test_tool
  */
-export class TestComponent extends ToolComponent {
-    override readonly componentId = 'test-component';
-    override readonly displayName = 'Test Component';
-    override readonly description = 'A test component';
-    override componentPrompt = 'Test component prompt';
+export class TestComponent extends ReactiveToolComponent {
+  override readonly componentId = 'test-component';
+  override readonly displayName = 'Test Component';
+  override readonly description = 'A test component';
+  override componentPrompt = 'Test component prompt';
 
-    toolSet = new Map<string, Tool>([
-        ['test_tool', {
-            toolName: 'test_tool',
-            paramsSchema: z.object({}),
-            desc: 'A test tool',
-        }],
-    ]);
-
-    renderImply = async (): Promise<TUIElement[]> => {
-        return [];
+  protected override toolDefs() {
+    return {
+      test_tool: {
+        desc: 'A test tool',
+        paramsSchema: z.object({}),
+      },
     };
+  }
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        return { success: true, data: { success: true } };
-    };
+  renderImply = async (): Promise<TUIElement[]> => {
+    return [];
+  };
 
-    async exportData(options?: ExportOptions) {
-        return { data: {}, format: options?.format ?? 'json', metadata: { componentId: this.componentId } };
-    }
+  async onTest_tool(): Promise<ToolCallResult<any>> {
+    return { success: true, data: { success: true } };
+  }
 }
 
 /**
  * TestComponent2 - Another component with different ID for testing
  */
-export class TestComponent2 extends ToolComponent {
-    override readonly componentId = 'test-component-2';
-    override readonly displayName = 'Test Component 2';
-    override readonly description = 'Another test component';
-    override componentPrompt = 'Test component 2 prompt';
+export class TestComponent2 extends ReactiveToolComponent {
+  override readonly componentId = 'test-component-2';
+  override readonly displayName = 'Test Component 2';
+  override readonly description = 'Another test component';
+  override componentPrompt = 'Test component 2 prompt';
 
-    toolSet = new Map<string, Tool>([
-        ['test_tool', {
-            toolName: 'test_tool',
-            paramsSchema: z.object({}),
-            desc: 'A test tool',
-        }],
-    ]);
-
-    renderImply = async (): Promise<TUIElement[]> => {
-        return [];
+  protected override toolDefs() {
+    return {
+      test_tool: {
+        desc: 'A test tool',
+        paramsSchema: z.object({}),
+      },
     };
+  }
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        return { success: true, data: { success: true } };
-    };
+  renderImply = async (): Promise<TUIElement[]> => {
+    return [];
+  };
 
-    async exportData(options?: ExportOptions) {
-        return { data: {}, format: options?.format ?? 'json', metadata: { componentId: this.componentId } };
-    }
+  async onTest_tool(): Promise<ToolCallResult<any>> {
+    return { success: true, data: { success: true } };
+  }
 }
 
 /**
  * AnotherComponent - Component with different tool for testing
  */
-export class AnotherComponent extends ToolComponent {
-    override readonly componentId = 'another-component';
-    override readonly displayName = 'Another Component';
-    override readonly description = 'Another test component';
-    override componentPrompt = 'Another component prompt';
+export class AnotherComponent extends ReactiveToolComponent {
+  override readonly componentId = 'another-component';
+  override readonly displayName = 'Another Component';
+  override readonly description = 'Another test component';
+  override componentPrompt = 'Another component prompt';
 
-    toolSet = new Map<string, Tool>([
-        ['another_tool', {
-            toolName: 'another_tool',
-            paramsSchema: z.object({}),
-            desc: 'Another test tool',
-        }],
-    ]);
-
-    renderImply = async (): Promise<TUIElement[]> => {
-        return [];
+  protected override toolDefs() {
+    return {
+      another_tool: {
+        desc: 'Another test tool',
+        paramsSchema: z.object({}),
+      },
     };
+  }
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        return { success: true, data: { success: true } };
-    };
+  renderImply = async (): Promise<TUIElement[]> => {
+    return [];
+  };
 
-    async exportData(options?: ExportOptions) {
-        return { data: {}, format: options?.format ?? 'json', metadata: { componentId: this.componentId } };
-    }
+  async onAnother_tool(): Promise<ToolCallResult<any>> {
+    return { success: true, data: { success: true } };
+  }
 }
 
 /**
  * Test component A - Search functionality
  * Provides a search tool that stores query and results
  */
-export class TestToolComponentA extends ToolComponent {
-    override componentPrompt = 'Test tool component A prompt';
+export class TestToolComponentA extends ReactiveToolComponent<{
+  searchQuery: string;
+  searchResults: string[];
+}> {
+  override componentPrompt = 'Test tool component A prompt';
 
-    toolSet = new Map<string, Tool>([
-        ['search', {
-            toolName: 'search',
-            desc: 'Search for something',
-            paramsSchema: z.object({ query: z.string() })
-        }]
-    ]);
+  protected override initialState() {
+    return { searchQuery: '', searchResults: [] };
+  }
 
-    private searchQuery = '';
-    private searchResults: string[] = [];
-
-    renderImply = async (): Promise<tdiv[]> => {
-        return [
-            new tdiv({
-                content: `Search Query: ${this.searchQuery}`,
-                styles: { width: 80, showBorder: false }
-            }),
-            new tdiv({
-                content: `Results: ${this.searchResults.join(', ')}`,
-                styles: { width: 80, showBorder: false }
-            })
-        ];
+  protected override toolDefs() {
+    return {
+      search: {
+        desc: 'Search for something',
+        paramsSchema: z.object({ query: z.string() }),
+      },
     };
+  }
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        if (toolName === 'search') {
-            this.searchQuery = params.query;
-            this.searchResults = [`result1 for ${params.query}`, `result2 for ${params.query}`];
-            return {
-                success: true,
-                data: { query: params.query, results: this.searchResults },
-                summary: `[TestA] 搜索: ${params.query}, 找到 ${this.searchResults.length} 个结果`
-            };
-        }
-        return { success: false, data: { error: 'Unknown tool' } };
+  renderImply = async (): Promise<tdiv[]> => {
+    const s = this.snapshot;
+    return [
+      new tdiv({
+        content: `Search Query: ${s.searchQuery}`,
+        styles: { width: 80, showBorder: false },
+      }),
+      new tdiv({
+        content: `Results: ${s.searchResults.join(', ')}`,
+        styles: { width: 80, showBorder: false },
+      }),
+    ];
+  };
+
+  async onSearch(params: { query: string }): Promise<ToolCallResult<any>> {
+    this.reactive.searchQuery = params.query;
+    this.reactive.searchResults = [
+      `result1 for ${params.query}`,
+      `result2 for ${params.query}`,
+    ];
+    return {
+      success: true,
+      data: { query: params.query, results: this.snapshot.searchResults },
+      summary: `[TestA] 搜索: ${params.query}, 找到 ${this.snapshot.searchResults.length} 个结果`,
     };
+  }
 
-    getSearchQuery(): string {
-        return this.searchQuery;
-    }
+  getSearchQuery(): string {
+    return this.snapshot.searchQuery;
+  }
 
-    getSearchResults(): string[] {
-        return this.searchResults;
-    }
-
-    async exportData(options?: ExportOptions) {
-        return {
-            data: { searchQuery: this.searchQuery, searchResults: this.searchResults },
-            format: options?.format ?? 'json',
-            metadata: { componentId: this.componentId },
-        };
-    }
+  getSearchResults(): string[] {
+    return this.snapshot.searchResults;
+  }
 }
 
 /**
  * Test component B - Counter functionality
  * Provides an increment tool to increase a counter
  */
-export class TestToolComponentB extends ToolComponent {
-    override componentPrompt = 'Test tool component B prompt';
+export class TestToolComponentB extends ReactiveToolComponent<{
+  counter: number;
+}> {
+  override componentPrompt = 'Test tool component B prompt';
 
-    toolSet = new Map<string, Tool>([
-        ['increment', {
-            toolName: 'increment',
-            desc: 'Increment counter',
-            paramsSchema: z.object({ amount: z.number().optional() })
-        }]
-    ]);
+  protected override initialState() {
+    return { counter: 0 };
+  }
 
-    private counter = 0;
-
-    renderImply = async (): Promise<tdiv[]> => {
-        return [
-            new tdiv({
-                content: `Counter: ${this.counter}`,
-                styles: { width: 80, showBorder: false }
-            })
-        ];
+  protected override toolDefs() {
+    return {
+      increment: {
+        desc: 'Increment counter',
+        paramsSchema: z.object({ amount: z.number().optional() }),
+      },
     };
+  }
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        if (toolName === 'increment') {
-            const amount = params.amount || 1;
-            this.counter += amount;
-            return {
-                success: true,
-                data: { counter: this.counter, increment: amount },
-                summary: `[TestB] 计数器: +${amount}, 当前值: ${this.counter}`
-            };
-        }
-        return { success: false, data: { error: 'Unknown tool' } };
+  renderImply = async (): Promise<tdiv[]> => {
+    return [
+      new tdiv({
+        content: `Counter: ${this.snapshot.counter}`,
+        styles: { width: 80, showBorder: false },
+      }),
+    ];
+  };
+
+  async onIncrement(params: { amount?: number }): Promise<ToolCallResult<any>> {
+    const amount = params.amount || 1;
+    this.reactive.counter += amount;
+    return {
+      success: true,
+      data: { counter: this.snapshot.counter, increment: amount },
+      summary: `[TestB] 计数器: +${amount}, 当前值: ${this.snapshot.counter}`,
     };
+  }
 
-    getCounter(): number {
-        return this.counter;
-    }
-
-    async exportData(options?: ExportOptions) {
-        return {
-            data: { counter: this.counter },
-            format: options?.format ?? 'json',
-            metadata: { componentId: this.componentId },
-        };
-    }
+  getCounter(): number {
+    return this.snapshot.counter;
+  }
 }
 
 /**
  * Test component C - Toggle functionality
  * Provides a toggle tool to flip a boolean flag
  */
-export class TestToolComponentC extends ToolComponent {
-    override componentPrompt = 'Test tool component C prompt';
+export class TestToolComponentC extends ReactiveToolComponent<{
+  flag: boolean;
+}> {
+  override componentPrompt = 'Test tool component C prompt';
 
-    toolSet = new Map<string, Tool>([
-        ['toggle', {
-            toolName: 'toggle',
-            desc: 'Toggle flag',
-            paramsSchema: z.object({})
-        }]
-    ]);
+  protected override initialState() {
+    return { flag: false };
+  }
 
-    private flag = false;
-
-    renderImply = async (): Promise<tdiv[]> => {
-        return [
-            new tdiv({
-                content: `Flag: ${this.flag}`,
-                styles: { width: 80, showBorder: false }
-            })
-        ];
+  protected override toolDefs() {
+    return {
+      toggle: {
+        desc: 'Toggle flag',
+        paramsSchema: z.object({}),
+      },
     };
+  }
 
-    handleToolCall = async (toolName: string, params: any): Promise<ToolCallResult<any>> => {
-        if (toolName === 'toggle') {
-            this.flag = !this.flag;
-            return {
-                success: true,
-                data: { flag: this.flag },
-                summary: `[TestC] 开关: ${this.flag ? 'ON' : 'OFF'}`
-            };
-        }
-        return { success: false, data: { error: 'Unknown tool' } };
+  renderImply = async (): Promise<tdiv[]> => {
+    return [
+      new tdiv({
+        content: `Flag: ${this.snapshot.flag}`,
+        styles: { width: 80, showBorder: false },
+      }),
+    ];
+  };
+
+  async onToggle(): Promise<ToolCallResult<any>> {
+    this.reactive.flag = !this.snapshot.flag;
+    return {
+      success: true,
+      data: { flag: this.snapshot.flag },
+      summary: `[TestC] 开关: ${this.snapshot.flag ? 'ON' : 'OFF'}`,
     };
+  }
 
-    getFlag(): boolean {
-        return this.flag;
-    }
-
-    async exportData(options?: ExportOptions) {
-        return {
-            data: { flag: this.flag },
-            format: options?.format ?? 'json',
-            metadata: { componentId: this.componentId },
-        };
-    }
+  getFlag(): boolean {
+    return this.snapshot.flag;
+  }
 }

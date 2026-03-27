@@ -1,9 +1,4 @@
-import {
-  proxy,
-  subscribe,
-  snapshot as takeSnapshot,
-  type Snapshot,
-} from 'valtio';
+import { proxy, subscribe, snapshot as takeSnapshot } from 'valtio';
 import { injectable } from 'inversify';
 import { z } from 'zod';
 import {
@@ -101,8 +96,8 @@ export abstract class ReactiveToolComponent<
     return this._reactive;
   }
 
-  protected get snapshot(): Readonly<Snapshot<TState>> {
-    return takeSnapshot(this._reactive);
+  protected get snapshot(): TState {
+    return takeSnapshot(this._reactive) as TState;
   }
 
   protected toolDefs(): ToolDefs {

@@ -1,10 +1,7 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
-import {
-  ToolComponent,
-  ExportOptions,
-  type ExportResult,
-} from '../core/toolComponent.js';
+import { ReactiveToolComponent } from '../core/reactiveToolComponent.js';
+import type { ExportResult } from '../core/toolComponent.js';
 import type { Tool, ToolCallResult } from '../core/types.js';
 import type { TUIElement } from '../ui/TUIElement.js';
 import { tdiv, th } from '../ui/index.js';
@@ -24,8 +21,12 @@ import {
   type SentTaskInfo,
 } from './a2aTaskSchemas.js';
 
+interface A2ATaskState {
+  sentTasks: Record<string, SentTaskInfo>;
+}
+
 @injectable()
-export class A2ATaskComponent extends ToolComponent {
+export class A2ATaskComponent extends ReactiveToolComponent<A2ATaskState> {
   override componentId = 'a2a-task';
   override displayName = 'A2A Task Manager';
   override description = 'Manage A2A task acknowledgment and responses';
@@ -53,9 +54,6 @@ This component handles Agent-to-Agent (A2A) task communication.
 
   protected a2aHandler: IA2AHandler;
   protected a2aClient: IA2AClient;
-  protected sentTasks = new Map<string, SentTaskInfo>();
-
-  override toolSet: Map<string, Tool>;
 
   constructor(
     @inject(TYPES.IA2AHandler) a2aHandler: IA2AHandler,
@@ -64,45 +62,46 @@ This component handles Agent-to-Agent (A2A) task communication.
     super();
     this.a2aHandler = a2aHandler;
     this.a2aClient = a2aClient;
-    this.toolSet = this.initializeToolSet();
   }
 
-  private getA2AHandler(): IA2AHandler {
-    return this.a2aHandler;
+  protected override initialState(): A2ATaskState {
+    return { sentTasks: {} };
   }
 
-  private getA2AClient(): IA2AClient {
-    return this.a2aClient;
+  protected override toolDefs() {
+    return {
+      acknowledgeTask: {
+        desc: a2aTaskToolSchemas.acknowledgeTask.desc,
+        paramsSchema: a2aTaskToolSchemas.acknowledgeTask.paramsSchema,
+      },
+      completeTask: {
+        desc: a2aTaskToolSchemas.completeTask.desc,
+        paramsSchema: a2aTaskToolSchemas.completeTask.paramsSchema,
+      },
+      failTask: {
+        desc: a2aTaskToolSchemas.failTask.desc,
+        paramsSchema: a2aTaskToolSchemas.failTask.paramsSchema,
+      },
+      sendTaskResult: {
+        desc: a2aTaskToolSchemas.sendTaskResult.desc,
+        paramsSchema: a2aTaskToolSchemas.sendTaskResult.paramsSchema,
+      },
+      getPendingTasks: {
+        desc: a2aTaskToolSchemas.getPendingTasks.desc,
+        paramsSchema: a2aTaskToolSchemas.getPendingTasks.paramsSchema,
+      },
+      sendTask: {
+        desc: a2aTaskToolSchemas.sendTask.desc,
+        paramsSchema: a2aTaskToolSchemas.sendTask.paramsSchema,
+      },
+      getSentTasks: {
+        desc: a2aTaskToolSchemas.getSentTasks.desc,
+        paramsSchema: a2aTaskToolSchemas.getSentTasks.paramsSchema,
+      },
+    };
   }
 
-  private initializeToolSet(): Map<string, Tool> {
-    const tools = new Map<string, Tool>();
-
-    const toolEntries: [
-      string,
-      (typeof a2aTaskToolSchemas)[keyof typeof a2aTaskToolSchemas],
-    ][] = [
-      ['acknowledgeTask', a2aTaskToolSchemas.acknowledgeTask],
-      ['completeTask', a2aTaskToolSchemas.completeTask],
-      ['failTask', a2aTaskToolSchemas.failTask],
-      ['sendTaskResult', a2aTaskToolSchemas.sendTaskResult],
-      ['getPendingTasks', a2aTaskToolSchemas.getPendingTasks],
-      ['sendTask', a2aTaskToolSchemas.sendTask],
-      ['getSentTasks', a2aTaskToolSchemas.getSentTasks],
-    ];
-
-    toolEntries.forEach(([name, toolDef]) => {
-      tools.set(name, {
-        toolName: toolDef.toolName,
-        desc: toolDef.desc,
-        paramsSchema: toolDef.paramsSchema,
-      });
-    });
-
-    return tools;
-  }
-
-  handleToolCall: {
+  override handleToolCall: {
     <T extends A2ATaskToolName>(
       toolName: T,
       params: unknown,
@@ -149,6 +148,10 @@ This component handles Agent-to-Agent (A2A) task communication.
       };
     }
   };
+
+  private getSentTasksArray(): SentTaskInfo[] {
+    return Object.values(this.snapshot.sentTasks);
+  }
 
   override renderImply = async (): Promise<TUIElement[]> => {
     const elements: TUIElement[] = [];
@@ -224,7 +227,7 @@ This component handles Agent-to-Agent (A2A) task communication.
     }
 
     try {
-      const pending = this.getA2AHandler().getPendingTasks();
+      const pending = this.a2aHandler.getPendingTasks();
 
       if (pending.length > 0) {
         const acknowledged = pending.filter((t) => t.acknowledged).length;
@@ -262,10 +265,10 @@ This component handles Agent-to-Agent (A2A) task communication.
     return elements;
   };
 
-  async exportData(_options?: ExportOptions): Promise<ExportResult> {
+  override async exportData(_options?: any): Promise<ExportResult> {
     try {
-      const pending = this.getA2AHandler().getPendingTasks();
-      const allSentTaskInfos = Array.from(this.sentTasks.values());
+      const pending = this.a2aHandler.getPendingTasks();
+      const allSentTaskInfos = this.getSentTasksArray();
       return {
         data: {
           pendingTasks: pending,
@@ -285,36 +288,38 @@ This component handles Agent-to-Agent (A2A) task communication.
   }
 
   getInFlightTasks(): SentTaskInfo[] {
-    return Array.from(this.sentTasks.values()).filter(
-      (t) => t.status === 'in-flight',
-    );
+    return this.getSentTasksArray().filter((t) => t.status === 'in-flight');
   }
 
   getCompletedTasks(): SentTaskInfo[] {
-    return Array.from(this.sentTasks.values()).filter(
-      (t) => t.status === 'completed',
-    );
+    return this.getSentTasksArray().filter((t) => t.status === 'completed');
   }
 
   getFailedTasks(): SentTaskInfo[] {
-    return Array.from(this.sentTasks.values()).filter(
+    return this.getSentTasksArray().filter(
       (t) => t.status === 'failed' || t.status === 'timeout',
     );
   }
 
   private async trackSentTaskInfo(sentTask: SentTaskInfo): Promise<void> {
     try {
-      const result = await this.getA2AClient().waitForResult(
+      const result = await this.a2aClient.waitForResult(
         sentTask.conversationId,
       );
-      sentTask.status = 'completed';
-      sentTask.result = result;
-      sentTask.completedAt = Date.now();
+      this.reactive.sentTasks[sentTask.taskId] = {
+        ...sentTask,
+        status: 'completed',
+        result,
+        completedAt: Date.now(),
+      };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      sentTask.status = msg.includes('Timeout') ? 'timeout' : 'failed';
-      sentTask.error = msg;
-      sentTask.completedAt = Date.now();
+      this.reactive.sentTasks[sentTask.taskId] = {
+        ...sentTask,
+        status: msg.includes('Timeout') ? 'timeout' : 'failed',
+        error: msg,
+        completedAt: Date.now(),
+      };
     }
   }
 
@@ -322,7 +327,7 @@ This component handles Agent-to-Agent (A2A) task communication.
     params: AcknowledgeTaskParams,
   ): Promise<ToolCallResult<{ success: boolean; conversationId: string }>> {
     try {
-      await this.getA2AHandler().acknowledge(params.conversationId);
+      await this.a2aHandler.acknowledge(params.conversationId);
       return {
         success: true,
         data: {
@@ -350,7 +355,7 @@ This component handles Agent-to-Agent (A2A) task communication.
     params: CompleteTaskParams,
   ): Promise<ToolCallResult<{ success: boolean; conversationId: string }>> {
     try {
-      this.getA2AHandler().completeTask(
+      this.a2aHandler.completeTask(
         params.conversationId,
         params.output,
         params.status || 'completed',
@@ -382,7 +387,7 @@ This component handles Agent-to-Agent (A2A) task communication.
     params: FailTaskParams,
   ): Promise<ToolCallResult<{ success: boolean; conversationId: string }>> {
     try {
-      this.getA2AHandler().completeTask(
+      this.a2aHandler.completeTask(
         params.conversationId,
         { error: params.error },
         'failed',
@@ -415,7 +420,7 @@ This component handles Agent-to-Agent (A2A) task communication.
   ): Promise<ToolCallResult<{ success: boolean; conversationId: string }>> {
     try {
       const status: A2ATaskStatus = params.status || 'completed';
-      await this.getA2AHandler().sendTaskResult(
+      await this.a2aHandler.sendTaskResult(
         params.conversationId,
         params.output,
         status,
@@ -448,7 +453,7 @@ This component handles Agent-to-Agent (A2A) task communication.
     ToolCallResult<{ tasks: PendingTask[] }>
   > {
     try {
-      const pending = this.getA2AHandler().getPendingTasks();
+      const pending = this.a2aHandler.getPendingTasks();
       return {
         success: true,
         data: { tasks: pending },
@@ -482,7 +487,7 @@ This component handles Agent-to-Agent (A2A) task communication.
     }>
   > {
     try {
-      const conversationId = await this.getA2AClient().sendTaskAndWaitForAck(
+      const conversationId = await this.a2aClient.sendTaskAndWaitForAck(
         params.targetAgentId,
         params.taskId,
         params.description,
@@ -498,7 +503,7 @@ This component handles Agent-to-Agent (A2A) task communication.
         status: 'in-flight',
         sentAt: Date.now(),
       };
-      this.sentTasks.set(params.taskId, sentTask);
+      this.reactive.sentTasks[params.taskId] = sentTask;
 
       this.trackSentTaskInfo(sentTask).catch(() => {});
 
@@ -534,7 +539,7 @@ This component handles Agent-to-Agent (A2A) task communication.
       tasks: SentTaskInfo[];
     }>
   > {
-    const tasks = Array.from(this.sentTasks.values());
+    const tasks = this.getSentTasksArray();
     return {
       success: true,
       data: {
