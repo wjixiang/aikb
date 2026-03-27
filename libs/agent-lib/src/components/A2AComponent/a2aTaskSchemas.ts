@@ -1,11 +1,18 @@
 import { z } from 'zod';
-import type { A2ATaskResult } from '../../core/a2a/types.js';
+
+// =============================================================================
+// INBOX tools — checkInbox, acknowledgeTask, completeTask, failTask
+// =============================================================================
+
+export const checkInboxParamsSchema = z.object({}).passthrough();
+
+export type CheckInboxParams = z.infer<typeof checkInboxParamsSchema>;
 
 export const acknowledgeTaskParamsSchema = z.object({
   conversationId: z
     .string()
     .describe(
-      'Conversation ID (e.g., "conv_1234567890_abc123") - MUST be obtained from getPendingTasks, NOT guessed',
+      'Conversation ID (e.g., "conv_1234567890_abc123") — obtained from checkInbox',
     ),
 });
 
@@ -16,11 +23,6 @@ export const completeTaskParamsSchema = z.object({
     .string()
     .describe('Conversation ID of the task to complete'),
   output: z.unknown().describe('Task output/result data'),
-  status: z
-    .enum(['completed', 'failed', 'processing'])
-    .optional()
-    .default('completed')
-    .describe('Task status'),
 });
 
 export type CompleteTaskParams = z.infer<typeof completeTaskParamsSchema>;
@@ -32,36 +34,20 @@ export const failTaskParamsSchema = z.object({
 
 export type FailTaskParams = z.infer<typeof failTaskParamsSchema>;
 
-export const sendTaskResultParamsSchema = z.object({
-  conversationId: z.string().describe('Conversation ID of the task'),
-  output: z.unknown().describe('Task output/result data'),
-  status: z
-    .enum(['completed', 'failed', 'processing'])
-    .optional()
-    .default('completed')
-    .describe('Task status'),
-  error: z.string().optional().describe('Error message if status is failed'),
-});
-
-export type SendTaskResultParams = z.infer<typeof sendTaskResultParamsSchema>;
-
-export const getPendingTasksParamsSchema = z
-  .object({
-    _placeholder: z
-      .string()
-      .optional()
-      .describe('Internal parameter, always use empty object {}'),
-  })
-  .passthrough();
-
-export type GetPendingTasksParams = z.infer<typeof getPendingTasksParamsSchema>;
+// =============================================================================
+// SENT tools — sendTask, sendQuery, checkSent, waitForResult, cancelTask
+// =============================================================================
 
 export const sendTaskParamsSchema = z.object({
   targetAgentId: z
     .string()
-    .describe('Agent ID of the target agent to send the task to'),
-  taskId: z.string().describe('Unique task identifier'),
-  description: z.string().describe('Description of the task'),
+    .describe(
+      'Agent ID or alias of the target agent (use discoverAgents to find)',
+    ),
+  taskId: z.string().describe('Unique task identifier for this delegation'),
+  description: z
+    .string()
+    .describe('Clear description of the task to be performed'),
   input: z
     .record(z.unknown())
     .optional()
@@ -76,105 +62,166 @@ export const sendTaskParamsSchema = z.object({
 
 export type SendTaskParams = z.infer<typeof sendTaskParamsSchema>;
 
-export const getSentTasksParamsSchema = z
-  .object({
-    _placeholder: z
-      .string()
-      .optional()
-      .describe('Internal parameter, always use empty object {}'),
-  })
-  .passthrough();
+export const sendQueryParamsSchema = z.object({
+  targetAgentId: z
+    .string()
+    .describe('Agent ID or alias to query (use discoverAgents to find)'),
+  query: z
+    .string()
+    .describe('The question or query to send to the target agent'),
+});
 
-export type GetSentTasksParams = z.infer<typeof getSentTasksParamsSchema>;
+export type SendQueryParams = z.infer<typeof sendQueryParamsSchema>;
+
+export const checkSentParamsSchema = z.object({}).passthrough();
+
+export type CheckSentParams = z.infer<typeof checkSentParamsSchema>;
 
 export const waitForResultParamsSchema = z.object({
   conversationId: z
     .string()
     .describe(
-      'Conversation ID of the sent task to wait for. Must be obtained from sendTask or getSentTasks result.',
+      'Conversation ID of the sent task to wait for. Obtained from sendTask or checkSent result.',
     ),
 });
 
 export type WaitForResultParams = z.infer<typeof waitForResultParamsSchema>;
 
-interface SentTaskInfo {
+export const cancelTaskParamsSchema = z.object({
+  conversationId: z
+    .string()
+    .describe('Conversation ID of the in-flight task to cancel'),
+});
+
+export type CancelTaskParams = z.infer<typeof cancelTaskParamsSchema>;
+
+// =============================================================================
+// CONTACTS tools — discoverAgents
+// =============================================================================
+
+export const discoverAgentsParamsSchema = z.object({
+  capability: z
+    .string()
+    .optional()
+    .describe(
+      'Filter by capability (e.g., "search", "analysis", "mail"). Returns all agents if not specified.',
+    ),
+  skill: z
+    .string()
+    .optional()
+    .describe('Filter by specific skill. Returns all agents if not specified.'),
+});
+
+export type DiscoverAgentsParams = z.infer<typeof discoverAgentsParamsSchema>;
+
+// =============================================================================
+// State types
+// =============================================================================
+
+export interface SentTaskInfo {
   taskId: string;
   conversationId: string;
   targetAgentId: string;
+  targetAgentName?: string;
   description: string;
-  status: 'in-flight' | 'completed' | 'failed' | 'timeout';
-  result?: A2ATaskResult;
+  status: 'in-flight' | 'completed' | 'failed' | 'timeout' | 'cancelled';
+  resultSummary?: string;
   error?: string;
   sentAt: number;
+  acknowledgedAt?: number;
   completedAt?: number;
+  cancelledAt?: number;
 }
 
-export type { SentTaskInfo };
+export interface IncomingTaskInfo {
+  conversationId: string;
+  from: string;
+  fromAgentName?: string;
+  description: string;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  status: 'pending' | 'acknowledged' | 'completed' | 'failed';
+  receivedAt: number;
+  acknowledgedAt?: number;
+  completedAt?: number;
+  resultSummary?: string;
+  error?: string;
+}
+
+// =============================================================================
+// Tool registry & return types
+// =============================================================================
 
 export const a2aTaskToolSchemas = {
+  // INBOX
+  checkInbox: {
+    toolName: 'checkInbox',
+    desc: 'Check incoming tasks (inbox). Call this at the start of each turn to see new tasks, acknowledged tasks, and completed tasks from other agents.',
+    paramsSchema: checkInboxParamsSchema,
+  },
   acknowledgeTask: {
     toolName: 'acknowledgeTask',
-    desc: 'Acknowledge receipt of an A2A task. Call this when you have received a task and are ready to process it.',
+    desc: 'Accept an incoming task from another agent. This tells the sender you have received the task and are processing it. Always call this before starting work on a task.',
     paramsSchema: acknowledgeTaskParamsSchema,
   },
   completeTask: {
     toolName: 'completeTask',
-    desc: 'Mark an A2A task as completed with output data.',
+    desc: 'Complete an incoming task and send the result back to the requesting agent.',
     paramsSchema: completeTaskParamsSchema,
   },
   failTask: {
     toolName: 'failTask',
-    desc: 'Mark an A2A task as failed with an error message.',
+    desc: 'Report that an incoming task has failed, with an error message explaining why.',
     paramsSchema: failTaskParamsSchema,
   },
-  sendTaskResult: {
-    toolName: 'sendTaskResult',
-    desc: 'Send the result of an A2A task with optional error.',
-    paramsSchema: sendTaskResultParamsSchema,
-  },
-  getPendingTasks: {
-    toolName: 'getPendingTasks',
-    desc: 'Get all pending A2A tasks awaiting acknowledgment or response.',
-    paramsSchema: getPendingTasksParamsSchema,
-  },
+
+  // SENT
   sendTask: {
     toolName: 'sendTask',
-    desc: 'Send a task to another agent asynchronously. Returns immediately after ACK with conversationId. Task result is tracked in the background - use getSentTasks to check status.',
+    desc: 'Delegate a task to another agent asynchronously. The agent ACKs immediately and processes in the background. Use checkSent or waitForResult to track progress.',
     paramsSchema: sendTaskParamsSchema,
   },
-  getSentTasks: {
-    toolName: 'getSentTasks',
-    desc: 'Get the status of all sent tasks. Includes in-flight, completed, and failed tasks.',
-    paramsSchema: getSentTasksParamsSchema,
+  sendQuery: {
+    toolName: 'sendQuery',
+    desc: 'Send a lightweight synchronous query to another agent and wait for the response. Use this for simple questions that expect a quick answer, as opposed to sendTask which is for longer-running work.',
+    paramsSchema: sendQueryParamsSchema,
+  },
+  checkSent: {
+    toolName: 'checkSent',
+    desc: 'View the status of all tasks you have delegated to other agents. Shows in-flight, completed, failed, and cancelled tasks.',
+    paramsSchema: checkSentParamsSchema,
   },
   waitForResult: {
     toolName: 'waitForResult',
-    desc: 'Wait for the result of a previously sent task. The agent will sleep until the result arrives. Use this when you need to wait for a task result before proceeding.',
+    desc: 'Sleep and wait for the result of a previously sent task. The agent will automatically wake up when the result arrives. Use this when you need the result before proceeding.',
     paramsSchema: waitForResultParamsSchema,
+  },
+  cancelTask: {
+    toolName: 'cancelTask',
+    desc: 'Cancel an in-flight task that you previously sent to another agent.',
+    paramsSchema: cancelTaskParamsSchema,
+  },
+
+  // CONTACTS
+  discoverAgents: {
+    toolName: 'discoverAgents',
+    desc: 'Discover available agents and their capabilities. Use this to find which agents can handle specific tasks before sending.',
+    paramsSchema: discoverAgentsParamsSchema,
   },
 } as const;
 
 export type A2ATaskToolName = keyof typeof a2aTaskToolSchemas;
 
 export interface A2ATaskToolReturnTypes {
+  checkInbox: {
+    pending: IncomingTaskInfo[];
+    acknowledged: IncomingTaskInfo[];
+    completed: IncomingTaskInfo[];
+    failed: IncomingTaskInfo[];
+    total: number;
+  };
   acknowledgeTask: { success: boolean; conversationId: string };
   completeTask: { success: boolean; conversationId: string };
   failTask: { success: boolean; conversationId: string };
-  sendTaskResult: { success: boolean; conversationId: string };
-  getPendingTasks: {
-    tasks: Array<{
-      conversationId: string;
-      messageId: string;
-      messageType: string;
-      from: string;
-      payload: {
-        taskId?: string;
-        description?: string;
-        input?: Record<string, unknown>;
-      };
-      receivedAt: number;
-    }>;
-  };
   sendTask: {
     success: boolean;
     conversationId: string;
@@ -182,14 +229,34 @@ export interface A2ATaskToolReturnTypes {
     status: string;
     error?: string;
   };
-  getSentTasks: {
+  sendQuery: {
+    success: boolean;
+    from: string;
+    output?: unknown;
+    error?: string;
+  };
+  checkSent: {
     tasks: SentTaskInfo[];
+    inFlightCount: number;
+    completedCount: number;
+    failedCount: number;
   };
   waitForResult: {
     success: boolean;
     conversationId: string;
-    result?: A2ATaskResult;
+    resultSummary?: string;
     error?: string;
+  };
+  cancelTask: { success: boolean; conversationId: string };
+  discoverAgents: {
+    agents: Array<{
+      instanceId: string;
+      alias?: string;
+      name: string;
+      capabilities: string[];
+      skills: string[];
+    }>;
+    total: number;
   };
 }
 

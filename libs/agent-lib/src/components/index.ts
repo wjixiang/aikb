@@ -49,9 +49,18 @@ export {
   type AcknowledgeTaskParams,
   type CompleteTaskParams,
   type FailTaskParams,
-  type SendTaskResultParams,
-  type GetPendingTasksParams,
+  type SendTaskParams,
+  type SendQueryParams,
+  type WaitForResultParams,
+  type CancelTaskParams,
+  type DiscoverAgentsParams,
+  type CheckInboxParams,
+  type CheckSentParams,
+  type SentTaskInfo,
+  type IncomingTaskInfo,
   type A2ATaskToolName,
+  type A2ATaskToolReturnTypes,
+  type A2ATaskToolReturnType,
 } from './A2AComponent/index.js';
 
 // Test Components - Re-export for convenience in tests

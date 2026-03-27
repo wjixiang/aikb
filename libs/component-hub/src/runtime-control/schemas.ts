@@ -85,26 +85,6 @@ export const destroyAgentParamsSchema = z
 export type DestroyAgentParams = z.infer<typeof destroyAgentParamsSchema>;
 
 /**
- * Schema for starting an agent via tool call
- */
-export const startAgentParamsSchema = z
-  .object({
-    agentId: z
-      .string()
-      .optional()
-      .describe('Agent ID, alias, or name (e.g., "epidemiology-a1b2")'),
-    instanceId: z
-      .string()
-      .optional()
-      .describe('Deprecated: use agentId instead'),
-  })
-  .transform((data) => ({
-    agentId: (data.agentId || data.instanceId) as string,
-  }));
-
-export type StartAgentParams = z.infer<typeof startAgentParamsSchema>;
-
-/**
  * Schema for stopping an agent via tool call
  */
 export const stopAgentParamsSchema = z
@@ -129,7 +109,7 @@ export type StopAgentParams = z.infer<typeof stopAgentParamsSchema>;
  */
 export const listAgentsParamsSchema = z.object({
   status: z
-    .enum(['idle', 'running', 'completed', 'aborted'])
+    .enum(['idle', 'running', 'sleep', 'completed', 'aborted'])
     .optional()
     .describe('Filter by status'),
   agentType: z.string().optional().describe('Filter by agent type'),
@@ -278,11 +258,6 @@ export const runtimeControlToolSchemas = {
     desc: 'Destroy a child agent and optionally its descendants. Use with caution.',
     paramsSchema: destroyAgentParamsSchema,
   },
-  startAgent: {
-    toolName: 'startAgent',
-    desc: 'Start an idle child agent',
-    paramsSchema: startAgentParamsSchema,
-  },
   stopAgent: {
     toolName: 'stopAgent',
     desc: 'Stop a running child agent',
@@ -365,7 +340,6 @@ export type RuntimeControlToolName = keyof typeof runtimeControlToolSchemas;
 export interface RuntimeControlToolReturnTypes {
   createAgent: { instanceId: string; name: string; createdAt: string };
   destroyAgent: { success: boolean; destroyedCount: number };
-  startAgent: { success: boolean; alias?: string };
   stopAgent: { success: boolean };
   listAgents: { agents: AgentMetadata[] };
   getAgent: AgentMetadata | null;

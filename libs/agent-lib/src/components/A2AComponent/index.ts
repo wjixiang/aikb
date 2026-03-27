@@ -1,8 +1,10 @@
 /**
- * A2AComponent - A2A task management components
+ * A2AComponent - Agent Mailbox for agent-to-agent collaboration
  *
- * This module provides components for managing A2A (Agent-to-Agent) communication:
- * - A2ATaskComponent: Tools for acknowledging and responding to A2A tasks
+ * Provides tools for:
+ * - INBOX: receiving, acknowledging, completing, and failing tasks
+ * - SENT: delegating tasks, sending queries, tracking results, cancelling
+ * - CONTACTS: discovering available agents by capability/skill
  *
  * @module A2AComponent
  */
@@ -13,8 +15,16 @@ export type {
   AcknowledgeTaskParams,
   CompleteTaskParams,
   FailTaskParams,
-  SendTaskResultParams,
-  GetPendingTasksParams,
+  SendTaskParams,
+  SendQueryParams,
+  WaitForResultParams,
+  CancelTaskParams,
+  DiscoverAgentsParams,
+  CheckInboxParams,
+  CheckSentParams,
+  SentTaskInfo,
+  IncomingTaskInfo,
   A2ATaskToolName,
   A2ATaskToolReturnTypes,
+  A2ATaskToolReturnType,
 } from './a2aTaskSchemas.js';
