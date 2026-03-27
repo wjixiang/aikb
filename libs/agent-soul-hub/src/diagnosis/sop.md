@@ -21,22 +21,25 @@
 
 ## 核心检索词 (Core Keywords)
 
-```
-("Intervertebral Disc Displacement"[MeSH] OR "Intervertebral Disc Degeneration"[MeSH] OR "herniated disc*" OR "disc herniation" OR "lumbar disc herniation" OR "cervical disc herniation" OR "radiculopathy" OR "sciatica")
-```
+根据任务中给定的**目标疾病或主题**，构建核心检索词集。
 
-*(简称为 [DISC_CORE])*
+构建原则：
+- 优先使用 MeSH 主题词（如 `"Disease Name"[MeSH]`）
+- 补充常用同义词和不同表述（如 `"disease name"`、`"disease alias"`）
+- 涵盖疾病的不同亚型或分期
+
+*(简称为 [DISEASE_CORE])*
 
 ---
 
 ## 检索策略
 
 ```
-[DISC_CORE] AND ("Diagnosis"[MeSH] OR "Magnetic Resonance Imaging"[MeSH] OR "physical examination" OR "straight leg raise" OR "clinical presentation" OR "differential diagnosis" OR screening OR prevention OR "prognostic factors")
+[DISEASE_CORE] AND ("Diagnosis"[MeSH] OR "Magnetic Resonance Imaging"[MeSH] OR "physical examination" OR "clinical presentation" OR "differential diagnosis" OR screening OR prevention OR "prognostic factors" OR "biomarkers" OR sensitivity OR specificity)
 ```
 
 **推荐筛选条件**：
-- 时间范围：`2020:2025`（近5年）
+- 时间范围：近5年
 - 文献类型：`Systematic Review` 或 `Practice Guideline`
 
 ---
@@ -49,7 +52,7 @@
 调用工具: search_pubmed
 参数: {
   "term": "你的检索策略",
-  "filter": ["2020:2025", "Systematic Review"],
+  "filter": ["近5年", "Systematic Review"],
   "sort": "date",
   "sortOrder": "dsc",
   "page": 1
@@ -84,11 +87,11 @@
 ```
 
 **判断标准**（诊断、筛查与预防）：
-- [ ] 是否涉及影像学诊断（MRI、CT）及其准确性？
+- [ ] 是否涉及影像学或实验室诊断方法及其准确性？
 - [ ] 是否讨论了临床症状或体格检查？
 - [ ] 是否涉及鉴别诊断？
 - [ ] 是否探讨了筛查或预防策略？
-- [ ] 是否报告了诊断效能指标（敏感性、特异性）？
+- [ ] 是否报告了诊断效能指标（敏感性、特异性、AUC等）？
 - [ ] 是否为高质量证据（指南、系统综述、诊断性研究）？
 
 **3.3 纳入符合标准的文献**
@@ -102,7 +105,7 @@
 调用工具: update_article_note
 参数: {
   "pmid": "文献PMID",
-  "note": "纳入理由：例如'MRI诊断椎间盘突出的系统综述，报告敏感性/特异性'"
+  "note": "纳入理由：例如'某诊断方法的系统综述，报告敏感性/特异性'"
 }
 ```
 
@@ -127,11 +130,11 @@
 ```
 
 检查主题覆盖：
-- [ ] MRI诊断标准与分型
-- [ ] 体格检查（直腿抬高试验等）
+- [ ] 影像学/实验室诊断标准与分型
+- [ ] 体格检查与临床评估
 - [ ] 临床表现
 - [ ] 鉴别诊断
-- [ ] 无症状人群的影像学发现
+- [ ] 早期筛查策略
 - [ ] 预防策略
 
 ### 第六步：报告检索结果
@@ -140,18 +143,9 @@
 
 ---
 
-## 重点筛选目标
-
-- MRI在椎间盘突出诊断中的应用与局限性
-- 无症状人群中的高发病率问题
-- 不同分型（膨出、突出、脱垂、游离）的标准
-- 体格检查的诊断效能（直腿抬高试验等）
-- 预防策略的循证证据
-
----
-
 ## 检索建议
 
 1. **诊断性研究**：优先选择报告敏感性/特异性的研究
 2. **指南优先**：关注各大协会的临床实践指南
-3. **分型标准**：注意收集椎间盘突出分型的标准文献
+3. **分型标准**：注意收集疾病分型/分期的标准文献
+4. **生物标志物**：关注新型诊断生物标志物的研究

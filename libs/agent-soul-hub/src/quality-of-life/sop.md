@@ -21,22 +21,25 @@
 
 ## 核心检索词 (Core Keywords)
 
-```
-("Intervertebral Disc Displacement"[MeSH] OR "Intervertebral Disc Degeneration"[MeSH] OR "herniated disc*" OR "disc herniation" OR "lumbar disc herniation" OR "cervical disc herniation" OR "radiculopathy" OR "sciatica")
-```
+根据任务中给定的**目标疾病或主题**，构建核心检索词集。
 
-*(简称为 [DISC_CORE])*
+构建原则：
+- 优先使用 MeSH 主题词（如 `"Disease Name"[MeSH]`）
+- 补充常用同义词和不同表述（如 `"disease name"`、`"disease alias"`）
+- 涵盖疾病的不同亚型或分期
+
+*(简称为 [DISEASE_CORE])*
 
 ---
 
 ## 检索策略
 
 ```
-[DISC_CORE] AND ("Quality of Life"[MeSH] OR QoL OR "Cost of Illness"[MeSH] OR DALY OR YLD OR "health economics" OR "absenteeism" OR disability OR "disease trajectory")
+[DISEASE_CORE] AND ("Quality of Life"[MeSH] OR QoL OR "Cost of Illness"[MeSH] OR DALY OR YLD OR "health economics" OR "absenteeism" OR disability OR "disease trajectory" OR "patient-reported outcome")
 ```
 
 **推荐筛选条件**：
-- 时间范围：`2020:2025`（近5年）
+- 时间范围：近5年
 - 文献类型：`Systematic Review` 或 `Observational Study`
 
 ---
@@ -49,7 +52,7 @@
 调用工具: search_pubmed
 参数: {
   "term": "你的检索策略",
-  "filter": ["2020:2025"],
+  "filter": ["近5年"],
   "sort": "date",
   "sortOrder": "dsc",
   "page": 1
@@ -102,7 +105,7 @@
 调用工具: update_article_note
 参数: {
   "pmid": "文献PMID",
-  "note": "纳入理由：例如'GBD研究，报告椎间盘疾病导致的YLD数据'"
+  "note": "纳入理由：例如'GBD研究，报告该疾病导致的YLD数据'"
 }
 ```
 
@@ -136,15 +139,6 @@
 ### 第六步：报告检索结果
 
 在文本中总结检索过程和结果。
-
----
-
-## 重点筛选目标
-
-- 慢性下腰痛导致的缺勤成本
-- 心理共病（抑郁、焦虑）对生活质量的影响
-- 疾病负担的经济学分析
-- 患者报告结局(PRO)研究
 
 ---
 

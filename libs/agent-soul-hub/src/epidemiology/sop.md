@@ -21,22 +21,25 @@
 
 ## 核心检索词 (Core Keywords)
 
-```
-("Intervertebral Disc Displacement"[MeSH] OR "Intervertebral Disc Degeneration"[MeSH] OR "herniated disc*" OR "disc herniation" OR "lumbar disc herniation" OR "cervical disc herniation" OR "radiculopathy" OR "sciatica")
-```
+根据任务中给定的**目标疾病或主题**，构建核心检索词集。
 
-*(简称为 [DISC_CORE])*
+构建原则：
+- 优先使用 MeSH 主题词（如 `"Disease Name"[MeSH]`）
+- 补充常用同义词和不同表述（如 `"disease name"`、`"disease alias"`）
+- 涵盖疾病的不同亚型或分期
+
+*(简称为 [DISEASE_CORE])*
 
 ---
 
 ## 检索策略
 
 ```
-[DISC_CORE] AND ("Epidemiology"[MeSH] OR incidence OR prevalence OR "risk factors" OR "global burden" OR genetics OR occupation* OR biomechanics OR "body mass index" OR obesity)
+[DISEASE_CORE] AND ("Epidemiology"[MeSH] OR incidence OR prevalence OR "risk factors" OR "global burden" OR genetics OR "environmental factors" OR "body mass index" OR obesity OR comorbidity)
 ```
 
 **推荐筛选条件**：
-- 时间范围：`2020:2025`（近5年）
+- 时间范围：近5年
 - 文献类型：`Systematic Review` 或 `Meta-Analysis`
 
 ---
@@ -49,7 +52,7 @@
 调用工具: search_pubmed
 参数: {
   "term": "你的检索策略",
-  "filter": ["2020:2025", "Systematic Review"],
+  "filter": ["近5年", "Systematic Review"],
   "sort": "date",
   "sortOrder": "dsc",
   "page": 1
@@ -85,7 +88,7 @@
 
 **判断标准**（流行病学与危险因素）：
 - [ ] 是否报告了发病率或患病率数据？
-- [ ] 是否分析了危险因素（遗传、职业、BMI等）？
+- [ ] 是否分析了危险因素（遗传、环境、生活方式等）？
 - [ ] 研究样本量是否足够（推荐 >500）？
 - [ ] 是否为高质量研究（系统综述、荟萃分析、大样本队列）？
 - [ ] 是否提供了全球或区域负担数据？
@@ -101,7 +104,7 @@
 调用工具: update_article_note
 参数: {
   "pmid": "文献PMID",
-  "note": "纳入理由：例如'GBD 2021数据，提供全球患病率'"
+  "note": "纳入理由：例如'GBD数据，提供全球患病率'"
 }
 ```
 
@@ -130,10 +133,10 @@
 - 确认已收集的文献数量
 - 检查是否覆盖了所有关键主题：
   - [ ] 发病率/患病率
-  - [ ] 遗传因素
-  - [ ] 职业风险
-  - [ ] 生物力学因素
-  - [ ] 生活方式因素（BMI、肥胖）
+  - [ ] 遗传/基因因素
+  - [ ] 环境风险
+  - [ ] 生活方式因素（BMI、肥胖等）
+  - [ ] 共病情况
 
 ### 第六步：报告检索结果
 
@@ -146,17 +149,8 @@
 
 ---
 
-## 重点筛选目标
-
-- Global Burden of Disease (GBD) 最新数据
-- 大样本队列研究（双胞胎研究、前瞻性队列）
-- 发病率与患病率的系统综述
-- 职业暴露与生物力学风险因素研究
-
----
-
 ## 检索建议
 
-1. **时间限制**：优先检索近5年（2020-2025）的高质量文献
-2. **期刊优先**：The Lancet, NEJM, Nature Reviews, Spine
-3. **术语辨析**：区分"椎间盘退变"和"椎间盘突出"
+1. **时间限制**：优先检索近5年的高质量文献
+2. **期刊优先**：The Lancet, NEJM, Nature Reviews, BMJ 等顶级期刊
+3. **术语辨析**：注意区分疾病不同概念（如退变 vs 突出、急性 vs 慢性等）

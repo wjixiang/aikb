@@ -24,18 +24,25 @@ const SOP_CONTENT = `# 展望与新兴疗法文献检索 Agent
 
 ## 核心检索词 (Core Keywords)
 
-("Intervertebral Disc Displacement"[MeSH] OR "Intervertebral Disc Degeneration"[MeSH] OR "herniated disc*" OR "disc herniation" OR "lumbar disc herniation" OR "cervical disc herniation" OR "radiculopathy" OR "sciatica")
+根据任务中给定的**目标疾病或主题**，构建核心检索词集。
 
-*(简称为 [DISC_CORE])*
+构建原则：
+- 优先使用 MeSH 主题词（如 \`"Disease Name"[MeSH]\`）
+- 补充常用同义词和不同表述（如 \`"disease name"\`、\`"disease alias"\`）
+- 涵盖疾病的不同亚型或分期
+
+*(简称为 [DISEASE_CORE])*
 
 ---
 
 ## 检索策略
 
-[DISC_CORE] AND ("Tissue Engineering"[MeSH] OR "Stem Cells"[MeSH] OR "Biomarkers"[MeSH] OR biologics OR "regenerative medicine" OR "hydrogels" OR "CRISPR" OR "emerging therapies" OR "future directions")
+\`\`\`
+[DISEASE_CORE] AND ("Tissue Engineering"[MeSH] OR "Stem Cells"[MeSH] OR "Biomarkers"[MeSH] OR biologics OR "regenerative medicine" OR "gene therapy" OR "targeted therapy" OR "precision medicine" OR "emerging therapies" OR "future directions" OR "clinical trial")
+\`\`\`
 
 **推荐筛选条件**：
-- 时间范围：\`2020:2025\`（近5年，前沿研究需要最新）
+- 时间范围：近5年（前沿研究需要最新）
 - 文献类型：\`Review\` 或 \`Clinical Trial\`
 
 ---
@@ -47,7 +54,7 @@ const SOP_CONTENT = `# 展望与新兴疗法文献检索 Agent
 调用工具: search_pubmed
 参数: {
   "term": "你的检索策略",
-  "filter": ["2020:2025", "Review"],
+  "filter": ["近5年", "Review"],
   "sort": "date",
   "sortOrder": "dsc",
   "page": 1
@@ -81,10 +88,10 @@ const SOP_CONTENT = `# 展望与新兴疗法文献检索 Agent
 **判断标准**（展望与新兴疗法）：
 - [ ] 是否涉及再生医学（干细胞、组织工程）？
 - [ ] 是否探讨了新型生物制剂或生物材料？
-- [ ] 是否涉及基因治疗或分子治疗？
+- [ ] 是否涉及基因治疗或分子靶向治疗？
 - [ ] 是否为临床试验或高质量综述？
 - [ ] 是否讨论了未来研究方向？
-- [ ] 是否涉及微创技术的新进展？
+- [ ] 是否涉及精准医学或个体化治疗？
 
 **3.3 纳入符合标准的文献**
 调用工具: save_article
@@ -94,7 +101,7 @@ const SOP_CONTENT = `# 展望与新兴疗法文献检索 Agent
 调用工具: update_article_note
 参数: {
   "pmid": "文献PMID",
-  "note": "纳入理由：例如'干细胞治疗椎间盘退变的I期临床试验'"
+  "note": "纳入理由：例如'新型生物制剂的I/II期临床试验'"
 }
 
 **3.5 继续查看当前页其他文献**
@@ -114,26 +121,16 @@ const SOP_CONTENT = `# 展望与新兴疗法文献检索 Agent
 参数: {}
 
 检查主题覆盖：
-- [ ] 干细胞治疗
-- [ ] 组织工程（水凝胶、支架）
-- [ ] 生物制剂（抗炎因子等）
-- [ ] 基因治疗/CRISPR
-- [ ] 微创脊柱外科(MISS)新技术
-- [ ] 生物标志物
+- [ ] 干细胞/再生医学治疗
+- [ ] 生物制剂/靶向治疗
+- [ ] 基因治疗/基因编辑
+- [ ] 精准医学
+- [ ] 新型手术/介入技术
+- [ ] 生物标志物/诊断新技术
 
 ### 第六步：报告检索结果
 
 在文本中总结检索过程和结果。
-
----
-
-## 重点筛选目标
-
-- 髓核再生技术
-- 抗炎生物制剂
-- 微创脊柱外科(MISS)的新技术演进
-- 组织工程与干细胞治疗
-- 生物标志物研究
 
 ---
 
@@ -142,7 +139,7 @@ const SOP_CONTENT = `# 展望与新兴疗法文献检索 Agent
 1. **最新优先**：新兴疗法领域变化快，优先检索最近2-3年文献
 2. **临床试验**：关注已进入临床试验阶段的新疗法
 3. **综述文章**：高质量综述能提供领域全景
-4. **跨学科**：关注材料学、干细胞生物学的交叉研究
+4. **跨学科**：关注材料学、干细胞生物学、基因组学等交叉研究
 5. **谨慎评估**：注意区分早期实验研究和临床转化研究`;
 
 export function createEmergingTreatmentsAgentSoul(): AgentBlueprint {
@@ -152,7 +149,7 @@ export function createEmergingTreatmentsAgentSoul(): AgentBlueprint {
       name: 'Emerging Treatments Agent',
       type: 'article-retrieve-emerging-treatments',
       description:
-        '展望与新兴疗法文献检索专家，负责再生医学、干细胞治疗、组织工程等前沿文献的检索与筛选',
+        '展望与新兴疗法文献检索专家，负责再生医学、基因治疗、精准医学等前沿文献的检索与筛选',
     },
     components: [
       {

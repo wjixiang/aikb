@@ -24,18 +24,25 @@ const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 
 ## 核心检索词 (Core Keywords)
 
-("Intervertebral Disc Displacement"[MeSH] OR "Intervertebral Disc Degeneration"[MeSH] OR "herniated disc*" OR "disc herniation" OR "lumbar disc herniation" OR "cervical disc herniation" OR "radiculopathy" OR "sciatica")
+根据任务中给定的**目标疾病或主题**，构建核心检索词集。
 
-*(简称为 [DISC_CORE])*
+构建原则：
+- 优先使用 MeSH 主题词（如 \`"Disease Name"[MeSH]\`）
+- 补充常用同义词和不同表述（如 \`"disease name"\`、\`"disease alias"\`）
+- 涵盖疾病的不同亚型或分期
+
+*(简称为 [DISEASE_CORE])*
 
 ---
 
 ## 检索策略
 
-[DISC_CORE] AND ("Therapeutics"[MeSH] OR "Disease Management"[MeSH] OR "conservative treatment" OR "physical therapy" OR exercise OR NSAIDs OR "epidural steroid injection*" OR "microdiscectomy" OR "spinal fusion" OR "clinical guidelines")
+\`\`\`
+[DISEASE_CORE] AND ("Therapeutics"[MeSH] OR "Disease Management"[MeSH] OR "conservative treatment" OR "physical therapy" OR pharmacotherapy OR surgery OR "clinical guidelines" OR "treatment outcome" OR "randomized controlled trial")
+\`\`\`
 
 **推荐筛选条件**：
-- 时间范围：\`2020:2025\`（近5年）
+- 时间范围：近5年
 - 文献类型：\`Systematic Review\`、\`Meta-Analysis\` 或 \`Practice Guideline\`
 
 ---
@@ -47,7 +54,7 @@ const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 调用工具: search_pubmed
 参数: {
   "term": "你的检索策略",
-  "filter": ["2020:2025", "Systematic Review"],
+  "filter": ["近5年", "Systematic Review"],
   "sort": "date",
   "sortOrder": "dsc",
   "page": 1
@@ -80,11 +87,11 @@ const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 
 **判断标准**（疾病管理与治疗）：
 - [ ] 是否为临床指南或循证推荐？
-- [ ] 是否比较了不同治疗方案（保守 vs 手术）？
-- [ ] 是否报告了疗效指标（疼痛缓解、功能改善）？
+- [ ] 是否比较了不同治疗方案？
+- [ ] 是否报告了疗效指标（缓解率、功能改善、生存率等）？
 - [ ] 是否为高质量证据（RCT、系统综述、荟萃分析）？
 - [ ] 是否涉及阶梯治疗策略？
-- [ ] 是否讨论了手术适应证或禁忌证？
+- [ ] 是否讨论了治疗适应证或禁忌证？
 
 **3.3 纳入符合标准的文献**
 调用工具: save_article
@@ -94,7 +101,7 @@ const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 调用工具: update_article_note
 参数: {
   "pmid": "文献PMID",
-  "note": "纳入理由：例如'保守治疗vs手术治疗的RCT荟萃分析，报告长期疗效'"
+  "note": "纳入理由：例如'不同治疗方案的RCT荟萃分析，报告长期疗效'"
 }
 
 **3.5 继续查看当前页其他文献**
@@ -115,11 +122,11 @@ const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 
 检查主题覆盖：
 - [ ] 临床实践指南
-- [ ] 保守治疗（物理治疗、运动疗法）
-- [ ] 药物治疗（NSAIDs等）
-- [ ] 介入治疗（硬膜外注射）
-- [ ] 手术治疗（显微椎间盘切除术、脊柱融合）
+- [ ] 保守治疗（药物治疗、物理治疗等）
+- [ ] 介入治疗
+- [ ] 手术治疗
 - [ ] 阶梯治疗策略
+- [ ] 不良反应与安全性
 
 ### 第六步：报告检索结果
 
@@ -127,19 +134,10 @@ const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 
 ---
 
-## 重点筛选目标
-
-- 各大骨科/神经外科协会的最新临床指南
-- 保守治疗与手术治疗的长期/短期疗效比较（RCT荟萃分析）
-- 药物治疗的循证证据
-- 微创手术技术的发展
-
----
-
 ## 检索建议
 
-1. **指南优先**：优先检索各大协会的临床实践指南
-2. **RCT荟萃分析**：关注高质量的系统综述和荟萃分析
+1. **指南优先**：优先检索各专业协会的临床实践指南
+2. **RCT荟析分析**：关注高质量的系统综述和荟萃分析
 3. **分级治疗**：注意收集阶梯治疗策略的循证依据
 4. **长期随访**：优先选择随访时间 >1 年的研究`;
 
