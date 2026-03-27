@@ -59,34 +59,88 @@ const ROLE_BG: Record<string, string> = {
   system: 'bg-muted/50',
 };
 
-function extractText(block: MemoryMessage['content'][0]): string {
-  if (block.type === 'text') return block.text ?? '';
-  if (block.type === 'thinking')
-    return `[thinking] ${block.thinking?.slice(0, 100) ?? ''}...`;
-  if (block.type === 'tool_use')
-    return `[tool_call] ${block.name ?? 'unknown'}()`;
-  if (block.type === 'tool_result') {
-    const c = block.content;
-    if (typeof c === 'string')
-      return c.length > 200 ? c.slice(0, 200) + '...' : c;
-    if (typeof c === 'object' && c !== null) {
-      const inner =
-        (c as { text?: string; content?: string }).text ??
-        (c as { content?: string }).content;
-      if (typeof inner === 'string')
-        return inner.length > 200 ? inner.slice(0, 200) + '...' : inner;
-    }
-    return '[tool result]';
+function extractToolResultText(block: MemoryMessage['content'][0]): string {
+  const c = block.content;
+  if (typeof c === 'string') return c;
+  if (typeof c === 'object' && c !== null) {
+    const inner =
+      (c as { text?: string; content?: string }).text ??
+      (c as { content?: string }).content;
+    if (typeof inner === 'string') return inner;
   }
-  return `[${block.type}]`;
+  return '';
 }
 
-function MessageItem({ msg, index }: { msg: MemoryMessage; index: number }) {
+function tryFormatJson(str: string): string | null {
+  try {
+    const parsed = JSON.parse(str);
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    return null;
+  }
+}
+
+function ContentBlock({ block }: { block: MemoryMessage['content'][0] }) {
+  if (block.type === 'text') {
+    return (
+      <div className="text-left whitespace-pre-wrap break-words leading-relaxed">
+        {block.text ?? ''}
+      </div>
+    );
+  }
+
+  if (block.type === 'thinking') {
+    return (
+      <div className="text-left text-[11px] italic border-l-2 border-purple-300 dark:border-purple-700 pl-2 py-0.5 text-purple-600/70 dark:text-purple-400/70">
+        {block.thinking?.slice(0, 300) ?? ''}
+        {(block.thinking?.length ?? 0) > 300 ? '...' : ''}
+      </div>
+    );
+  }
+
+  if (block.type === 'tool_use') {
+    return (
+      <div className="flex items-center gap-1.5 text-[11px] font-mono py-0.5">
+        <Wrench className="h-3 w-3 text-orange-500 shrink-0" />
+        <span className="text-orange-600 dark:text-orange-400 font-medium">
+          {block.name ?? 'unknown'}
+        </span>
+        <span className="text-muted-foreground">()</span>
+      </div>
+    );
+  }
+
+  if (block.type === 'tool_result') {
+    const raw = extractToolResultText(block);
+    if (!raw) return null;
+
+    const formatted = tryFormatJson(raw);
+
+    if (formatted) {
+      return (
+        <pre className="text-left whitespace-pre-wrap break-words font-mono text-[11px] bg-muted/50 dark:bg-muted/30 rounded px-2 py-1.5 my-0.5 overflow-x-auto overflow-y-auto leading-relaxed max-h-60">
+          {formatted}
+        </pre>
+      );
+    }
+
+    return (
+      <div className="text-left whitespace-pre-wrap break-words text-[11px] leading-relaxed text-muted-foreground">
+        {raw.length > 500 ? raw.slice(0, 500) + '...' : raw}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function MessageItem({ msg }: { msg: MemoryMessage; index: number }) {
   const [expanded, setExpanded] = useState(false);
 
-  const fullText = msg.content.map(extractText).join('\n');
-  const preview = fullText.slice(0, 150);
-  const isLong = fullText.length > 150;
+  const blockCount = msg.content.length;
+  const isLong = blockCount > 4;
+  const visibleBlocks =
+    isLong && !expanded ? msg.content.slice(0, 3) : msg.content;
   const hasThinking = msg.content.some((b) => b.type === 'thinking');
   const hasToolUse = msg.content.some(
     (b) => b.type === 'tool_use' || b.type === 'tool_result',
@@ -96,7 +150,7 @@ function MessageItem({ msg, index }: { msg: MemoryMessage; index: number }) {
   return (
     <div
       className={cn(
-        'rounded-lg border px-3 py-2 text-xs',
+        'rounded-lg border px-3 py-2 text-xs text-left',
         ROLE_BG[msg.role] ?? 'bg-muted/30',
       )}
     >
@@ -125,9 +179,11 @@ function MessageItem({ msg, index }: { msg: MemoryMessage; index: number }) {
           </span>
         )}
       </div>
-      <pre className="whitespace-pre-wrap break-words font-sans leading-relaxed">
-        {isLong && !expanded ? preview + '...' : fullText}
-      </pre>
+      <div className="space-y-1">
+        {visibleBlocks.map((block, i) => (
+          <ContentBlock key={i} block={block} />
+        ))}
+      </div>
       {isLong && (
         <button
           onClick={() => setExpanded(!expanded)}
@@ -139,7 +195,8 @@ function MessageItem({ msg, index }: { msg: MemoryMessage; index: number }) {
             </>
           ) : (
             <>
-              <ChevronRight className="h-2.5 w-2.5" /> Show more
+              <ChevronRight className="h-2.5 w-2.5" /> Show more ({blockCount}{' '}
+              blocks)
             </>
           )}
         </button>
