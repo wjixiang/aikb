@@ -87,6 +87,16 @@ export const getSentTasksParamsSchema = z
 
 export type GetSentTasksParams = z.infer<typeof getSentTasksParamsSchema>;
 
+export const waitForResultParamsSchema = z.object({
+  conversationId: z
+    .string()
+    .describe(
+      'Conversation ID of the sent task to wait for. Must be obtained from sendTask or getSentTasks result.',
+    ),
+});
+
+export type WaitForResultParams = z.infer<typeof waitForResultParamsSchema>;
+
 interface SentTaskInfo {
   taskId: string;
   conversationId: string;
@@ -137,6 +147,11 @@ export const a2aTaskToolSchemas = {
     desc: 'Get the status of all sent tasks. Includes in-flight, completed, and failed tasks.',
     paramsSchema: getSentTasksParamsSchema,
   },
+  waitForResult: {
+    toolName: 'waitForResult',
+    desc: 'Wait for the result of a previously sent task. The agent will sleep until the result arrives. Use this when you need to wait for a task result before proceeding.',
+    paramsSchema: waitForResultParamsSchema,
+  },
 } as const;
 
 export type A2ATaskToolName = keyof typeof a2aTaskToolSchemas;
@@ -169,6 +184,12 @@ export interface A2ATaskToolReturnTypes {
   };
   getSentTasks: {
     tasks: SentTaskInfo[];
+  };
+  waitForResult: {
+    success: boolean;
+    conversationId: string;
+    result?: A2ATaskResult;
+    error?: string;
   };
 }
 

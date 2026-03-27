@@ -86,7 +86,7 @@ export interface RuntimeStatsResponse {
 export interface AgentInfo {
   instanceId: string;
   alias: string;
-  status: 'running' | 'stopped' | 'idle';
+  status: 'running' | 'idle' | 'sleep' | 'completed' | 'aborted';
   name: string;
   agentType: string;
   description?: string;

@@ -182,8 +182,21 @@ export class Agent {
   // RuntimeControlComponent state (set via DI)
   private _runtimeControlState?: RuntimeControlState;
 
+  // Sleep mechanism: pause requestLoop and wait for wakeUp
+  private _sleepResolve: ((data?: unknown) => void) | null = null;
+  private _sleepReason: string | null = null;
+
   // Persistence service (for component states - instance-level)
   private persistenceService?: IPersistenceService;
+
+  private persistInstanceStatus(): void {
+    if (!this.persistenceService) return;
+    void this.persistenceService.updateInstanceMetadata(this.instanceId, {
+      status: this._status,
+      completedAt:
+        this._status === AgentStatus.Completed ? new Date() : undefined,
+    });
+  }
 
   // Session manager (handles session lifecycle)
   private sessionManager: ISessionManager;
@@ -410,9 +423,7 @@ export class Agent {
         // Wait for either completeTask or requestLoop to finish
         try {
           const result = await Promise.race([
-            this.waitForA2ATaskCompletion(
-              ctx.message.conversationId,
-            ),
+            this.waitForA2ATaskCompletion(ctx.message.conversationId),
             processingPromise, // Fallback: if requestLoop finishes first, use its result
           ]);
 
@@ -593,8 +604,7 @@ export class Agent {
 
     this._status = AgentStatus.Running;
     void this.sessionManager.persistState(this.getSessionState());
-
-    // Note: Initial user message will be added in requestLoop after startTurn()
+    this.persistInstanceStatus();
     // This ensures the message is properly associated with a Turn
 
     // Start request loop
@@ -623,6 +633,7 @@ export class Agent {
 
     this._status = AgentStatus.Completed;
     void this.sessionManager.persistState(this.getSessionState());
+    this.persistInstanceStatus();
     void this.endSession();
 
     // Trigger agent:completed hook
@@ -660,7 +671,16 @@ export class Agent {
       source,
       details,
     };
+
+    // Wake up from sleep if sleeping, so the blocked tool call can return
+    if (this._sleepResolve) {
+      const resolve = this._sleepResolve;
+      this._sleepResolve = null;
+      resolve(undefined);
+    }
+
     void this.sessionManager.persistState(this.getSessionState());
+    this.persistInstanceStatus();
     void this.endSession('aborted');
 
     // Trigger agent:aborted hook
@@ -671,6 +691,75 @@ export class Agent {
       reason: abortReason,
       source,
     });
+  }
+
+  /**
+   * Check if agent is sleeping
+   */
+  public isSleeping(): boolean {
+    return this._status === AgentStatus.Sleep;
+  }
+
+  /**
+   * Put agent to sleep - pauses the requestLoop until wakeUp() is called.
+   * Returns a promise that resolves with wake-up data when the agent is woken.
+   * @param reason - Why the agent is sleeping (for observability)
+   */
+  public sleep(reason: string): Promise<unknown> {
+    if (this._status !== AgentStatus.Running) {
+      throw new Error(`Agent cannot sleep from status: ${this._status}`);
+    }
+
+    this._status = AgentStatus.Sleep;
+    this._sleepReason = reason;
+    void this.sessionManager.persistState(this.getSessionState());
+    this.persistInstanceStatus();
+
+    void this.hookModule.executeHooks(HookType.AGENT_SLEEPING, {
+      type: HookType.AGENT_SLEEPING,
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+      reason,
+    });
+
+    this.logger.info({ reason }, '[Agent] Entering sleep state');
+
+    return new Promise<unknown>((resolve) => {
+      this._sleepResolve = resolve;
+    });
+  }
+
+  /**
+   * Wake up a sleeping agent - resumes the requestLoop.
+   * @param data - Optional data to pass back to the sleeping point (e.g., A2A result)
+   */
+  public wakeUp(data?: unknown): void {
+    if (this._status !== AgentStatus.Sleep) {
+      this.logger.warn(
+        { currentStatus: this._status },
+        '[Agent] Cannot wake up - not sleeping',
+      );
+      return;
+    }
+
+    this._status = AgentStatus.Running;
+    this._sleepReason = null;
+    void this.sessionManager.persistState(this.getSessionState());
+    this.persistInstanceStatus();
+
+    void this.hookModule.executeHooks(HookType.AGENT_WOKEN, {
+      type: HookType.AGENT_WOKEN,
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+      data,
+    });
+
+    this.logger.info('[Agent] Woken up, resuming execution');
+
+    if (this._sleepResolve) {
+      this._sleepResolve(data);
+      this._sleepResolve = null;
+    }
   }
 
   /**
@@ -835,7 +924,7 @@ export class Agent {
           );
         }
 
-        await this.sleep(this._currentPollInterval);
+        await this.delay(this._currentPollInterval);
       }
     } catch (error) {
       this.logger.error(`Agent mail-driven polling error: ${error}`);
@@ -927,9 +1016,9 @@ export class Agent {
   }
 
   /**
-   * Sleep utility
+   * Delay utility
    */
-  private sleep(ms: number): Promise<void> {
+  private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
@@ -1143,6 +1232,7 @@ export class Agent {
       // Still mark as completed to avoid hanging
       if (this._status !== AgentStatus.Aborted) {
         this._status = AgentStatus.Completed;
+        this.persistInstanceStatus();
       }
     }
     return resultContext;

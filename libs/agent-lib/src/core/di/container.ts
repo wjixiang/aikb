@@ -3,6 +3,8 @@ import { Container } from 'inversify';
 import { TYPES } from './types.js';
 import { Agent } from '../agent/agent.js';
 import { AgentStatus } from '../common/types.js';
+import type { IAgentSleepControl } from '../runtime/AgentSleepControl.js';
+import { LazySleepControl } from '../runtime/AgentSleepControl.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
@@ -62,6 +64,11 @@ export class AgentContainer {
   private agentInstance: Agent | null = null;
   private isRestoring = false;
   private initPromise: Promise<void> | null = null;
+  private lazySleepControl = new LazySleepControl();
+
+  get agent(): Agent | null {
+    return this.agentInstance;
+  }
 
   constructor(
     options: AgentCreationOptions = {},
@@ -355,6 +362,12 @@ export class AgentContainer {
     // These will be resolved with DI when building the ToolComponents array
     this.container.bind(A2ATaskComponent).toSelf().inSingletonScope();
 
+    // Bind AgentSleepControl - lazy proxy to avoid circular dependency
+    // (Agent → ToolManager → A2ATaskComponent → AgentSleepControl → Agent)
+    this.container
+      .bind<IAgentSleepControl>(TYPES.AgentSleepControl)
+      .toConstantValue(this.lazySleepControl);
+
     // Bind custom component classes if provided
     if (this.config.components && this.config.components.length > 0) {
       for (const reg of this.config.components) {
@@ -435,6 +448,9 @@ export class AgentContainer {
 
     if (!this.agentInstance) {
       this.agentInstance = this.container.get<Agent>(TYPES.Agent);
+
+      // Wire up lazy sleep control now that Agent is resolved
+      this.lazySleepControl.setResolver(() => this.agentInstance!);
 
       // Note: Components are now injected via DI constructor
       // No need to manually register here

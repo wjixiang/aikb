@@ -24,6 +24,8 @@ export enum HookType {
   AGENT_ABORTING = 'agent:aborting',
   AGENT_ABORTED = 'agent:aborted',
   AGENT_ERROR = 'agent:error',
+  AGENT_SLEEPING = 'agent:sleeping',
+  AGENT_WOKEN = 'agent:woken',
   COMPONENT_BEFORE_REGISTER = 'component:beforeRegister',
   COMPONENT_AFTER_REGISTER = 'component:afterRegister',
   COMPONENT_BEFORE_UNREGISTER = 'component:beforeUnregister',
@@ -123,6 +125,24 @@ export interface AgentErrorContext extends HookContextBase {
 }
 
 /**
+ * Agent sleeping context
+ */
+export interface AgentSleepingContext extends HookContextBase {
+  type: HookType.AGENT_SLEEPING;
+  /** Reason for sleeping */
+  reason: string;
+}
+
+/**
+ * Agent woken context
+ */
+export interface AgentWokenContext extends HookContextBase {
+  type: HookType.AGENT_WOKEN;
+  /** Wake-up data (e.g., A2A result) */
+  data?: unknown;
+}
+
+/**
  * Component before register context
  */
 export interface ComponentBeforeRegisterContext extends HookContextBase {
@@ -216,12 +236,14 @@ export type HookContext =
   | AgentAbortingContext
   | AgentAbortedContext
   | AgentErrorContext
+  | AgentSleepingContext
+  | AgentWokenContext
   | ComponentBeforeRegisterContext
   | ComponentAfterRegisterContext
   | ComponentBeforeUnregisterContext
   | ComponentAfterUnregisterContext
   | ToolBeforeExecuteContext
-  | ToolAfterExecuteContext
+  | ToolAfterExecuteContext;
 // =============================================================================
 // Hook Handler Types
 // =============================================================================

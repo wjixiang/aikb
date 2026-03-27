@@ -9,6 +9,7 @@ import { TYPES } from '../../core/di/types.js';
 import type { IA2AHandler, PendingTask } from '../../core/a2a/A2AHandler.js';
 import type { IA2AClient } from '../../core/a2a/A2AClient.js';
 import type { A2ATaskResult, A2ATaskStatus } from '../../core/a2a/types.js';
+import type { IAgentSleepControl } from '../../core/runtime/AgentSleepControl.js';
 import {
   a2aTaskToolSchemas,
   type A2ATaskToolName,
@@ -19,6 +20,7 @@ import {
   type SendTaskParams,
   type A2ATaskToolReturnTypes,
   type SentTaskInfo,
+  type WaitForResultParams,
 } from './a2aTaskSchemas.js';
 
 interface A2ATaskState {
@@ -43,8 +45,14 @@ This component handles Agent-to-Agent (A2A) task communication.
 **Sending tasks:**
 - sendTask sends a task and returns immediately after ACK (async mode)
 - The task result is tracked in the background
-- Check getSentTasks or the component render to see task status
+- Use waitForResult to sleep and wait for the result of a specific task
+- Or check getSentTasks or the component render to see task status
 - Results are available on the next agent turn after completion
+
+**Waiting for results:**
+- waitForResult puts the agent to sleep until the A2A result arrives
+- The agent automatically wakes up when the result is ready
+- This is useful when you need to wait for a task before proceeding
 
 **Critical:**
 - The conversationId is a unique ID like "conv_1234567890_abc123", NOT the task description
@@ -54,14 +62,17 @@ This component handles Agent-to-Agent (A2A) task communication.
 
   protected a2aHandler: IA2AHandler;
   protected a2aClient: IA2AClient;
+  protected sleepControl: IAgentSleepControl;
 
   constructor(
     @inject(TYPES.IA2AHandler) a2aHandler: IA2AHandler,
     @inject(TYPES.IA2AClient) a2aClient: IA2AClient,
+    @inject(TYPES.AgentSleepControl) sleepControl: IAgentSleepControl,
   ) {
     super();
     this.a2aHandler = a2aHandler;
     this.a2aClient = a2aClient;
+    this.sleepControl = sleepControl;
   }
 
   protected override initialState(): A2ATaskState {
@@ -98,6 +109,10 @@ This component handles Agent-to-Agent (A2A) task communication.
         desc: a2aTaskToolSchemas.getSentTasks.desc,
         paramsSchema: a2aTaskToolSchemas.getSentTasks.paramsSchema,
       },
+      waitForResult: {
+        desc: a2aTaskToolSchemas.waitForResult.desc,
+        paramsSchema: a2aTaskToolSchemas.waitForResult.paramsSchema,
+      },
     };
   }
 
@@ -131,6 +146,8 @@ This component handles Agent-to-Agent (A2A) task communication.
           return await this.handleSendTask(params as SendTaskParams);
         case 'getSentTaskInfos':
           return await this.handleGetSentTaskInfos();
+        case 'waitForResult':
+          return await this.handleWaitForResult(params as WaitForResultParams);
         default:
           return {
             success: false,
@@ -312,6 +329,9 @@ This component handles Agent-to-Agent (A2A) task communication.
         result,
         completedAt: Date.now(),
       };
+      if (this.sleepControl.isSleeping()) {
+        this.sleepControl.wakeUp(result);
+      }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       this.reactive.sentTasks[sentTask.taskId] = {
@@ -320,6 +340,9 @@ This component handles Agent-to-Agent (A2A) task communication.
         error: msg,
         completedAt: Date.now(),
       };
+      if (this.sleepControl.isSleeping()) {
+        this.sleepControl.wakeUp(undefined);
+      }
     }
   }
 
@@ -547,5 +570,95 @@ This component handles Agent-to-Agent (A2A) task communication.
       },
       summary: `[A2A Task] ${tasks.length} sent tasks (${this.getInFlightTasks().length} in-flight, ${this.getCompletedTasks().length} completed, ${this.getFailedTasks().length} failed)`,
     };
+  }
+
+  private async handleWaitForResult(params: WaitForResultParams): Promise<
+    ToolCallResult<{
+      success: boolean;
+      conversationId: string;
+      result?: A2ATaskResult;
+      error?: string;
+    }>
+  > {
+    const sentTask = Object.values(this.snapshot.sentTasks).find(
+      (t) => t.conversationId === params.conversationId,
+    );
+
+    if (!sentTask) {
+      return {
+        success: false,
+        data: {
+          success: false,
+          conversationId: params.conversationId,
+          error: `No sent task found with conversationId: ${params.conversationId}`,
+        },
+        summary: `[A2A Task] No sent task found for conversationId: ${params.conversationId}`,
+      };
+    }
+
+    if (sentTask.status === 'completed') {
+      return {
+        success: true,
+        data: {
+          success: true,
+          conversationId: params.conversationId,
+          result: sentTask.result,
+        },
+        summary: `[A2A Task] Task already completed: ${params.conversationId}`,
+      };
+    }
+
+    if (sentTask.status === 'failed' || sentTask.status === 'timeout') {
+      return {
+        success: false,
+        data: {
+          success: false,
+          conversationId: params.conversationId,
+          error: sentTask.error,
+        },
+        summary: `[A2A Task] Task already ${sentTask.status}: ${params.conversationId}`,
+      };
+    }
+
+    try {
+      const wakeData = await this.sleepControl.sleep(
+        `Waiting for A2A result: ${params.conversationId}`,
+      );
+
+      const task = this.snapshot.sentTasks[sentTask.taskId];
+      if (task && task.status === 'completed') {
+        return {
+          success: true,
+          data: {
+            success: true,
+            conversationId: params.conversationId,
+            result: task.result,
+          },
+          summary: `[A2A Task] Woke up, result received: ${params.conversationId}`,
+        };
+      }
+
+      return {
+        success: false,
+        data: {
+          success: false,
+          conversationId: params.conversationId,
+          error: task?.error ?? 'Woken up without result (possibly aborted)',
+        },
+        summary: `[A2A Task] Woken up without result: ${params.conversationId}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          success: false,
+          conversationId: params.conversationId,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        summary: `[A2A Task] Failed to wait for result: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      };
+    }
   }
 }

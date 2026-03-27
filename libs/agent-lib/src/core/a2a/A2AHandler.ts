@@ -444,10 +444,7 @@ export class A2AHandler implements IA2AHandler {
     });
 
     // Call task handler with timeout (handler should call acknowledge() when ready)
-    const result = await this.withTimeout(
-      this.taskHandler(payload, context),
-      this.handlerTimeout,
-    );
+    const result = await this.taskHandler(payload, context);
 
     // If handler returns a result, send it automatically
     if (result) {
@@ -482,10 +479,7 @@ export class A2AHandler implements IA2AHandler {
     await this.sendAck(message);
 
     // Call query handler with timeout
-    const response = await this.withTimeout(
-      this.queryHandler(payload, context),
-      this.handlerTimeout,
-    );
+    const response = await this.queryHandler(payload, context);
 
     // Send response
     await this.sendResult(
@@ -511,10 +505,7 @@ export class A2AHandler implements IA2AHandler {
     const payload = message.content;
 
     // Events are fire-and-forget, no acknowledgment needed
-    await this.withTimeout(
-      this.eventHandler(payload, context),
-      this.handlerTimeout,
-    );
+    await this.eventHandler(payload, context);
   }
 
   /**
@@ -541,10 +532,7 @@ export class A2AHandler implements IA2AHandler {
     await this.sendAck(message);
 
     // Call cancel handler
-    await this.withTimeout(
-      this.cancelHandler(taskId, context),
-      this.handlerTimeout,
-    );
+    await this.cancelHandler(taskId, context);
   }
 
   /**
@@ -632,28 +620,6 @@ export class A2AHandler implements IA2AHandler {
       typeof msg['conversationId'] === 'string' &&
       typeof msg['messageType'] === 'string'
     );
-  }
-
-  /**
-   * Execute a promise with timeout
-   */
-  private async withTimeout<T>(
-    promise: Promise<T>,
-    timeoutMs: number,
-  ): Promise<T> {
-    let timeoutId: NodeJS.Timeout;
-
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => {
-        reject(new Error(`Handler timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
-
-    try {
-      return await Promise.race([promise, timeoutPromise]);
-    } finally {
-      clearTimeout(timeoutId!);
-    }
   }
 }
 

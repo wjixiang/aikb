@@ -14,7 +14,7 @@ interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
   label: string;
   nodeType: string;
-  status?: string;
+  status: string;
   agentType?: string;
 }
 
@@ -31,7 +31,9 @@ interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
 const STATUS_COLORS: Record<string, string> = {
   running: '#22c55e',
   idle: '#eab308',
-  stopped: '#ef4444',
+  sleep: '#a78bfa',
+  completed: '#6b7280',
+  aborted: '#ef4444',
 };
 
 const NODE_TYPE_COLORS: Record<string, string> = {
@@ -85,9 +87,9 @@ function getTypeColor(
 ): string {
   if (node.status && STATUS_COLORS[node.status])
     return STATUS_COLORS[node.status];
-  if (NODE_TYPE_COLORS[node.nodeType]) return NODE_TYPE_COLORS[node.nodeType];
   if (node.agentType && soulColors.has(node.agentType))
     return soulColors.get(node.agentType)!;
+  if (NODE_TYPE_COLORS[node.nodeType]) return NODE_TYPE_COLORS[node.nodeType];
   return '#64748b';
 }
 
@@ -195,6 +197,7 @@ export function AgentTopology({
               id: n.instanceId,
               label: n.instanceId,
               nodeType: n.nodeType ?? 'worker',
+              status: 'idle',
               agentType: undefined,
             }));
 
@@ -368,7 +371,7 @@ export function AgentTopology({
         .attr('cx', 12)
         .attr('cy', -12)
         .attr('r', 5)
-        .attr('fill', (d) => STATUS_COLORS[d.status ?? 'stopped'])
+        .attr('fill', (d) => STATUS_COLORS[d.status])
         .attr('stroke', '#1e293b')
         .attr('stroke-width', 1.5);
 
@@ -503,8 +506,44 @@ export function AgentTopology({
             style={{ cursor: 'grab' }}
           />
         </div>
-        <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
           <span>Drag nodes to rearrange. Scroll to zoom.</span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 h-3 rounded-full border border-background"
+              style={{ backgroundColor: '#22c55e' }}
+            />
+            running
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 h-3 rounded-full border border-background"
+              style={{ backgroundColor: '#eab308' }}
+            />
+            idle
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 h-3 rounded-full border border-background"
+              style={{ backgroundColor: '#a78bfa' }}
+            />
+            sleep
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 h-3 rounded-full border border-background"
+              style={{ backgroundColor: '#6b7280' }}
+            />
+            completed
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 h-3 rounded-full border border-background"
+              style={{ backgroundColor: '#ef4444' }}
+            />
+            aborted
+          </span>
+          <span className="text-border">|</span>
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-4 h-0.5"

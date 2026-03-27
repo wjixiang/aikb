@@ -842,8 +842,11 @@ export class AgentRuntime implements IAgentRuntime {
 
     const agent = await container.getAgent();
 
-    // Abort running agent if any
-    if (agent.status === AgentStatus.Running) {
+    // Abort running or sleeping agent
+    if (
+      agent.status === AgentStatus.Running ||
+      agent.status === AgentStatus.Sleep
+    ) {
       agent.abort('Runtime stop', 'manual');
     }
 
@@ -931,7 +934,13 @@ export class AgentRuntime implements IAgentRuntime {
    * @returns Promise resolving to array of agent metadata
    */
   async listAgents(filter?: AgentFilter): Promise<AgentMetadata[]> {
-    let agents = this.registry.getAll();
+    let agents = this.registry.getAll().map((meta) => {
+      const container = this.containers.get(meta.instanceId);
+      if (container?.agent) {
+        return { ...meta, status: container.agent.status };
+      }
+      return meta;
+    });
 
     if (filter) {
       if (filter.status) {
@@ -1139,6 +1148,7 @@ export class AgentRuntime implements IAgentRuntime {
     const agentsByStatus: Record<AgentStatus, number> = {
       [AgentStatus.Idle]: 0,
       [AgentStatus.Running]: 0,
+      [AgentStatus.Sleep]: 0,
       [AgentStatus.Completed]: 0,
       [AgentStatus.Aborted]: 0,
     };

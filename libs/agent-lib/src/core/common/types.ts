@@ -17,6 +17,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 export enum AgentStatus {
   Idle = 'idle',
   Running = 'running',
+  Sleep = 'sleep',
   Completed = 'completed',
   Aborted = 'aborted',
 }

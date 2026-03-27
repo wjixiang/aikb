@@ -359,6 +359,12 @@ export const TYPES = {
    * @scope Singleton - Optional, bound at container creation when runtimeControl config is provided
    */
   RuntimeControlRESTConfig: Symbol('RuntimeControlRESTConfig'),
+
+  /**
+   * AgentSleepControl - Allows components to put agent to sleep and wake it up
+   * @scope Singleton - Bound at container creation
+   */
+  AgentSleepControl: Symbol('AgentSleepControl'),
 } as const;
 
 export type TestOverrides = {
