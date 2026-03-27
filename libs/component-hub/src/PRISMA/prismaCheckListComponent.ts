@@ -1,5 +1,4 @@
-import { ToolComponent, ExportOptions } from 'agent-lib/components';
-import { Tool } from 'agent-lib/components';
+import { ReactiveToolComponent, ExportOptions } from 'agent-lib/components';
 import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui';
 import type { ToolCallResult } from 'agent-lib/components';
 import { createPrismaToolSet } from './prismaTools.js';
@@ -39,10 +38,19 @@ export interface ProgressResult {
   >;
 }
 
-export class PrismaCheckListComponent extends ToolComponent {
+interface PrismaChecklistState {
+  metadata: ManuscriptMetadata;
+  validationResult: ValidationResult | null;
+  progressResult: ProgressResult | null;
+  exportResult: string | null;
+  filteredItems: PrismaChecklistItem[] | null;
+}
+
+export class PrismaCheckListComponent extends ReactiveToolComponent<PrismaChecklistState> {
   override componentId = 'prisma-checklist';
   override displayName = 'PRISMA Checklist';
-  override description = 'PRISMA 2020 checklist for systematic review reporting';
+  override description =
+    'PRISMA 2020 checklist for systematic review reporting';
   override componentPrompt = `## PRISMA Checklist
 
 This component provides the PRISMA 2020 checklist for systematic review and meta-analysis reporting.
@@ -68,33 +76,40 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
 - Discussion (Discussion, Other information)
 - Funding and registration`;
 
-  toolSet: Map<string, Tool>;
-  handleToolCall: (
-    toolName: string,
-    params: any,
-  ) => Promise<ToolCallResult<any>>;
-
-  // Internal state
   private checklistItems: Map<number, PrismaChecklistItem> = new Map();
-  private metadata: ManuscriptMetadata = {};
-  private validationResult: ValidationResult | null = null;
-  private progressResult: ProgressResult | null = null;
-  private exportResult: string | null = null;
-  private filteredItems: PrismaChecklistItem[] | null = null;
 
   constructor() {
     super();
-    this.toolSet = this.initializeToolSet();
-    this.handleToolCall = this.handleToolCallImpl.bind(this);
     this.initializeDefaultItems();
   }
 
-  private initializeToolSet(): Map<string, Tool> {
-    return createPrismaToolSet();
+  protected override initialState(): PrismaChecklistState {
+    return {
+      metadata: {},
+      validationResult: null,
+      progressResult: null,
+      exportResult: null,
+      filteredItems: null,
+    };
+  }
+
+  protected override toolDefs() {
+    const tools = createPrismaToolSet();
+    const defs: Record<
+      string,
+      { desc: string; paramsSchema: any; examples?: any[] }
+    > = {};
+    for (const [name, tool] of tools) {
+      defs[name] = {
+        desc: tool.desc,
+        paramsSchema: tool.paramsSchema,
+        examples: tool.examples,
+      };
+    }
+    return defs;
   }
 
   private initializeDefaultItems(): void {
-    // Initialize all default PRISMA items
     DEFAULT_PRISMA_ITEMS.forEach((item) => {
       this.checklistItems.set(item.itemNumber, {
         ...item,
@@ -108,7 +123,6 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
   renderImply = async () => {
     const elements: TUIElement[] = [];
 
-    // Render header
     elements.push(
       new th({
         content: 'PRISMA 2020 Checklist',
@@ -118,27 +132,22 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       }),
     );
 
-    // Render manuscript metadata
-    if (this.metadata.title || this.metadata.authors) {
+    if (this.snapshot.metadata.title || this.snapshot.metadata.authors) {
       elements.push(this.renderMetadata());
     }
 
-    // Render progress if available
-    if (this.progressResult) {
+    if (this.snapshot.progressResult) {
       elements.push(this.renderProgress());
     }
 
-    // Render validation result if available
-    if (this.validationResult) {
+    if (this.snapshot.validationResult) {
       elements.push(this.renderValidationResult());
     }
 
-    // Render export result if available
-    if (this.exportResult) {
+    if (this.snapshot.exportResult) {
       elements.push(this.renderExportResult());
     }
 
-    // Render checklist items (filtered or all)
     elements.push(this.renderChecklistItems());
 
     return elements;
@@ -157,46 +166,49 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       }),
     );
 
-    if (this.metadata.title) {
+    if (this.snapshot.metadata.title) {
       container.addChild(
         new tp({
-          content: `**Title**: ${this.metadata.title}`,
+          content: `**Title**: ${this.snapshot.metadata.title}`,
           indent: 1,
         }),
       );
     }
 
-    if (this.metadata.authors && this.metadata.authors.length > 0) {
+    if (
+      this.snapshot.metadata.authors &&
+      this.snapshot.metadata.authors.length > 0
+    ) {
       container.addChild(
         new tp({
-          content: `**Authors**: ${this.metadata.authors.join(', ')}`,
+          content: `**Authors**: ${this.snapshot.metadata.authors.join(', ')}`,
           indent: 1,
         }),
       );
     }
 
-    if (this.metadata.registrationNumber) {
+    if (this.snapshot.metadata.registrationNumber) {
       container.addChild(
         new tp({
-          content: `**Registration**: ${this.metadata.registrationNumber}`,
+          content: `**Registration**: ${this.snapshot.metadata.registrationNumber}`,
           indent: 1,
         }),
       );
     }
 
-    if (this.metadata.registrationDate) {
+    if (this.snapshot.metadata.registrationDate) {
       container.addChild(
         new tp({
-          content: `**Registration Date**: ${this.metadata.registrationDate}`,
+          content: `**Registration Date**: ${this.snapshot.metadata.registrationDate}`,
           indent: 1,
         }),
       );
     }
 
-    if (this.metadata.protocolLink) {
+    if (this.snapshot.metadata.protocolLink) {
       container.addChild(
         new tp({
-          content: `**Protocol**: ${this.metadata.protocolLink}`,
+          content: `**Protocol**: ${this.snapshot.metadata.protocolLink}`,
           indent: 1,
         }),
       );
@@ -210,7 +222,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       styles: { showBorder: true, padding: { vertical: 1 } },
     });
 
-    const progress = this.progressResult!;
+    const progress = this.snapshot.progressResult!;
     const progressBar = this.createProgressBar(progress.completionPercentage);
 
     container.addChild(
@@ -235,7 +247,6 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       }),
     );
 
-    // Render section progress
     container.addChild(
       new tp({
         content: '',
@@ -270,8 +281,8 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       styles: { showBorder: true, padding: { vertical: 1 } },
     });
 
-    const status = this.validationResult!.isValid ? '✓ Valid' : '✗ Incomplete';
-    const statusColor = this.validationResult!.isValid ? 'green' : 'yellow';
+    const validation = this.snapshot.validationResult!;
+    const status = validation.isValid ? '✓ Valid' : '✗ Incomplete';
 
     container.addChild(
       new th({
@@ -283,12 +294,12 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
 
     container.addChild(
       new tp({
-        content: this.validationResult!.message,
+        content: validation.message,
         indent: 1,
       }),
     );
 
-    if (this.validationResult!.missingItems.length > 0) {
+    if (validation.missingItems.length > 0) {
       container.addChild(
         new tp({
           content: '',
@@ -301,7 +312,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
           indent: 1,
         }),
       );
-      this.validationResult!.missingItems.forEach((itemNum) => {
+      validation.missingItems.forEach((itemNum) => {
         const item = this.checklistItems.get(itemNum);
         container.addChild(
           new tp({
@@ -330,7 +341,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
 
     container.addChild(
       new tp({
-        content: this.exportResult!,
+        content: this.snapshot.exportResult!,
         indent: 1,
       }),
     );
@@ -352,12 +363,11 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     );
 
     const itemsToRender =
-      this.filteredItems ||
+      this.snapshot.filteredItems ||
       Array.from(this.checklistItems.values()).sort(
         (a, b) => a.itemNumber - b.itemNumber,
       );
 
-    // Group by section
     const sections = new Map<string, PrismaChecklistItem[]>();
     for (const item of itemsToRender) {
       if (!sections.has(item.section)) {
@@ -366,7 +376,6 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       sections.get(item.section)!.push(item);
     }
 
-    // Render each section
     for (const [section, items] of sections.entries()) {
       container.addChild(this.renderSection(section, items));
     }
@@ -465,37 +474,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     }
   }
 
-  private async handleToolCallImpl(
-    toolName: string,
-    params: any,
-  ): Promise<ToolCallResult<any>> {
-    switch (toolName) {
-      case 'set_checklist_item':
-        return this.handleSetChecklistItem(params);
-      case 'set_multiple_items':
-        return this.handleSetMultipleItems(params);
-      case 'filter_checklist':
-        return this.handleFilterChecklist(params);
-      case 'export_checklist':
-        return this.handleExportChecklist(params);
-      case 'validate_checklist':
-        return this.handleValidateChecklist(params);
-      case 'clear_checklist':
-        return this.handleClearChecklist(params);
-      case 'get_progress':
-        return this.handleGetProgress();
-      case 'set_manuscript_metadata':
-        return this.handleSetManuscriptMetadata(params);
-      default:
-        return {
-          success: false,
-          data: { error: `Unknown tool: ${toolName}` },
-          summary: `[PRISMA] 未知工具: ${toolName}`,
-        };
-    }
-  }
-
-  private handleSetChecklistItem(params: any): ToolCallResult<any> {
+  async onSet_checklist_item(params: any): Promise<ToolCallResult<any>> {
     const { itemNumber, status, location, notes } = params;
 
     const item = this.checklistItems.get(itemNumber);
@@ -507,7 +486,6 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       };
     }
 
-    // Update the item
     this.checklistItems.set(itemNumber, {
       ...item,
       status,
@@ -515,11 +493,10 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       notes: notes || item.notes,
     });
 
-    // Clear previous results since checklist changed
-    this.validationResult = null;
-    this.progressResult = null;
-    this.exportResult = null;
-    this.filteredItems = null;
+    this.reactive.validationResult = null;
+    this.reactive.progressResult = null;
+    this.reactive.exportResult = null;
+    this.reactive.filteredItems = null;
 
     return {
       success: true,
@@ -528,7 +505,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     };
   }
 
-  private handleSetMultipleItems(params: any): ToolCallResult<any> {
+  async onSet_multiple_items(params: any): Promise<ToolCallResult<any>> {
     const { items } = params;
     let updatedCount = 0;
 
@@ -547,11 +524,10 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       }
     }
 
-    // Clear previous results since checklist changed
-    this.validationResult = null;
-    this.progressResult = null;
-    this.exportResult = null;
-    this.filteredItems = null;
+    this.reactive.validationResult = null;
+    this.reactive.progressResult = null;
+    this.reactive.exportResult = null;
+    this.reactive.filteredItems = null;
 
     return {
       success: true,
@@ -560,7 +536,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     };
   }
 
-  private handleFilterChecklist(params: any): ToolCallResult<any> {
+  async onFilter_checklist(params: any): Promise<ToolCallResult<any>> {
     const { section, status, topic } = params;
 
     let filtered = Array.from(this.checklistItems.values());
@@ -579,7 +555,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       );
     }
 
-    this.filteredItems = filtered;
+    this.reactive.filteredItems = filtered;
     return {
       success: true,
       data: { count: filtered.length },
@@ -587,7 +563,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     };
   }
 
-  private handleExportChecklist(params: any): ToolCallResult<any> {
+  async onExport_checklist(params: any): Promise<ToolCallResult<any>> {
     const { format, includeCompletedOnly } = params;
 
     let items = Array.from(this.checklistItems.values());
@@ -598,13 +574,13 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
 
     switch (format) {
       case 'json':
-        this.exportResult = this.generateJsonOutput(items);
+        this.reactive.exportResult = this.generateJsonOutput(items);
         break;
       case 'markdown':
-        this.exportResult = this.generateMarkdownOutput(items);
+        this.reactive.exportResult = this.generateMarkdownOutput(items);
         break;
       case 'csv':
-        this.exportResult = this.generateCsvOutput(items);
+        this.reactive.exportResult = this.generateCsvOutput(items);
         break;
       default:
         return {
@@ -620,7 +596,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     };
   }
 
-  private handleValidateChecklist(params: any): ToolCallResult<any> {
+  async onValidate_checklist(params: any): Promise<ToolCallResult<any>> {
     const { requiredItems } = params;
 
     const required =
@@ -654,7 +630,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       message = `Your PRISMA checklist is incomplete. ${missingItems.length} required items are missing or not completed.`;
     }
 
-    this.validationResult = {
+    this.reactive.validationResult = {
       isValid,
       message,
       missingItems,
@@ -675,7 +651,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     };
   }
 
-  private handleClearChecklist(params: any): ToolCallResult<any> {
+  async onClear_checklist(params: any): Promise<ToolCallResult<any>> {
     const { confirm } = params;
 
     if (!confirm) {
@@ -689,7 +665,6 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       };
     }
 
-    // Reset all items to not_started
     for (const [itemNumber, item] of this.checklistItems.entries()) {
       this.checklistItems.set(itemNumber, {
         ...item,
@@ -699,12 +674,11 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       });
     }
 
-    // Clear all results
-    this.validationResult = null;
-    this.progressResult = null;
-    this.exportResult = null;
-    this.filteredItems = null;
-    this.metadata = {};
+    this.reactive.validationResult = null;
+    this.reactive.progressResult = null;
+    this.reactive.exportResult = null;
+    this.reactive.filteredItems = null;
+    this.reactive.metadata = {};
 
     return {
       success: true,
@@ -713,7 +687,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     };
   }
 
-  private handleGetProgress(): ToolCallResult<any> {
+  async onGet_progress(_params: any): Promise<ToolCallResult<any>> {
     const items = Array.from(this.checklistItems.values());
 
     const completedItems = items.filter(
@@ -733,7 +707,6 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     const completionPercentage =
       totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
-    // Calculate section progress
     const sectionProgress: Record<
       string,
       { total: number; completed: number; percentage: number }
@@ -762,7 +735,7 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
         progress.total > 0 ? (progress.completed / progress.total) * 100 : 0;
     }
 
-    this.progressResult = {
+    this.reactive.progressResult = {
       totalItems,
       completedItems,
       inProgressItems,
@@ -774,12 +747,12 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
 
     return {
       success: true,
-      data: this.progressResult,
+      data: this.reactive.progressResult,
       summary: `[PRISMA] 进度: ${completedItems}/${totalItems} (${completionPercentage.toFixed(1)}%)`,
     };
   }
 
-  private handleSetManuscriptMetadata(params: any): ToolCallResult<any> {
+  async onSet_manuscript_metadata(params: any): Promise<ToolCallResult<any>> {
     const {
       title,
       authors,
@@ -788,8 +761,8 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
       protocolLink,
     } = params;
 
-    this.metadata = {
-      ...this.metadata,
+    this.reactive.metadata = {
+      ...this.snapshot.metadata,
       ...(title !== undefined && { title }),
       ...(authors !== undefined && { authors }),
       ...(registrationNumber !== undefined && { registrationNumber }),
@@ -799,14 +772,14 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
 
     return {
       success: true,
-      data: { metadata: this.metadata },
-      summary: `[PRISMA] 设置稿件元数据: ${this.metadata.title || 'Untitled'}`,
+      data: { metadata: this.reactive.metadata },
+      summary: `[PRISMA] 设置稿件元数据: ${this.reactive.metadata.title || 'Untitled'}`,
     };
   }
 
   private generateJsonOutput(items: PrismaChecklistItem[]): string {
     const output = {
-      metadata: this.metadata,
+      metadata: this.snapshot.metadata,
       items: items.sort((a, b) => a.itemNumber - b.itemNumber),
     };
 
@@ -816,21 +789,23 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
   private generateMarkdownOutput(items: PrismaChecklistItem[]): string {
     let output = '# PRISMA 2020 Checklist\n\n';
 
-    if (this.metadata.title) {
-      output += `**Title**: ${this.metadata.title}\n\n`;
+    if (this.snapshot.metadata.title) {
+      output += `**Title**: ${this.snapshot.metadata.title}\n\n`;
     }
 
-    if (this.metadata.authors && this.metadata.authors.length > 0) {
-      output += `**Authors**: ${this.metadata.authors.join(', ')}\n\n`;
+    if (
+      this.snapshot.metadata.authors &&
+      this.snapshot.metadata.authors.length > 0
+    ) {
+      output += `**Authors**: ${this.snapshot.metadata.authors.join(', ')}\n\n`;
     }
 
-    if (this.metadata.registrationNumber) {
-      output += `**Registration**: ${this.metadata.registrationNumber}\n\n`;
+    if (this.snapshot.metadata.registrationNumber) {
+      output += `**Registration**: ${this.snapshot.metadata.registrationNumber}\n\n`;
     }
 
     output += '## Checklist Items\n\n';
 
-    // Group by section
     const sections = new Map<string, PrismaChecklistItem[]>();
     for (const item of items) {
       if (!sections.has(item.section)) {
@@ -892,33 +867,24 @@ This component provides the PRISMA 2020 checklist for systematic review and meta
     return output;
   }
 
-  /**
-   * Get the current checklist state
-   */
   getChecklist(): PrismaChecklist {
     return {
-      metadata: this.metadata,
+      metadata: this.snapshot.metadata,
       items: Array.from(this.checklistItems.values()).sort(
         (a, b) => a.itemNumber - b.itemNumber,
       ),
     };
   }
 
-  /**
-   * Get a specific checklist item
-   */
   getChecklistItem(itemNumber: number): PrismaChecklistItem | undefined {
     return this.checklistItems.get(itemNumber);
   }
 
-  /**
-   * Get manuscript metadata
-   */
   getMetadata(): ManuscriptMetadata {
-    return { ...this.metadata };
+    return { ...this.snapshot.metadata };
   }
 
-  async exportData(options?: ExportOptions) {
+  override async exportData(options?: ExportOptions) {
     return {
       data: this.getChecklist(),
       format: options?.format ?? 'json',

@@ -1,11 +1,7 @@
 import 'reflect-metadata';
 import { injectable, inject, optional } from 'inversify';
-import {
-  ToolComponent,
-  ExportOptions,
-  type ExportResult,
-} from 'agent-lib/components';
-import type { Tool, ToolCallResult } from 'agent-lib/components';
+import { ReactiveToolComponent, type ExportResult } from 'agent-lib/components';
+import type { ToolCallResult } from 'agent-lib/components';
 import type { TUIElement } from 'agent-lib/components/ui';
 import { th, tdiv } from 'agent-lib/components/ui';
 import { TYPES } from 'agent-lib/core';
@@ -33,7 +29,7 @@ type RuntimeControlToolReturnType<T extends RuntimeControlToolName> =
   RuntimeControlToolReturnTypes[T];
 
 @injectable()
-export class RuntimeControlComponent extends ToolComponent {
+export class RuntimeControlComponent extends ReactiveToolComponent<{}> {
   override componentId = 'runtime-control';
   override displayName = 'Runtime Control';
   override description = 'Create and manage child agents';
@@ -56,7 +52,6 @@ This component enables creation and management of child agents via REST API.
 
   protected instanceId: string;
   protected restClient?: SwarmAPIClient;
-  toolSet: Map<string, Tool>;
 
   constructor(
     @inject(TYPES.AgentInstanceId) instanceId: string,
@@ -72,49 +67,83 @@ This component enables creation and management of child agents via REST API.
         restConfig.apiKey,
       );
     }
-    this.toolSet = this.initializeToolSet();
   }
 
-  private initializeToolSet(): Map<string, Tool> {
-    const tools = new Map<string, Tool>();
-
-    const toolEntries: [
-      string,
-      (typeof runtimeControlToolSchemas)[keyof typeof runtimeControlToolSchemas],
-    ][] = [
-      ['createAgent', runtimeControlToolSchemas.createAgent],
-      ['destroyAgent', runtimeControlToolSchemas.destroyAgent],
-      ['stopAgent', runtimeControlToolSchemas.stopAgent],
-      ['listAgents', runtimeControlToolSchemas.listAgents],
-      ['getAgent', runtimeControlToolSchemas.getAgent],
-      ['getStats', runtimeControlToolSchemas.getStats],
-      ['listChildAgents', runtimeControlToolSchemas.listChildAgents],
-      ['getMyInfo', runtimeControlToolSchemas.getMyInfo],
-      ['listAgentSouls', runtimeControlToolSchemas.listAgentSouls],
-      ['createAgentByType', runtimeControlToolSchemas.createAgentByType],
-      ['registerInTopology', runtimeControlToolSchemas.registerInTopology],
-      [
-        'unregisterFromTopology',
-        runtimeControlToolSchemas.unregisterFromTopology,
-      ],
-      ['connectAgents', runtimeControlToolSchemas.connectAgents],
-      ['disconnectAgents', runtimeControlToolSchemas.disconnectAgents],
-      ['getTopologyInfo', runtimeControlToolSchemas.getTopologyInfo],
-      ['getNeighbors', runtimeControlToolSchemas.getNeighbors],
-    ];
-
-    toolEntries.forEach(([name, toolDef]) => {
-      tools.set(name, {
-        toolName: toolDef.toolName,
-        desc: toolDef.desc,
-        paramsSchema: toolDef.paramsSchema,
-      });
-    });
-
-    return tools;
+  protected override initialState() {
+    return {};
   }
 
-  handleToolCall: {
+  protected override toolDefs() {
+    return {
+      createAgent: {
+        desc: runtimeControlToolSchemas.createAgent.desc,
+        paramsSchema: runtimeControlToolSchemas.createAgent.paramsSchema,
+      },
+      destroyAgent: {
+        desc: runtimeControlToolSchemas.destroyAgent.desc,
+        paramsSchema: runtimeControlToolSchemas.destroyAgent.paramsSchema,
+      },
+      stopAgent: {
+        desc: runtimeControlToolSchemas.stopAgent.desc,
+        paramsSchema: runtimeControlToolSchemas.stopAgent.paramsSchema,
+      },
+      listAgents: {
+        desc: runtimeControlToolSchemas.listAgents.desc,
+        paramsSchema: runtimeControlToolSchemas.listAgents.paramsSchema,
+      },
+      getAgent: {
+        desc: runtimeControlToolSchemas.getAgent.desc,
+        paramsSchema: runtimeControlToolSchemas.getAgent.paramsSchema,
+      },
+      getStats: {
+        desc: runtimeControlToolSchemas.getStats.desc,
+        paramsSchema: runtimeControlToolSchemas.getStats.paramsSchema,
+      },
+      listChildAgents: {
+        desc: runtimeControlToolSchemas.listChildAgents.desc,
+        paramsSchema: runtimeControlToolSchemas.listChildAgents.paramsSchema,
+      },
+      getMyInfo: {
+        desc: runtimeControlToolSchemas.getMyInfo.desc,
+        paramsSchema: runtimeControlToolSchemas.getMyInfo.paramsSchema,
+      },
+      listAgentSouls: {
+        desc: runtimeControlToolSchemas.listAgentSouls.desc,
+        paramsSchema: runtimeControlToolSchemas.listAgentSouls.paramsSchema,
+      },
+      createAgentByType: {
+        desc: runtimeControlToolSchemas.createAgentByType.desc,
+        paramsSchema: runtimeControlToolSchemas.createAgentByType.paramsSchema,
+      },
+      registerInTopology: {
+        desc: runtimeControlToolSchemas.registerInTopology.desc,
+        paramsSchema: runtimeControlToolSchemas.registerInTopology.paramsSchema,
+      },
+      unregisterFromTopology: {
+        desc: runtimeControlToolSchemas.unregisterFromTopology.desc,
+        paramsSchema:
+          runtimeControlToolSchemas.unregisterFromTopology.paramsSchema,
+      },
+      connectAgents: {
+        desc: runtimeControlToolSchemas.connectAgents.desc,
+        paramsSchema: runtimeControlToolSchemas.connectAgents.paramsSchema,
+      },
+      disconnectAgents: {
+        desc: runtimeControlToolSchemas.disconnectAgents.desc,
+        paramsSchema: runtimeControlToolSchemas.disconnectAgents.paramsSchema,
+      },
+      getTopologyInfo: {
+        desc: runtimeControlToolSchemas.getTopologyInfo.desc,
+        paramsSchema: runtimeControlToolSchemas.getTopologyInfo.paramsSchema,
+      },
+      getNeighbors: {
+        desc: runtimeControlToolSchemas.getNeighbors.desc,
+        paramsSchema: runtimeControlToolSchemas.getNeighbors.paramsSchema,
+      },
+    };
+  }
+
+  override handleToolCall: {
     <T extends RuntimeControlToolName>(
       toolName: T,
       params: unknown,
@@ -253,7 +282,7 @@ This component enables creation and management of child agents via REST API.
   // Export
   // ============================================
 
-  async exportData(_options?: ExportOptions): Promise<ExportResult> {
+  override async exportData(_options?: any): Promise<ExportResult> {
     return {
       data: {
         instanceId: this.instanceId,

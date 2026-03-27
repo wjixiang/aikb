@@ -1,7 +1,9 @@
-import { ToolComponent, ExportOptions } from 'agent-lib/components';
-import { Tool } from 'agent-lib/components';
-import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui';
+import {
+  ReactiveToolComponent,
+  type ExportOptions,
+} from 'agent-lib/components';
 import type { ToolCallResult } from 'agent-lib/components';
+import { TUIElement, tdiv, th, tp } from 'agent-lib/components/ui';
 import { createPicosToolSet } from './picosTools.js';
 import type {
   Patient,
@@ -12,10 +14,22 @@ import type {
   PICOS,
 } from './picosSchemas.js';
 
-export class PicosComponent extends ToolComponent {
+interface PicosState {
+  currentPicos: PICOS;
+  generatedQuestion: string | null;
+  validationResult: {
+    isValid: boolean;
+    message: string;
+    missingElements: string[];
+  } | null;
+  exportResult: string | null;
+}
+
+export class PicosComponent extends ReactiveToolComponent<PicosState> {
   override componentId = 'picos';
   override displayName = 'PICOS Builder';
-  override description = 'Build PICOS clinical questions for evidence-based medicine';
+  override description =
+    'Build PICOS clinical questions for evidence-based medicine';
   override componentPrompt = `## PICOS Clinical Question Builder
 
 This component helps construct PICOS clinical questions for systematic reviews and evidence-based medicine.
@@ -40,33 +54,38 @@ This component helps construct PICOS clinical questions for systematic reviews a
 - Choose clinically relevant outcomes
 - Match study designs to answer type (RCTs for interventions, cohort for prognosis)`;
 
-  toolSet: Map<string, Tool>;
-  handleToolCall: (
-    toolName: string,
-    params: any,
-  ) => Promise<ToolCallResult<any>>;
-
-  currentPicos: PICOS = {};
-  generatedQuestion: string | null = null;
-  validationResult: {
-    isValid: boolean;
-    message: string;
-    missingElements: string[];
-  } | null = null;
-  exportResult: string | null = null;
-
   constructor() {
     super();
-    this.toolSet = this.initializeToolSet();
-    this.handleToolCall = this.handleToolCallImpl.bind(this);
   }
 
-  private initializeToolSet(): Map<string, Tool> {
-    return createPicosToolSet();
+  protected override initialState(): PicosState {
+    return {
+      currentPicos: {},
+      generatedQuestion: null,
+      validationResult: null,
+      exportResult: null,
+    };
+  }
+
+  protected override toolDefs() {
+    const tools = createPicosToolSet();
+    const defs: Record<
+      string,
+      { desc: string; paramsSchema: any; examples?: any[] }
+    > = {};
+    for (const [name, tool] of tools) {
+      defs[name] = {
+        desc: tool.desc,
+        paramsSchema: tool.paramsSchema,
+        examples: tool.examples,
+      };
+    }
+    return defs;
   }
 
   renderImply = async () => {
     const elements: TUIElement[] = [];
+    const s = this.snapshot;
 
     // Render header
     elements.push(
@@ -79,17 +98,17 @@ This component helps construct PICOS clinical questions for systematic reviews a
     );
 
     // Render generated question if available
-    if (this.generatedQuestion) {
+    if (s.generatedQuestion) {
       elements.push(this.renderGeneratedQuestion());
     }
 
     // Render validation result if available
-    if (this.validationResult) {
+    if (s.validationResult) {
       elements.push(this.renderValidationResult());
     }
 
     // Render export result if available
-    if (this.exportResult) {
+    if (s.exportResult) {
       elements.push(this.renderExportResult());
     }
 
@@ -98,11 +117,11 @@ This component helps construct PICOS clinical questions for systematic reviews a
 
     // Render welcome message if no elements set
     if (
-      !this.currentPicos.patient &&
-      !this.currentPicos.intervention &&
-      !this.currentPicos.comparison &&
-      !this.currentPicos.outcome &&
-      !this.currentPicos.studyDesign
+      !s.currentPicos.patient &&
+      !s.currentPicos.intervention &&
+      !s.currentPicos.comparison &&
+      !s.currentPicos.outcome &&
+      !s.currentPicos.studyDesign
     ) {
       elements.push(
         new tdiv({
@@ -134,7 +153,7 @@ This component helps construct PICOS clinical questions for systematic reviews a
 
     container.addChild(
       new tp({
-        content: this.generatedQuestion!,
+        content: this.snapshot.generatedQuestion!,
         indent: 1,
       }),
     );
@@ -147,8 +166,9 @@ This component helps construct PICOS clinical questions for systematic reviews a
       styles: { showBorder: true, padding: { vertical: 1 } },
     });
 
-    const status = this.validationResult!.isValid ? '✓ Valid' : '✗ Incomplete';
-    const statusColor = this.validationResult!.isValid ? 'green' : 'yellow';
+    const result = this.snapshot.validationResult!;
+    const status = result.isValid ? '✓ Valid' : '✗ Incomplete';
+    const statusColor = result.isValid ? 'green' : 'yellow';
 
     container.addChild(
       new th({
@@ -160,12 +180,12 @@ This component helps construct PICOS clinical questions for systematic reviews a
 
     container.addChild(
       new tp({
-        content: this.validationResult!.message,
+        content: result.message,
         indent: 1,
       }),
     );
 
-    if (this.validationResult!.missingElements.length > 0) {
+    if (result.missingElements.length > 0) {
       container.addChild(
         new tp({
           content: '',
@@ -178,7 +198,7 @@ This component helps construct PICOS clinical questions for systematic reviews a
           indent: 1,
         }),
       );
-      this.validationResult!.missingElements.forEach((element) => {
+      result.missingElements.forEach((element) => {
         container.addChild(
           new tp({
             content: `  - ${element}`,
@@ -206,7 +226,7 @@ This component helps construct PICOS clinical questions for systematic reviews a
 
     container.addChild(
       new tp({
-        content: this.exportResult!,
+        content: this.snapshot.exportResult!,
         indent: 1,
       }),
     );
@@ -227,47 +247,38 @@ This component helps construct PICOS clinical questions for systematic reviews a
       }),
     );
 
+    const s = this.snapshot.currentPicos;
+
     // Patient
-    if (this.currentPicos.patient) {
+    if (s.patient) {
       container.addChild(
-        this.renderPicosElement(
-          'P - Patient/Problem',
-          this.currentPicos.patient,
-        ),
+        this.renderPicosElement('P - Patient/Problem', s.patient),
       );
     }
 
     // Intervention
-    if (this.currentPicos.intervention) {
+    if (s.intervention) {
       container.addChild(
-        this.renderPicosElement(
-          'I - Intervention',
-          this.currentPicos.intervention,
-        ),
+        this.renderPicosElement('I - Intervention', s.intervention),
       );
     }
 
     // Comparison
-    if (this.currentPicos.comparison) {
+    if (s.comparison) {
       container.addChild(
-        this.renderPicosElement('C - Comparison', this.currentPicos.comparison),
+        this.renderPicosElement('C - Comparison', s.comparison),
       );
     }
 
     // Outcome
-    if (this.currentPicos.outcome) {
-      container.addChild(
-        this.renderPicosElement('O - Outcome', this.currentPicos.outcome),
-      );
+    if (s.outcome) {
+      container.addChild(this.renderPicosElement('O - Outcome', s.outcome));
     }
 
     // Study Design
-    if (this.currentPicos.studyDesign) {
+    if (s.studyDesign) {
       container.addChild(
-        this.renderPicosElement(
-          'S - Study Design',
-          this.currentPicos.studyDesign,
-        ),
+        this.renderPicosElement('S - Study Design', s.studyDesign),
       );
     }
 
@@ -346,31 +357,7 @@ This component helps construct PICOS clinical questions for systematic reviews a
       .replace(/^./, (str) => str.toUpperCase());
   }
 
-  private async handleToolCallImpl(
-    toolName: string,
-    params: any,
-  ): Promise<ToolCallResult<any>> {
-    switch (toolName) {
-      case 'set_picos_element':
-        return this.handleSetPicosElement(params);
-      case 'generate_clinical_question':
-        return this.handleGenerateClinicalQuestion(params);
-      case 'validate_picos':
-        return this.handleValidatePicos();
-      case 'clear_picos':
-        return this.handleClearPicos();
-      case 'export_picos':
-        return this.handleExportPicos(params);
-      default:
-        return {
-          success: false,
-          data: { error: `Unknown tool: ${toolName}` },
-          summary: `[PICOS] 未知工具: ${toolName}`,
-        };
-    }
-  }
-
-  private handleSetPicosElement(params: any): ToolCallResult<any> {
+  async onSet_picos_element(params: any): Promise<ToolCallResult<any>> {
     const { element, data } = params;
 
     if (
@@ -410,12 +397,12 @@ This component helps construct PICOS clinical questions for systematic reviews a
       processedData = { description: processedData };
     }
 
-    (this.currentPicos as any)[element] = processedData;
+    (this.reactive.currentPicos as any)[element] = processedData;
 
     // Clear previous results since PICOS changed
-    this.generatedQuestion = null;
-    this.validationResult = null;
-    this.exportResult = null;
+    this.reactive.generatedQuestion = null;
+    this.reactive.validationResult = null;
+    this.reactive.exportResult = null;
 
     return {
       success: true,
@@ -424,14 +411,17 @@ This component helps construct PICOS clinical questions for systematic reviews a
     };
   }
 
-  private handleGenerateClinicalQuestion(params: any): ToolCallResult<any> {
+  async onGenerate_clinical_question(
+    params: any,
+  ): Promise<ToolCallResult<any>> {
     const format = params.format || 'both';
+    const s = this.snapshot;
 
     if (
-      !this.currentPicos.patient &&
-      !this.currentPicos.intervention &&
-      !this.currentPicos.comparison &&
-      !this.currentPicos.outcome
+      !s.currentPicos.patient &&
+      !s.currentPicos.intervention &&
+      !s.currentPicos.comparison &&
+      !s.currentPicos.outcome
     ) {
       return {
         success: false,
@@ -445,52 +435,53 @@ This component helps construct PICOS clinical questions for systematic reviews a
 
     const parts: string[] = [];
 
-    if (this.currentPicos.patient) {
-      parts.push(`In ${this.currentPicos.patient.description}`);
+    if (s.currentPicos.patient) {
+      parts.push(`In ${s.currentPicos.patient.description}`);
     }
 
-    if (this.currentPicos.intervention) {
-      parts.push(`does ${this.currentPicos.intervention.description}`);
+    if (s.currentPicos.intervention) {
+      parts.push(`does ${s.currentPicos.intervention.description}`);
     }
 
-    if (this.currentPicos.comparison) {
-      parts.push(`compared to ${this.currentPicos.comparison.description}`);
+    if (s.currentPicos.comparison) {
+      parts.push(`compared to ${s.currentPicos.comparison.description}`);
     }
 
-    if (this.currentPicos.outcome) {
-      parts.push(`affect ${this.currentPicos.outcome.description}`);
+    if (s.currentPicos.outcome) {
+      parts.push(`affect ${s.currentPicos.outcome.description}`);
     }
 
-    if (this.currentPicos.studyDesign) {
-      parts.push(`(${this.currentPicos.studyDesign.description})`);
+    if (s.currentPicos.studyDesign) {
+      parts.push(`(${s.currentPicos.studyDesign.description})`);
     }
 
     const question = parts.join(' ') + '?';
 
     if (format === 'question' || format === 'both') {
-      this.generatedQuestion = question;
+      this.reactive.generatedQuestion = question;
     } else {
-      this.generatedQuestion = null;
+      this.reactive.generatedQuestion = null;
     }
 
     // If structured format is requested, include it in export result
     if (format === 'structured' || format === 'both') {
-      this.exportResult = this.generateStructuredOutput();
+      this.reactive.exportResult = this.generateStructuredOutput();
     }
 
     return {
       success: true,
-      data: { question: this.generatedQuestion, format },
+      data: { question: this.snapshot.generatedQuestion, format },
       summary: `[PICOS] 生成临床问题`,
     };
   }
 
-  private handleValidatePicos(): ToolCallResult<any> {
+  async onValidate_picos(_params: any): Promise<ToolCallResult<any>> {
+    const s = this.snapshot;
     const missingElements: string[] = [];
 
-    if (!this.currentPicos.patient) missingElements.push('Patient/Problem');
-    if (!this.currentPicos.intervention) missingElements.push('Intervention');
-    if (!this.currentPicos.outcome) missingElements.push('Outcome');
+    if (!s.currentPicos.patient) missingElements.push('Patient/Problem');
+    if (!s.currentPicos.intervention) missingElements.push('Intervention');
+    if (!s.currentPicos.outcome) missingElements.push('Outcome');
 
     const isValid = missingElements.length === 0;
 
@@ -498,11 +489,11 @@ This component helps construct PICOS clinical questions for systematic reviews a
     if (isValid) {
       message =
         'Your PICOS formulation is complete! You have all the essential elements for a well-structured clinical question.';
-      if (!this.currentPicos.comparison) {
+      if (!s.currentPicos.comparison) {
         message +=
           ' Note: Comparison element is optional but recommended for comprehensive questions.';
       }
-      if (!this.currentPicos.studyDesign) {
+      if (!s.currentPicos.studyDesign) {
         message +=
           ' Note: Study Design element can help guide your literature search strategy.';
       }
@@ -510,7 +501,7 @@ This component helps construct PICOS clinical questions for systematic reviews a
       message = `Your PICOS formulation is incomplete. Please add the missing elements to create a complete clinical question.`;
     }
 
-    this.validationResult = {
+    this.reactive.validationResult = {
       isValid,
       message,
       missingElements,
@@ -518,16 +509,16 @@ This component helps construct PICOS clinical questions for systematic reviews a
 
     return {
       success: isValid,
-      data: this.validationResult,
+      data: this.snapshot.validationResult,
       summary: `[PICOS] 验证: ${isValid ? '完整' : '不完整'}`,
     };
   }
 
-  private handleClearPicos(): ToolCallResult<any> {
-    this.currentPicos = {};
-    this.generatedQuestion = null;
-    this.validationResult = null;
-    this.exportResult = null;
+  async onClear_picos(_params: any): Promise<ToolCallResult<any>> {
+    this.reactive.currentPicos = {};
+    this.reactive.generatedQuestion = null;
+    this.reactive.validationResult = null;
+    this.reactive.exportResult = null;
 
     return {
       success: true,
@@ -536,18 +527,22 @@ This component helps construct PICOS clinical questions for systematic reviews a
     };
   }
 
-  private handleExportPicos(params: any): ToolCallResult<any> {
+  async onExport_picos(params: any): Promise<ToolCallResult<any>> {
     const format = params.format || 'markdown';
 
     switch (format) {
       case 'json':
-        this.exportResult = JSON.stringify(this.currentPicos, null, 2);
+        this.reactive.exportResult = JSON.stringify(
+          this.snapshot.currentPicos,
+          null,
+          2,
+        );
         break;
       case 'markdown':
-        this.exportResult = this.generateMarkdownOutput();
+        this.reactive.exportResult = this.generateMarkdownOutput();
         break;
       case 'search':
-        this.exportResult = this.generateSearchString();
+        this.reactive.exportResult = this.generateSearchString();
         break;
       default:
         return {
@@ -565,104 +560,104 @@ This component helps construct PICOS clinical questions for systematic reviews a
   }
 
   private generateMarkdownOutput(): string {
+    const s = this.snapshot.currentPicos;
     let output = '# PICOS Clinical Question\n\n';
 
-    if (this.currentPicos.patient) {
-      output += `**Patient/Problem**: ${this.currentPicos.patient.description}\n`;
-      if (this.currentPicos.patient.ageGroup)
-        output += `  - Age Group: ${this.currentPicos.patient.ageGroup}\n`;
-      if (this.currentPicos.patient.condition)
-        output += `  - Condition: ${this.currentPicos.patient.condition}\n`;
+    if (s.patient) {
+      output += `**Patient/Problem**: ${s.patient.description}\n`;
+      if (s.patient.ageGroup)
+        output += `  - Age Group: ${s.patient.ageGroup}\n`;
+      if (s.patient.condition)
+        output += `  - Condition: ${s.patient.condition}\n`;
       output += '\n';
     }
 
-    if (this.currentPicos.intervention) {
-      output += `**Intervention**: ${this.currentPicos.intervention.description}\n`;
-      if (this.currentPicos.intervention.type)
-        output += `  - Type: ${this.currentPicos.intervention.type}\n`;
+    if (s.intervention) {
+      output += `**Intervention**: ${s.intervention.description}\n`;
+      if (s.intervention.type) output += `  - Type: ${s.intervention.type}\n`;
       output += '\n';
     }
 
-    if (this.currentPicos.comparison) {
-      output += `**Comparison**: ${this.currentPicos.comparison.description}\n`;
-      if (this.currentPicos.comparison.type)
-        output += `  - Type: ${this.currentPicos.comparison.type}\n`;
+    if (s.comparison) {
+      output += `**Comparison**: ${s.comparison.description}\n`;
+      if (s.comparison.type) output += `  - Type: ${s.comparison.type}\n`;
       output += '\n';
     }
 
-    if (this.currentPicos.outcome) {
-      output += `**Outcome**: ${this.currentPicos.outcome.description}\n`;
-      if (this.currentPicos.outcome.type)
-        output += `  - Type: ${this.currentPicos.outcome.type}\n`;
-      if (this.currentPicos.outcome.timeFrame)
-        output += `  - Time Frame: ${this.currentPicos.outcome.timeFrame}\n`;
+    if (s.outcome) {
+      output += `**Outcome**: ${s.outcome.description}\n`;
+      if (s.outcome.type) output += `  - Type: ${s.outcome.type}\n`;
+      if (s.outcome.timeFrame)
+        output += `  - Time Frame: ${s.outcome.timeFrame}\n`;
       output += '\n';
     }
 
-    if (this.currentPicos.studyDesign) {
-      output += `**Study Design**: ${this.currentPicos.studyDesign.description}\n`;
-      if (this.currentPicos.studyDesign.type)
-        output += `  - Type: ${this.currentPicos.studyDesign.type}\n`;
+    if (s.studyDesign) {
+      output += `**Study Design**: ${s.studyDesign.description}\n`;
+      if (s.studyDesign.type) output += `  - Type: ${s.studyDesign.type}\n`;
     }
 
     return output;
   }
 
   private generateStructuredOutput(): string {
+    const s = this.snapshot.currentPicos;
     let output = '## Structured PICOS Format\n\n';
 
     output += `| Element | Description |\n`;
     output += `|---------|-------------|\n`;
 
-    if (this.currentPicos.patient) {
-      output += `| **P** - Patient/Problem | ${this.currentPicos.patient.description} |\n`;
+    if (s.patient) {
+      output += `| **P** - Patient/Problem | ${s.patient.description} |\n`;
     }
-    if (this.currentPicos.intervention) {
-      output += `| **I** - Intervention | ${this.currentPicos.intervention.description} |\n`;
+    if (s.intervention) {
+      output += `| **I** - Intervention | ${s.intervention.description} |\n`;
     }
-    if (this.currentPicos.comparison) {
-      output += `| **C** - Comparison | ${this.currentPicos.comparison.description} |\n`;
+    if (s.comparison) {
+      output += `| **C** - Comparison | ${s.comparison.description} |\n`;
     }
-    if (this.currentPicos.outcome) {
-      output += `| **O** - Outcome | ${this.currentPicos.outcome.description} |\n`;
+    if (s.outcome) {
+      output += `| **O** - Outcome | ${s.outcome.description} |\n`;
     }
-    if (this.currentPicos.studyDesign) {
-      output += `| **S** - Study Design | ${this.currentPicos.studyDesign.description} |\n`;
+    if (s.studyDesign) {
+      output += `| **S** - Study Design | ${s.studyDesign.description} |\n`;
     }
 
     return output;
   }
 
   private generateSearchString(): string {
+    const s = this.snapshot.currentPicos;
     const searchParts: string[] = [];
 
-    if (this.currentPicos.patient?.condition) {
-      searchParts.push(this.currentPicos.patient.condition);
+    if (s.patient?.condition) {
+      searchParts.push(s.patient.condition);
     }
 
-    if (this.currentPicos.intervention?.description) {
-      searchParts.push(this.currentPicos.intervention.description);
+    if (s.intervention?.description) {
+      searchParts.push(s.intervention.description);
     }
 
-    if (this.currentPicos.comparison?.description) {
-      searchParts.push(this.currentPicos.comparison.description);
+    if (s.comparison?.description) {
+      searchParts.push(s.comparison.description);
     }
 
-    if (this.currentPicos.outcome?.description) {
-      searchParts.push(this.currentPicos.outcome.description);
+    if (s.outcome?.description) {
+      searchParts.push(s.outcome.description);
     }
 
     // Join with AND for PubMed-style search
     return searchParts.join(' AND ');
   }
 
-  async exportData(options?: ExportOptions) {
+  override async exportData(options?: ExportOptions) {
+    const s = this.snapshot;
     return {
       data: {
-        currentPicos: this.currentPicos,
-        generatedQuestion: this.generatedQuestion,
-        validationResult: this.validationResult,
-        exportResult: this.exportResult,
+        currentPicos: s.currentPicos,
+        generatedQuestion: s.generatedQuestion,
+        validationResult: s.validationResult,
+        exportResult: s.exportResult,
       },
       format: options?.format ?? 'json',
       metadata: {

@@ -13,11 +13,6 @@ export { PrismaFlowComponent } from './PRISMA/prismaFlowComponent.js';
 
 export { PaperAnalysisComponent } from './paperAnalysis/paperAnalysisComponent.js';
 
-export {
-  MarkdownComponent,
-  createMarkdownComponent,
-} from './fileSystem/markdown/index.js';
-
 export { RuntimeControlComponent } from './runtime-control/index.js';
 export {
   SwarmAPIClient,
