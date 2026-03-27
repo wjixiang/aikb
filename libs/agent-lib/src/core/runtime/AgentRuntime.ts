@@ -703,7 +703,6 @@ export class AgentRuntime implements IAgentRuntime {
       getGlobalAgentRegistry(),
       {
         instanceId,
-        defaultTimeout: 60000,
       },
     );
     agent.setA2AClient(a2aClient);
@@ -1499,7 +1498,6 @@ export class AgentRuntime implements IAgentRuntime {
       getGlobalAgentRegistry(),
       {
         instanceId,
-        defaultTimeout: 60000,
       },
     );
     agent.setA2AClient(a2aClient);

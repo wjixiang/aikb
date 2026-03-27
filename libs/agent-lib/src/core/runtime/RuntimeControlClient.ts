@@ -218,7 +218,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     },
   ): Promise<unknown> {
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const a2aClient = this.createDirectA2AClient(options);
+    const a2aClient = this.createDirectA2AClient();
     return a2aClient.sendQuery(targetAgentId, query, options);
   }
 

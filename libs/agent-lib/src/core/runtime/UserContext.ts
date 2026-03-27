@@ -125,9 +125,6 @@ class UserContextContainer {
           ),
           {
             instanceId: this._instanceId,
-            defaultTimeout: this.container.get<number>(
-              UserContextTypes.DefaultTimeout,
-            ),
           },
         );
       });
@@ -215,7 +212,7 @@ export class UserContext implements IUserContext {
         ? createA2AClient(
             this.container.getMessageBus(),
             this.container.getRegistry(),
-            { instanceId: this.instanceId, defaultTimeout: timeout },
+            { instanceId: this.instanceId },
           )
         : this.getA2AClient();
 

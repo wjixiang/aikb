@@ -129,14 +129,12 @@ export interface RoutingDecision {
 
 export interface TopologyConfig {
   defaultAckTimeout?: number;
-  defaultResultTimeout?: number;
   maxRetries?: number;
   defaultTtl?: number;
 }
 
 export const DEFAULT_TOPOLOGY_CONFIG: Required<TopologyConfig> = {
   defaultAckTimeout: 5000,
-  defaultResultTimeout: 60000,
   maxRetries: 3,
   defaultTtl: 10,
 };

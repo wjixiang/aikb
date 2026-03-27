@@ -291,8 +291,6 @@ export class MessageBus implements IMessageBus {
     this.config = {
       defaultAckTimeout:
         config?.defaultAckTimeout ?? this.config.defaultAckTimeout,
-      defaultResultTimeout:
-        config?.defaultResultTimeout ?? this.config.defaultResultTimeout,
       maxRetries: config?.maxRetries ?? this.config.maxRetries,
       defaultTtl: config?.defaultTtl ?? this.config.defaultTtl,
     };

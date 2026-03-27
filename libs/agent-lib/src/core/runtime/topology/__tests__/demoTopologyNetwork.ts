@@ -37,7 +37,6 @@ async function main() {
   // ============================================================
   const network = createAgentTopologyNetwork({
     defaultAckTimeout: 3000,
-    defaultResultTimeout: 30000,
     maxRetries: 2,
   });
 

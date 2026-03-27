@@ -16,7 +16,6 @@ describe('AgentTopologyNetwork', () => {
   beforeEach(async () => {
     network = createAgentTopologyNetwork({
       defaultAckTimeout: 5000,
-      defaultResultTimeout: 10000,
       maxRetries: 3,
     });
     await network.initialize();

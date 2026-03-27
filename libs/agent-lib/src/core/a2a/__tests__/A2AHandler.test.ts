@@ -29,7 +29,6 @@ const createMockMessageBus = (): IMessageBus => {
     setConfig: vi.fn(),
     getConfig: vi.fn(() => ({
       defaultAckTimeout: 5000,
-      defaultResultTimeout: 60000,
       maxRetries: 3,
       defaultTtl: 10,
     })),
