@@ -7,5 +7,9 @@ requires-python = ">=3.12"
 mr-lib = { workspace = true }
 
 [tool.uv.workspace]
-members = ["python-libs/*", "python-apps/*"]
+members = [
+    "python-libs/*",
+    "python-apps/*",
+    "apps/swarm-fs",
+]
 exclude = ["packages/seeds"]
