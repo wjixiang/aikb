@@ -147,9 +147,7 @@ export interface AgentFilter {
  * ## Usage Example
  *
  * ```typescript
- * const runtime = createAgentRuntime({ maxAgents: 5 });
- *
- * // Start the runtime
+ * const runtime = createAgentRuntime({}); * // Start the runtime
  * await runtime.start();
  *
  * // Create and start an agent
@@ -457,7 +455,6 @@ export interface IAgentRuntime {
  *
  * ## Memory Management
  *
- * - Maximum agent count is configurable via `maxAgents` in config
  * - Destroyed agents are fully removed from memory
  * - Event subscriptions are cleaned up on runtime stop
  *
@@ -541,10 +538,9 @@ export class AgentRuntime implements IAgentRuntime {
    * Create a new AgentRuntime instance.
    *
    * @param config Runtime configuration options
-   * @param config.maxAgents Maximum number of agents allowed (default: 10)
    *
    * @example
-   * const runtime = new AgentRuntime({ maxAgents: 5 });
+   * const runtime = new AgentRuntime({});
    *
    * @example
    * // Use Redis for distributed A2A communication
@@ -557,7 +553,6 @@ export class AgentRuntime implements IAgentRuntime {
    */
   constructor(config: AgentRuntimeConfig = {}) {
     this.config = {
-      maxAgents: 10,
       ...config,
     };
 
@@ -659,12 +654,6 @@ export class AgentRuntime implements IAgentRuntime {
     soul: AgentBlueprint,
     overrides?: Partial<AgentFactoryOptions>,
   ): Promise<string> {
-    if (this.containers.size >= (this.config.maxAgents ?? 10)) {
-      throw new Error(`Maximum agent limit reached: ${this.config.maxAgents}`);
-    }
-
-    // Merge API config: runtime default + overrides
-    // overrides take precedence over runtime defaults
     const mergedApi = {
       ...this.defaultApiConfig,
       ...overrides?.api,
@@ -1467,12 +1456,6 @@ export class AgentRuntime implements IAgentRuntime {
       `[AgentRuntime._createChildAgent] Options: ${JSON.stringify(options.agent)}`,
     );
 
-    if (this.containers.size >= (this.config.maxAgents ?? 10)) {
-      throw new Error(`Maximum agent limit reached: ${this.config.maxAgents}`);
-    }
-
-    // Merge API config: runtime default + options.api
-    // This ensures child agents use the runtime's default API config if not specified
     const mergedApi = {
       ...this.defaultApiConfig,
       ...options?.api,
@@ -1683,11 +1666,10 @@ export class AgentRuntime implements IAgentRuntime {
  * the IAgentRuntime interface type for better abstraction.
  *
  * @param config Optional runtime configuration
- * @param config.maxAgents Maximum number of agents allowed (default: 10)
  * @returns A new AgentRuntime instance typed as IAgentRuntime
  *
  * @example
- * const runtime = createAgentRuntime({ maxAgents: 5 });
+ * const runtime = createAgentRuntime({});
  * await runtime.start();
  *
  * const agentId = await runtime.createAgent({

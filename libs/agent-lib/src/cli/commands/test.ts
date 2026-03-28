@@ -60,7 +60,11 @@ export function testCommands(program: Command): void {
   testCmd
     .command('a2a')
     .description('A2A 通信测试')
-    .option('-m, --message-bus <mode>', 'MessageBus 模式 (memory|redis)', 'memory')
+    .option(
+      '-m, --message-bus <mode>',
+      'MessageBus 模式 (memory|redis)',
+      'memory',
+    )
     .option('--redis-url <url>', 'Redis URL')
     .option('-n, --task-count <n>', '发送任务数量', '5')
     .option('-t, --timeout <ms>', '超时时间', '30000')
@@ -114,9 +118,7 @@ async function testBasic(options: {
   try {
     // Create runtime
     spinner.text = 'Creating AgentRuntime...';
-    const runtime = createAgentRuntime({
-      maxAgents: parseInt(options.agentCount) + 2,
-    });
+    const runtime = createAgentRuntime({});
 
     await runtime.start();
     spinner.succeed('AgentRuntime created and started');
@@ -164,9 +166,9 @@ async function testBasic(options: {
     const stats = await runtime.getStats();
     spinner.text = 'Getting runtime stats...';
     spinner.succeed(
-      `Runtime: ${stats.totalAgents} agents, ${
-        Object.values(stats.agentsByStatus).reduce((a, b) => a + b, 0)
-      } total status`,
+      `Runtime: ${stats.totalAgents} agents, ${Object.values(
+        stats.agentsByStatus,
+      ).reduce((a, b) => a + b, 0)} total status`,
     );
 
     // Wait for duration
@@ -174,7 +176,9 @@ async function testBasic(options: {
     spinner.text = `Running for ${options.duration}s...`;
     spinner.info(`Waiting ${options.duration}s for agents to process...`);
 
-    await new Promise((resolve) => setTimeout(resolve, Math.min(duration, 5000)));
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.min(duration, 5000)),
+    );
 
     // Cleanup
     spinner.text = 'Stopping runtime...';
@@ -231,9 +235,7 @@ async function testA2A(options: {
 
   try {
     // Build config
-    const config: AgentRuntimeConfig = {
-      maxAgents: 10,
-    };
+    const config: AgentRuntimeConfig = {};
 
     if (options.messageBus === 'redis') {
       config.messageBus = {
@@ -253,7 +255,9 @@ async function testA2A(options: {
     // Create two agents
     spinner.text = 'Creating sender and receiver agents...';
     const senderId = await runtime.createAgent(createEpidemiologyAgentSoul());
-    const receiverId = await runtime.createAgent(createPathophysiologyAgentSoul());
+    const receiverId = await runtime.createAgent(
+      createPathophysiologyAgentSoul(),
+    );
 
     await runtime.startAgent(senderId);
     await runtime.startAgent(receiverId);
@@ -279,12 +283,14 @@ async function testA2A(options: {
     for (let i = 0; i < taskCount; i++) {
       const taskId = `test-task-${i + 1}`;
       try {
-        const response = await sender.getRuntimeClient().sendA2ATask(
-          receiverId,
-          taskId,
-          `Test task ${i + 1}: Search for literature`,
-          { query: `test query ${i + 1}` },
-        );
+        const response = await sender
+          .getRuntimeClient()
+          .sendA2ATask(
+            receiverId,
+            taskId,
+            `Test task ${i + 1}: Search for literature`,
+            { query: `test query ${i + 1}` },
+          );
         results.push({
           taskId,
           success: response.status === 'completed',
@@ -369,7 +375,6 @@ async function testRedis(options: {
     for (let i = 0; i < runtimeCount; i++) {
       spinner.text = `Creating Runtime ${i + 1}/${runtimeCount}...`;
       const runtime = createAgentRuntime({
-        maxAgents: agentPerRuntime + 2,
         messageBus: {
           mode: 'redis',
           redis: {
@@ -393,7 +398,9 @@ async function testRedis(options: {
         await runtime.startAgent(id);
       }
 
-      spinner.succeed(`Runtime ${i + 1} created with ${agentPerRuntime} agents`);
+      spinner.succeed(
+        `Runtime ${i + 1} created with ${agentPerRuntime} agents`,
+      );
     }
 
     spinner.info(
@@ -403,19 +410,25 @@ async function testRedis(options: {
     // Test cross-runtime communication
     spinner.text = 'Testing cross-runtime A2A communication...';
 
-    if (allAgentIds.length >= 2 && allAgentIds[0].length > 0 && allAgentIds[1].length > 0) {
+    if (
+      allAgentIds.length >= 2 &&
+      allAgentIds[0].length > 0 &&
+      allAgentIds[1].length > 0
+    ) {
       const runtime1 = runtimes[0];
       const agent1 = await runtime1.getAgent(allAgentIds[0][0]);
       const agent2Id = allAgentIds[1][0];
 
       if (agent1) {
         try {
-          const response = await agent1.getRuntimeClient().sendA2ATask(
-            agent2Id,
-            'cross-runtime-test',
-            'Cross-runtime test task',
-            { test: true },
-          );
+          const response = await agent1
+            .getRuntimeClient()
+            .sendA2ATask(
+              agent2Id,
+              'cross-runtime-test',
+              'Cross-runtime test task',
+              { test: true },
+            );
 
           spinner.succeed(
             `Cross-runtime communication successful: ${response.status}`,
@@ -490,7 +503,9 @@ function testList(): void {
   ];
 
   for (const scenario of scenarios) {
-    console.log(chalk.cyan(scenario.name.padEnd(15)) + ' ' + scenario.description);
+    console.log(
+      chalk.cyan(scenario.name.padEnd(15)) + ' ' + scenario.description,
+    );
     console.log(chalk.gray('  Options: ') + scenario.options);
     console.log('');
   }
@@ -503,7 +518,10 @@ function testList(): void {
 /**
  * Print test result
  */
-function printTestResult(result: TestResult, format: OutputFormat = 'table'): void {
+function printTestResult(
+  result: TestResult,
+  format: OutputFormat = 'table',
+): void {
   if (format === 'json') {
     console.log(formatOutput(result, 'json'));
     return;

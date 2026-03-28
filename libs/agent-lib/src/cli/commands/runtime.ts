@@ -24,7 +24,10 @@ const DEFAULT_PID_FILE = '.agent-runtime.pid';
 const DEFAULT_RUNTIME_PORT = 9400;
 
 // Runtime instance store (for non-detached mode)
-const runtimes = new Map<string, Awaited<ReturnType<typeof createAgentRuntime>>>();
+const runtimes = new Map<
+  string,
+  Awaited<ReturnType<typeof createAgentRuntime>>
+>();
 
 /**
  * Register runtime commands
@@ -38,12 +41,8 @@ export function runtimeCommands(program: Command): void {
   runtimeCmd
     .command('start')
     .description('启动 Agent Runtime')
-    .option('-m, --max-agents <n>', '最大 Agent 数量', '10')
-    .option(
-      '--message-bus <mode>',
-      'MessageBus 模式 (memory|redis)',
-      'memory',
-    )
+    .option('-m, --message-bus <mode>', '消息总线模式', 'memory')
+    .option('--message-bus <mode>', 'MessageBus 模式 (memory|redis)', 'memory')
     .option('--redis-url <url>', 'Redis 连接 URL', getEnv('REDIS_URL'))
     .option('--redis-host <host>', 'Redis 主机', 'localhost')
     .option('--redis-port <port>', 'Redis 端口', '6379')
@@ -112,7 +111,6 @@ export function runtimeCommands(program: Command): void {
  * Start runtime
  */
 async function runtimeStart(options: {
-  maxAgents: string;
   messageBus: 'memory' | 'redis';
   redisUrl?: string;
   redisHost?: string;
@@ -140,7 +138,6 @@ async function runtimeStart(options: {
 
   // Build config
   const config: AgentRuntimeConfig = {
-    maxAgents: parseInt(options.maxAgents),
     defaultApiConfig: {
       apiKey: options.apiKey,
       apiBaseUrl: options.apiUrl,
@@ -151,8 +148,7 @@ async function runtimeStart(options: {
   // Configure message bus
   if (options.messageBus === 'redis') {
     const redisUrl =
-      options.redisUrl ||
-      `redis://${options.redisHost}:${options.redisPort}`;
+      options.redisUrl || `redis://${options.redisHost}:${options.redisPort}`;
     config.messageBus = {
       mode: 'redis',
       redis: {
@@ -198,7 +194,6 @@ async function runtimeStart(options: {
   console.log(chalk.green('✓') + ' Agent Runtime started');
   console.log(chalk.gray('  PID: ') + process.pid);
   console.log(chalk.gray('  Mode: ') + options.messageBus);
-  console.log(chalk.gray('  Max Agents: ') + options.maxAgents);
 
   if (options.detach) {
     // In detached mode, keep running in background
@@ -318,7 +313,6 @@ async function runtimeStatus(options: {
     pid,
     uptime: running ? 'unknown' : 'N/A',
     messageBus: 'unknown',
-    maxAgents: 0,
     stats,
   };
 
@@ -337,9 +331,7 @@ async function runtimeStatus(options: {
 /**
  * List all runtimes
  */
-async function runtimeList(options: {
-  output?: OutputFormat;
-}): Promise<void> {
+async function runtimeList(options: { output?: OutputFormat }): Promise<void> {
   // For now, just list local runtimes
   const runtimesList = Array.from(runtimes.entries()).map(([pidFile, _]) => {
     const pidFileResolved = resolve(pidFile);
@@ -367,7 +359,9 @@ async function runtimeList(options: {
     console.log('');
 
     for (const rt of runtimesList) {
-      const status = rt.running ? chalk.green('Running') : chalk.gray('Stopped');
+      const status = rt.running
+        ? chalk.green('Running')
+        : chalk.gray('Stopped');
       console.log(`  ${rt.pidFile}`);
       console.log(`    PID: ${rt.pid || 'N/A'} | Status: ${status}`);
     }
@@ -389,7 +383,6 @@ function formatRuntimeStatus(status: any, running: boolean): string {
       { label: 'PID', value: status.pid },
       { label: 'Uptime', value: status.uptime },
       { label: 'MessageBus', value: status.messageBus },
-      { label: 'Max Agents', value: status.maxAgents },
     ]),
   ] as string[];
 

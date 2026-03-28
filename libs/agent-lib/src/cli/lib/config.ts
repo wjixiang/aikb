@@ -14,7 +14,6 @@ import { parse as parseYaml } from 'yaml';
 
 export interface AgentCliConfig {
   runtime?: {
-    maxAgents?: number;
     messageBus?: 'memory' | 'redis';
     redis?: {
       url?: string;
@@ -47,7 +46,9 @@ export interface AgentCliConfig {
 /**
  * Load configuration from file
  */
-export function loadConfig(configPath: string = '.agent-clirc'): AgentCliConfig {
+export function loadConfig(
+  configPath: string = '.agent-clirc',
+): AgentCliConfig {
   const paths = [
     resolve(process.cwd(), configPath),
     resolve(process.cwd(), 'agent-cli.config.js'),

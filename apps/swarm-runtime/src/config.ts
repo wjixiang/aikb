@@ -11,7 +11,6 @@ export interface ServerConfig {
   host: string;
   port: number;
   logLevel: string;
-  maxAgents: number;
 }
 
 export interface ApiConfig {
@@ -50,7 +49,7 @@ const PROVIDER_KEY_ENV: Record<string, string[]> = {
   moonshot: ['KIMI_API_KEY', 'MOONSHOT_API_KEY'],
   ollama: [],
   lmstudio: [],
-  zai: ['ZAI_API_KEY'],
+  zai: ['ZAI_API_KEY', 'GLM_API_KEY'],
 };
 
 function resolveApiKey(provider: string): string {
@@ -108,7 +107,6 @@ export function loadConfig(): AppConfig {
       host: serverHost,
       port: serverPort,
       logLevel: process.env['LOG_LEVEL'] || 'info',
-      maxAgents: parseInt(process.env['MAX_AGENTS'] || '50'),
     },
     api: {
       apiProvider: process.env['API_PROVIDER'] || 'openai',

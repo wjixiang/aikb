@@ -342,7 +342,6 @@ export interface MessageBusConfig {
 }
 
 export interface AgentRuntimeConfig {
-  maxAgents?: number;
   defaultApiConfig?: Partial<RuntimeControlProviderSettings>;
   persistence?: PersistenceConfig;
   /** MessageBus configuration - defaults to in-memory */

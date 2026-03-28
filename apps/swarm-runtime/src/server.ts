@@ -21,7 +21,6 @@ envconfig();
 const config = loadConfig();
 
 const runtimeConfig: AgentRuntimeConfig = {
-  maxAgents: config.server.maxAgents,
   defaultApiConfig: config.api as any,
   messageBus: config.messageBus as any,
   ...(config.runtimeControl ? { runtimeControl: config.runtimeControl } : {}),
@@ -112,10 +111,7 @@ try {
   fastify.log.info(`🚀 Swarm Server started on http://${host}:${port}`);
   fastify.log.info(`   Server ID: ${config.server.id}`);
   fastify.log.info(`   MessageBus: ${config.messageBus?.mode || 'memory'}`);
-  fastify.log.info(`   Max Agents: ${config.server.maxAgents}`);
-  fastify.log.info(
-    `   ACK Timeout: ${config.ackTimeout ?? 5000}ms`,
-  );
+  fastify.log.info(`   ACK Timeout: ${config.ackTimeout ?? 5000}ms`);
   fastify.log.info(
     `   Task Persistence: ${fastify.taskService ? 'enabled' : 'disabled (set AGENT_DATABASE_URL)'}`,
   );

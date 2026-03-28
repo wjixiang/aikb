@@ -235,7 +235,7 @@ export class UserContext implements IUserContext {
  *
  * @example
  * ```typescript
- * const runtime = createAgentRuntime({ maxAgents: 10 });
+ * const runtime = createAgentRuntime({});
  *
  * const user = runtime.createUserContext();
  *

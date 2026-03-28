@@ -78,7 +78,6 @@ const agentRuntimePluginFunc = async (
   fastify.log.info(
     {
       serverId,
-      maxAgents: runtimeConfig.maxAgents,
       messageBus: runtimeConfig.messageBus?.mode || 'memory',
     },
     'AgentRuntime started',

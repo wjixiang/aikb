@@ -9,7 +9,7 @@
  * ```typescript
  * import { AgentRuntime } from 'agent-lib/runtime';
  *
- * const runtime = new AgentRuntime({ maxAgents: 5 });
+ * const runtime = new AgentRuntime({});
  *
  * // Create an agent
  * const agentId = await runtime.createAgent({

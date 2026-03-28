@@ -34,7 +34,6 @@ async function main() {
   // Step 1: Create AgentRuntime (includes topology network)
   // ============================================================
   const runtime = createAgentRuntime({
-    maxAgents: 10,
     defaultApiConfig: {
       apiProvider: 'openai',
       apiBaseUrl: 'https://ark.cn-beijing.volces.com/api/coding/v3',
