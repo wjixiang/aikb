@@ -1,7 +1,7 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/geist';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -94,7 +94,7 @@
 
   --sidebar-border: oklch(0.922 0 0);
 
-  --sidebar-ring: oklch(0.708 0 0)
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -258,10 +258,67 @@ code {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+:root {
+  --color-status-running: #22c55e;
+  --color-status-idle: #eab308;
+  --color-status-sleep: #a78bfa;
+  --color-status-completed: #6b7280;
+  --color-status-aborted: #ef4444;
+
+  --color-node-coordinator: #6366f1;
+  --color-node-router: #8b5cf6;
+  --color-node-worker: #3b82f6;
+  --color-node-default: #64748b;
+  --color-node-stroke: #1e293b;
+
+  --color-edge-idle: #94a3b8;
+  --color-edge-pending: #f59e0b;
+  --color-edge-acknowledged: #22c55e;
+  --color-edge-completed: #3b82f6;
+  --color-edge-failed: #ef4444;
+
+  --color-label-primary: #e2e8f0;
+  --color-label-secondary: #94a3b8;
+  --color-tooltip-bg: #f8fafc;
+
+  --color-soul-1: #f97316;
+  --color-soul-2: #06b6d4;
+  --color-soul-3: #ec4899;
+  --color-soul-4: #14b8a6;
+  --color-soul-5: #a855f7;
+  --color-soul-6: #e11d48;
+  --color-soul-7: #0ea5e9;
+  --color-soul-8: #84cc16;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-node-stroke: #0f172a;
+    --color-node-default: #94a3b8;
+    --color-edge-idle: #64748b;
+    --color-label-primary: #f1f5f9;
+    --color-label-secondary: #94a3b8;
+    --color-tooltip-bg: #1e293b;
+  }
+}
+
+.dark {
+  --color-node-stroke: #0f172a;
+  --color-node-default: #94a3b8;
+  --color-edge-idle: #64748b;
+  --color-label-primary: #f1f5f9;
+  --color-label-secondary: #94a3b8;
+  --color-tooltip-bg: #1e293b;
+}
+
 @layer base {
   * {
-    @apply border-border outline-ring/50;}
+    @apply border-border outline-ring/50;
+  }
   body {
-    @apply bg-background text-foreground;}
+    @apply bg-background text-foreground;
+  }
   html {
-    @apply font-sans;}}
+    @apply font-sans;
+  }
+}

@@ -29,28 +29,28 @@ interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  running: '#22c55e',
-  idle: '#eab308',
-  sleep: '#a78bfa',
-  completed: '#6b7280',
-  aborted: '#ef4444',
+  running: 'var(--color-status-running)',
+  idle: 'var(--color-status-idle)',
+  sleep: 'var(--color-status-sleep)',
+  completed: 'var(--color-status-completed)',
+  aborted: 'var(--color-status-aborted)',
 };
 
 const NODE_TYPE_COLORS: Record<string, string> = {
-  coordinator: '#6366f1',
-  router: '#8b5cf6',
-  worker: '#3b82f6',
+  coordinator: 'var(--color-node-coordinator)',
+  router: 'var(--color-node-router)',
+  worker: 'var(--color-node-worker)',
 };
 
 const SOUL_TYPE_COLORS = [
-  '#f97316',
-  '#06b6d4',
-  '#ec4899',
-  '#14b8a6',
-  '#a855f7',
-  '#e11d48',
-  '#0ea5e9',
-  '#84cc16',
+  'var(--color-soul-1)',
+  'var(--color-soul-2)',
+  'var(--color-soul-3)',
+  'var(--color-soul-4)',
+  'var(--color-soul-5)',
+  'var(--color-soul-6)',
+  'var(--color-soul-7)',
+  'var(--color-soul-8)',
 ];
 
 const EDGE_ACTIVITY_STYLES: Record<
@@ -58,24 +58,24 @@ const EDGE_ACTIVITY_STYLES: Record<
   { stroke: string; width: number; opacity: number; dasharray?: string }
 > = {
   pending: {
-    stroke: '#f59e0b',
+    stroke: 'var(--color-edge-pending)',
     width: 2,
     opacity: 1,
     dasharray: '4 6',
   },
   acknowledged: {
-    stroke: '#22c55e',
+    stroke: 'var(--color-edge-acknowledged)',
     width: 2.5,
     opacity: 1,
     dasharray: '8 4',
   },
   completed: {
-    stroke: '#3b82f6',
+    stroke: 'var(--color-edge-completed)',
     width: 2,
     opacity: 0.8,
   },
   failed: {
-    stroke: '#ef4444',
+    stroke: 'var(--color-edge-failed)',
     width: 2,
     opacity: 0.8,
   },
@@ -90,7 +90,7 @@ function getTypeColor(
   if (node.agentType && soulColors.has(node.agentType))
     return soulColors.get(node.agentType)!;
   if (NODE_TYPE_COLORS[node.nodeType]) return NODE_TYPE_COLORS[node.nodeType];
-  return '#64748b';
+  return 'var(--color-node-default)';
 }
 
 export function AgentTopology({
@@ -239,11 +239,14 @@ export function AgentTopology({
       // Arrow markers - one per status + default
       const defs = svg.append('defs');
       const markerConfigs = [
-        { id: 'arrowhead', fill: '#94a3b8' },
-        { id: 'arrowhead-pending', fill: '#f59e0b' },
-        { id: 'arrowhead-acknowledged', fill: '#22c55e' },
-        { id: 'arrowhead-completed', fill: '#3b82f6' },
-        { id: 'arrowhead-failed', fill: '#ef4444' },
+        { id: 'arrowhead', fill: 'var(--color-edge-idle)' },
+        { id: 'arrowhead-pending', fill: 'var(--color-edge-pending)' },
+        {
+          id: 'arrowhead-acknowledged',
+          fill: 'var(--color-edge-acknowledged)',
+        },
+        { id: 'arrowhead-completed', fill: 'var(--color-edge-completed)' },
+        { id: 'arrowhead-failed', fill: 'var(--color-edge-failed)' },
       ];
       for (const mc of markerConfigs) {
         defs
@@ -277,7 +280,7 @@ export function AgentTopology({
         .join('line')
         .attr('stroke', (d) => {
           const style = d.activity ? EDGE_ACTIVITY_STYLES[d.activity] : null;
-          return style?.stroke ?? '#94a3b8';
+          return style?.stroke ?? 'var(--color-edge-idle)';
         })
         .attr('stroke-width', (d) => {
           const style = d.activity ? EDGE_ACTIVITY_STYLES[d.activity] : null;
@@ -303,7 +306,7 @@ export function AgentTopology({
         .append('text')
         .style('display', 'none')
         .style('position', 'absolute')
-        .attr('fill', '#f8fafc')
+        .attr('fill', 'var(--color-tooltip-bg)')
         .attr('font-size', 11)
         .attr('pointer-events', 'none');
 
@@ -359,7 +362,7 @@ export function AgentTopology({
         .append('circle')
         .attr('r', 18)
         .attr('fill', (d) => getTypeColor(d, soulColors))
-        .attr('stroke', '#1e293b')
+        .attr('stroke', 'var(--color-node-stroke)')
         .attr('stroke-width', 2)
         .attr('fill-opacity', 0.85)
         .style('cursor', 'pointer');
@@ -372,7 +375,7 @@ export function AgentTopology({
         .attr('cy', -12)
         .attr('r', 5)
         .attr('fill', (d) => STATUS_COLORS[d.status])
-        .attr('stroke', '#1e293b')
+        .attr('stroke', 'var(--color-node-stroke)')
         .attr('stroke-width', 1.5);
 
       // Labels
@@ -381,7 +384,7 @@ export function AgentTopology({
         .text((d) => d.label)
         .attr('text-anchor', 'middle')
         .attr('dy', 32)
-        .attr('fill', '#e2e8f0')
+        .attr('fill', 'var(--color-label-primary)')
         .attr('font-size', 11)
         .attr('font-weight', 500)
         .attr('pointer-events', 'none');
@@ -393,7 +396,7 @@ export function AgentTopology({
         .text((d) => d.agentType!)
         .attr('text-anchor', 'middle')
         .attr('dy', 44)
-        .attr('fill', '#94a3b8')
+        .attr('fill', 'var(--color-label-secondary)')
         .attr('font-size', 9)
         .attr('pointer-events', 'none');
 
@@ -402,7 +405,7 @@ export function AgentTopology({
         .append('text')
         .style('display', 'none')
         .style('position', 'absolute')
-        .attr('fill', '#f8fafc')
+        .attr('fill', 'var(--color-tooltip-bg)')
         .attr('font-size', 11)
         .attr('pointer-events', 'none');
 
@@ -511,35 +514,35 @@ export function AgentTopology({
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-3 h-3 rounded-full border border-background"
-              style={{ backgroundColor: '#22c55e' }}
+              style={{ backgroundColor: 'var(--color-status-running)' }}
             />
             running
           </span>
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-3 h-3 rounded-full border border-background"
-              style={{ backgroundColor: '#eab308' }}
+              style={{ backgroundColor: 'var(--color-status-idle)' }}
             />
             idle
           </span>
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-3 h-3 rounded-full border border-background"
-              style={{ backgroundColor: '#a78bfa' }}
+              style={{ backgroundColor: 'var(--color-status-sleep)' }}
             />
             sleep
           </span>
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-3 h-3 rounded-full border border-background"
-              style={{ backgroundColor: '#6b7280' }}
+              style={{ backgroundColor: 'var(--color-status-completed)' }}
             />
             completed
           </span>
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-3 h-3 rounded-full border border-background"
-              style={{ backgroundColor: '#ef4444' }}
+              style={{ backgroundColor: 'var(--color-status-aborted)' }}
             />
             aborted
           </span>
@@ -547,7 +550,7 @@ export function AgentTopology({
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-4 h-0.5"
-              style={{ backgroundColor: '#94a3b8' }}
+              style={{ backgroundColor: 'var(--color-edge-idle)' }}
             />
             idle
           </span>
@@ -555,8 +558,8 @@ export function AgentTopology({
             <span
               className="inline-block w-4 h-0.5"
               style={{
-                backgroundColor: '#f59e0b',
-                borderTop: '1px dashed #f59e0b',
+                backgroundColor: 'var(--color-edge-pending)',
+                borderTop: '1px dashed var(--color-edge-pending)',
                 height: 0,
               }}
             />
@@ -566,8 +569,8 @@ export function AgentTopology({
             <span
               className="inline-block w-4 h-0.5"
               style={{
-                backgroundColor: '#22c55e',
-                borderTop: '1px dashed #22c55e',
+                backgroundColor: 'var(--color-edge-acknowledged)',
+                borderTop: '1px dashed var(--color-edge-acknowledged)',
                 height: 0,
               }}
             />
@@ -576,14 +579,14 @@ export function AgentTopology({
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-4 h-0.5"
-              style={{ backgroundColor: '#3b82f6' }}
+              style={{ backgroundColor: 'var(--color-edge-completed)' }}
             />
             completed
           </span>
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block w-4 h-0.5"
-              style={{ backgroundColor: '#ef4444' }}
+              style={{ backgroundColor: 'var(--color-edge-failed)' }}
             />
             failed
           </span>

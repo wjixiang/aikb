@@ -1,6 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { api, type LineageSchema, type LineageNodeDef } from '@/lib/api';
+import {
+  api,
+  type LineageSchema,
+  type LineageSchemaSummary,
+  type LineageNodeDef,
+} from '@/lib/api';
 import {
   GitBranch,
   ChevronRight,
@@ -16,8 +21,8 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const ROLE_DOT: Record<string, string> = {
-  coordinator: 'bg-indigo-500',
-  worker: 'bg-blue-500',
+  coordinator: 'bg-[var(--color-node-coordinator)]',
+  worker: 'bg-[var(--color-node-worker)]',
 };
 
 function TreeNode({
@@ -178,7 +183,10 @@ export function LineageTree() {
         setError('Failed to load lineages');
         return;
       }
-      const summaries = res.data;
+      const raw = res.data;
+      const summaries: LineageSchemaSummary[] = Array.isArray(raw)
+        ? raw
+        : (Object.values(raw) as LineageSchemaSummary[]);
       if (summaries.length === 0) {
         setSchemas([]);
         setSelectedId(null);
