@@ -10,10 +10,10 @@
  */
 
 import { z } from 'zod';
-import { ReactiveToolComponent } from './core/reactiveToolComponent.js';
-import { tdiv } from './ui/tdiv.js';
-import type { ToolCallResult } from './core/types.js';
-import type { TUIElement } from './ui/TUIElement.js';
+import { ReactiveToolComponent } from 'agent-lib/components';
+import { tdiv } from 'agent-lib/components/ui';
+import type { ToolCallResult } from 'agent-lib/components';
+import type { TUIElement } from 'agent-lib/components/ui';
 // @ts-expect-error - Apollo client has default export at runtime but TS types are inconsistent
 import apollo from '@apollo/client';
 import { loadErrorMessages, loadDevMessages } from '@apollo/client/dev';

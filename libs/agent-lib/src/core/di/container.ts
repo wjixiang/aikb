@@ -10,7 +10,6 @@ import { MemoryModule } from '../memory/MemoryModule.js';
 import { ApiClientFactory } from '../api-client/ApiClientFactory.js';
 import { ToolManager } from '../tools/ToolManager.js';
 import { PostgresPersistenceService } from '../persistence/PostgresPersistenceService.js';
-import { ComponentRegistry } from '../../components/ComponentRegistry.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
@@ -37,7 +36,6 @@ import { createA2AHandler, createA2AClient } from '../a2a/index.js';
 import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
 import type { IA2AClient } from '../a2a/index.js';
 import { getGlobalAgentRegistry } from '../a2a/index.js';
-import { LineageControlComponent } from '../../components/LineageControl/LineageControlComponent.js';
 import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
 import type { AgentLineageInfo } from '../runtime/types.js';
 
@@ -248,7 +246,6 @@ export class AgentContainer {
       .to(MemoryModule)
       .inSingletonScope();
     this.container.bind(TYPES.IToolManager).to(ToolManager).inSingletonScope();
-    this.container.bind(ComponentRegistry).toSelf().inSingletonScope();
     this.container
       .bind(GlobalToolProvider)
       .toDynamicValue(() => new GlobalToolProvider())
@@ -369,10 +366,6 @@ export class AgentContainer {
         .toConstantValue(lineage);
     }
 
-    // Bind global component classes as singletons
-    // These will be resolved with DI when building the ToolComponents array
-    this.container.bind(LineageControlComponent).toSelf().inSingletonScope();
-
     // Bind AgentSleepControl - lazy proxy to avoid circular dependency
     // (Agent → ToolManager → A2ATaskComponent → AgentSleepControl → Agent)
     this.container
@@ -398,36 +391,18 @@ export class AgentContainer {
       component: ToolComponent;
       priority?: number;
     }> => {
-      const components: Array<{ component: ToolComponent; priority?: number }> =
-        [
-          {
-            component: this.container.get(
-              LineageControlComponent,
-            ) as unknown as ToolComponent,
-            priority: 0,
-          },
-        ];
-
-      // Add custom components from config
-      if (this.config.components) {
-        for (const reg of this.config.components) {
-          if (reg.componentInstance) {
-            components.push({
-              component: reg.componentInstance,
-              priority: reg.priority,
-            });
-          } else if (reg.componentClass) {
-            components.push({
-              component: this.container.get(
-                reg.componentClass,
-              ) as unknown as ToolComponent,
-              priority: reg.priority,
-            });
-          }
-        }
+      if (!this.config.components || this.config.components.length === 0) {
+        return [];
       }
 
-      return components;
+      return this.config.components.map((reg) => ({
+        component: reg.componentInstance
+          ? reg.componentInstance
+          : (this.container.get(
+              reg.componentClass!,
+            ) as unknown as ToolComponent),
+        priority: reg.priority,
+      }));
     };
 
     this.container

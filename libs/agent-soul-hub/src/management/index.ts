@@ -1,5 +1,9 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { BibliographySearchComponent } from 'component-hub';
+import {
+  BibliographySearchComponent,
+  LineageControlComponent,
+  LifecycleComponent,
+} from 'component-hub';
 
 const SOP_CONTENT = `# 疾病管理与治疗文献检索 Agent
 
@@ -154,6 +158,8 @@ export function createManagementAgentSoul(): AgentBlueprint {
       {
         componentClass: BibliographySearchComponent,
       },
+      { componentClass: LineageControlComponent, priority: 0 },
+      { componentClass: LifecycleComponent, priority: 100 },
     ],
   };
 }

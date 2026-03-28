@@ -298,14 +298,6 @@ export const TYPES = {
    */
   ToolComponents: Symbol('ToolComponents'),
 
-  // ==================== Internal Services ====================
-
-  /**
-   * ComponentRegistry - Registry for managing tool components
-   * @scope Singleton - Shared across VirtualWorkspace instances
-   */
-  ComponentRegistry: Symbol('ComponentRegistry'),
-
   // ==================== Hook System ====================
 
   /**

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { RuntimeStats } from '../../core/runtime/types.js';
+import type { RuntimeStats } from 'agent-lib/core';
 import type {
   CheckInboxParams,
   AcknowledgeTaskParams,
@@ -12,7 +12,7 @@ import type {
   CancelTaskParams,
   SentTaskInfo,
   IncomingTaskInfo,
-} from '../A2AComponent/a2aTaskSchemas.js';
+} from './a2a/a2aTaskSchemas.js';
 import {
   checkInboxParamsSchema,
   acknowledgeTaskParamsSchema,
@@ -24,7 +24,7 @@ import {
   waitForResultParamsSchema,
   cancelTaskParamsSchema,
   discoverAgentsParamsSchema,
-} from '../A2AComponent/a2aTaskSchemas.js';
+} from './a2a/a2aTaskSchemas.js';
 
 export {
   checkInboxParamsSchema,
@@ -36,7 +36,7 @@ export {
   checkSentParamsSchema,
   waitForResultParamsSchema,
   cancelTaskParamsSchema,
-} from '../A2AComponent/a2aTaskSchemas.js';
+} from './a2a/a2aTaskSchemas.js';
 
 // =============================================================================
 // Lifecycle tools — createAgentByType, startAgent, stopAgent, destroyAgent
@@ -317,4 +317,4 @@ export type {
   DiscoverAgentsParams,
   SentTaskInfo,
   IncomingTaskInfo,
-} from '../A2AComponent/a2aTaskSchemas.js';
+} from './a2a/a2aTaskSchemas.js';

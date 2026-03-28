@@ -1,5 +1,9 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { BibliographySearchComponent } from 'component-hub';
+import {
+  BibliographySearchComponent,
+  LineageControlComponent,
+  LifecycleComponent,
+} from 'component-hub';
 
 const SOP_CONTENT = `# 综合文献检索策略
 ### 基本检索步骤
@@ -103,6 +107,8 @@ export function createBibRetrieveAgentSoul(): AgentBlueprint {
       {
         componentClass: BibliographySearchComponent,
       },
+      { componentClass: LineageControlComponent, priority: 0 },
+      { componentClass: LifecycleComponent, priority: 100 },
     ],
   };
 }

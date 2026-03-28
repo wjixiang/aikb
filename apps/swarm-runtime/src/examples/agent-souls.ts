@@ -5,6 +5,7 @@
  */
 
 import type { AgentBlueprint } from 'agent-lib/core';
+import type { DIComponentRegistration } from 'agent-lib/core';
 
 /**
  * 流行病学文献检索 Agent
@@ -27,6 +28,7 @@ export const epidemiologyAgentExample: AgentBlueprint = {
 - acknowledgeTask: 确认任务
 - completeTask: 完成任务`,
   },
+  components: [],
 };
 
 /**
@@ -44,6 +46,7 @@ export const diagnosisAgentExample: AgentBlueprint = {
 - 分析诊断准确性研究
 - 提供筛查建议`,
   },
+  components: [],
 };
 
 /**
@@ -61,6 +64,7 @@ export const managementAgentExample: AgentBlueprint = {
 - 分析药物临床试验
 - 提供临床指南建议`,
   },
+  components: [],
 };
 
 /**
@@ -84,6 +88,7 @@ export const routerAgentExample: AgentBlueprint = {
 - 可以向其他 Agent 发送任务
 - 可以聚合多个 Agent 的结果`,
   },
+  components: [],
 };
 
 /**
@@ -102,6 +107,7 @@ export const generalAgentExample: AgentBlueprint = {
 - 执行文献检索
 - 分析和总结结果`,
   },
+  components: [],
 };
 
 // Export all examples as a map

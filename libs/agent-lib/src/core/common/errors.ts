@@ -99,7 +99,10 @@ export class NoToolsUsedError extends AgentError {
   readonly code = 'NO_TOOLS_USED';
 
   constructor(cause?: Error) {
-    super('Last response did not use any tools. View tool-use guidence carefully to use proper tool-calling to interact with workspace', cause);
+    super(
+      'Last response did not use any tools. View tool-use guidence carefully to use proper tool-calling to interact with workspace',
+      cause,
+    );
   }
 }
 
@@ -137,27 +140,7 @@ export class MaxRetryExceededError extends AgentError {
 export class ToolExecutionFailedError extends AgentError {
   readonly code = 'TOOL_EXECUTION_FAILED';
 
-  constructor(
-    toolName: string,
-    message: string,
-    cause?: Error,
-  ) {
+  constructor(toolName: string, message: string, cause?: Error) {
     super(`Tool execution failed for '${toolName}': ${message}`, cause);
   }
 }
-
-/**
- * Error thrown when agent attempts to complete with unreplied emails pending
- * Used in mail-driven mode to enforce mandatory reply policy
- */
-export class UnrepliedMailError extends AgentError {
-  readonly code = 'UNREPLIED_MAIL';
-
-  constructor(public readonly unrepliedMailIds: string[]) {
-    super(
-      `Cannot complete: ${unrepliedMailIds.length} unreplied email(s) remaining. Reply to all emails before completing.`,
-    );
-    this.name = 'UnrepliedMailError';
-  }
-}
-

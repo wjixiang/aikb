@@ -1,5 +1,10 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { WebSearchComponent, ZhipuWebSearchProvider } from 'component-hub';
+import {
+  WebSearchComponent,
+  ZhipuWebSearchProvider,
+  LineageControlComponent,
+  LifecycleComponent,
+} from 'component-hub';
 import type { WebSearchProvider } from 'component-hub';
 
 const SOP_CONTENT = `# 联网搜索 Agent
@@ -141,7 +146,7 @@ function createDefaultProvider(): WebSearchProvider {
   if (!apiKey) {
     throw new Error(
       'GLM_API_KEY environment variable is required for WebSearchAgent. ' +
-      'Please set it before creating the agent soul.',
+        'Please set it before creating the agent soul.',
     );
   }
   const baseUrl = process.env.ZHIPU_API_BASE_URL;
@@ -166,6 +171,8 @@ export function createWebSearchAgentSoul(): AgentBlueprint {
       {
         componentInstance: new WebSearchComponent(createDefaultProvider()),
       },
+      { componentClass: LineageControlComponent, priority: 0 },
+      { componentClass: LifecycleComponent, priority: 100 },
     ],
   };
 }

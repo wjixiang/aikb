@@ -47,5 +47,6 @@ export function createRouterAgentSoul(
         config?.description ??
         'Central routing agent for multi-agent topology network',
     },
+    components: [],
   };
 }

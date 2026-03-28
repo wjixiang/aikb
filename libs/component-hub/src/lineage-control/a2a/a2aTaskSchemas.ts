@@ -1,9 +1,5 @@
 import { z } from 'zod';
 
-// =============================================================================
-// INBOX tools — checkInbox, acknowledgeTask, completeTask, failTask
-// =============================================================================
-
 export const checkInboxParamsSchema = z.object({}).passthrough();
 
 export type CheckInboxParams = z.infer<typeof checkInboxParamsSchema>;
@@ -33,10 +29,6 @@ export const failTaskParamsSchema = z.object({
 });
 
 export type FailTaskParams = z.infer<typeof failTaskParamsSchema>;
-
-// =============================================================================
-// SENT tools — sendTask, sendQuery, checkSent, waitForResult, cancelTask
-// =============================================================================
 
 export const sendTaskParamsSchema = z.object({
   targetAgentId: z
@@ -95,10 +87,6 @@ export const cancelTaskParamsSchema = z.object({
 
 export type CancelTaskParams = z.infer<typeof cancelTaskParamsSchema>;
 
-// =============================================================================
-// CONTACTS tools — discoverAgents
-// =============================================================================
-
 export const discoverAgentsParamsSchema = z.object({
   capability: z
     .string()
@@ -113,10 +101,6 @@ export const discoverAgentsParamsSchema = z.object({
 });
 
 export type DiscoverAgentsParams = z.infer<typeof discoverAgentsParamsSchema>;
-
-// =============================================================================
-// State types
-// =============================================================================
 
 export interface SentTaskInfo {
   taskId: string;
@@ -147,12 +131,7 @@ export interface IncomingTaskInfo {
   error?: string;
 }
 
-// =============================================================================
-// Tool registry & return types
-// =============================================================================
-
 export const a2aTaskToolSchemas = {
-  // INBOX
   checkInbox: {
     toolName: 'checkInbox',
     desc: 'Check incoming tasks (inbox). Call this at the start of each turn to see new tasks, acknowledged tasks, and completed tasks from other agents.',
@@ -173,8 +152,6 @@ export const a2aTaskToolSchemas = {
     desc: 'Report that an incoming task has failed, with an error message explaining why.',
     paramsSchema: failTaskParamsSchema,
   },
-
-  // SENT
   sendTask: {
     toolName: 'sendTask',
     desc: 'Delegate a task to another agent asynchronously. The agent ACKs immediately and processes in the background. Use checkSent or waitForResult to track progress.',
@@ -200,8 +177,6 @@ export const a2aTaskToolSchemas = {
     desc: 'Cancel an in-flight task that you previously sent to another agent.',
     paramsSchema: cancelTaskParamsSchema,
   },
-
-  // CONTACTS
   discoverAgents: {
     toolName: 'discoverAgents',
     desc: 'Discover available agents and their capabilities. Use this to find which agents can handle specific tasks before sending.',

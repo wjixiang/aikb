@@ -1,5 +1,9 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { BibliographySearchComponent } from 'component-hub';
+import {
+  BibliographySearchComponent,
+  LineageControlComponent,
+  LifecycleComponent,
+} from 'component-hub';
 
 const SOP_CONTENT = `# 生活质量与社会负担文献检索 Agent
 
@@ -153,6 +157,8 @@ export function createQualityOfLifeAgentSoul(): AgentBlueprint {
       {
         componentClass: BibliographySearchComponent,
       },
+      { componentClass: LineageControlComponent, priority: 0 },
+      { componentClass: LifecycleComponent, priority: 100 },
     ],
   };
 }

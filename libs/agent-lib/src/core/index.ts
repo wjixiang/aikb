@@ -109,6 +109,7 @@ export type {
   TopologyNode,
   TopologyEdge,
   RoutingStats,
+  IAgentSleepControl,
 } from './runtime/index.js';
 export {
   generateEventId,

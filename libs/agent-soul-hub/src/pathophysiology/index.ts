@@ -1,5 +1,9 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { BibliographySearchComponent } from 'component-hub';
+import {
+  BibliographySearchComponent,
+  LineageControlComponent,
+  LifecycleComponent,
+} from 'component-hub';
 
 const SOP_CONTENT = `# 病理机制文献检索 Agent
 
@@ -151,6 +155,8 @@ export function createPathophysiologyAgentSoul(): AgentBlueprint {
       {
         componentClass: BibliographySearchComponent,
       },
+      { componentClass: LineageControlComponent, priority: 0 },
+      { componentClass: LifecycleComponent, priority: 100 },
     ],
   };
 }

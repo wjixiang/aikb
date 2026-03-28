@@ -1,12 +1,12 @@
 import { injectable, inject, optional, postConstruct } from 'inversify';
 import pino from 'pino';
 import {
-  ToolComponent,
   type VirtualWorkspaceConfig,
   type Tool,
   type IVirtualWorkspace,
   type ToolCallResult,
   type ComponentStateBase,
+  type ToolComponent,
   tdiv,
   MdDiv,
   MdHeading,
@@ -20,20 +20,12 @@ import {
 import { ToolSource } from '../tools/IToolProvider.js';
 import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
-import { ToolManager } from '../tools/ToolManager.js';
-import {
-  ComponentRegistry,
-  type ComponentRegistration,
-} from '../../components/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import type { A2AHandler } from '../a2a/index.js';
 
-/** Component registration for DI-managed components */
-export interface DIComponentRegistration {
-  /** Component instance (uses component.componentId as identifier) */
+interface ResolvedComponent {
   component: ToolComponent;
-  /** Registration priority (higher = registered first) */
   priority?: number;
 }
 
@@ -57,7 +49,10 @@ export interface ToolCallSummary {
 @injectable()
 export class VirtualWorkspace implements IVirtualWorkspace {
   private config: VirtualWorkspaceConfig;
-  protected componentRegistry: ComponentRegistry;
+  private components: Array<{
+    component: ToolComponent;
+    priority?: number;
+  }> = [];
   private toolManager: IToolManager;
   private toolCallLog: ToolCallSummary[] = [];
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
@@ -71,14 +66,13 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   constructor(
     @inject(TYPES.IToolManager) toolManager: IToolManager,
-    @inject(ComponentRegistry) componentRegistry: ComponentRegistry,
     @inject(GlobalToolProvider) globalToolProvider: GlobalToolProvider,
     @inject(TYPES.VirtualWorkspaceConfig)
     @optional()
     config: Partial<VirtualWorkspaceConfig> = {},
     @inject(TYPES.ToolComponents)
     @optional()
-    diComponents?: DIComponentRegistration[],
+    diComponents?: ResolvedComponent[],
     @inject(TYPES.IA2AHandler)
     @optional()
     a2aHandler?: A2AHandler,
@@ -88,25 +82,25 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       ...config,
     };
 
-    this.componentRegistry = componentRegistry;
     this.toolManager = toolManager;
     this.globalToolProvider = globalToolProvider;
     this._a2aHandler = a2aHandler;
 
     if (diComponents && diComponents.length > 0) {
-      for (const { component, priority } of diComponents) {
-        this.componentRegistry.register(
-          component.componentId,
-          component,
-          priority,
-        );
+      for (const reg of diComponents) {
+        this.components.push({
+          component: reg.component,
+          priority: reg.priority,
+        });
       }
     }
   }
 
   @postConstruct()
   private init(): void {
-    this.registerComponentTools();
+    for (const { component } of this.components) {
+      this._registerToolProvider(component);
+    }
     this.toolManager.registerProvider(this.globalToolProvider);
   }
 
@@ -119,40 +113,17 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     this.toolManager.registerProvider(provider);
   }
 
-  private registerComponentTools(): void {
-    const registrations = this.componentRegistry.getAllRegistrations();
-    for (const registration of registrations) {
-      this._registerToolProvider(registration.component);
-    }
-  }
-
   getToolManager(): IToolManager {
     return this.toolManager;
   }
 
-  getComponentRegistry(): ComponentRegistry {
-    return this.componentRegistry;
-  }
-
   getComponent(id: string): ToolComponent | undefined {
-    return this.componentRegistry.get(id);
+    return this.components.find((c) => c.component.componentId === id)
+      ?.component;
   }
 
   getComponentKeys(): string[] {
-    return this.componentRegistry.getIds();
-  }
-
-  /**
-   * Add a component dynamically after initialization
-   * This registers the component and its tools
-   */
-  addComponent(component: ToolComponent): void {
-    this.componentRegistry.register(component.componentId, component);
-    this._registerToolProvider(component);
-    this.logger.debug(
-      { componentId: component.componentId },
-      'Component added dynamically',
-    );
+    return this.components.map((c) => c.component.componentId);
   }
 
   getA2AHandler(): A2AHandler | undefined {
@@ -310,16 +281,12 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   }
 
   async renderComponentToolsSection(): Promise<TUIElement | null> {
-    const componentIds = this.componentRegistry.getIds();
     const tools: Tool[] = [];
 
-    for (const id of componentIds) {
-      const component = this.componentRegistry.get(id);
-      if (component) {
-        for (const tool of component.toolSet.values()) {
-          if (this.toolManager.isToolEnabled(tool.toolName)) {
-            tools.push(tool);
-          }
+    for (const { component } of this.components) {
+      for (const tool of component.toolSet.values()) {
+        if (this.toolManager.isToolEnabled(tool.toolName)) {
+          tools.push(tool);
         }
       }
     }
@@ -429,19 +396,21 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       );
     }
 
-    const sortedRegistrations = this.componentRegistry.getAllRegistrations();
+    const sorted = [...this.components].sort(
+      (a, b) => (a.priority ?? 0) - (b.priority ?? 0),
+    );
 
-    for (const registration of sortedRegistrations) {
+    for (const { component } of sorted) {
       const componentContainer = new MdDiv(
         {
-          content: `## ${registration.component.componentId}`,
+          content: `## ${component.componentId}`,
           styles: { showBorder: true },
         },
         [],
         1,
       );
 
-      const componentRender = await registration.component.renderImply();
+      const componentRender = await component.renderImply();
       for (const element of componentRender) {
         const rendered = element.render(this.config.renderMode);
         componentContainer.addChild(
@@ -494,15 +463,17 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       );
     }
 
-    const sortedRegistrations = this.componentRegistry.getAllRegistrations();
+    const sorted = [...this.components].sort(
+      (a, b) => (a.priority ?? 0) - (b.priority ?? 0),
+    );
 
-    for (const registration of sortedRegistrations) {
+    for (const { component } of sorted) {
       const componentContainer = new tdiv({
-        content: registration.component.componentId,
+        content: component.componentId,
         styles: { showBorder: true },
       });
 
-      const componentRender = await registration.component.renderImply();
+      const componentRender = await component.renderImply();
       componentRender.forEach((element) =>
         componentContainer.addChild(element),
       );
@@ -535,12 +506,14 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     componentKeys: string[];
     totalTools: number;
   } {
-    const componentKeys = this.componentRegistry.getIds();
-    const totalTools = this.componentRegistry.getToolCount();
+    let totalTools = 0;
+    for (const { component } of this.components) {
+      totalTools += component.toolSet.size;
+    }
 
     return {
-      componentCount: this.componentRegistry.size,
-      componentKeys,
+      componentCount: this.components.length,
+      componentKeys: this.components.map((c) => c.component.componentId),
       totalTools,
     };
   }
@@ -620,19 +593,18 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   ): Promise<Record<string, ExportResult>> {
     const results: Record<string, ExportResult> = {};
 
-    const registrations = this.componentRegistry.getAllRegistrations();
-    for (const registration of registrations) {
+    for (const { component } of this.components) {
       try {
-        const result = await registration.component.exportData(options);
-        results[registration.component.componentId] = result;
+        const result = await component.exportData(options);
+        results[component.componentId] = result;
       } catch (error) {
-        results[registration.component.componentId] = {
+        results[component.componentId] = {
           data: {
             error: error instanceof Error ? error.message : String(error),
           },
           format: options?.format ?? 'json',
           metadata: {
-            componentId: registration.component.componentId,
+            componentId: component.componentId,
             error: true,
           },
         };
@@ -655,18 +627,14 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   exportComponentStates(): Map<string, ComponentStateBase> {
     const states = new Map<string, ComponentStateBase>();
-    const registrations = this.componentRegistry.getAllRegistrations();
 
-    for (const registration of registrations) {
-      if (registration.component.exportState) {
+    for (const { component } of this.components) {
+      if (component.exportState) {
         try {
-          states.set(
-            registration.component.componentId,
-            registration.component.exportState(),
-          );
+          states.set(component.componentId, component.exportState());
         } catch (error) {
           console.error(
-            `[VirtualWorkspace] Failed to export state for ${registration.component.componentId}:`,
+            `[VirtualWorkspace] Failed to export state for ${component.componentId}:`,
             error,
           );
         }
@@ -679,10 +647,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   importComponentStates(states: Map<string, ComponentStateBase>): void {
     for (const [componentId, state] of states) {
       try {
-        const registration =
-          this.componentRegistry.getRegistration(componentId);
-        if (registration?.component.restoreState) {
-          registration.component.restoreState(state);
+        const entry = this.components.find(
+          (c) => c.component.componentId === componentId,
+        );
+        if (entry?.component.restoreState) {
+          entry.component.restoreState(state);
         }
       } catch (error) {
         console.error(
@@ -693,5 +662,3 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     }
   }
 }
-
-export type { ComponentRegistration };

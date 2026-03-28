@@ -1,5 +1,9 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { BibliographySearchComponent } from 'component-hub';
+import {
+  BibliographySearchComponent,
+  LineageControlComponent,
+  LifecycleComponent,
+} from 'component-hub';
 
 const SOP_CONTENT = `# 流行病学与危险因素文献检索 Agent
 
@@ -162,6 +166,8 @@ export function createEpidemiologyAgentSoul(): AgentBlueprint {
       {
         componentClass: BibliographySearchComponent,
       },
+      { componentClass: LineageControlComponent, priority: 0 },
+      { componentClass: LifecycleComponent, priority: 100 },
     ],
   };
 }

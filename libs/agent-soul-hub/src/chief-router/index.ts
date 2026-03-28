@@ -1,4 +1,5 @@
 import { AgentBlueprint } from 'agent-lib/core';
+import { LineageControlComponent, LifecycleComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 首席路由 (Chief Router)
 
@@ -52,7 +53,10 @@ export function createChiefRouterAgentSoul(): AgentBlueprint {
       type: 'chief-router',
       description: '文献调查顶层路由，负责将任务分解并委派给子路由',
     },
-    components: [],
+    components: [
+      { componentClass: LineageControlComponent, priority: 0 },
+      { componentClass: LifecycleComponent, priority: 100 },
+    ],
   };
 }
 

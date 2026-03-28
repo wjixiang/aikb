@@ -1,5 +1,5 @@
 export { LineageControlComponent } from './LineageControlComponent.js';
-export { lineageControlToolSchemas } from './lineageControlSchemas.js';
+export { lineageControlToolSchemas } from './schemas.js';
 export type {
   CreateAgentByTypeParams,
   StartAgentParams,
@@ -23,4 +23,4 @@ export type {
   CheckSentParams,
   WaitForResultParams,
   CancelTaskParams,
-} from './lineageControlSchemas.js';
+} from './schemas.js';

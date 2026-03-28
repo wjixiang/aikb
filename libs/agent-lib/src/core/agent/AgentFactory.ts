@@ -34,7 +34,7 @@ export interface AgentSoul {
  */
 export interface AgentBlueprint {
   agent?: AgentSoul;
-  components?: DIComponentRegistration[];
+  components: DIComponentRegistration[];
 }
 
 /**
@@ -83,7 +83,7 @@ export class AgentFactory {
    * @param messageBus - Required message bus for agent communication
    */
   static create(
-    options: AgentFactoryOptions = {},
+    options: AgentFactoryOptions,
     messageBus: IMessageBus,
   ): AgentContainer {
     return new AgentContainer(options, messageBus);
@@ -95,7 +95,7 @@ export class AgentFactory {
    * @param messageBus - Required message bus for agent communication
    */
   static async createAgent(
-    options: AgentFactoryOptions = {},
+    options: AgentFactoryOptions,
     messageBus: IMessageBus,
   ): Promise<Agent> {
     const container = this.create(options, messageBus);

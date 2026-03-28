@@ -4,6 +4,41 @@
  * A collection of domain-specific components for agent systems.
  */
 
+// Lifecycle
+export { LifecycleComponent } from './lifecycle/index.js';
+
+// Lineage Control
+export { LineageControlComponent } from './lineage-control/index.js';
+export { lineageControlToolSchemas } from './lineage-control/index.js';
+export type {
+  GetMyInfoParams,
+  GetStatsParams,
+  DiscoverAgentsParams,
+  LineageControlToolName,
+  LineageControlToolReturnTypes,
+  SentTaskInfo,
+  IncomingTaskInfo,
+  CheckInboxParams,
+  AcknowledgeTaskParams,
+  CompleteTaskParams,
+  FailTaskParams,
+  SendTaskParams,
+  SendQueryParams,
+  CheckSentParams,
+  WaitForResultParams,
+  CancelTaskParams,
+} from './lineage-control/index.js';
+
+// Bookshelf
+export {
+  BookViewerComponent,
+  WorkspaceInfoComponent,
+} from './bookshelf/index.js';
+
+// Knowledge
+export { KnowledgeManageComponent } from './knowledge/index.js';
+
+// Bibliography Search
 export { BibliographySearchComponent } from './bibliographySearch/bibliographySearchComponent.js';
 
 export { PicosComponent } from './PICOS/picosComponents.js';

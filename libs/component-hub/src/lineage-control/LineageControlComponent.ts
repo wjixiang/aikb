@@ -1,21 +1,21 @@
 import 'reflect-metadata';
 import { injectable, inject, optional } from 'inversify';
-import { ToolComponent, type ExportResult } from '../core/toolComponent.js';
-import type { ToolCallResult } from '../core/types.js';
-import type { TUIElement } from '../ui/TUIElement.js';
-import { tdiv, th } from '../ui/index.js';
-import { TYPES } from '../../core/di/types.js';
-import type { IA2AHandler } from '../../core/a2a/A2AHandler.js';
-import type { IA2AClient } from '../../core/a2a/A2AClient.js';
-import type { IAgentSleepControl } from '../../core/runtime/AgentSleepControl.js';
-import type { RuntimeControlState } from '../../core/runtime/RuntimeControlState.js';
-import type { IRuntimeControlClient } from '../../core/runtime/types.js';
-import type { AgentLineageInfo } from '../../core/runtime/types.js';
-import type { AgentMetadata } from '../../core/runtime/types.js';
-import { getGlobalAgentRegistry } from '../../core/a2a/index.js';
-import { agentSoulRegistry } from '../../core/AgentSoulRegistry.js';
-import { lineageSchemaRegistry } from '../../core/runtime/LineageSchemaRegistry.js';
-import type { IAgentCardRegistry } from '../../core/a2a/AgentCard.js';
+import { ToolComponent, type ExportResult } from 'agent-lib/components';
+import type { ToolCallResult } from 'agent-lib/components';
+import type { TUIElement } from 'agent-lib/components/ui';
+import { tdiv, th } from 'agent-lib/components/ui';
+import { TYPES } from 'agent-lib/core';
+import type { IA2AHandler } from 'agent-lib/core';
+import type { IA2AClient } from 'agent-lib/core';
+import type { IAgentSleepControl } from 'agent-lib/core';
+import type { RuntimeControlState } from 'agent-lib/core';
+import type { IRuntimeControlClient } from 'agent-lib/core';
+import type { AgentLineageInfo } from 'agent-lib/core';
+import type { AgentMetadata } from 'agent-lib/core';
+import { getGlobalAgentRegistry } from 'agent-lib/core';
+import { agentSoulRegistry } from 'agent-lib/core';
+import { lineageSchemaRegistry } from 'agent-lib/core';
+import type { IAgentCardRegistry } from 'agent-lib/core';
 import {
   lineageControlToolSchemas,
   type LineageControlToolReturnTypes,
@@ -37,7 +37,7 @@ import {
   type DiscoverAgentsParams,
   type SentTaskInfo,
   type IncomingTaskInfo,
-} from './lineageControlSchemas.js';
+} from './schemas.js';
 
 const MAX_SUMMARY_LENGTH = 500;
 
@@ -792,9 +792,6 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       description?: string;
     }>;
     if (this.lineage?.allowedChildren) {
-      const { lineageSchemaRegistry } = await import(
-        '../../core/runtime/LineageSchemaRegistry.js'
-      );
       souls = this.lineage.allowedChildren.map((c) => {
         const found = lineageSchemaRegistry.findBySoulToken(c.soulToken);
         const node = found?.node;
