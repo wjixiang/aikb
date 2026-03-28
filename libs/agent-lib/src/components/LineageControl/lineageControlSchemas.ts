@@ -278,7 +278,6 @@ export interface LineageControlToolReturnTypes {
   listAllowedSouls: {
     souls: Array<{
       soulToken: string;
-      nodeId: string;
       name?: string;
       description?: string;
     }>;
@@ -287,8 +286,8 @@ export interface LineageControlToolReturnTypes {
     instanceId: string;
     role?: string;
     schemaId?: string;
-    nodeId?: string;
-    allowedChildren: Array<{ soulToken: string; nodeId: string }>;
+    soulToken?: string;
+    allowedChildren: Array<{ soulToken: string }>;
     parentInstanceId?: string;
   };
   getStats: RuntimeStats;

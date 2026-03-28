@@ -414,7 +414,6 @@ export function generateEventId(): string {
 export type LineageRole = 'root' | 'coordinator' | 'worker';
 
 export interface LineageNodeDef {
-  id: string;
   role: LineageRole;
   soulToken: string;
   name?: string;
@@ -431,11 +430,10 @@ export interface LineageSchema {
 
 export interface AgentLineageInfo {
   schemaId: string;
-  nodeId: string;
+  soulToken: string;
   role: LineageRole;
   allowedChildren: Array<{
     soulToken: string;
-    nodeId: string;
   }>;
 }
 

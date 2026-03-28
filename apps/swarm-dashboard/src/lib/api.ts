@@ -165,7 +165,6 @@ export interface MemoryMessage {
 // ========== Lineage Types ==========
 
 export interface LineageNodeDef {
-  id: string;
   role: 'root' | 'coordinator' | 'worker';
   soulToken: string;
   name?: string;
@@ -184,7 +183,7 @@ export interface LineageSchemaSummary {
   id: string;
   name: string;
   description?: string;
-  rootNodeId: string;
+  rootSoulToken: string;
   rootNodeRole: string;
   childCount: number;
 }

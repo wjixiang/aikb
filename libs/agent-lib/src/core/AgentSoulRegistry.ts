@@ -20,7 +20,6 @@ export type AgentSoulType =
   | 'management'
   | 'quality-of-life'
   | 'emerging-treatments'
-  | 'paper-analysis'
   | 'bib-retrieve'
   | 'web-search';
 

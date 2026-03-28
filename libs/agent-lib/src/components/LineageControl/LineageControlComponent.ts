@@ -788,7 +788,6 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   > {
     let souls: Array<{
       soulToken: string;
-      nodeId: string;
       name?: string;
       description?: string;
     }>;
@@ -797,13 +796,10 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
         '../../core/runtime/LineageSchemaRegistry.js'
       );
       souls = this.lineage.allowedChildren.map((c) => {
-        const node = (lineageSchemaRegistry as any).findNode(
-          this.lineage!.schemaId,
-          c.nodeId,
-        );
+        const found = lineageSchemaRegistry.findBySoulToken(c.soulToken);
+        const node = found?.node;
         return {
           soulToken: c.soulToken,
-          nodeId: c.nodeId,
           name: node?.name,
           description: node?.description,
         };
@@ -812,7 +808,6 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       const allSouls = agentSoulRegistry.getAll();
       souls = allSouls.map((s) => ({
         soulToken: s.type as string,
-        nodeId: s.type as string,
         name: s.name,
         description: s.description,
       }));
@@ -834,7 +829,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
         instanceId: this.instanceId,
         role: this.lineage?.role,
         schemaId: this.lineage?.schemaId,
-        nodeId: this.lineage?.nodeId,
+        soulToken: this.lineage?.soulToken,
         allowedChildren: this.lineage?.allowedChildren ?? [],
         parentInstanceId,
       },
@@ -1093,10 +1088,8 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
           }),
         );
         for (const entry of allowed) {
-          const schemaId = this.lineage?.schemaId;
-          const node = schemaId
-            ? lineageSchemaRegistry.findNode(schemaId, entry.nodeId)
-            : undefined;
+          const found = lineageSchemaRegistry.findBySoulToken(entry.soulToken);
+          const node = found?.node;
           const label = node?.name || entry.soulToken;
           const role = node?.role || '?';
           const desc = node?.description || '';
@@ -1109,7 +1102,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
           );
           elements.push(
             new tdiv({
-              content: `    soulToken=${entry.soulToken}  nodeId=${entry.nodeId}  children=${childCount}`,
+              content: `    soulToken=${entry.soulToken}  children=${childCount}`,
             }),
           );
           if (desc) {

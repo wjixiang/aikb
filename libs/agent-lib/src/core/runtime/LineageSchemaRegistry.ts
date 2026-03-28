@@ -23,12 +23,6 @@ class LineageSchemaRegistryImpl {
     return this.schemas.has(id);
   }
 
-  findNode(schemaId: string, nodeId: string): LineageNodeDef | undefined {
-    const schema = this.schemas.get(schemaId);
-    if (!schema) return undefined;
-    return this.findNodeInTree(schema.root, nodeId);
-  }
-
   findBySoulToken(
     soulToken: string,
   ): { schema: LineageSchema; node: LineageNodeDef } | undefined {
@@ -44,25 +38,12 @@ class LineageSchemaRegistryImpl {
     if (!match) return undefined;
     return {
       schemaId: match.schema.id,
-      nodeId: match.node.id,
+      soulToken: match.node.soulToken,
       role: match.node.role,
       allowedChildren: (match.node.children ?? []).map((c) => ({
         soulToken: c.soulToken,
-        nodeId: c.id,
       })),
     };
-  }
-
-  private findNodeInTree(
-    node: LineageNodeDef,
-    nodeId: string,
-  ): LineageNodeDef | undefined {
-    if (node.id === nodeId) return node;
-    for (const child of node.children ?? []) {
-      const found = this.findNodeInTree(child, nodeId);
-      if (found) return found;
-    }
-    return undefined;
   }
 
   private findNodeBySoulTokenInTree(

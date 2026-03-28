@@ -809,7 +809,7 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
         id: s.id,
         name: s.name,
         description: s.description,
-        rootNodeId: s.root?.id,
+        rootSoulToken: s.root?.soulToken,
         rootNodeRole: s.root?.role,
         childCount: s.root?.children?.length ?? 0,
       }));
@@ -917,7 +917,6 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const root = schema.root as {
-          id: string;
           role: string;
           soulToken: string;
           name?: string;
@@ -928,11 +927,10 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
 
         const lineageInfo: AgentLineageInfo = {
           schemaId: schema.id,
-          nodeId: root.id,
+          soulToken: root.soulToken,
           role: root.role as AgentLineageInfo['role'],
           allowedChildren: (root.children ?? []).map((c: any) => ({
             soulToken: c.soulToken,
-            nodeId: c.id,
           })),
         };
 

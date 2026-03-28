@@ -57,7 +57,7 @@ function TreeNode({
         />
 
         <span className="text-sm font-medium truncate">
-          {node.name ?? node.id}
+          {node.name ?? node.soulToken}
         </span>
 
         <span
@@ -84,7 +84,7 @@ function TreeNode({
             style={{ left: `${depth * 20 + 13}px` }}
           />
           {node.children!.map((child) => (
-            <TreeNode key={child.id} node={child} depth={depth + 1} />
+            <TreeNode key={child.soulToken} node={child} depth={depth + 1} />
           ))}
         </div>
       )}

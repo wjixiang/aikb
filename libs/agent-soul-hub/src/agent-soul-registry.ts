@@ -28,7 +28,6 @@ function isAgentSoulType(token: string): token is AgentSoulType {
     'management',
     'quality-of-life',
     'emerging-treatments',
-    'paper-analysis',
     'bib-retrieve',
     'web-search',
   ];

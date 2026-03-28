@@ -103,11 +103,11 @@ function createLineage(
 ): AgentLineageInfo {
   return {
     schemaId: 'test-schema',
-    nodeId: 'node-1',
+    soulToken: 'node-1',
     role,
     allowedChildren:
       role !== 'worker'
-        ? [{ soulToken: 'worker-a', nodeId: 'worker-a-node' }]
+        ? [{ soulToken: 'worker-a' }]
         : [],
   };
 }
@@ -968,7 +968,6 @@ describe('LineageControlComponent', () => {
       expect(result.success).toBe(true);
       expect(result.data.souls).toHaveLength(1);
       expect(result.data.souls[0].soulToken).toBe('worker-a');
-      expect(result.data.souls[0].nodeId).toBe('worker-a-node');
     });
 
     it('should work without lineage', async () => {
@@ -1003,7 +1002,7 @@ describe('LineageControlComponent', () => {
       expect(result.data.instanceId).toBe(INSTANCE_ID);
       expect(result.data.role).toBe('coordinator');
       expect(result.data.schemaId).toBe('test-schema');
-      expect(result.data.nodeId).toBe('node-1');
+      expect(result.data.soulToken).toBe('node-1');
       expect(result.data.allowedChildren).toHaveLength(1);
       expect(result.data.parentInstanceId).toBe('parent-abc');
     });

@@ -98,19 +98,16 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     );
     if (!allowedChild) return;
 
-    const childNode = lineageSchemaRegistry.findNode(
-      lineage.schemaId,
-      allowedChild.nodeId,
-    );
-    if (!childNode) return;
+    const found = lineageSchemaRegistry.findBySoulToken(allowedChild.soulToken);
+    if (!found) return;
+    const childNode = found.node;
 
     const childLineage: AgentLineageInfo = {
       schemaId: lineage.schemaId,
-      nodeId: childNode.id,
+      soulToken: childNode.soulToken,
       role: childNode.role,
       allowedChildren: (childNode.children ?? []).map((c) => ({
         soulToken: c.soulToken,
-        nodeId: c.id,
       })),
     };
 
