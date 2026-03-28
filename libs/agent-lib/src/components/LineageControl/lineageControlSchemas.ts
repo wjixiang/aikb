@@ -136,7 +136,7 @@ export const lineageControlToolSchemas = {
     paramsSchema: failTaskParamsSchema,
   },
 
-  // SENT (coordinator only)
+  // SENT (router only)
   sendTask: {
     toolName: 'sendTask',
     desc: 'Delegate a task to a child agent asynchronously.',
@@ -163,7 +163,7 @@ export const lineageControlToolSchemas = {
     paramsSchema: cancelTaskParamsSchema,
   },
 
-  // LIFECYCLE (coordinator only)
+  // LIFECYCLE (router only)
   listChildAgents: {
     toolName: 'listChildAgents',
     desc: 'List your direct child agents.',
@@ -190,7 +190,7 @@ export const lineageControlToolSchemas = {
     paramsSchema: destroyAgentParamsSchema,
   },
 
-  // DISCOVERY (coordinator only)
+  // DISCOVERY (router only)
   listAllowedSouls: {
     toolName: 'listAllowedSouls',
     desc: 'List the soul tokens you are allowed to create as children.',
@@ -206,7 +206,7 @@ export const lineageControlToolSchemas = {
     desc: 'Get runtime statistics.',
     paramsSchema: getStatsParamsSchema,
   },
-  // DISCOVERY (no-lineage / coordinator only)
+  // DISCOVERY (no-lineage / router only)
   discoverAgents: {
     toolName: 'discoverAgents',
     desc: 'Discover available agents and their capabilities.',

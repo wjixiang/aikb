@@ -15,13 +15,13 @@ import {
 } from 'lucide-react';
 
 const ROLE_COLORS: Record<string, string> = {
-  coordinator:
+  router:
     'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300',
   worker: 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300',
 };
 
 const ROLE_DOT: Record<string, string> = {
-  coordinator: 'bg-[var(--color-node-coordinator)]',
+  router: 'bg-[var(--color-node-router)]',
   worker: 'bg-[var(--color-node-worker)]',
 };
 

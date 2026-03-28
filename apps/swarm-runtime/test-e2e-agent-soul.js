@@ -116,7 +116,7 @@ async function run() {
     // Step 2: Create agent instance
     console.log('\n🤖 Step 2: Create agent instance');
     const createRes = await request('POST', '/runtime/agent-souls', {
-      token: 'coordinator',
+      token: 'chief-router',
     });
     console.log(`   Status: ${createRes.status}`);
     if (createRes.status !== 201) {
@@ -140,7 +140,7 @@ async function run() {
     // Step 3: Create task
     console.log('\n📝 Step 3: Create task');
     const taskRes = await request('POST', '/tasks', {
-      description: '帮我找一个影像组学的文献，要求数据完全公开可下载，以便于我进行学习',
+      description: '进行血管外科最新文献的调查',
       targetInstanceId: agentId,
       priority: 'normal',
     });

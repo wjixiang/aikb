@@ -99,16 +99,13 @@ function createRuntimeState(
 }
 
 function createLineage(
-  role: 'root' | 'coordinator' | 'worker' = 'coordinator',
+  role: 'root' | 'router' | 'worker' = 'router',
 ): AgentLineageInfo {
   return {
     schemaId: 'test-schema',
     soulToken: 'node-1',
     role,
-    allowedChildren:
-      role !== 'worker'
-        ? [{ soulToken: 'worker-a' }]
-        : [],
+    allowedChildren: role !== 'worker' ? [{ soulToken: 'worker-a' }] : [],
   };
 }
 
@@ -150,9 +147,9 @@ describe('LineageControlComponent', () => {
       expect(component.displayName).toBe('Lineage Control');
     });
 
-    it('should create instance with coordinator lineage', () => {
+    it('should create instance with router lineage', () => {
       const { component } = createComponent({
-        lineage: createLineage('coordinator'),
+        lineage: createLineage('router'),
       });
       expect(component).toBeInstanceOf(LineageControlComponent);
     });
@@ -181,18 +178,18 @@ describe('LineageControlComponent', () => {
       expect(component.componentPrompt).not.toContain('createAgentByType');
     });
 
-    it('should return coordinatorPrompt when role is coordinator', () => {
+    it('should return routerPrompt when role is router', () => {
       const { component } = createComponent({
-        lineage: createLineage('coordinator'),
+        lineage: createLineage('router'),
       });
-      expect(component.componentPrompt).toContain('coordinator');
+      expect(component.componentPrompt).toContain('router');
       expect(component.componentPrompt).toContain('child agents');
       expect(component.componentPrompt).toContain('worker-a');
     });
 
-    it('should return coordinatorPrompt when role is root', () => {
+    it('should return routerPrompt when role is root', () => {
       const { component } = createComponent({ lineage: createLineage('root') });
-      expect(component.componentPrompt).toContain('coordinator');
+      expect(component.componentPrompt).toContain('router');
     });
   });
 
@@ -206,7 +203,7 @@ describe('LineageControlComponent', () => {
       expect(tools.has('failTask')).toBe(true);
     });
 
-    it('should include coordinator tools when no lineage', () => {
+    it('should include router tools when no lineage', () => {
       const { component } = createComponent();
       const tools = component.toolSet;
       expect(tools.has('sendTask')).toBe(true);
@@ -225,23 +222,23 @@ describe('LineageControlComponent', () => {
       expect(tools.has('discoverAgents')).toBe(true);
     });
 
-    it('should include coordinator tools for coordinator role', () => {
+    it('should include router tools for router role', () => {
       const { component } = createComponent({
-        lineage: createLineage('coordinator'),
+        lineage: createLineage('router'),
       });
       const tools = component.toolSet;
       expect(tools.has('sendTask')).toBe(true);
       expect(tools.has('createAgentByType')).toBe(true);
     });
 
-    it('should not include discoverAgents for coordinator role', () => {
+    it('should not include discoverAgents for router role', () => {
       const { component } = createComponent({
-        lineage: createLineage('coordinator'),
+        lineage: createLineage('router'),
       });
       expect(component.toolSet.has('discoverAgents')).toBe(false);
     });
 
-    it('should not include coordinator tools for worker role', () => {
+    it('should not include router tools for worker role', () => {
       const { component } = createComponent({
         lineage: createLineage('worker'),
       });
@@ -516,7 +513,7 @@ describe('LineageControlComponent', () => {
   });
 
   // ===========================================================================
-  // SENT (coordinator)
+  // SENT (router)
   // ===========================================================================
 
   describe('onSendTask', () => {
@@ -775,7 +772,7 @@ describe('LineageControlComponent', () => {
   });
 
   // ===========================================================================
-  // LIFECYCLE (coordinator)
+  // LIFECYCLE (router)
   // ===========================================================================
 
   describe('lifecycle - no runtime client', () => {
@@ -960,7 +957,7 @@ describe('LineageControlComponent', () => {
   describe('onListAllowedSouls', () => {
     it('should list allowed souls from lineage', async () => {
       const { component } = createComponent({
-        lineage: createLineage('coordinator'),
+        lineage: createLineage('router'),
       });
 
       const result = await component.handleToolCall('listAllowedSouls', {});
@@ -992,7 +989,7 @@ describe('LineageControlComponent', () => {
 
     it('should return instance info with lineage', async () => {
       const { component } = createComponent({
-        lineage: createLineage('coordinator'),
+        lineage: createLineage('router'),
         runtimeClient: createMockRuntimeClient(),
       });
 
@@ -1000,7 +997,7 @@ describe('LineageControlComponent', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.instanceId).toBe(INSTANCE_ID);
-      expect(result.data.role).toBe('coordinator');
+      expect(result.data.role).toBe('router');
       expect(result.data.schemaId).toBe('test-schema');
       expect(result.data.soulToken).toBe('node-1');
       expect(result.data.allowedChildren).toHaveLength(1);
@@ -1061,13 +1058,13 @@ describe('LineageControlComponent', () => {
 
     it('should export state with lineage', async () => {
       const { component } = createComponent({
-        lineage: createLineage('coordinator'),
+        lineage: createLineage('router'),
       });
       const result = await component.exportData();
       const data = result.data as Record<string, unknown>;
 
       expect(data.lineage).toBeDefined();
-      expect((data.lineage as AgentLineageInfo).role).toBe('coordinator');
+      expect((data.lineage as AgentLineageInfo).role).toBe('router');
     });
   });
 

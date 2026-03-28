@@ -411,7 +411,7 @@ export function generateEventId(): string {
 // Lineage Types
 // =============================================================================
 
-export type LineageRole = 'root' | 'coordinator' | 'worker';
+export type LineageRole = 'root' | 'router' | 'worker';
 
 export interface LineageNodeDef {
   role: LineageRole;

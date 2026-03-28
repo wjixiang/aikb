@@ -265,7 +265,7 @@ code {
   --color-status-completed: #6b7280;
   --color-status-aborted: #ef4444;
 
-  --color-node-coordinator: #6366f1;
+  --color-node-router: #6366f1;
   --color-node-router: #8b5cf6;
   --color-node-worker: #3b82f6;
   --color-node-default: #64748b;

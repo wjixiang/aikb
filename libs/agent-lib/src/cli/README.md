@@ -34,15 +34,15 @@ agent-cli <command> [subcommand] [options]
 
 ### 全局选项
 
-| 选项 | 简写 | 描述 | 默认值 |
-|------|------|------|--------|
-| `--config <file>` | `-c` | 配置文件路径 | `.agent-clirc` |
-| `--log-level <level>` | `-l` | 日志级别 (debug/info/warn/error) | `info` |
-| `--output <format>` | `-o` | 输出格式 (json/table/compact) | `table` |
-| `--no-color` | | 禁用彩色输出 | false |
-| `--verbose` | `-v` | 详细输出 | false |
-| `--help` | `-h` | 显示帮助 | |
-| `--version` | `-V` | 显示版本 | |
+| 选项                  | 简写 | 描述                             | 默认值         |
+| --------------------- | ---- | -------------------------------- | -------------- |
+| `--config <file>`     | `-c` | 配置文件路径                     | `.agent-clirc` |
+| `--log-level <level>` | `-l` | 日志级别 (debug/info/warn/error) | `info`         |
+| `--output <format>`   | `-o` | 输出格式 (json/table/compact)    | `table`        |
+| `--no-color`          |      | 禁用彩色输出                     | false          |
+| `--verbose`           | `-v` | 详细输出                         | false          |
+| `--help`              | `-h` | 显示帮助                         |                |
+| `--version`           | `-V` | 显示版本                         |                |
 
 ---
 
@@ -62,18 +62,19 @@ agent-cli runtime <action> [options]
 agent-cli runtime start [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--max-agents <n>` | 最大 Agent 数量 | 10 |
-| `--message-bus <mode>` | MessageBus 模式 (memory/redis) | memory |
-| `--redis-url <url>` | Redis 连接 URL (redis模式必需) | |
-| `--api-key <key>` | API 密钥 | $OPENAI_API_KEY |
-| `--api-url <url>` | API 基础 URL | |
-| `--api-model <model>` | 模型 ID | |
-| `--detach` | 后台运行 | false |
-| `--pid-file <file>` | PID 文件路径 | `.agent-runtime.pid` |
+| 选项                   | 描述                           | 默认值               |
+| ---------------------- | ------------------------------ | -------------------- |
+| `--max-agents <n>`     | 最大 Agent 数量                | 10                   |
+| `--message-bus <mode>` | MessageBus 模式 (memory/redis) | memory               |
+| `--redis-url <url>`    | Redis 连接 URL (redis模式必需) |                      |
+| `--api-key <key>`      | API 密钥                       | $OPENAI_API_KEY      |
+| `--api-url <url>`      | API 基础 URL                   |                      |
+| `--api-model <model>`  | 模型 ID                        |                      |
+| `--detach`             | 后台运行                       | false                |
+| `--pid-file <file>`    | PID 文件路径                   | `.agent-runtime.pid` |
 
 **示例：**
+
 ```bash
 # 内存模式启动
 agent-cli runtime start
@@ -91,10 +92,10 @@ agent-cli runtime start --detach
 agent-cli runtime stop [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
+| 选项                | 描述         | 默认值               |
+| ------------------- | ------------ | -------------------- |
 | `--pid-file <file>` | PID 文件路径 | `.agent-runtime.pid` |
-| `--force` | 强制停止 | false |
+| `--force`           | 强制停止     | false                |
 
 #### 1.3 runtime status - 查看状态
 
@@ -103,6 +104,7 @@ agent-cli runtime status [options]
 ```
 
 输出示例：
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Agent Runtime Status                     │
@@ -137,13 +139,14 @@ agent-cli agent <action> [options]
 agent-cli agent list [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--status <status>` | 过滤状态 (running/idle/stopped/error) | |
-| `--type <type>` | 过滤类型 | |
-| `--format <format>` | 输出格式 (table/json/compact) | table |
+| 选项                | 描述                                  | 默认值 |
+| ------------------- | ------------------------------------- | ------ |
+| `--status <status>` | 过滤状态 (running/idle/stopped/error) |        |
+| `--type <type>`     | 过滤类型                              |        |
+| `--format <format>` | 输出格式 (table/json/compact)         | table  |
 
 **输出示例：**
+
 ```
 ┌──────────────────┬──────────────┬────────────┬─────────┬────────────────┐
 │ Instance ID      │ Name         │ Type       │ Status  │ Created At     │
@@ -160,21 +163,22 @@ agent-cli agent list [options]
 agent-cli agent create <type> [options]
 ```
 
-| 参数/选项 | 描述 | 默认值 |
-|-----------|------|--------|
-| `type` | Agent 类型 | |
-| `--name <name>` | Agent 名称 | |
-| `--sop <file>` | SOP 文件路径 | |
-| `--auto-start` | 自动启动 | false |
+| 参数/选项       | 描述         | 默认值 |
+| --------------- | ------------ | ------ |
+| `type`          | Agent 类型   |        |
+| `--name <name>` | Agent 名称   |        |
+| `--sop <file>`  | SOP 文件路径 |        |
+| `--auto-start`  | 自动启动     | false  |
 
 **支持的 Agent 类型：**
+
 - `epidemiology` - 流行病学文献检索
 - `pathophysiology` - 病理机制文献检索
 - `diagnosis` - 诊断文献检索
 - `management` - 治疗管理文献检索
 - `quality-of-life` - 生活质量文献检索
 - `emerging-treatments` - 新兴疗法文献检索
-- `coordinator` - 协调 Agent
+- `router` - 路由 Agent
 
 #### 2.3 agent start - 启动 Agent
 
@@ -188,9 +192,9 @@ agent-cli agent start <instance-id>
 agent-cli agent stop <instance-id> [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--force` | 强制停止 | false |
+| 选项      | 描述     | 默认值 |
+| --------- | -------- | ------ |
+| `--force` | 强制停止 | false  |
 
 #### 2.5 agent destroy - 销毁 Agent
 
@@ -198,9 +202,9 @@ agent-cli agent stop <instance-id> [options]
 agent-cli agent destroy <instance-id> [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--cascade` | 级联销毁子 Agent | false |
+| 选项        | 描述             | 默认值 |
+| ----------- | ---------------- | ------ |
+| `--cascade` | 级联销毁子 Agent | false  |
 
 #### 2.6 agent logs - 查看 Agent 日志
 
@@ -208,11 +212,11 @@ agent-cli agent destroy <instance-id> [options]
 agent-cli agent logs <instance-id> [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--follow` | 持续跟踪日志 | false |
-| `--tail <n>` | 显示最后 n 行 | 50 |
-| `--filter <pattern>` | 过滤日志内容 | |
+| 选项                 | 描述          | 默认值 |
+| -------------------- | ------------- | ------ |
+| `--follow`           | 持续跟踪日志  | false  |
+| `--tail <n>`         | 显示最后 n 行 | 50     |
+| `--filter <pattern>` | 过滤日志内容  |        |
 
 ---
 
@@ -231,16 +235,17 @@ agent-cli test basic [options]
 ```
 
 测试内容：
+
 - 创建 Runtime
 - 创建多个 Agent
 - Agent 生命周期管理
 - 基础通信
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--agent-count <n>` | 创建的 Agent 数量 | 3 |
-| `--parallel` | 并行创建 Agent | false |
-| `--duration <seconds>` | 测试持续时间 | 60 |
+| 选项                   | 描述              | 默认值 |
+| ---------------------- | ----------------- | ------ |
+| `--agent-count <n>`    | 创建的 Agent 数量 | 3      |
+| `--parallel`           | 并行创建 Agent    | false  |
+| `--duration <seconds>` | 测试持续时间      | 60     |
 
 #### 3.2 test a2a - A2A 通信测试
 
@@ -249,18 +254,19 @@ agent-cli test a2a [options]
 ```
 
 测试内容：
+
 - A2A Task 发送
 - A2A Query 发送
 - A2A Event 发送
 - ACK 确认机制
 - 结果等待
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
+| 选项                   | 描述            | 默认值 |
+| ---------------------- | --------------- | ------ |
 | `--message-bus <mode>` | MessageBus 模式 | memory |
-| `--redis-url <url>` | Redis URL | |
-| `--task-count <n>` | 发送任务数量 | 5 |
-| `--timeout <ms>` | 超时时间 | 30000 |
+| `--redis-url <url>`    | Redis URL       |        |
+| `--task-count <n>`     | 发送任务数量    | 5      |
+| `--timeout <ms>`       | 超时时间        | 30000  |
 
 #### 3.3 test redis - Redis 分布式测试
 
@@ -269,15 +275,16 @@ agent-cli test redis [options]
 ```
 
 测试内容：
+
 - Redis pub/sub 通信
 - 跨进程 Agent 通信
 - 分布式场景
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--redis-url <url>` | Redis URL | redis://localhost:6379 |
-| `--runtime-count <n>` | Runtime 数量 | 2 |
-| `--agent-per-runtime <n>` | 每个 Runtime 的 Agent 数 | 2 |
+| 选项                      | 描述                     | 默认值                 |
+| ------------------------- | ------------------------ | ---------------------- |
+| `--redis-url <url>`       | Redis URL                | redis://localhost:6379 |
+| `--runtime-count <n>`     | Runtime 数量             | 2                      |
+| `--agent-per-runtime <n>` | 每个 Runtime 的 Agent 数 | 2                      |
 
 #### 3.4 test scenario - 运行自定义场景
 
@@ -311,12 +318,13 @@ agent-cli monitor runtime [options]
 
 显示：Runtime 状态、Agent 列表、统计信息
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--refresh <ms>` | 刷新间隔 | 1000 |
-| `--compact` | 紧凑模式 | false |
+| 选项             | 描述     | 默认值 |
+| ---------------- | -------- | ------ |
+| `--refresh <ms>` | 刷新间隔 | 1000   |
+| `--compact`      | 紧凑模式 | false  |
 
 **输出示例：**
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                       Agent Runtime Monitor                              │
@@ -354,11 +362,11 @@ agent-cli monitor agent <instance-id> [options]
 
 显示：Agent 状态、任务队列、A2A 消息
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--refresh <ms>` | 刷新间隔 | 500 |
-| `--show-tasks` | 显示任务详情 | true |
-| `--show-a2a` | 显示 A2A 消息 | true |
+| 选项             | 描述          | 默认值 |
+| ---------------- | ------------- | ------ |
+| `--refresh <ms>` | 刷新间隔      | 500    |
+| `--show-tasks`   | 显示任务详情  | true   |
+| `--show-a2a`     | 显示 A2A 消息 | true   |
 
 #### 4.3 monitor a2a - 监控 A2A 通信
 
@@ -368,11 +376,11 @@ agent-cli monitor a2a [options]
 
 显示：活跃会话、消息流、统计信息
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--refresh <ms>` | 刷新间隔 | 500 |
-| `--follow <conv-id>` | 跟踪特定会话 | |
-| `--show-all` | 显示所有消息（包括已完成的）| false |
+| 选项                 | 描述                         | 默认值 |
+| -------------------- | ---------------------------- | ------ |
+| `--refresh <ms>`     | 刷新间隔                     | 500    |
+| `--follow <conv-id>` | 跟踪特定会话                 |        |
+| `--show-all`         | 显示所有消息（包括已完成的） | false  |
 
 #### 4.4 monitor logs - 监控日志
 
@@ -382,11 +390,11 @@ agent-cli monitor logs [options]
 
 实时显示所有 Agent 日志。
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--level <level>` | 日志级别过滤 | info |
-| `--agent <id>` | 特定 Agent | |
-| `--pattern <pattern>` | 正则过滤 | |
+| 选项                  | 描述         | 默认值 |
+| --------------------- | ------------ | ------ |
+| `--level <level>`     | 日志级别过滤 | info   |
+| `--agent <id>`        | 特定 Agent   |        |
+| `--pattern <pattern>` | 正则过滤     |        |
 
 ---
 
@@ -404,14 +412,15 @@ agent-cli a2a <action> [options]
 agent-cli a2a send-task <target-agent> <description> [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--task-id <id>` | 任务 ID | auto |
-| `--input <json>` | 输入数据 (JSON) | {} |
+| 选项             | 描述                            | 默认值 |
+| ---------------- | ------------------------------- | ------ |
+| `--task-id <id>` | 任务 ID                         | auto   |
+| `--input <json>` | 输入数据 (JSON)                 | {}     |
 | `--priority <p>` | 优先级 (low/normal/high/urgent) | normal |
-| `--timeout <ms>` | 超时时间 | 60000 |
+| `--timeout <ms>` | 超时时间                        | 60000  |
 
 **示例：**
+
 ```bash
 agent-cli a2a send-task agent-abc123 "Search PubMed for LDH" \
   --input '{"query":"lumbar disc herniation","limit":10}' \
@@ -430,9 +439,9 @@ agent-cli a2a send-query <target-agent> <query> [options]
 agent-cli a2a send-event <target-agent> <event-type> [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--data <json>` | 事件数据 (JSON) | {} |
+| 选项            | 描述            | 默认值 |
+| --------------- | --------------- | ------ |
+| `--data <json>` | 事件数据 (JSON) | {}     |
 
 #### 5.3 a2a conversations - 查看会话
 
@@ -440,10 +449,10 @@ agent-cli a2a send-event <target-agent> <event-type> [options]
 agent-cli a2a conversations [options]
 ```
 
-| 选项 | 描述 | 默认值 |
-|------|------|--------|
-| `--status <status>` | 过滤状态 | |
-| `--active-only` | 仅活跃会话 | false |
+| 选项                | 描述       | 默认值 |
+| ------------------- | ---------- | ------ |
+| `--status <status>` | 过滤状态   |        |
+| `--active-only`     | 仅活跃会话 | false  |
 
 ---
 
@@ -452,6 +461,7 @@ agent-cli a2a conversations [options]
 配置文件支持 `.agent-clirc` (JSON/YAML) 或 `agent-cli.config.js`。
 
 **示例配置：**
+
 ```yaml
 # .agent-clirc
 runtime:
@@ -467,7 +477,7 @@ api:
   model: gpt-4
 
 agent:
-  defaultType: coordinator
+  defaultType: router
   autoStart: false
 
 monitor:
@@ -476,43 +486,46 @@ monitor:
 
 log:
   level: info
-  format: pretty  # pretty | json
+  format: pretty # pretty | json
 ```
 
 ---
 
 ## 环境变量
 
-| 变量 | 描述 |
-|------|------|
-| `AGENT_CLI_CONFIG` | 配置文件路径 |
-| `OPENAI_API_KEY` | API 密钥 |
-| `REDIS_URL` | Redis 连接 URL |
-| `LOG_LEVEL` | 日志级别 |
+| 变量               | 描述           |
+| ------------------ | -------------- |
+| `AGENT_CLI_CONFIG` | 配置文件路径   |
+| `OPENAI_API_KEY`   | API 密钥       |
+| `REDIS_URL`        | Redis 连接 URL |
+| `LOG_LEVEL`        | 日志级别       |
 
 ---
 
 ## 输出格式
 
 ### table (默认)
+
 表格格式，适合终端查看
 
 ### json
+
 JSON 格式，便于脚本解析
 
 ### compact
+
 紧凑格式，减少输出
 
 ---
 
 ## 退出码
 
-| 码 | 含义 |
-|----|------|
-| 0 | 成功 |
-| 1 | 一般错误 |
-| 2 | 无效参数 |
-| 3 | Runtime 未运行 |
-| 4 | Agent 未找到 |
-| 5 | 超时 |
-| 6 | 测试失败 |
+| 码  | 含义           |
+| --- | -------------- |
+| 0   | 成功           |
+| 1   | 一般错误       |
+| 2   | 无效参数       |
+| 3   | Runtime 未运行 |
+| 4   | Agent 未找到   |
+| 5   | 超时           |
+| 6   | 测试失败       |

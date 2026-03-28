@@ -82,7 +82,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
     if (this.lineage.role === 'worker') {
       return this.workerPrompt;
     }
-    return this.coordinatorPrompt;
+    return this.routerPrompt;
   }
 
   protected a2aHandler: IA2AHandler;
@@ -377,7 +377,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   }
 
   // ===========================================================================
-  // SENT (coordinator only)
+  // SENT (router only)
   // ===========================================================================
 
   async onSendTask(
@@ -646,7 +646,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   }
 
   // ===========================================================================
-  // LIFECYCLE (coordinator only)
+  // LIFECYCLE (router only)
   // ===========================================================================
 
   private noClient<T = unknown>(): ToolCallResult<T> {
@@ -780,7 +780,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   }
 
   // ===========================================================================
-  // DISCOVERY (coordinator only)
+  // DISCOVERY (router only)
   // ===========================================================================
 
   async onListAllowedSouls(): Promise<
@@ -1016,7 +1016,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       }
     }
 
-    // SENT (coordinator only)
+    // SENT (router only)
     if (this.lineage?.role !== 'worker') {
       const sentInFlight = sent.filter((t) => t.status === 'in-flight');
       const sentDone = sent.filter((t) => t.status === 'completed');
@@ -1077,7 +1077,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       }
     }
 
-    // ALLOWED SOULS (coordinator only)
+    // ALLOWED SOULS (router only)
     if (this.lineage?.role !== 'worker') {
       const allowed = this.lineage?.allowedChildren ?? [];
       if (allowed.length > 0) {
@@ -1118,7 +1118,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       }
     }
 
-    // CHILDREN (coordinator only)
+    // CHILDREN (router only)
     if (this.lineage?.role !== 'worker') {
       const localChildren = Object.values(this.snapshot.childAgents);
       if (localChildren.length > 0) {
@@ -1188,7 +1188,7 @@ You have an Agent Mailbox for collaborating with other agents.
 
   private workerPrompt = `## Task Processing
 
-You are a worker agent. You receive tasks from your coordinator and return results.
+You are a worker agent. You receive tasks from your router and return results.
 
 **At the start of every turn, call checkInbox first.**
 
@@ -1201,13 +1201,13 @@ You are a worker agent. You receive tasks from your coordinator and return resul
 
 You cannot create agents or send tasks to others. Focus on your specialized work.`;
 
-  private get coordinatorPrompt(): string {
+  private get routerPrompt(): string {
     const allowed = (this.lineage?.allowedChildren ?? [])
       .map((c) => c.soulToken)
       .join(', ');
     return `## Agent Control Panel
 
-You are a coordinator. You manage child agents and delegate work to them.
+You are a router. You manage child agents and delegate work to them.
 
 **At the start of every turn, call checkInbox first.**
 

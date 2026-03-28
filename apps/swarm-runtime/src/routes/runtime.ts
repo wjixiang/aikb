@@ -271,12 +271,10 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const metadata = fastify.agentRuntime.getAgentMetadata(instanceId);
         if (!metadata?.config) {
-          return reply
-            .code(404)
-            .send({
-              success: false,
-              error: 'Agent not found or no config available',
-            });
+          return reply.code(404).send({
+            success: false,
+            error: 'Agent not found or no config available',
+          });
         }
         const config = metadata.config as Record<string, unknown>;
         const agentConfig = config.agent as Record<string, unknown> | undefined;
@@ -464,7 +462,7 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             agentId: { type: 'string', description: 'Agent instance ID' },
             nodeType: {
               type: 'string',
-              description: 'Node type (e.g., router, worker, coordinator)',
+              description: 'Node type (e.g., router, worker)',
             },
             capabilities: {
               type: 'array',

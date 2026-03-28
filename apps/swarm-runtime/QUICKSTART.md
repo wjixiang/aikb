@@ -62,6 +62,7 @@ curl -X POST http://localhost:9400/api/runtime/agents \
 ```
 
 响应：
+
 ```json
 {
   "success": true,
@@ -147,44 +148,44 @@ pnpm dev
 
 ### Runtime 管理
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/runtime/stats` | 获取统计信息 |
-| GET | `/api/runtime/agents` | 列出 Agent |
-| POST | `/api/runtime/agents` | 创建 Agent |
-| DELETE | `/api/runtime/agents/:id` | 销毁 Agent |
-| GET | `/api/runtime/topology` | 获取拓扑图 |
-| GET | `/api/runtime/topology/stats` | 获取拓扑统计 |
+| 方法   | 路径                          | 描述         |
+| ------ | ----------------------------- | ------------ |
+| GET    | `/api/runtime/stats`          | 获取统计信息 |
+| GET    | `/api/runtime/agents`         | 列出 Agent   |
+| POST   | `/api/runtime/agents`         | 创建 Agent   |
+| DELETE | `/api/runtime/agents/:id`     | 销毁 Agent   |
+| GET    | `/api/runtime/topology`       | 获取拓扑图   |
+| GET    | `/api/runtime/topology/stats` | 获取拓扑统计 |
 
 ### Agent 操作
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/agents/:id` | 获取 Agent 详情 |
-| POST | `/api/agents/:id/start` | 启动 Agent |
-| POST | `/api/agents/:id/stop` | 停止 Agent |
-| DELETE | `/api/agents/:id` | 销毁 Agent |
-| GET | `/api/agents/:id/children` | 列出子 Agent |
-| GET | `/api/agents/:id/logs` | 获取日志 |
+| 方法   | 路径                       | 描述            |
+| ------ | -------------------------- | --------------- |
+| GET    | `/api/agents/:id`          | 获取 Agent 详情 |
+| POST   | `/api/agents/:id/start`    | 启动 Agent      |
+| POST   | `/api/agents/:id/stop`     | 停止 Agent      |
+| DELETE | `/api/agents/:id`          | 销毁 Agent      |
+| GET    | `/api/agents/:id/children` | 列出子 Agent    |
+| GET    | `/api/agents/:id/logs`     | 获取日志        |
 
 ### A2A 通信
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| POST | `/api/a2a/task` | 发送任务 |
-| POST | `/api/a2a/query` | 发送查询 |
-| POST | `/api/a2a/event` | 发送事件 |
-| POST | `/api/a2a/cancel` | 发送取消 |
-| GET | `/api/a2a/conversations` | 列出会话 |
+| 方法 | 路径                     | 描述     |
+| ---- | ------------------------ | -------- |
+| POST | `/api/a2a/task`          | 发送任务 |
+| POST | `/api/a2a/query`         | 发送查询 |
+| POST | `/api/a2a/event`         | 发送事件 |
+| POST | `/api/a2a/cancel`        | 发送取消 |
+| GET  | `/api/a2a/conversations` | 列出会话 |
 
 ### 健康检查
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/health` | 基础健康检查 |
-| GET | `/health/ready` | 就绪探针 |
-| GET | `/health/live` | 存活探针 |
-| GET | `/health/metrics` | 服务器指标 |
+| 方法 | 路径              | 描述         |
+| ---- | ----------------- | ------------ |
+| GET  | `/health`         | 基础健康检查 |
+| GET  | `/health/ready`   | 就绪探针     |
+| GET  | `/health/live`    | 存活探针     |
+| GET  | `/health/metrics` | 服务器指标   |
 
 ## 测试脚本
 
@@ -211,16 +212,16 @@ pnpm tsx src/examples/client-example.ts
 
 ## 可用的 Agent 类型
 
-| 类型 | 描述 |
-|------|------|
-| `epidemiology` | 流行病学文献检索 |
-| `pathophysiology` | 病理机制文献检索 |
-| `diagnosis` | 诊断文献检索 |
-| `management` | 治疗管理文献检索 |
-| `quality-of-life` | 生活质量文献检索 |
+| 类型                  | 描述             |
+| --------------------- | ---------------- |
+| `epidemiology`        | 流行病学文献检索 |
+| `pathophysiology`     | 病理机制文献检索 |
+| `diagnosis`           | 诊断文献检索     |
+| `management`          | 治疗管理文献检索 |
+| `quality-of-life`     | 生活质量文献检索 |
 | `emerging-treatments` | 新兴疗法文献检索 |
-| `coordinator` | 协调 Agent |
-| `bib-retrieve` | 综合检索 Agent |
+| `router`              | 路由 Agent       |
+| `bib-retrieve`        | 综合检索 Agent   |
 
 ## 故障排查
 

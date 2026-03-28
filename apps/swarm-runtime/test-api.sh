@@ -87,7 +87,7 @@ create_response=$(curl -s -X POST "$BASE_URL/api/runtime/agents" \
   -d '{
     "agent": {
       "name": "Test Agent",
-      "type": "coordinator",
+      "type": "router",
       "description": "A test agent for API testing"
     }
   }')

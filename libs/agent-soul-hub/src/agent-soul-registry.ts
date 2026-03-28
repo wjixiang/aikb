@@ -20,8 +20,8 @@ export function registerAgentSoul(metadata: AgentSoulMetadata): void {
 
 function isAgentSoulType(token: string): token is AgentSoulType {
   const validTypes: AgentSoulType[] = [
-    'chief-coordinator',
-    'coordinator',
+    'chief-router',
+    'router',
     'epidemiology',
     'pathophysiology',
     'diagnosis',
@@ -59,8 +59,8 @@ import { createDiagnosisAgentSoul } from './diagnosis/index.js';
 import { createManagementAgentSoul } from './management/index.js';
 import { createQualityOfLifeAgentSoul } from './quality-of-life/index.js';
 import { createEmergingTreatmentsAgentSoul } from './emerging-treatments/index.js';
-import { createCoordinatorAgentSoul } from './coordinator/index.js';
-import { createChiefCoordinatorAgentSoul } from './chief-coordinator/index.js';
+import { createArticleRetrieveRouterAgentSoul } from './article-retrieve-router/index.js';
+import { createChiefRouterAgentSoul } from './chief-router/index.js';
 import { createBibRetrieveAgentSoul } from './article-retrieve/index.js';
 import { createWebSearchAgentSoul } from './web-search/index.js';
 
@@ -117,19 +117,19 @@ registerAgentSoul({
 });
 
 registerAgentSoul({
-  token: 'chief-coordinator',
-  name: 'Chief Coordinator Agent',
-  type: 'chief-coordinator',
-  description: '顶层协调者Agent，负责将任务分解并委派给子协调者',
-  factory: createChiefCoordinatorAgentSoul,
+  token: 'chief-router',
+  name: 'Chief Router Agent',
+  type: 'chief-router',
+  description: '顶层路由Agent，负责将任务分解并委派给子路由',
+  factory: createChiefRouterAgentSoul,
 });
 
 registerAgentSoul({
-  token: 'coordinator',
-  name: 'Coordinator Agent',
-  type: 'coordinator',
-  description: '协调者Agent，负责协调多个Agent之间的工作',
-  factory: createCoordinatorAgentSoul,
+  token: 'article-retrieve-router',
+  name: 'Router Agent',
+  type: 'router',
+  description: '路由Agent，负责协调多个Agent之间的工作',
+  factory: createArticleRetrieveRouterAgentSoul,
 });
 
 registerAgentSoul({

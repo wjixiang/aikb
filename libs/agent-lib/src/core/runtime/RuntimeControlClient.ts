@@ -7,7 +7,7 @@
  * Agents without lineage info have unrestricted access (backward compatible).
  * Agents with lineage info are constrained by their role:
  * - worker: cannot create/manage/send to other agents
- * - coordinator/root: can only create allowed children and interact with direct children
+ * - router/root: can only create allowed children and interact with direct children
  *
  * @module RuntimeControlClient
  */

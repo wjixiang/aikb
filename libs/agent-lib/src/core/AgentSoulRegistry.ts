@@ -1,7 +1,7 @@
 /**
  * AgentSoulRegistry - Registry for all available AgentSoul configurations
  *
- * This registry allows Coordinator agents to discover and instantiate
+ * This registry allows Router agents to discover and instantiate
  * specialized agents for different tasks.
  *
  * Type definitions and registry - concrete agents are in agent-soul-hub package.
@@ -12,8 +12,8 @@ import type { AgentBlueprint } from './agent/AgentFactory.js';
 export type { AgentBlueprint } from './agent/AgentFactory.js';
 
 export type AgentSoulType =
-  | 'chief-coordinator'
-  | 'coordinator'
+  | 'chief-router'
+  | 'router'
   | 'epidemiology'
   | 'pathophysiology'
   | 'diagnosis'

@@ -66,10 +66,10 @@ export const managementAgentExample: AgentBlueprint = {
 /**
  * 协调 Agent
  */
-export const coordinatorAgentExample: AgentBlueprint = {
+export const routerAgentExample: AgentBlueprint = {
   agent: {
-    name: 'Literature Coordinator',
-    type: 'coordinator',
+    name: 'Literature Router',
+    type: 'router',
     description: '协调多个检索 Agent 完成复杂文献综述任务',
     sop: `你是文献综述协调专家，负责协调多个专业 Agent 完成复杂任务。
 
@@ -109,7 +109,7 @@ export const agentExamples = {
   epidemiology: epidemiologyAgentExample,
   diagnosis: diagnosisAgentExample,
   management: managementAgentExample,
-  coordinator: coordinatorAgentExample,
+  router: routerAgentExample,
   general: generalAgentExample,
 } as const;
 

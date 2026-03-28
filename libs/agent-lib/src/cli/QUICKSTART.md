@@ -126,7 +126,7 @@ api:
   model: gpt-4
 
 agent:
-  defaultType: coordinator
+  defaultType: router
   autoStart: false
 
 monitor:
@@ -219,15 +219,15 @@ agent-cli agent list -o compact
 
 ## 退出码
 
-| 码 | 含义 |
-|----|------|
-| 0 | 成功 |
-| 1 | 一般错误 |
-| 2 | 无效参数 |
-| 3 | Runtime 未运行 |
-| 4 | Agent 未找到 |
-| 5 | 超时 |
-| 6 | 测试失败 |
+| 码  | 含义           |
+| --- | -------------- |
+| 0   | 成功           |
+| 1   | 一般错误       |
+| 2   | 无效参数       |
+| 3   | Runtime 未运行 |
+| 4   | Agent 未找到   |
+| 5   | 超时           |
+| 6   | 测试失败       |
 
 ## 故障排查
 

@@ -165,7 +165,7 @@ export interface MemoryMessage {
 // ========== Lineage Types ==========
 
 export interface LineageNodeDef {
-  role: 'root' | 'coordinator' | 'worker';
+  role: 'root' | 'router' | 'worker';
   soulToken: string;
   name?: string;
   description?: string;

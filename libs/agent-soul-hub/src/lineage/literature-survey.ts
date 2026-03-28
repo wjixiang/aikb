@@ -5,16 +5,16 @@ export const literatureSurveyLineage: LineageSchema = {
   id: 'literature-survey',
   name: 'Literature Survey Lineage',
   description:
-    'Multi-level lineage for systematic literature surveys. Chief coordinator delegates to search coordinators, which in turn manage specialized worker agents.',
+    'Multi-level lineage for systematic literature surveys. Chief router delegates to search routers, which in turn manage specialized worker agents.',
   root: {
-    role: 'coordinator',
-    soulToken: 'chief-coordinator',
-    name: 'Chief Coordinator',
+    role: 'router',
+    soulToken: 'chief-router',
+    name: 'Chief Router',
     children: [
       {
-        role: 'coordinator',
-        soulToken: 'coordinator',
-        name: 'Search Coordinator',
+        role: 'router',
+        soulToken: 'article-retrieve-router',
+        name: 'Article Retrieve Router',
         children: [
           {
             role: 'worker',

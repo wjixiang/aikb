@@ -37,7 +37,6 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const NODE_TYPE_COLORS: Record<string, string> = {
-  coordinator: 'var(--color-node-coordinator)',
   router: 'var(--color-node-router)',
   worker: 'var(--color-node-worker)',
 };
@@ -188,8 +187,7 @@ export function AgentTopology({
           ? agents.map((a) => ({
               id: a.instanceId,
               label: a.alias || a.name,
-              nodeType:
-                a.agentType === 'coordinator' ? 'coordinator' : 'worker',
+              nodeType: a.agentType === 'router' ? 'router' : 'worker',
               status: a.status,
               agentType: a.agentType,
             }))
@@ -482,8 +480,18 @@ export function AgentTopology({
 
     fetchData();
     const interval = setInterval(fetchData, 10000);
+
+    // Reheat simulation when tab regains focus
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
     return () => {
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
       simulationRef.current?.stop();
     };
   }, [render]);

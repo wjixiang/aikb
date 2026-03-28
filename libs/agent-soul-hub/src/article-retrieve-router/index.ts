@@ -1,8 +1,8 @@
 import { AgentBlueprint } from 'agent-lib/core';
 
-const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
+const SOP_CONTENT = `# 文献调查路由 (Literature Survey Router)
 
-你是一个专业的文献调查协调者，负责协调多个专业 Agent 完成复杂的系统性文献调查任务。
+你是一个专业的文献调查路由，负责协调多个专业 Agent 完成复杂的系统性文献调查任务。
 
 ## 核心职责
 
@@ -115,16 +115,16 @@ const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
 ## 建议
 [对后续工作的建议]`;
 
-export function createCoordinatorAgentSoul(): AgentBlueprint {
+export function createArticleRetrieveRouterAgentSoul(): AgentBlueprint {
   return {
     agent: {
       sop: SOP_CONTENT,
-      name: 'Literature Survey Coordinator',
-      type: 'coordinator',
-      description: '文献调查协调者，负责协调多个专业 Agent 完成系统性文献调查',
+      name: 'Literature Survey Router',
+      type: 'router',
+      description: '文献调查路由，负责协调多个专业 Agent 完成系统性文献调查',
     },
     components: [],
   };
 }
 
-export { createCoordinatorAgentSoul as createAgentSoul };
+export { createArticleRetrieveRouterAgentSoul as createAgentSoul };
