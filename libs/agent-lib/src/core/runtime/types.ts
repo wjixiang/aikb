@@ -105,6 +105,7 @@ export interface IRuntimeControlClient {
   // ============================================
 
   createAgent(options: RuntimeControlAgentOptions): Promise<string>;
+  startAgent(instanceId: string): Promise<void>;
   stopAgent(instanceId: string): Promise<void>;
   destroyAgent(
     instanceId: string,
@@ -405,6 +406,38 @@ export interface PersistenceConfig {
 
 export function generateEventId(): string {
   return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+// =============================================================================
+// Lineage Types
+// =============================================================================
+
+export type LineageRole = 'root' | 'coordinator' | 'worker';
+
+export interface LineageNodeDef {
+  id: string;
+  role: LineageRole;
+  soulType: string;
+  name?: string;
+  description?: string;
+  children?: LineageNodeDef[];
+}
+
+export interface LineageSchema {
+  id: string;
+  name: string;
+  description?: string;
+  root: LineageNodeDef;
+}
+
+export interface AgentLineageInfo {
+  schemaId: string;
+  nodeId: string;
+  role: LineageRole;
+  allowedChildren: Array<{
+    soulType: string;
+    nodeId: string;
+  }>;
 }
 
 // Re-export

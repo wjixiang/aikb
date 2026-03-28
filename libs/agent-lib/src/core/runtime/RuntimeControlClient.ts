@@ -4,7 +4,10 @@
  * This module provides the concrete implementation of the Runtime control interface
  * that is passed to Agents, enabling them to manage agents and topology.
  *
- * All agents have equal capabilities - there is no permission system.
+ * Agents without lineage info have unrestricted access (backward compatible).
+ * Agents with lineage info are constrained by their role:
+ * - worker: cannot create/manage/send to other agents
+ * - coordinator/root: can only create allowed children and interact with direct children
  *
  * @module RuntimeControlClient
  */
@@ -18,18 +21,110 @@ import type {
   RuntimeControlAgentOptions,
   TopologyNodeType,
   EdgeType,
+  AgentLineageInfo,
 } from './types.js';
 import type { AgentRuntime } from './AgentRuntime.js';
 import type { ITopologyGraph } from './topology/graph/TopologyGraph.js';
 import type { RoutingStats } from './topology/types.js';
 import { createA2AClient } from '../a2a/index.js';
 import type { IA2AClient, A2ATaskResult } from '../a2a/index.js';
+import { lineageSchemaRegistry } from './LineageSchemaRegistry.js';
 
 export class RuntimeControlClientImpl implements IRuntimeControlClient {
   constructor(
     private runtime: AgentRuntime,
     private callerInstanceId: string,
   ) {}
+
+  // ============================================
+  // Lineage Helpers
+  // ============================================
+
+  private getLineageInfo(): AgentLineageInfo | undefined {
+    const metadata = this.runtime.getAgentMetadata(this.callerInstanceId);
+    return metadata?.metadata?.['lineage'] as AgentLineageInfo | undefined;
+  }
+
+  private assertCanCreateAgent(requestedSoulType?: string): void {
+    const lineage = this.getLineageInfo();
+    if (!lineage) return;
+    if (lineage.role === 'worker') {
+      throw new Error("Agent role 'worker' cannot create child agents");
+    }
+    if (requestedSoulType) {
+      const allowed = lineage.allowedChildren.find(
+        (c) => c.soulType === requestedSoulType,
+      );
+      if (!allowed) {
+        throw new Error(
+          `Cannot create agent of type '${requestedSoulType}'. ` +
+            `Allowed: [${lineage.allowedChildren.map((c) => c.soulType).join(', ')}]`,
+        );
+      }
+    }
+  }
+
+  private assertCanManageAgents(): void {
+    const lineage = this.getLineageInfo();
+    if (!lineage) return;
+    if (lineage.role === 'worker') {
+      throw new Error("Agent role 'worker' cannot manage other agents");
+    }
+  }
+
+  private async assertCanAccessTarget(targetIdOrAlias: string): Promise<void> {
+    const lineage = this.getLineageInfo();
+    if (!lineage) return;
+    const targetId = this.resolveAgentId(targetIdOrAlias);
+    const children = this.runtime._getChildren(this.callerInstanceId);
+    const isChild = children.some((c) => c.instanceId === targetId);
+    if (!isChild) {
+      throw new Error(
+        `Cannot access agent '${targetIdOrAlias}': not a direct child`,
+      );
+    }
+  }
+
+  private injectChildLineage(
+    options: RuntimeControlAgentOptions,
+    requestedSoulType?: string,
+  ): void {
+    const lineage = this.getLineageInfo();
+    if (!lineage) return;
+
+    const allowedChild = lineage.allowedChildren.find(
+      (c) => c.soulType === requestedSoulType,
+    );
+    if (!allowedChild) return;
+
+    const childNode = lineageSchemaRegistry.findNode(
+      lineage.schemaId,
+      allowedChild.nodeId,
+    );
+    if (!childNode) return;
+
+    const childLineage: AgentLineageInfo = {
+      schemaId: lineage.schemaId,
+      nodeId: childNode.id,
+      role: childNode.role,
+      allowedChildren: (childNode.children ?? []).map((c) => ({
+        soulType: c.soulType,
+        nodeId: c.id,
+      })),
+    };
+
+    options.agent = {
+      ...options.agent,
+      metadata: {
+        ...((options.agent?.metadata as Record<string, unknown>) ?? {}),
+        lineage: childLineage,
+      },
+    };
+  }
+
+  // ============================================
+  // Agent ID Resolution
+  // ============================================
 
   resolveAgentId(idOrAlias: string): string {
     const agents = this.runtime.listAgentsSync();
@@ -55,15 +150,20 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   // ============================================
 
   async createAgent(options: RuntimeControlAgentOptions): Promise<string> {
+    const soulType = options.agent?.type;
+    this.assertCanCreateAgent(soulType);
+    this.injectChildLineage(options, soulType);
     return this.runtime._createChildAgent(this.callerInstanceId, options);
   }
 
   async startAgent(instanceIdOrAlias: string): Promise<void> {
+    await this.assertCanAccessTarget(instanceIdOrAlias);
     const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.startAgent(instanceId);
   }
 
   async stopAgent(instanceIdOrAlias: string): Promise<void> {
+    await this.assertCanAccessTarget(instanceIdOrAlias);
     const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.stopAgent(instanceId);
   }
@@ -72,6 +172,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     instanceIdOrAlias: string,
     options?: { cascade?: boolean },
   ): Promise<void> {
+    await this.assertCanAccessTarget(instanceIdOrAlias);
     const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime._destroyAgentWithCascade(
       instanceId,
@@ -84,12 +185,15 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   // ============================================
 
   async getAgent(instanceIdOrAlias: string): Promise<Agent | undefined> {
+    await this.assertCanAccessTarget(instanceIdOrAlias);
     const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.getAgent(instanceId) as Promise<Agent | undefined>;
   }
 
   async listAgents(filter?: AgentFilter): Promise<AgentMetadata[]> {
-    return this.runtime.listAgents(filter);
+    const lineage = this.getLineageInfo();
+    if (!lineage) return this.runtime.listAgents(filter);
+    return this.runtime._getChildren(this.callerInstanceId);
   }
 
   getSelfInstanceId(): string {
@@ -122,11 +226,13 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     nodeType: TopologyNodeType,
     capabilities?: string[],
   ): void {
+    this.assertCanManageAgents();
     const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.registerInTopology(instanceId, nodeType, capabilities);
   }
 
   unregisterFromTopology(instanceIdOrAlias: string): void {
+    this.assertCanManageAgents();
     const instanceId = this.resolveAgentId(instanceIdOrAlias);
     return this.runtime.unregisterFromTopology(instanceId);
   }
@@ -136,12 +242,14 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     toOrAlias: string,
     edgeType?: EdgeType,
   ): void {
+    this.assertCanManageAgents();
     const from = this.resolveAgentId(fromOrAlias);
     const to = this.resolveAgentId(toOrAlias);
     return this.runtime.connectAgents(from, to, edgeType);
   }
 
   disconnectAgents(fromOrAlias: string, toOrAlias: string): void {
+    this.assertCanManageAgents();
     const from = this.resolveAgentId(fromOrAlias);
     const to = this.resolveAgentId(toOrAlias);
     return this.runtime.disconnectAgents(from, to);
@@ -178,6 +286,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
       priority?: 'low' | 'normal' | 'high' | 'urgent';
     },
   ): Promise<A2ATaskResult> {
+    await this.assertCanAccessTarget(targetAgentIdOrAlias);
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
     const a2aClient = this.createDirectA2AClient();
     return a2aClient.sendTask(
@@ -198,6 +307,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
       priority?: 'low' | 'normal' | 'high' | 'urgent';
     },
   ): Promise<string> {
+    await this.assertCanAccessTarget(targetAgentIdOrAlias);
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
     const a2aClient = this.createDirectA2AClient();
     return a2aClient.sendTaskAndWaitForAck(
@@ -217,6 +327,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
       timeout?: number;
     },
   ): Promise<unknown> {
+    await this.assertCanAccessTarget(targetAgentIdOrAlias);
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
     const a2aClient = this.createDirectA2AClient();
     return a2aClient.sendQuery(targetAgentId, query, options);
@@ -227,6 +338,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     eventType: string,
     data: unknown,
   ): Promise<void> {
+    await this.assertCanAccessTarget(targetAgentIdOrAlias);
     const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
     const a2aClient = this.createDirectA2AClient();
     return a2aClient.sendEvent(targetAgentId, eventType, data);

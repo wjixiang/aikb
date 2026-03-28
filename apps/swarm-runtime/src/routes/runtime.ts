@@ -11,6 +11,8 @@ import {
   createAgentSoulByToken,
   type AgentSoulMetadata,
 } from 'agent-soul-hub';
+import { lineageSchemaRegistry } from 'agent-lib/core';
+import type { LineageSchema, AgentLineageInfo } from 'agent-lib/core';
 
 const responseSchema = {
   type: 'object',
@@ -709,6 +711,189 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             error: error.message,
           });
         }
+        return reply.code(400).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
+
+  // =========================================================================
+  // Lineage Endpoints
+  // =========================================================================
+
+  fastify.get(
+    '/lineages',
+    {
+      schema: {
+        tags: ['runtime', 'lineage'],
+        description: 'List all registered lineage schemas',
+        response: { 200: responseSchema },
+      } as any,
+    },
+    async (_request, reply) => {
+      const schemas = (lineageSchemaRegistry as any).getAll();
+      const summary = schemas.map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        rootNodeId: s.root?.id,
+        rootNodeRole: s.root?.role,
+        childCount: s.root?.children?.length ?? 0,
+      }));
+      return {
+        success: true,
+        data: summary,
+        count: summary.length,
+      };
+    },
+  );
+
+  fastify.get(
+    '/lineages/:id',
+    {
+      schema: {
+        tags: ['runtime', 'lineage'],
+        description: 'Get a specific lineage schema by ID',
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'Lineage schema ID' },
+          },
+          required: ['id'],
+        },
+        response: { 200: responseSchema, 404: responseSchema },
+      } as any,
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const schema = (lineageSchemaRegistry as any).get(id);
+      if (!schema) {
+        return reply.code(404).send({
+          success: false,
+          error: `Lineage schema not found: ${id}`,
+        });
+      }
+      return { success: true, data: schema };
+    },
+  );
+
+  fastify.post(
+    '/lineages/:id/instantiate',
+    {
+      schema: {
+        tags: ['runtime', 'lineage'],
+        description:
+          'Instantiate a lineage schema by creating its root agent with lineage metadata',
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'Lineage schema ID' },
+          },
+          required: ['id'],
+        },
+        body: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Custom name for the root agent',
+            },
+            sop: {
+              type: 'string',
+              description: 'Custom SOP override for the root agent',
+            },
+            api: {
+              type: 'object',
+              description: 'API configuration override',
+              properties: {
+                provider: { type: 'string' },
+                apiKey: { type: 'string' },
+                baseUrl: { type: 'string' },
+                modelId: { type: 'string' },
+              },
+            },
+          },
+        },
+        response: {
+          201: responseSchema,
+          404: responseSchema,
+          400: responseSchema,
+        },
+      } as any,
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const body = request.body as {
+        name?: string;
+        sop?: string;
+        api?: {
+          provider?: string;
+          apiKey?: string;
+          baseUrl?: string;
+          modelId?: string;
+        };
+      };
+
+      const schema = (lineageSchemaRegistry as any).get(id);
+      if (!schema) {
+        return reply.code(404).send({
+          success: false,
+          error: `Lineage schema not found: ${id}`,
+        });
+      }
+
+      try {
+        const root = schema.root as {
+          id: string;
+          role: string;
+          soulType: string;
+          name?: string;
+          children?: any[];
+        };
+
+        const soulConfig = createAgentSoulByToken(root.soulType);
+
+        const lineageInfo: AgentLineageInfo = {
+          schemaId: schema.id,
+          nodeId: root.id,
+          role: root.role as AgentLineageInfo['role'],
+          allowedChildren: (root.children ?? []).map((c: any) => ({
+            soulType: c.soulType,
+            nodeId: c.id,
+          })),
+        };
+
+        const instanceId = await fastify.agentRuntime.createAgent(
+          {
+            ...soulConfig,
+            agent: {
+              ...soulConfig.agent,
+              name: body.name || root.name || soulConfig.agent?.name,
+              ...(body.sop ? { sop: body.sop } : {}),
+              metadata: {
+                ...((soulConfig.agent?.metadata as Record<string, unknown>) ??
+                  {}),
+                lineage: lineageInfo,
+              },
+            },
+          },
+          {
+            ...(body.api ? { api: body.api as any } : {}),
+          },
+        );
+
+        return reply.code(201).send({
+          success: true,
+          data: {
+            instanceId,
+            lineage: lineageInfo,
+            lineageSchemaId: schema.id,
+            serverId: fastify.serverId,
+          },
+        });
+      } catch (error) {
         return reply.code(400).send({
           success: false,
           error: error instanceof Error ? error.message : String(error),

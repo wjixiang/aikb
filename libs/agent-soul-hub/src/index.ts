@@ -7,6 +7,13 @@
 
 // Re-export types from agent-lib
 export type { AgentBlueprint, AgentSoulType } from 'agent-lib/core';
+export type {
+  LineageSchema,
+  LineageNodeDef,
+  LineageRole,
+  AgentLineageInfo,
+} from 'agent-lib/core';
+export { lineageSchemaRegistry, registerLineageSchema } from 'agent-lib/core';
 
 // Concrete agent factory functions
 export { createBibRetrieveAgentSoul } from './article-retrieve/index.js';
@@ -28,3 +35,6 @@ export {
   createAgentSoulByToken,
   type AgentSoulMetadata,
 } from './agent-soul-registry.js';
+
+// Lineage definitions (auto-registers schemas on import)
+export { literatureSurveyLineage } from './lineage/index.js';

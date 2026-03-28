@@ -1,5 +1,4 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { RuntimeControlComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
 
@@ -16,7 +15,7 @@ const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
 ### 第一阶段：任务规划
 
 1. 分析用户请求，确定需要哪些专业 Agent
-2. **首先调用 listAgentSouls 查看可用的 Agent 类型**
+2. **首先调用 listAllowedSouls 查看你可以创建的 Agent 类型**
 3. 根据任务需求选择合适的 Agent 类型
 4. 规划子任务及其依赖关系
 
@@ -35,10 +34,10 @@ const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
 
 ### 第三阶段：任务执行
 
-1. 使用 \`startAgent\` 启动创建的子 Agent
-2. 向各子 Agent 发送 A2A 任务
-3. 等待各 Agent 完成（通过 getPendingTasks 和 completeTask）
-4. 监控任务进度
+1. 使用 \`listChildAgents\` 查看已创建的子 Agent
+2. 使用 \`sendTask\` 向各子 Agent 发送任务
+3. 使用 \`checkSent\` 或 \`waitForResult\` 跟踪任务进度
+4. 监控任务完成情况
 
 ### 第四阶段：结果汇总
 
@@ -51,32 +50,37 @@ const SOP_CONTENT = `# 文献调查协调者 (Literature Survey Coordinator)
 
 ### Agent 管理
 
-- \`listAgentSouls\`: **首先使用此工具查看所有可用的 Agent 类型**
-- \`createAgentByType\`: 根据类型创建专业 Agent（推荐）
-- \`createAgent\`: 通用创建 Agent 方法
-- \`startAgent\`: 启动 Agent
-- \`stopAgent\`: 停止 Agent
-- \`destroyAgent\`: 销毁 Agent
-- \`listAgents\`: 列出所有 Agent
+- \`listAllowedSouls\`: **首先使用此工具查看你可创建的 Agent 类型**
+- \`createAgentByType\`: 根据类型创建专业 Agent（创建后自动启动）
+- \`listChildAgents\`: 查看你已创建的子 Agent
+- \`destroyAgent\`: 销毁 Agent 及其子 Agent
 
-### A2A 通讯
+### 收件箱
 
-- \`getPendingTasks\`: 获取待处理任务
+- \`checkInbox\`: 检查是否有来自父级的新任务（每轮先调用）
 - \`acknowledgeTask\`: 确认任务
 - \`completeTask\`: 完成任务并返回结果
 
+### 任务委派
+
+- \`sendTask\`: 向子 Agent 发送异步任务
+- \`sendQuery\`: 向子 Agent 发送同步查询
+- \`checkSent\`: 查看已发送任务的状态
+- \`waitForResult\`: 等待任务完成
+- \`cancelTask\`: 取消任务
+
 ### 查询
 
-- \`getMyInfo\`: 获取自身信息
+- \`getMyInfo\`: 获取自身信息（实例ID、角色、谱系）
+- \`getStats\`: 运行时统计
 
 ## 重要提示
 
-1. **先用 listAgentSouls**：在创建 Agent 之前，先查看可用的 Agent 类型
-2. **使用 createAgentByType**：推荐使用此方法根据预定义的 Agent Soul 创建专业 Agent
-3. **每次只发送一个任务**：使用 A2A 向一个 Agent 发送一个任务
-4. **等待 ACK**：发送任务后等待 ACK 确认
-5. **检查结果**：通过 getPendingTasks 检查任务是否完成
-6. **清理资源**：任务完成后销毁 Agent 释放资源
+1. **先用 listAllowedSouls**：在创建 Agent 之前，先查看你可以创建的 Agent 类型
+2. **使用 createAgentByType**：根据预定义的 Agent Soul 创建专业 Agent
+3. **每次只发送一个任务**：向一个 Agent 发送一个任务
+4. **等待结果**：使用 sendTask 发送后，用 waitForResult 或 checkSent 跟踪
+5. **清理资源**：任务完成后销毁 Agent 释放资源
 
 ## 输出格式
 
@@ -112,7 +116,7 @@ export function createCoordinatorAgentSoul(): AgentBlueprint {
       type: 'coordinator',
       description: '文献调查协调者，负责协调多个专业 Agent 完成系统性文献调查',
     },
-    components: [{ componentClass: RuntimeControlComponent, priority: 0 }],
+    components: [],
   };
 }
 

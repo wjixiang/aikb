@@ -67,3 +67,16 @@ export { RuntimeControlClientImpl } from './RuntimeControlClient.js';
 export { RuntimeControlState } from './RuntimeControlState.js';
 
 export type { IAgentSleepControl } from './AgentSleepControl.js';
+
+// Lineage
+export type {
+  LineageRole,
+  LineageNodeDef,
+  LineageSchema,
+  AgentLineageInfo,
+} from './types.js';
+
+export {
+  lineageSchemaRegistry,
+  registerLineageSchema,
+} from './LineageSchemaRegistry.js';
