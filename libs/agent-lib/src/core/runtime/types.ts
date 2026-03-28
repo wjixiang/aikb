@@ -416,7 +416,7 @@ export type LineageRole = 'root' | 'coordinator' | 'worker';
 export interface LineageNodeDef {
   id: string;
   role: LineageRole;
-  soulType: string;
+  soulToken: string;
   name?: string;
   description?: string;
   children?: LineageNodeDef[];
@@ -434,7 +434,7 @@ export interface AgentLineageInfo {
   nodeId: string;
   role: LineageRole;
   allowedChildren: Array<{
-    soulType: string;
+    soulToken: string;
     nodeId: string;
   }>;
 }

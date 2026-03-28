@@ -23,6 +23,7 @@ import {
   checkSentParamsSchema,
   waitForResultParamsSchema,
   cancelTaskParamsSchema,
+  discoverAgentsParamsSchema,
 } from '../A2AComponent/a2aTaskSchemas.js';
 
 export {
@@ -42,10 +43,10 @@ export {
 // =============================================================================
 
 export const createAgentByTypeParamsSchema = z.object({
-  soulType: z
+  soulToken: z
     .string()
     .describe(
-      'Type of agent soul to create (e.g., "epidemiology", "diagnosis"). Only allowed types listed in your lineage.',
+      'Token of agent soul to create (e.g., "epidemiology", "diagnosis"). Only allowed tokens listed in your lineage.',
     ),
   name: z
     .string()
@@ -170,7 +171,7 @@ export const lineageControlToolSchemas = {
   },
   createAgentByType: {
     toolName: 'createAgentByType',
-    desc: 'Create a new child agent from an allowed soul type.',
+    desc: 'Create a new child agent from an allowed soul token.',
     paramsSchema: createAgentByTypeParamsSchema,
   },
   startAgent: {
@@ -192,7 +193,7 @@ export const lineageControlToolSchemas = {
   // DISCOVERY (coordinator only)
   listAllowedSouls: {
     toolName: 'listAllowedSouls',
-    desc: 'List the soul types you are allowed to create as children.',
+    desc: 'List the soul tokens you are allowed to create as children.',
     paramsSchema: listAllowedSoulsParamsSchema,
   },
   getMyInfo: {
@@ -204,6 +205,12 @@ export const lineageControlToolSchemas = {
     toolName: 'getStats',
     desc: 'Get runtime statistics.',
     paramsSchema: getStatsParamsSchema,
+  },
+  // DISCOVERY (no-lineage / coordinator only)
+  discoverAgents: {
+    toolName: 'discoverAgents',
+    desc: 'Discover available agents and their capabilities.',
+    paramsSchema: discoverAgentsParamsSchema,
   },
 } as const;
 
@@ -263,23 +270,38 @@ export interface LineageControlToolReturnTypes {
     success: boolean;
     instanceId: string;
     name: string;
-    soulType: string;
+    soulToken: string;
   };
   startAgent: { success: boolean };
   stopAgent: { success: boolean };
   destroyAgent: { success: boolean };
   listAllowedSouls: {
-    souls: Array<{ soulType: string; nodeId: string }>;
+    souls: Array<{
+      soulToken: string;
+      nodeId: string;
+      name?: string;
+      description?: string;
+    }>;
   };
   getMyInfo: {
     instanceId: string;
     role?: string;
     schemaId?: string;
     nodeId?: string;
-    allowedChildren: Array<{ soulType: string; nodeId: string }>;
+    allowedChildren: Array<{ soulToken: string; nodeId: string }>;
     parentInstanceId?: string;
   };
   getStats: RuntimeStats;
+  discoverAgents: {
+    agents: Array<{
+      instanceId: string;
+      alias?: string;
+      name: string;
+      capabilities: string[];
+      skills: string[];
+    }>;
+    total: number;
+  };
 }
 
 // Re-export A2A types for consumers
@@ -293,6 +315,7 @@ export type {
   CheckSentParams,
   WaitForResultParams,
   CancelTaskParams,
+  DiscoverAgentsParams,
   SentTaskInfo,
   IncomingTaskInfo,
 } from '../A2AComponent/a2aTaskSchemas.js';

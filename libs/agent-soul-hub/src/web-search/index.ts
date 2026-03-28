@@ -137,11 +137,11 @@ const SOP_CONTENT = `# 联网搜索 Agent
 5. **多次搜索**：对于复杂问题，可以分步执行多次搜索，逐步缩小范围`;
 
 function createDefaultProvider(): WebSearchProvider {
-  const apiKey = process.env.ZHIPU_API_KEY;
+  const apiKey = process.env.GLM_API_KEY;
   if (!apiKey) {
     throw new Error(
-      'ZHIPU_API_KEY environment variable is required for WebSearchAgent. ' +
-        'Please set it before creating the agent soul.',
+      'GLM_API_KEY environment variable is required for WebSearchAgent. ' +
+      'Please set it before creating the agent soul.',
     );
   }
   const baseUrl = process.env.ZHIPU_API_BASE_URL;

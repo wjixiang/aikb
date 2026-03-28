@@ -140,7 +140,7 @@ async function run() {
     // Step 3: Create task
     console.log('\n📝 Step 3: Create task');
     const taskRes = await request('POST', '/tasks', {
-      description: '查找有关于血管外科的最新文献，用于撰写综述',
+      description: '帮我找一个影像组学的文献，要求数据完全公开可下载，以便于我进行学习',
       targetInstanceId: agentId,
       priority: 'normal',
     });

@@ -9,49 +9,49 @@ export const literatureSurveyLineage: LineageSchema = {
   root: {
     id: 'chief-coordinator',
     role: 'coordinator',
-    soulType: 'coordinator',
+    soulToken: 'chief-coordinator',
     name: 'Chief Coordinator',
     children: [
       {
         id: 'search-coordinator',
         role: 'coordinator',
-        soulType: 'coordinator',
+        soulToken: 'coordinator',
         name: 'Search Coordinator',
         children: [
           {
             id: 'epidemiology',
             role: 'worker',
-            soulType: 'epidemiology',
+            soulToken: 'epidemiology',
             name: 'Epidemiology & Risk Factors',
           },
           {
             id: 'pathophysiology',
             role: 'worker',
-            soulType: 'pathophysiology',
+            soulToken: 'pathophysiology',
             name: 'Pathophysiology',
           },
           {
             id: 'diagnosis',
             role: 'worker',
-            soulType: 'diagnosis',
+            soulToken: 'diagnosis',
             name: 'Diagnosis & Screening',
           },
           {
             id: 'management',
             role: 'worker',
-            soulType: 'management',
+            soulToken: 'management',
             name: 'Disease Management',
           },
           {
             id: 'quality-of-life',
             role: 'worker',
-            soulType: 'quality-of-life',
+            soulToken: 'quality-of-life',
             name: 'Quality of Life',
           },
           {
             id: 'emerging-treatments',
             role: 'worker',
-            soulType: 'emerging-treatments',
+            soulToken: 'emerging-treatments',
             name: 'Emerging Treatments',
           },
         ],
@@ -59,13 +59,13 @@ export const literatureSurveyLineage: LineageSchema = {
       {
         id: 'analysis-coordinator',
         role: 'coordinator',
-        soulType: 'coordinator',
+        soulToken: 'coordinator',
         name: 'Analysis Coordinator',
         children: [
           {
             id: 'paper-analysis',
             role: 'worker',
-            soulType: 'paper-analysis',
+            soulToken: 'paper-analysis',
             name: 'Paper Analysis',
           },
         ],

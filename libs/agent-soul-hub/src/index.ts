@@ -17,6 +17,7 @@ export { lineageSchemaRegistry, registerLineageSchema } from 'agent-lib/core';
 
 // Concrete agent factory functions
 export { createBibRetrieveAgentSoul } from './article-retrieve/index.js';
+export { createChiefCoordinatorAgentSoul } from './chief-coordinator/index.js';
 export { createCoordinatorAgentSoul } from './coordinator/index.js';
 export { createEpidemiologyAgentSoul } from './epidemiology/index.js';
 export { createPathophysiologyAgentSoul } from './pathophysiology/index.js';

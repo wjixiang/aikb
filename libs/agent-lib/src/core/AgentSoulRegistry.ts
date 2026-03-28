@@ -12,6 +12,8 @@ import type { AgentBlueprint } from './agent/AgentFactory.js';
 export type { AgentBlueprint } from './agent/AgentFactory.js';
 
 export type AgentSoulType =
+  | 'chief-coordinator'
+  | 'coordinator'
   | 'epidemiology'
   | 'pathophysiology'
   | 'diagnosis'
@@ -19,7 +21,6 @@ export type AgentSoulType =
   | 'quality-of-life'
   | 'emerging-treatments'
   | 'paper-analysis'
-  | 'coordinator'
   | 'bib-retrieve'
   | 'web-search';
 

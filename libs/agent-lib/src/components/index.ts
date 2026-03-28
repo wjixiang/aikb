@@ -6,7 +6,7 @@
  * - TUI rendering primitives
  * - Component Registry
  * - Utility functions
- * - Built-in components (A2A, RuntimeControl)
+ * - Built-in components (LineageControl)
  *
  * Domain-specific components are provided by the component-hub package.
  */
@@ -36,32 +36,57 @@ export type { ComponentRegistration } from './ComponentRegistry.js';
  */
 export * from './core/index.js';
 
-// ==================== A2A Task Component ====================
+// ==================== Lineage Control Component ====================
 
 /**
- * A2A Task Module
+ * Lineage Control Module
  *
- * A2A task acknowledgment and response management.
+ * Unified component for agent inbox, task delegation, and lineage-based agent lifecycle management.
+ * Replaces the legacy A2ATaskComponent and RuntimeControlComponent.
  */
-export { A2ATaskComponent } from './A2AComponent/index.js';
+export { LineageControlComponent } from './LineageControl/index.js';
 export {
-  a2aTaskToolSchemas,
+  lineageControlToolSchemas,
+  type CreateAgentByTypeParams,
+  type StartAgentParams,
+  type StopAgentParams,
+  type DestroyAgentParams,
+  type ListChildAgentsParams,
+  type ListAllowedSoulsParams,
+  type GetMyInfoParams,
+  type GetStatsParams,
+  type DiscoverAgentsParams,
+  type LineageControlToolName,
+  type LineageControlToolReturnTypes,
+  type SentTaskInfo,
+  type IncomingTaskInfo,
+  type CheckInboxParams,
   type AcknowledgeTaskParams,
   type CompleteTaskParams,
   type FailTaskParams,
   type SendTaskParams,
   type SendQueryParams,
+  type CheckSentParams,
   type WaitForResultParams,
   type CancelTaskParams,
-  type DiscoverAgentsParams,
-  type CheckInboxParams,
-  type CheckSentParams,
-  type SentTaskInfo,
-  type IncomingTaskInfo,
-  type A2ATaskToolName,
-  type A2ATaskToolReturnTypes,
-  type A2ATaskToolReturnType,
-} from './A2AComponent/index.js';
+} from './LineageControl/index.js';
+
+// ==================== Legacy A2A Re-exports ====================
+
+export type {
+  AcknowledgeTaskParams as A2AAcknowledgeTaskParams,
+  CompleteTaskParams as A2ACompleteTaskParams,
+  FailTaskParams as A2AFailTaskParams,
+  SendTaskParams as A2ASendTaskParams,
+  SendQueryParams as A2ASendQueryParams,
+  WaitForResultParams as A2AWaitForResultParams,
+  CancelTaskParams as A2ACancelTaskParams,
+  DiscoverAgentsParams as A2ADiscoverAgentsParams,
+  CheckInboxParams as A2ACheckInboxParams,
+  CheckSentParams as A2ACheckSentParams,
+  SentTaskInfo as A2ASentTaskInfo,
+  IncomingTaskInfo as A2AIncomingTaskInfo,
+} from './A2AComponent/a2aTaskSchemas.js';
 
 // Test Components - Re-export for convenience in tests
 // Located in: core/statefulContext/__tests__/testComponents.ts

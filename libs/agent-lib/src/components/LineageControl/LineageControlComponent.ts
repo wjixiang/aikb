@@ -13,6 +13,8 @@ import type { IRuntimeControlClient } from '../../core/runtime/types.js';
 import type { AgentLineageInfo } from '../../core/runtime/types.js';
 import type { AgentMetadata } from '../../core/runtime/types.js';
 import { getGlobalAgentRegistry } from '../../core/a2a/index.js';
+import { agentSoulRegistry } from '../../core/AgentSoulRegistry.js';
+import { lineageSchemaRegistry } from '../../core/runtime/LineageSchemaRegistry.js';
 import type { IAgentCardRegistry } from '../../core/a2a/AgentCard.js';
 import {
   lineageControlToolSchemas,
@@ -32,6 +34,7 @@ import {
   type ListAllowedSoulsParams,
   type GetMyInfoParams,
   type GetStatsParams,
+  type DiscoverAgentsParams,
   type SentTaskInfo,
   type IncomingTaskInfo,
 } from './lineageControlSchemas.js';
@@ -55,7 +58,7 @@ function summarizeOutput(result?: { output?: unknown }): string | undefined {
 interface ChildAgentRecord {
   instanceId: string;
   name?: string;
-  soulType?: string;
+  soulToken?: string;
   createdAt: number;
 }
 
@@ -86,7 +89,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   protected a2aClient: IA2AClient;
   protected sleepControl: IAgentSleepControl;
   private agentRegistry: IAgentCardRegistry;
-  private runtimeClient?: IRuntimeControlClient;
+  private runtimeState?: RuntimeControlState;
   protected lineage?: AgentLineageInfo;
 
   constructor(
@@ -106,8 +109,12 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
     this.a2aClient = a2aClient;
     this.sleepControl = sleepControl;
     this.agentRegistry = getGlobalAgentRegistry();
-    this.runtimeClient = runtimeState?.getRuntimeClient();
+    this.runtimeState = runtimeState;
     this.lineage = lineage;
+  }
+
+  private get runtimeClient(): IRuntimeControlClient | undefined {
+    return this.runtimeState?.getRuntimeClient();
   }
 
   protected override initialState(): LineageControlState {
@@ -190,6 +197,13 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
           paramsSchema: lineageControlToolSchemas.getStats.paramsSchema,
         },
       });
+
+      if (!this.lineage) {
+        tools['discoverAgents'] = {
+          desc: lineageControlToolSchemas.discoverAgents.desc,
+          paramsSchema: lineageControlToolSchemas.discoverAgents.paramsSchema,
+        };
+      }
     }
 
     return tools;
@@ -687,15 +701,15 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
     try {
       const instanceId = await this.runtimeClient.createAgent({
         agent: {
-          type: params.soulType,
-          name: params.name || params.soulType,
+          type: params.soulToken,
+          name: params.name || params.soulToken,
         },
       });
 
       this.reactive.childAgents[instanceId] = {
         instanceId,
-        name: params.name || params.soulType,
-        soulType: params.soulType,
+        name: params.name || params.soulToken,
+        soulToken: params.soulToken,
         createdAt: Date.now(),
       };
 
@@ -704,10 +718,10 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
         data: {
           success: true,
           instanceId,
-          name: params.name || params.soulType,
-          soulType: params.soulType,
+          name: params.name || params.soulToken,
+          soulToken: params.soulToken,
         },
-        summary: `[Lifecycle] Created ${params.name || params.soulType} (${instanceId.slice(0, 8)})`,
+        summary: `[Lifecycle] Created ${params.name || params.soulToken} (${instanceId.slice(0, 8)})`,
       };
     } catch (error) {
       return this.clientError(error);
@@ -772,7 +786,37 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   async onListAllowedSouls(): Promise<
     ToolCallResult<LineageControlToolReturnTypes['listAllowedSouls']>
   > {
-    const souls = this.lineage?.allowedChildren ?? [];
+    let souls: Array<{
+      soulToken: string;
+      nodeId: string;
+      name?: string;
+      description?: string;
+    }>;
+    if (this.lineage?.allowedChildren) {
+      const { lineageSchemaRegistry } = await import(
+        '../../core/runtime/LineageSchemaRegistry.js'
+      );
+      souls = this.lineage.allowedChildren.map((c) => {
+        const node = (lineageSchemaRegistry as any).findNode(
+          this.lineage!.schemaId,
+          c.nodeId,
+        );
+        return {
+          soulToken: c.soulToken,
+          nodeId: c.nodeId,
+          name: node?.name,
+          description: node?.description,
+        };
+      });
+    } else {
+      const allSouls = agentSoulRegistry.getAll();
+      souls = allSouls.map((s) => ({
+        soulToken: s.type as string,
+        nodeId: s.type as string,
+        name: s.name,
+        description: s.description,
+      }));
+    }
     return {
       success: true,
       data: { souls },
@@ -811,6 +855,49 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       };
     } catch (error) {
       return this.clientError(error);
+    }
+  }
+
+  async onDiscoverAgents(
+    params: DiscoverAgentsParams,
+  ): Promise<ToolCallResult<LineageControlToolReturnTypes['discoverAgents']>> {
+    try {
+      let agents;
+      if (params.capability) {
+        agents = this.agentRegistry.findByCapability(params.capability);
+      } else if (params.skill) {
+        agents = this.agentRegistry.findBySkill(params.skill);
+      } else {
+        agents = this.agentRegistry.getAllAgents();
+      }
+
+      const summary = agents.map((a) => ({
+        instanceId: a.instanceId,
+        alias: a.alias,
+        name: a.name,
+        capabilities: a.capabilities,
+        skills: a.skills,
+      }));
+
+      return {
+        success: true,
+        data: { agents: summary, total: summary.length },
+        summary: `[Contacts] Found ${summary.length} agent(s)${params.capability ? ` with capability "${params.capability}"` : params.skill ? ` with skill "${params.skill}"` : ''}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          agents: [],
+          total: 0,
+          error: error instanceof Error ? error.message : String(error),
+        } as LineageControlToolReturnTypes['discoverAgents'] & {
+          error: string;
+        },
+        summary: `[Contacts] Error: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      };
     }
   }
 
@@ -995,6 +1082,49 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       }
     }
 
+    // ALLOWED SOULS (coordinator only)
+    if (this.lineage?.role !== 'worker') {
+      const allowed = this.lineage?.allowedChildren ?? [];
+      if (allowed.length > 0) {
+        elements.push(
+          new th({
+            content: `ALLOWED SOULS (${allowed.length})`,
+            styles: { align: 'left' },
+          }),
+        );
+        for (const entry of allowed) {
+          const schemaId = this.lineage?.schemaId;
+          const node = schemaId
+            ? lineageSchemaRegistry.findNode(schemaId, entry.nodeId)
+            : undefined;
+          const label = node?.name || entry.soulToken;
+          const role = node?.role || '?';
+          const desc = node?.description || '';
+          const childCount = node?.children?.length ?? 0;
+
+          elements.push(
+            new tdiv({
+              content: `  * ${label} [${role}]`,
+            }),
+          );
+          elements.push(
+            new tdiv({
+              content: `    soulToken=${entry.soulToken}  nodeId=${entry.nodeId}  children=${childCount}`,
+            }),
+          );
+          if (desc) {
+            const truncated =
+              desc.length > 80 ? desc.slice(0, 80) + '...' : desc;
+            elements.push(
+              new tdiv({
+                content: `    ${truncated}`,
+              }),
+            );
+          }
+        }
+      }
+    }
+
     // CHILDREN (coordinator only)
     if (this.lineage?.role !== 'worker') {
       const localChildren = Object.values(this.snapshot.childAgents);
@@ -1007,7 +1137,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
         );
         for (const child of localChildren) {
           const age = Math.round((Date.now() - child.createdAt) / 1000);
-          const suffix = child.soulType ? ` [${child.soulType}]` : '';
+          const suffix = child.soulToken ? ` [${child.soulToken}]` : '';
           elements.push(
             new tdiv({
               content: `  + ${child.name}${suffix} (${child.instanceId.slice(0, 8)}) ${age}s ago`,
@@ -1052,6 +1182,9 @@ You have an Agent Mailbox for collaborating with other agents.
 4. waitForResult — sleep until a delegated task completes
 5. cancelTask — cancel an in-flight task
 
+## Contacts
+- discoverAgents — find agents by capability or skill
+
 ## Agent Management
 1. listChildAgents — list your child agents
 2. createAgentByType — create a new child agent from a predefined soul
@@ -1077,7 +1210,7 @@ You cannot create agents or send tasks to others. Focus on your specialized work
 
   private get coordinatorPrompt(): string {
     const allowed = (this.lineage?.allowedChildren ?? [])
-      .map((c) => c.soulType)
+      .map((c) => c.soulToken)
       .join(', ');
     return `## Agent Control Panel
 

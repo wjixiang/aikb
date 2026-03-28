@@ -29,6 +29,7 @@ import type { RoutingStats } from './topology/types.js';
 import { createA2AClient } from '../a2a/index.js';
 import type { IA2AClient, A2ATaskResult } from '../a2a/index.js';
 import { lineageSchemaRegistry } from './LineageSchemaRegistry.js';
+import { createAgentSoulByType } from '../AgentSoulRegistry.js';
 
 export class RuntimeControlClientImpl implements IRuntimeControlClient {
   constructor(
@@ -45,20 +46,20 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     return metadata?.metadata?.['lineage'] as AgentLineageInfo | undefined;
   }
 
-  private assertCanCreateAgent(requestedSoulType?: string): void {
+  private assertCanCreateAgent(requestedSoulToken?: string): void {
     const lineage = this.getLineageInfo();
     if (!lineage) return;
     if (lineage.role === 'worker') {
       throw new Error("Agent role 'worker' cannot create child agents");
     }
-    if (requestedSoulType) {
+    if (requestedSoulToken) {
       const allowed = lineage.allowedChildren.find(
-        (c) => c.soulType === requestedSoulType,
+        (c) => c.soulToken === requestedSoulToken,
       );
       if (!allowed) {
         throw new Error(
-          `Cannot create agent of type '${requestedSoulType}'. ` +
-            `Allowed: [${lineage.allowedChildren.map((c) => c.soulType).join(', ')}]`,
+          `Cannot create agent of soulToken '${requestedSoulToken}'. ` +
+            `Allowed: [${lineage.allowedChildren.map((c) => c.soulToken).join(', ')}]`,
         );
       }
     }
@@ -87,13 +88,13 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
 
   private injectChildLineage(
     options: RuntimeControlAgentOptions,
-    requestedSoulType?: string,
+    requestedSoulToken?: string,
   ): void {
     const lineage = this.getLineageInfo();
     if (!lineage) return;
 
     const allowedChild = lineage.allowedChildren.find(
-      (c) => c.soulType === requestedSoulType,
+      (c) => c.soulToken === requestedSoulToken,
     );
     if (!allowedChild) return;
 
@@ -108,7 +109,7 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
       nodeId: childNode.id,
       role: childNode.role,
       allowedChildren: (childNode.children ?? []).map((c) => ({
-        soulType: c.soulType,
+        soulToken: c.soulToken,
         nodeId: c.id,
       })),
     };
@@ -150,9 +151,29 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
   // ============================================
 
   async createAgent(options: RuntimeControlAgentOptions): Promise<string> {
-    const soulType = options.agent?.type;
-    this.assertCanCreateAgent(soulType);
-    this.injectChildLineage(options, soulType);
+    const soulToken = options.agent?.type;
+    this.assertCanCreateAgent(soulToken);
+
+    if (soulToken && !options.agent?.sop) {
+      try {
+        const soulBlueprint = createAgentSoulByType(soulToken as any);
+        const soulAgent = soulBlueprint.agent as
+          | Record<string, unknown>
+          | undefined;
+        options.agent = {
+          ...soulAgent,
+          ...options.agent,
+        } as RuntimeControlAgentOptions['agent'];
+        if (!options.components && soulBlueprint.components) {
+          options.components = soulBlueprint.components;
+        }
+      } catch {
+        // Soul factory not registered (e.g., in tests or when agent-soul-hub not imported)
+        // Fall through to create with whatever options were provided
+      }
+    }
+
+    this.injectChildLineage(options, options.agent?.type);
     return this.runtime._createChildAgent(this.callerInstanceId, options);
   }
 

@@ -11,6 +11,7 @@ import {
   createAgentSoulByToken,
   type AgentSoulMetadata,
 } from 'agent-soul-hub';
+import { literatureSurveyLineage } from 'agent-soul-hub';
 import { lineageSchemaRegistry } from 'agent-lib/core';
 import type { LineageSchema, AgentLineageInfo } from 'agent-lib/core';
 
@@ -686,12 +687,34 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         const soulConfig = createAgentSoulByToken(body.token);
-        const instanceId = await fastify.agentRuntime.createAgent(soulConfig, {
-          ...(body.api ? { api: body.api as any } : {}),
-          ...(body.parentInstanceId
-            ? { parentInstanceId: body.parentInstanceId }
-            : {}),
-        });
+        const lineageInfo = (lineageSchemaRegistry as any).resolveLineageInfo(
+          body.token,
+        );
+        const agentOverrides: Record<string, unknown> = {};
+        if (lineageInfo) {
+          agentOverrides.metadata = {
+            ...(((soulConfig.agent as any)?.metadata as Record<
+              string,
+              unknown
+            >) ?? {}),
+            lineage: lineageInfo,
+          };
+        }
+        const instanceId = await fastify.agentRuntime.createAgent(
+          {
+            ...soulConfig,
+            agent: {
+              ...soulConfig.agent,
+              ...agentOverrides,
+            } as any,
+          },
+          {
+            ...(body.api ? { api: body.api as any } : {}),
+            ...(body.parentInstanceId
+              ? { parentInstanceId: body.parentInstanceId }
+              : {}),
+          },
+        );
         return reply.code(201).send({
           success: true,
           data: {
@@ -848,21 +871,33 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
         const root = schema.root as {
           id: string;
           role: string;
-          soulType: string;
+          soulToken: string;
           name?: string;
           children?: any[];
         };
 
-        const soulConfig = createAgentSoulByToken(root.soulType);
+        const soulConfig = createAgentSoulByToken(root.soulToken);
 
         const lineageInfo: AgentLineageInfo = {
           schemaId: schema.id,
           nodeId: root.id,
           role: root.role as AgentLineageInfo['role'],
           allowedChildren: (root.children ?? []).map((c: any) => ({
-            soulType: c.soulType,
+            soulToken: c.soulToken,
             nodeId: c.id,
           })),
+        };
+
+        const agentOverrides: Record<string, unknown> = {
+          name: body.name || root.name || soulConfig.agent?.name,
+          ...(body.sop ? { sop: body.sop } : {}),
+          metadata: {
+            ...(((soulConfig.agent as any)?.metadata as Record<
+              string,
+              unknown
+            >) ?? {}),
+            lineage: lineageInfo,
+          },
         };
 
         const instanceId = await fastify.agentRuntime.createAgent(
@@ -870,14 +905,8 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
             ...soulConfig,
             agent: {
               ...soulConfig.agent,
-              name: body.name || root.name || soulConfig.agent?.name,
-              ...(body.sop ? { sop: body.sop } : {}),
-              metadata: {
-                ...((soulConfig.agent?.metadata as Record<string, unknown>) ??
-                  {}),
-                lineage: lineageInfo,
-              },
-            },
+              ...agentOverrides,
+            } as any,
           },
           {
             ...(body.api ? { api: body.api as any } : {}),

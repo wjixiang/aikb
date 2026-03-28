@@ -37,7 +37,6 @@ import { createA2AHandler, createA2AClient } from '../a2a/index.js';
 import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
 import type { IA2AClient } from '../a2a/index.js';
 import { getGlobalAgentRegistry } from '../a2a/index.js';
-import { A2ATaskComponent } from '../../components/A2AComponent/A2ATaskComponent.js';
 import { LineageControlComponent } from '../../components/LineageControl/LineageControlComponent.js';
 import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
 import type { AgentLineageInfo } from '../runtime/types.js';
@@ -372,7 +371,6 @@ export class AgentContainer {
 
     // Bind global component classes as singletons
     // These will be resolved with DI when building the ToolComponents array
-    this.container.bind(A2ATaskComponent).toSelf().inSingletonScope();
     this.container.bind(LineageControlComponent).toSelf().inSingletonScope();
 
     // Bind AgentSleepControl - lazy proxy to avoid circular dependency
@@ -400,19 +398,12 @@ export class AgentContainer {
       component: ToolComponent;
       priority?: number;
     }> => {
-      const hasLineage = !!(this.config.agent.metadata?.['lineage'] as
-        | AgentLineageInfo
-        | undefined);
       const components: Array<{ component: ToolComponent; priority?: number }> =
         [
           {
-            component: hasLineage
-              ? (this.container.get(
-                  LineageControlComponent,
-                ) as unknown as ToolComponent)
-              : (this.container.get(
-                  A2ATaskComponent,
-                ) as unknown as ToolComponent),
+            component: this.container.get(
+              LineageControlComponent,
+            ) as unknown as ToolComponent,
             priority: 0,
           },
         ];

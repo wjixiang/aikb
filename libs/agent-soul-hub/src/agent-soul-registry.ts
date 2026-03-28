@@ -20,6 +20,8 @@ export function registerAgentSoul(metadata: AgentSoulMetadata): void {
 
 function isAgentSoulType(token: string): token is AgentSoulType {
   const validTypes: AgentSoulType[] = [
+    'chief-coordinator',
+    'coordinator',
     'epidemiology',
     'pathophysiology',
     'diagnosis',
@@ -27,7 +29,6 @@ function isAgentSoulType(token: string): token is AgentSoulType {
     'quality-of-life',
     'emerging-treatments',
     'paper-analysis',
-    'coordinator',
     'bib-retrieve',
     'web-search',
   ];
@@ -60,6 +61,7 @@ import { createManagementAgentSoul } from './management/index.js';
 import { createQualityOfLifeAgentSoul } from './quality-of-life/index.js';
 import { createEmergingTreatmentsAgentSoul } from './emerging-treatments/index.js';
 import { createCoordinatorAgentSoul } from './coordinator/index.js';
+import { createChiefCoordinatorAgentSoul } from './chief-coordinator/index.js';
 import { createBibRetrieveAgentSoul } from './article-retrieve/index.js';
 import { createWebSearchAgentSoul } from './web-search/index.js';
 
@@ -113,6 +115,14 @@ registerAgentSoul({
   type: 'article-retrieve-emerging-treatments',
   description: '新兴治疗方法文献检索专家，负责新疗法、新技术等文献的检索与筛选',
   factory: createEmergingTreatmentsAgentSoul,
+});
+
+registerAgentSoul({
+  token: 'chief-coordinator',
+  name: 'Chief Coordinator Agent',
+  type: 'chief-coordinator',
+  description: '顶层协调者Agent，负责将任务分解并委派给子协调者',
+  factory: createChiefCoordinatorAgentSoul,
 });
 
 registerAgentSoul({
