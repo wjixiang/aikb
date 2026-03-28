@@ -162,6 +162,33 @@ export interface MemoryMessage {
   ts?: number;
 }
 
+// ========== Lineage Types ==========
+
+export interface LineageNodeDef {
+  id: string;
+  role: 'root' | 'coordinator' | 'worker';
+  soulToken: string;
+  name?: string;
+  description?: string;
+  children?: LineageNodeDef[];
+}
+
+export interface LineageSchema {
+  id: string;
+  name: string;
+  description?: string;
+  root: LineageNodeDef;
+}
+
+export interface LineageSchemaSummary {
+  id: string;
+  name: string;
+  description?: string;
+  rootNodeId: string;
+  rootNodeRole: string;
+  childCount: number;
+}
+
 export interface AgentMemoryData {
   messages: MemoryMessage[];
   totalMessages: number;
@@ -265,6 +292,30 @@ export const api = {
         success: boolean;
         data: AgentMemoryData;
       }>(`/api/agents/${instanceId}/memory?limit=${limit}`),
+    agentPrompt: (instanceId: string) =>
+      apiFetch<{
+        success: boolean;
+        data: { instanceId: string; sop: string };
+      }>(`/api/runtime/agents/${instanceId}/prompt`),
+    lineages: () =>
+      apiFetch<{
+        success: boolean;
+        data: LineageSchemaSummary[];
+        count: number;
+      }>('/api/runtime/lineages'),
+    lineage: (id: string) =>
+      apiFetch<{
+        success: boolean;
+        data: LineageSchema;
+      }>(`/api/runtime/lineages/${id}`),
+    instantiateLineage: (id: string, body?: { name?: string; sop?: string }) =>
+      apiFetch<{
+        success: boolean;
+        data: { instanceId: string; status: string };
+      }>(`/api/runtime/lineages/${id}/instantiate`, {
+        method: 'POST',
+        body: JSON.stringify(body ?? {}),
+      }),
   },
   tasks: {
     list: (params?: { status?: string; limit?: number; offset?: number }) => {

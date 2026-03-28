@@ -251,6 +251,54 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
     },
   );
 
+  fastify.get(
+    '/agents/:instanceId/prompt',
+    {
+      schema: {
+        tags: ['runtime'],
+        description: 'Get system prompt (SOP) of a specific agent',
+        params: {
+          type: 'object',
+          properties: {
+            instanceId: { type: 'string', description: 'Agent instance ID' },
+          },
+        },
+        response: { 200: responseSchema, 404: responseSchema },
+      } as any,
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      try {
+        const metadata = fastify.agentRuntime.getAgentMetadata(instanceId);
+        if (!metadata?.config) {
+          return reply
+            .code(404)
+            .send({
+              success: false,
+              error: 'Agent not found or no config available',
+            });
+        }
+        const config = metadata.config as Record<string, unknown>;
+        const agentConfig = config.agent as Record<string, unknown> | undefined;
+        const sop = agentConfig?.sop;
+        return {
+          success: true,
+          data: {
+            instanceId,
+            sop:
+              typeof sop === 'string'
+                ? sop
+                : JSON.stringify(sop ?? '', null, 2),
+          },
+        };
+      } catch {
+        return reply
+          .code(404)
+          .send({ success: false, error: 'Agent not found' });
+      }
+    },
+  );
+
   fastify.post(
     '/agents/:instanceId/stop',
     {

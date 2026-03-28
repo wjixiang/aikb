@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Card,
   CardHeader,
@@ -18,11 +18,13 @@ import {
   Info,
   Brain,
   MessageSquare,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { STATUS_BADGE } from './constants';
 import { MessageItem } from './MemoryContent';
 import type { AgentDetail } from '@/hooks/useAgentDetail';
+import { api } from '@/lib/api';
 
 interface AgentDetailPanelProps {
   detail: AgentDetail;
@@ -123,7 +125,11 @@ export function AgentDetailPanel({
               memoryEndRef={memoryEndRef}
             />
           ) : (
-            <DetailsTab detail={detail} memoryData={memoryData} onSelectChild={onSelectChild} />
+            <DetailsTab
+              detail={detail}
+              memoryData={memoryData}
+              onSelectChild={onSelectChild}
+            />
           )}
         </div>
       </CardContent>
@@ -212,6 +218,27 @@ function DetailsTab({
   memoryData: AgentMemoryData | null;
   onSelectChild: (instanceId: string) => void;
 }) {
+  const [sop, setSop] = useState<string | null>(null);
+  const [sopLoading, setSopLoading] = useState(false);
+
+  const fetchSop = useCallback(async () => {
+    if (!detail.instanceId) return;
+    setSopLoading(true);
+    try {
+      const res = await api.runtime.agentPrompt(detail.instanceId);
+      if (res.success) setSop(res.data.sop);
+    } catch {
+      setSop(null);
+    } finally {
+      setSopLoading(false);
+    }
+  }, [detail.instanceId]);
+
+  useEffect(() => {
+    setSop(null);
+    fetchSop();
+  }, [fetchSop]);
+
   return (
     <div className="h-full overflow-y-auto space-y-3 text-xs pr-1">
       {/* Instance ID */}
@@ -236,6 +263,22 @@ function DetailsTab({
           <Cpu className="h-3 w-3" /> Type
         </span>
         <span>{detail.type || '-'}</span>
+      </div>
+
+      {/* System Prompt */}
+      <div className="border-t pt-2">
+        <div className="text-muted-foreground mb-1 flex items-center gap-1">
+          <FileText className="h-3 w-3" /> System Prompt
+        </div>
+        {sopLoading ? (
+          <div className="text-muted-foreground">Loading...</div>
+        ) : sop ? (
+          <pre className="bg-muted/50 rounded px-2 py-1.5 whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[11px] leading-relaxed">
+            {sop}
+          </pre>
+        ) : (
+          <div className="text-muted-foreground">Not available</div>
+        )}
       </div>
 
       {/* Memory Config */}
