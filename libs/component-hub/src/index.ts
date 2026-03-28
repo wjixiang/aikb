@@ -13,6 +13,23 @@ export { PrismaFlowComponent } from './PRISMA/prismaFlowComponent.js';
 
 export { PaperAnalysisComponent } from './paperAnalysis/paperAnalysisComponent.js';
 
+export { WebSearchComponent } from './webSearch/index.js';
+export {
+  ZhipuWebSearchProvider,
+  type ZhipuWebSearchConfig,
+  type ZhipuSearchEngine,
+} from './webSearch/index.js';
+export type {
+  WebSearchProvider,
+  WebSearchProviderConfig,
+  WebSearchParams,
+  WebSearchResponse,
+  WebSearchResult,
+  SearchIntent,
+  RecencyFilter,
+  ContentSize,
+} from './webSearch/index.js';
+
 export { RuntimeControlComponent } from './runtime-control/index.js';
 export {
   SwarmAPIClient,

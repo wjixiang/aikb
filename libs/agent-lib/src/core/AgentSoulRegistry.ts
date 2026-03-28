@@ -20,7 +20,8 @@ export type AgentSoulType =
   | 'emerging-treatments'
   | 'paper-analysis'
   | 'coordinator'
-  | 'bib-retrieve';
+  | 'bib-retrieve'
+  | 'web-search';
 
 export interface AgentSoulEntry {
   type: AgentSoulType;

@@ -29,6 +29,7 @@ function isAgentSoulType(token: string): token is AgentSoulType {
     'paper-analysis',
     'coordinator',
     'bib-retrieve',
+    'web-search',
   ];
   return (validTypes as readonly string[]).includes(token);
 }
@@ -60,6 +61,7 @@ import { createQualityOfLifeAgentSoul } from './quality-of-life/index.js';
 import { createEmergingTreatmentsAgentSoul } from './emerging-treatments/index.js';
 import { createCoordinatorAgentSoul } from './coordinator/index.js';
 import { createBibRetrieveAgentSoul } from './article-retrieve/index.js';
+import { createWebSearchAgentSoul } from './web-search/index.js';
 
 registerAgentSoul({
   token: 'epidemiology',
@@ -127,4 +129,13 @@ registerAgentSoul({
   type: 'bib-retrieve',
   description: '综合文献检索Agent，支持关键词、语义和混合检索',
   factory: createBibRetrieveAgentSoul,
+});
+
+registerAgentSoul({
+  token: 'web-search',
+  name: 'Web Search Agent',
+  type: 'web-search',
+  description:
+    '联网搜索Agent，通过搜索引擎从互联网获取最新信息，支持意图识别、域名过滤、时间范围筛选等高级搜索功能',
+  factory: createWebSearchAgentSoul,
 });
