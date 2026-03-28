@@ -7,7 +7,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { AgentMemoryData } from '@/lib/api';
+import type { AgentMemoryData, WorkspaceContextEntry } from '@/lib/api';
 import {
   X,
   Play,
@@ -19,6 +19,9 @@ import {
   Brain,
   MessageSquare,
   FileText,
+  Monitor,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { STATUS_BADGE } from './constants';
@@ -27,19 +30,24 @@ import type { AgentDetail } from '@/hooks/useAgentDetail';
 import { api } from '@/lib/api';
 
 interface AgentDetailPanelProps {
-  detail: AgentDetail;
+  detail: AgentDetail | null;
+  detailLoading: boolean;
   memoryData: AgentMemoryData | null;
   memoryLoading: boolean;
   actionLoading: string | null;
-  memoryTab: 'messages' | 'info';
-  onMemoryTabChange: (tab: 'messages' | 'info') => void;
+  memoryTab: 'messages' | 'info' | 'workspace';
+  onMemoryTabChange: (tab: 'messages' | 'info' | 'workspace') => void;
   onClose: () => void;
   onSelectChild: (instanceId: string) => void;
   onAction: (action: 'start' | 'stop' | 'destroy', instanceId: string) => void;
+  workspaceContexts: WorkspaceContextEntry[];
+  workspaceTotal: number;
+  workspaceLoading: boolean;
 }
 
 export function AgentDetailPanel({
   detail,
+  detailLoading,
   memoryData,
   memoryLoading,
   actionLoading,
@@ -48,128 +56,171 @@ export function AgentDetailPanel({
   onClose,
   onSelectChild,
   onAction,
+  workspaceContexts,
+  workspaceTotal,
+  workspaceLoading,
 }: AgentDetailPanelProps) {
-  const memoryEndRef = useRef<HTMLDivElement>(null);
+  const memoryScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    memoryEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = memoryScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [memoryData?.messages.length]);
 
   return (
     <Card className="w-96 shrink-0 border-2 flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center justify-between text-sm">
-          <span className="flex items-center gap-1.5 truncate">
-            <Info className="h-4 w-4 shrink-0" />
-            <span className="truncate">
-              {detail.alias || detail.name || detail.instanceId.slice(0, 12)}
-            </span>
-          </span>
-          <Button variant="ghost" size="icon-xs" onClick={onClose}>
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent className="flex-1 min-h-0 flex flex-col gap-2 text-sm pb-0">
-        {/* Status row */}
-        <div className="flex items-center justify-between shrink-0">
-          <span
-            className={`text-xs px-2 py-0.5 rounded font-medium ${STATUS_BADGE[detail.status] ?? STATUS_BADGE.stopped}`}
-          >
-            {detail.status}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {detail.type || '-'}
-          </span>
-        </div>
-
-        {/* Tab bar */}
-        <div className="flex border-b shrink-0">
-          <button
-            onClick={() => onMemoryTabChange('messages')}
-            className={cn(
-              'px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
-              memoryTab === 'messages'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <MessageSquare className="h-3 w-3 inline mr-1" />
-            Memory
-            {memoryData && (
-              <span className="ml-1 text-[10px] text-muted-foreground">
-                ({memoryData.messages.length}/{memoryData.totalMessages})
+      {detailLoading && detail == null ? (
+        <DetailSkeleton />
+      ) : detail != null ? (
+        <>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-1.5 truncate">
+                <Info className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {detail.alias ||
+                    detail.name ||
+                    detail.instanceId.slice(0, 12)}
+                </span>
               </span>
-            )}
-          </button>
-          <button
-            onClick={() => onMemoryTabChange('info')}
-            className={cn(
-              'px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
-              memoryTab === 'info'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            Details
-          </button>
-        </div>
+              <Button variant="ghost" size="icon-xs" onClick={onClose}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
 
-        {/* Tab content */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {memoryTab === 'messages' ? (
-            <MemoryTab
-              memoryData={memoryData}
-              memoryLoading={memoryLoading}
-              memoryEndRef={memoryEndRef}
-            />
-          ) : (
-            <DetailsTab
-              detail={detail}
-              memoryData={memoryData}
-              onSelectChild={onSelectChild}
-            />
-          )}
-        </div>
-      </CardContent>
+          <CardContent className="flex-1 min-h-0 flex flex-col gap-2 text-sm pb-0">
+            {/* Status row */}
+            <div className="flex items-center justify-between shrink-0">
+              <span
+                className={`text-xs px-2 py-0.5 rounded font-medium ${STATUS_BADGE[detail.status] ?? STATUS_BADGE.stopped}`}
+              >
+                {detail.status}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {detail.type || '-'}
+              </span>
+            </div>
 
-      <CardFooter className="gap-2 shrink-0">
-        {detail.status === 'idle' && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            disabled={actionLoading === 'start'}
-            onClick={() => onAction('start', detail.instanceId)}
-          >
-            <Play className="h-3.5 w-3.5 mr-1" />
-            Start
-          </Button>
-        )}
-        {(detail.status === 'running' || detail.status === 'completed') && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            disabled={actionLoading === 'stop'}
-            onClick={() => onAction('stop', detail.instanceId)}
-          >
-            <Square className="h-3.5 w-3.5 mr-1" />
-            Stop
-          </Button>
-        )}
-        <Button
-          variant="destructive"
-          size="sm"
-          className="flex-1"
-          disabled={actionLoading === 'destroy'}
-          onClick={() => onAction('destroy', detail.instanceId)}
-        >
-          <Trash2 className="h-3.5 w-3.5 mr-1" />
-          Destroy
-        </Button>
-      </CardFooter>
+            {/* Tab bar */}
+            <div className="flex border-b shrink-0">
+              <button
+                onClick={() => onMemoryTabChange('messages')}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+                  memoryTab === 'messages'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <MessageSquare className="h-3 w-3 inline mr-1" />
+                Memory
+                {memoryData && (
+                  <span className="ml-1 text-[10px] text-muted-foreground">
+                    ({memoryData.messages.length}/{memoryData.totalMessages})
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => onMemoryTabChange('workspace')}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+                  memoryTab === 'workspace'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <Monitor className="h-3 w-3 inline mr-1" />
+                Workspace
+                {workspaceTotal > 0 && (
+                  <span className="ml-1 text-[10px] text-muted-foreground">
+                    ({workspaceTotal})
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => onMemoryTabChange('info')}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+                  memoryTab === 'info'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                Details
+              </button>
+            </div>
+
+            {/* Tab content */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {memoryTab === 'messages' ? (
+                <MemoryTab
+                  memoryData={memoryData}
+                  memoryLoading={memoryLoading}
+                  memoryScrollRef={memoryScrollRef}
+                />
+              ) : memoryTab === 'workspace' ? (
+                <WorkspaceTab
+                  contexts={workspaceContexts}
+                  total={workspaceTotal}
+                  loading={workspaceLoading}
+                />
+              ) : (
+                <DetailsTab
+                  detail={detail}
+                  memoryData={memoryData}
+                  onSelectChild={onSelectChild}
+                />
+              )}
+            </div>
+          </CardContent>
+
+          <CardFooter className="gap-2 shrink-0">
+            {detail.status === 'idle' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                disabled={actionLoading === 'start'}
+                onClick={() => onAction('start', detail.instanceId)}
+              >
+                <Play className="h-3.5 w-3.5 mr-1" />
+                Start
+              </Button>
+            )}
+            {(detail.status === 'running' || detail.status === 'completed') && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                disabled={actionLoading === 'stop'}
+                onClick={() => onAction('stop', detail.instanceId)}
+              >
+                <Square className="h-3.5 w-3.5 mr-1" />
+                Stop
+              </Button>
+            )}
+            <Button
+              variant="destructive"
+              size="sm"
+              className="flex-1"
+              disabled={actionLoading === 'destroy'}
+              onClick={() => onAction('destroy', detail.instanceId)}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1" />
+              Destroy
+            </Button>
+          </CardFooter>
+        </>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2 py-12">
+          <Cpu className="h-8 w-8 opacity-30" />
+          <span className="text-sm">No agent selected</span>
+          <span className="text-xs opacity-60">
+            Click an agent to view details
+          </span>
+        </div>
+      )}
     </Card>
   );
 }
@@ -177,14 +228,17 @@ export function AgentDetailPanel({
 function MemoryTab({
   memoryData,
   memoryLoading,
-  memoryEndRef,
+  memoryScrollRef,
 }: {
   memoryData: AgentMemoryData | null;
   memoryLoading: boolean;
-  memoryEndRef: React.RefObject<HTMLDivElement | null>;
+  memoryScrollRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="h-full overflow-y-auto space-y-2 pr-1">
+    <div
+      ref={memoryScrollRef}
+      className="h-full overflow-y-auto space-y-2 pr-1"
+    >
       {memoryLoading && !memoryData ? (
         <div className="flex items-center justify-center h-32 text-muted-foreground text-xs">
           Loading memory...
@@ -202,7 +256,106 @@ function MemoryTab({
           {memoryData.messages.map((msg, i) => (
             <MessageItem key={i} msg={msg} index={i} />
           ))}
-          <div ref={memoryEndRef} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function WorkspaceTab({
+  contexts,
+  total,
+  loading,
+}: {
+  contexts: WorkspaceContextEntry[];
+  total: number;
+  loading: boolean;
+}) {
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+
+  return (
+    <div className="h-full overflow-y-auto space-y-2 pr-1">
+      {loading && contexts.length === 0 ? (
+        <div className="flex items-center justify-center h-32 text-muted-foreground text-xs">
+          Loading workspace contexts...
+        </div>
+      ) : contexts.length === 0 ? (
+        <div className="flex items-center justify-center h-32 text-muted-foreground text-xs">
+          No workspace contexts recorded
+        </div>
+      ) : (
+        <>
+          <div className="text-[10px] text-muted-foreground px-1">
+            Showing {contexts.length} of {total} entries (newest last)
+          </div>
+          {contexts.map((ctx, i) => {
+            const isExpanded = expandedIdx === i;
+            const ts = new Date(ctx.ts).toLocaleTimeString();
+            return (
+              <div key={i} className="border rounded text-xs">
+                <button
+                  onClick={() => setExpandedIdx(isExpanded ? null : i)}
+                  className="w-full flex items-center gap-1.5 px-2 py-1.5 text-left cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  )}
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    #{ctx.iteration}
+                  </span>
+                  {ctx.isDiff && (
+                    <span className="text-[10px] px-1 py-0 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                      diff
+                    </span>
+                  )}
+                  <span className="ml-auto text-[10px] text-muted-foreground">
+                    {ts}
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="px-2 pb-2">
+                    {ctx.isDiff && ctx.diff ? (
+                      <div className="space-y-1">
+                        {ctx.diff.map((d, di) => (
+                          <div key={di}>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span
+                                className={cn(
+                                  'inline-block w-1.5 h-1.5 rounded-full',
+                                  d.changed
+                                    ? 'bg-green-500'
+                                    : 'bg-muted-foreground/30',
+                                )}
+                              />
+                              <span className="font-mono text-[10px] text-muted-foreground">
+                                {d.section}
+                              </span>
+                              {!d.changed && (
+                                <span className="text-[9px] text-muted-foreground/60">
+                                  (unchanged)
+                                </span>
+                              )}
+                            </div>
+                            {d.changed && d.content && (
+                              <pre className="bg-muted/50 rounded px-2 py-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed max-h-64 overflow-y-auto">
+                                {d.content}
+                              </pre>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <pre className="bg-muted/50 rounded px-2 py-1.5 whitespace-pre-wrap break-words text-[11px] leading-relaxed max-h-64 overflow-y-auto">
+                        {ctx.content}
+                      </pre>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </>
       )}
     </div>
@@ -347,5 +500,50 @@ function DetailsTab({
         )}
       </div>
     </div>
+  );
+}
+
+function DetailSkeleton() {
+  return (
+    <>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center justify-between text-sm">
+          <span className="flex items-center gap-1.5 truncate">
+            <Info className="h-4 w-4 shrink-0 animate-pulse" />
+            <span className="h-4 w-32 bg-muted rounded animate-pulse" />
+          </span>
+          <div className="h-6 w-6" />
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="flex-1 min-h-0 flex flex-col gap-2 text-sm pb-0">
+        {/* Status row */}
+        <div className="flex items-center justify-between shrink-0">
+          <span className="h-5 w-14 bg-muted rounded animate-pulse" />
+          <span className="h-4 w-20 bg-muted rounded animate-pulse" />
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex border-b shrink-0">
+          <span className="h-4 w-16 bg-muted rounded animate-pulse" />
+          <span className="h-4 w-14 bg-muted rounded animate-pulse ml-3" />
+        </div>
+
+        {/* Content skeleton */}
+        <div className="flex-1 space-y-3 pt-1">
+          <div className="h-4 w-full bg-muted rounded animate-pulse" />
+          <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-5/6 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-2/3 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-full bg-muted rounded animate-pulse" />
+          <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
+        </div>
+      </CardContent>
+
+      <CardFooter className="gap-2 shrink-0">
+        <span className="h-8 flex-1 bg-muted rounded animate-pulse" />
+        <span className="h-8 flex-1 bg-muted rounded animate-pulse" />
+      </CardFooter>
+    </>
   );
 }

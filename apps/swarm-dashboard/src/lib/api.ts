@@ -188,6 +188,14 @@ export interface LineageSchemaSummary {
   childCount: number;
 }
 
+export interface WorkspaceContextEntry {
+  content: string;
+  ts: number;
+  iteration: number;
+  isDiff: boolean;
+  diff?: { section: string; changed: boolean; content: string | null }[];
+}
+
 export interface AgentMemoryData {
   messages: MemoryMessage[];
   totalMessages: number;
@@ -296,6 +304,14 @@ export const api = {
         success: boolean;
         data: { instanceId: string; sop: string };
       }>(`/api/runtime/agents/${instanceId}/prompt`),
+    agentWorkspaceContexts: (instanceId: string, limit = 50) =>
+      apiFetch<{
+        success: boolean;
+        data: {
+          contexts: WorkspaceContextEntry[];
+          totalEntries: number;
+        };
+      }>(`/api/agents/${instanceId}/workspace-contexts?limit=${limit}`),
     lineages: () =>
       apiFetch<{
         success: boolean;

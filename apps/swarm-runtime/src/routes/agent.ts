@@ -331,4 +331,68 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
       }
     },
   );
+
+  fastify.get(
+    '/:instanceId/workspace-contexts',
+    {
+      schema: {
+        tags: ['agents'],
+        description: 'Get agent workspace context history',
+        params: {
+          type: 'object',
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
+        },
+        querystring: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              default: 50,
+              description: 'Max entries to return',
+            },
+          },
+        },
+        response: { 200: responseSchema, 404: responseSchema },
+      } as any,
+    },
+    async (request: any, reply: any) => {
+      const { instanceId } = request.params;
+      const { limit = 50 } = request.query ?? {};
+      try {
+        const resolvedId = fastify.agentRuntime.resolveAgentId(instanceId);
+        const agent = await fastify.agentRuntime.getAgent(resolvedId);
+        if (!agent)
+          return reply
+            .code(404)
+            .send({ success: false, error: 'Agent not found' });
+
+        const memoryModule = agent.getMemoryModule();
+        const allContexts = memoryModule.getWorkspaceContexts();
+        const contexts = allContexts.slice(-limit).map((ctx: any) => ({
+          content: ctx.content,
+          ts: ctx.ts,
+          iteration: ctx.iteration,
+          isDiff: ctx.isDiff ?? false,
+          diff: ctx.diff ?? undefined,
+        }));
+
+        return {
+          success: true,
+          data: {
+            contexts,
+            totalEntries: allContexts.length,
+          },
+        };
+      } catch {
+        return reply
+          .code(404)
+          .send({ success: false, error: 'Agent not found' });
+      }
+    },
+  );
 };
