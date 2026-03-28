@@ -133,31 +133,15 @@ export interface MemoryModuleConfig {
 }
 
 /**
- * Represents a changed section in workspace context diff
- */
-export interface WorkspaceContextDiff {
-  /** Component name (e.g., 'mail', 'picos') or 'header' for workspace header */
-  section: string;
-  /** Whether this section changed since last iteration */
-  changed: boolean;
-  /** The content if changed, null if unchanged */
-  content: string | null;
-}
-
-/**
  * Workspace context entry for memory storage
  */
 export interface WorkspaceContextEntry {
-  /** The rendered workspace context string (full or diff) */
+  /** The rendered workspace context string */
   content: string;
   /** Timestamp when this context was captured */
   ts: number;
   /** Iteration number when this context was captured */
   iteration: number;
-  /** Whether this is a diff storage (vs full context) */
-  isDiff?: boolean;
-  /** Changed sections if isDiff is true */
-  diff?: WorkspaceContextDiff[];
 }
 
 /**

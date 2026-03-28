@@ -63,38 +63,6 @@ const SUMMARIZATION_PROMPT = `You are a concise summarizer. Given a conversation
 Format your response as a concise narrative summary.`;
 
 /**
- * System prompt for LLM workspace context diff analysis
- */
-const WORKSPACE_CONTEXT_DIFF_PROMPT = `You are an expert at analyzing workspace context changes. Given the previous and current workspace context, your task is to:
-
-1. **Identify Changes**: Compare the previous and current context to identify what sections changed
-2. **Summarize Key Changes**: For each changed section, provide a brief summary of what changed
-3. **Highlight Important Updates**: Call out any significant decisions, completed tasks, or new information
-
-**Workspace Context Structure** (typically has these sections):
-- Header/Summary information
-- Component states (mail, picos, etc.)
-- Recent Tool Calls
-- Current task status
-
-**Output Format**:
-Return a structured summary in this format:
-\`\`\`
-## Changed Sections
-
-### [Section Name]
-- **What changed**: [brief description of the change]
-- **Key details**: [specific values or information that changed]
-
-### [Section Name]
-- **What changed**: [brief description]
-- **Key details**: [specific values]
-\`\`\`
-
-If no significant changes exist, return "No significant changes detected."
-If this is the first context (no previous), return "Initial workspace context" followed by a brief summary of the workspace state.`;
-
-/**
  * Simplified MemoryModule - no turn concepts, with token-based compression
  */
 @injectable()
@@ -416,40 +384,6 @@ export class MemoryModule implements IMemoryModule {
   // ==================== Workspace Context Management ====================
 
   /**
-   * Parse workspace context into sections by component
-   * Returns a map of section name -> content
-   */
-  private _parseContextBySections(context: string): Map<string, string> {
-    const sections = new Map<string, string>();
-    const lines = context.split('\n');
-
-    let currentSection = 'header';
-    let currentContent: string[] = [];
-
-    for (const line of lines) {
-      // Match ## section-name pattern
-      const sectionMatch = line.match(/^##\s+(.+)$/);
-      if (sectionMatch) {
-        // Save previous section
-        if (currentSection || currentContent.length > 0) {
-          sections.set(currentSection, currentContent.join('\n'));
-        }
-        currentSection = sectionMatch[1].trim();
-        currentContent = [];
-      } else {
-        currentContent.push(line);
-      }
-    }
-
-    // Save last section
-    if (currentSection || currentContent.length > 0) {
-      sections.set(currentSection, currentContent.join('\n'));
-    }
-
-    return sections;
-  }
-
-  /**
    * Compute diff between previous context and current context
    * Returns diff structure indicating what changed
    * Ignores changes in Recent Tool Calls section (always changes)
@@ -519,17 +453,11 @@ export class MemoryModule implements IMemoryModule {
       return;
     }
 
-    // Generate simple diff summary (LLM summarization is disabled)
-    const summary = this._previousFullContext
-      ? this._simpleContextDiff(this._previousFullContext, cleanedContext)
-      : `Initial workspace context (iteration ${iteration})`;
-
-    // Store the simple diff summary
+    // Store the full workspace context
     this.workspaceContexts.push({
-      content: summary,
+      content: cleanedContext,
       ts: Date.now(),
       iteration,
-      isDiff: true,
     });
     this._previousFullContext = cleanedContext;
     this.logger.debug(
@@ -538,107 +466,6 @@ export class MemoryModule implements IMemoryModule {
 
     // Persist memory after recording workspace context
     await this._persistMemory();
-  }
-
-  /**
-   * Analyze context diff using LLM
-   */
-  private async _analyzeContextDiffWithLLM(
-    prevContext: string,
-    currContext: string,
-    iteration: number,
-  ): Promise<string> {
-    if (!this.apiClient) {
-      throw new Error('ApiClient not available');
-    }
-
-    // Build messages for LLM
-    const systemMsg: ApiMessage = {
-      role: 'system',
-      content: [{ type: 'text' as const, text: WORKSPACE_CONTEXT_DIFF_PROMPT }],
-      ts: Date.now(),
-    };
-
-    const userMsg: ApiMessage = {
-      role: 'user',
-      content: [
-        {
-          type: 'text' as const,
-          text: `## Previous Workspace Context (Iteration ${iteration - 1})
-\`\`\`
-${prevContext}
-\`\`\`
-
-## Current Workspace Context (Iteration ${iteration})
-\`\`\`
-${currContext}
-\`\`\`
-
-Please analyze the changes between these two workspace contexts.`,
-        },
-      ],
-      ts: Date.now(),
-    };
-
-    // Call LLM
-    const response = await this.apiClient.makeRequest(
-      WORKSPACE_CONTEXT_DIFF_PROMPT,
-      '', // workspace context - empty for diff analysis
-      [
-        this.formatMessageAsString(systemMsg),
-        this.formatMessageAsString(userMsg),
-      ],
-      { timeout: 60000 },
-      [], // no tools
-    );
-
-    // Extract summary from response
-    const summary =
-      response.textResponse?.trim() ||
-      `Context changed at iteration ${iteration}`;
-    return summary;
-  }
-
-  /**
-   * Simple context diff fallback (without LLM)
-   */
-  private _simpleContextDiff(prevContext: string, currContext: string): string {
-    const prevLines = prevContext.split('\n');
-    const currLines = currContext.split('\n');
-
-    const changedSections: string[] = [];
-
-    // Simple line-by-line comparison to find section changes
-    let prevSection = 'header';
-    let currSection = 'header';
-
-    for (let i = 0; i < Math.max(prevLines.length, currLines.length); i++) {
-      const prevLine = prevLines[i] || '';
-      const currLine = currLines[i] || '';
-
-      // Detect section headers
-      const prevSectionMatch = prevLine.match(/^##\s+(.+)$/);
-      const currSectionMatch = currLine.match(/^##\s+(.+)$/);
-
-      if (prevSectionMatch) prevSection = prevSectionMatch[1].trim();
-      if (currSectionMatch) currSection = currSectionMatch[1].trim();
-
-      if (prevLine !== currLine && (prevLine || currLine)) {
-        // Lines differ
-        if (
-          !changedSections.includes(currSection) &&
-          currSection !== prevSection
-        ) {
-          changedSections.push(currSection);
-        }
-      }
-    }
-
-    if (changedSections.length === 0) {
-      return 'Minor context updates';
-    }
-
-    return `Changed sections: ${changedSections.join(', ')}`;
   }
 
   /**

@@ -305,52 +305,15 @@ function WorkspaceTab({
                   <span className="font-mono text-[10px] text-muted-foreground">
                     #{ctx.iteration}
                   </span>
-                  {ctx.isDiff && (
-                    <span className="text-[10px] px-1 py-0 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400">
-                      diff
-                    </span>
-                  )}
                   <span className="ml-auto text-[10px] text-muted-foreground">
                     {ts}
                   </span>
                 </button>
                 {isExpanded && (
                   <div className="px-2 pb-2">
-                    {ctx.isDiff && ctx.diff ? (
-                      <div className="space-y-1">
-                        {ctx.diff.map((d, di) => (
-                          <div key={di}>
-                            <div className="flex items-center gap-1 mb-0.5">
-                              <span
-                                className={cn(
-                                  'inline-block w-1.5 h-1.5 rounded-full',
-                                  d.changed
-                                    ? 'bg-green-500'
-                                    : 'bg-muted-foreground/30',
-                                )}
-                              />
-                              <span className="font-mono text-[10px] text-muted-foreground">
-                                {d.section}
-                              </span>
-                              {!d.changed && (
-                                <span className="text-[9px] text-muted-foreground/60">
-                                  (unchanged)
-                                </span>
-                              )}
-                            </div>
-                            {d.changed && d.content && (
-                              <pre className="bg-muted/50 rounded px-2 py-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed max-h-64 overflow-y-auto">
-                                {d.content}
-                              </pre>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <pre className="bg-muted/50 rounded px-2 py-1.5 whitespace-pre-wrap break-words text-[11px] leading-relaxed max-h-64 overflow-y-auto">
-                        {ctx.content}
-                      </pre>
-                    )}
+                    <pre className="bg-muted/50 rounded px-2 py-1.5 whitespace-pre-wrap break-words text-[11px] leading-relaxed max-h-64 overflow-y-auto">
+                      {ctx.content}
+                    </pre>
                   </div>
                 )}
               </div>

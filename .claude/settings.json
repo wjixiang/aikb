@@ -32,7 +32,9 @@
       "Bash(curl -s http://192.168.123.98:9400/agents)",
       "Bash(curl -s http://192.168.123.98:9400/api/runtime/topology/edge-activity)",
       "Bash(curl -s http://192.168.123.98:9400/api/runtime/topology)",
-      "Bash(curl -s http://192.168.123.98:9400/api/runtime/agents)"
+      "Bash(curl -s http://192.168.123.98:9400/api/runtime/agents)",
+      "Bash(wc -l /mnt/disk1/project/project/aikb/apps/swarm-dashboard/src/components/*.tsx)",
+      "Bash(git status:*)"
     ]
   }
 }

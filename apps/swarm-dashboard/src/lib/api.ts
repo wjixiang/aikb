@@ -192,8 +192,6 @@ export interface WorkspaceContextEntry {
   content: string;
   ts: number;
   iteration: number;
-  isDiff: boolean;
-  diff?: { section: string; changed: boolean; content: string | null }[];
 }
 
 export interface AgentMemoryData {

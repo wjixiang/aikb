@@ -48,6 +48,7 @@ export function useAgentDetail(instanceId: string | null) {
       setDetail(null);
       return;
     }
+    setDetail(null);
     fetch();
     const interval = setInterval(fetch, 10000);
     return () => clearInterval(interval);

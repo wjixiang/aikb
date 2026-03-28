@@ -377,8 +377,6 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
           content: ctx.content,
           ts: ctx.ts,
           iteration: ctx.iteration,
-          isDiff: ctx.isDiff ?? false,
-          diff: ctx.diff ?? undefined,
         }));
 
         return {
