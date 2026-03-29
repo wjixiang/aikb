@@ -107,8 +107,8 @@ export function createBibRetrieveAgentSoul(): AgentBlueprint {
       {
         componentClass: BibliographySearchComponent,
       },
-      { componentClass: LineageControlComponent, priority: 0 },
-      { componentClass: LifecycleComponent, priority: 100 },
+      { componentClass: LineageControlComponent },
+      { componentClass: LifecycleComponent },
     ],
   };
 }

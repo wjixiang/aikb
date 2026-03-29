@@ -54,8 +54,8 @@ export function createChiefRouterAgentSoul(): AgentBlueprint {
       description: '文献调查顶层路由，负责将任务分解并委派给子路由',
     },
     components: [
-      { componentClass: LineageControlComponent, priority: 0 },
-      { componentClass: LifecycleComponent, priority: 100 },
+      { componentClass: LineageControlComponent },
+      { componentClass: LifecycleComponent },
     ],
   };
 }

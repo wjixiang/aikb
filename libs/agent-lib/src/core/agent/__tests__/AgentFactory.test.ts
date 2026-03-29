@@ -92,7 +92,7 @@ describe('AgentFactory', () => {
     it('should accept component registrations', () => {
       const mockComponent = { id: 'test-comp' } as unknown as ToolComponent;
       const components: ComponentRegistration[] = [
-        { id: 'bibliography-search', component: mockComponent, priority: 1 },
+        { id: 'bibliography-search', component: mockComponent },
       ];
       const container = AgentFactory.create({ components });
       expect(container).toBeDefined();
@@ -197,9 +197,7 @@ describe('AgentFactory', () => {
           onPropertyChange: vi.fn(),
           onMethodCall: vi.fn(),
         },
-        components: [
-          { id: 'comp1', component: {} as ToolComponent, priority: 1 },
-        ],
+        components: [{ id: 'comp1', component: {} as ToolComponent }],
       };
 
       const container = AgentFactory.create(fullOptions);
@@ -260,30 +258,20 @@ describe('AgentFactory', () => {
   });
 
   describe('ComponentRegistration interface', () => {
-    it('should accept component without priority', () => {
+    it('should accept component registration', () => {
       const registration: ComponentRegistration = {
-        id: 'no-priority-comp',
+        id: 'test-comp',
         component: {} as ToolComponent,
       };
       const container = AgentFactory.create({ components: [registration] });
       expect(container).toBeDefined();
     });
 
-    it('should accept component with priority', () => {
-      const registration: ComponentRegistration = {
-        id: 'priority-comp',
-        component: {} as ToolComponent,
-        priority: 10,
-      };
-      const container = AgentFactory.create({ components: [registration] });
-      expect(container).toBeDefined();
-    });
-
-    it('should accept multiple components with different priorities', () => {
+    it('should accept multiple components', () => {
       const components: ComponentRegistration[] = [
-        { id: 'low-priority', component: {} as ToolComponent, priority: 1 },
-        { id: 'medium-priority', component: {} as ToolComponent, priority: 5 },
-        { id: 'high-priority', component: {} as ToolComponent, priority: 10 },
+        { id: 'comp1', component: {} as ToolComponent },
+        { id: 'comp2', component: {} as ToolComponent },
+        { id: 'comp3', component: {} as ToolComponent },
       ];
       const container = AgentFactory.create({ components });
       expect(container).toBeDefined();

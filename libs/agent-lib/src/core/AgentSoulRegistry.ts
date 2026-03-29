@@ -68,32 +68,23 @@ export const agentSoulRegistry = new AgentSoulRegistry();
 
 // Factory function registry
 type AgentSoulFactory = () => AgentBlueprint;
-const agentSoulFactories: Partial<Record<AgentSoulType, AgentSoulFactory>> = {};
+const agentSoulFactories: Map<string, AgentSoulFactory> = new Map();
 
 /**
  * Register an agent soul factory function
  */
 export function registerAgentSoulFactory(
-  type: AgentSoulType,
+  type: string,
   factory: AgentSoulFactory,
 ): void {
-  agentSoulFactories[type] = factory;
-  // Also register metadata if not already registered
-  if (!agentSoulRegistry.get(type)) {
-    agentSoulRegistry.register({
-      type,
-      name: `${type} Agent`,
-      description: `Agent soul of type: ${type}`,
-      capabilities: ['literature-search'],
-    });
-  }
+  agentSoulFactories.set(type, factory);
 }
 
 /**
  * Create an agent soul by type - requires factory to be registered first
  */
-export function createAgentSoulByType(type: AgentSoulType): AgentBlueprint {
-  const factory = agentSoulFactories[type];
+export function createAgentSoulByType(type: string): AgentBlueprint {
+  const factory = agentSoulFactories.get(type);
   if (!factory) {
     throw new Error(
       `Agent soul factory not registered for type: ${type}. ` +

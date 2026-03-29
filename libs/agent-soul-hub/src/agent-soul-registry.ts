@@ -13,25 +13,10 @@ export const agentSoulRegistry: Map<string, AgentSoulMetadata> = new Map();
 
 export function registerAgentSoul(metadata: AgentSoulMetadata): void {
   agentSoulRegistry.set(metadata.token, metadata);
-  if (isAgentSoulType(metadata.token)) {
-    registerAgentSoulFactory(metadata.token, metadata.factory);
+  registerAgentSoulFactory(metadata.token, metadata.factory);
+  if (metadata.type && metadata.type !== metadata.token) {
+    registerAgentSoulFactory(metadata.type, metadata.factory);
   }
-}
-
-function isAgentSoulType(token: string): token is AgentSoulType {
-  const validTypes: AgentSoulType[] = [
-    'chief-router',
-    'router',
-    'epidemiology',
-    'pathophysiology',
-    'diagnosis',
-    'management',
-    'quality-of-life',
-    'emerging-treatments',
-    'bib-retrieve',
-    'web-search',
-  ];
-  return (validTypes as readonly string[]).includes(token);
 }
 
 export function getAgentSoul(token: string): AgentSoulMetadata | undefined {

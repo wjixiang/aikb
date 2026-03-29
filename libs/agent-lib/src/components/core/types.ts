@@ -536,18 +536,8 @@ export interface VirtualWorkspaceConfig {
  * Component registration in the workspace
  */
 export interface ComponentRegistration {
-  /**
-   * Unique key for accessing this component
-   */
   key: string;
-  /**
-   * The tool component instance
-   */
   component: any;
-  /**
-   * Optional priority for rendering (lower = earlier)
-   */
-  priority?: number;
 }
 
 /**

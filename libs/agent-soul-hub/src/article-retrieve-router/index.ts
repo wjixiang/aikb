@@ -125,8 +125,8 @@ export function createArticleRetrieveRouterAgentSoul(): AgentBlueprint {
       description: '文献调查路由，负责协调多个专业 Agent 完成系统性文献调查',
     },
     components: [
-      { componentClass: LineageControlComponent, priority: 0 },
-      { componentClass: LifecycleComponent, priority: 100 },
+      { componentClass: LineageControlComponent },
+      { componentClass: LifecycleComponent },
     ],
   };
 }

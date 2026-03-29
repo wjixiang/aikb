@@ -387,28 +387,22 @@ export class AgentContainer {
 
     // Build the ToolComponents array by resolving component instances
     // This uses toDynamicValue to ensure components are created after all dependencies are bound
-    const buildToolComponents = (): Array<{
-      component: ToolComponent;
-      priority?: number;
-    }> => {
+    const buildToolComponents = (): ToolComponent[] => {
       if (!this.config.components || this.config.components.length === 0) {
         return [];
       }
 
-      return this.config.components.map((reg) => ({
-        component: reg.componentInstance
+      return this.config.components.map((reg) =>
+        reg.componentInstance
           ? reg.componentInstance
           : (this.container.get(
               reg.componentClass!,
             ) as unknown as ToolComponent),
-        priority: reg.priority,
-      }));
+      );
     };
 
     this.container
-      .bind<
-        Array<{ component: ToolComponent; priority?: number }>
-      >(TYPES.ToolComponents)
+      .bind<ToolComponent[]>(TYPES.ToolComponents)
       .toDynamicValue(buildToolComponents)
       .inSingletonScope();
   }

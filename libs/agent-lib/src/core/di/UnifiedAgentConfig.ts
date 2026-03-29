@@ -14,8 +14,6 @@ export interface DIComponentRegistration {
   componentClass?: new (...args: any[]) => ToolComponent;
   /** Pre-instantiated component (bypasses DI resolution) */
   componentInstance?: ToolComponent;
-  /** Registration priority (higher = registered first) */
-  priority?: number;
 }
 
 export interface UnifiedAgentConfig {
@@ -41,7 +39,6 @@ export interface UnifiedAgentConfig {
   /**
    * Components to register with the agent's workspace
    * These will be automatically registered when the agent is created.
-   * Use priority field to control rendering order (lower = rendered first).
    */
   components?: DIComponentRegistration[];
 
@@ -85,7 +82,6 @@ export interface AgentCreationOptions {
   /**
    * Components to register with the agent's workspace
    * These will be automatically registered when the agent is created.
-   * Use priority field to control rendering order (lower = rendered first).
    */
   components?: DIComponentRegistration[];
 

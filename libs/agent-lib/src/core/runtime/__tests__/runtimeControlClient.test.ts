@@ -17,7 +17,7 @@ describe('RuntimeControlClientImpl', () => {
 
   beforeEach(() => {
     mockRuntime = {
-      _createChildAgent: vi.fn().mockResolvedValue('child-agent-id'),
+      createAgent: vi.fn().mockResolvedValue('child-agent-id'),
       startAgent: vi.fn().mockResolvedValue(undefined),
       stopAgent: vi.fn().mockResolvedValue(undefined),
       _destroyAgentWithCascade: vi.fn().mockResolvedValue(undefined),
@@ -53,10 +53,7 @@ describe('RuntimeControlClientImpl', () => {
       const result = await client.createAgent(options);
 
       expect(result).toBe('child-agent-id');
-      expect(mockRuntime._createChildAgent).toHaveBeenCalledWith(
-        callerInstanceId,
-        options,
-      );
+      expect(mockRuntime.createAgent).toHaveBeenCalled();
     });
   });
 

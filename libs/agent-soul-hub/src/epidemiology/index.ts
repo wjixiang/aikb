@@ -163,11 +163,11 @@ export function createEpidemiologyAgentSoul(): AgentBlueprint {
         '流行病学与危险因素文献检索专家，负责发病率、患病率、危险因素等文献的检索与筛选',
     },
     components: [
+      { componentClass: LifecycleComponent },
+      { componentClass: LineageControlComponent },
       {
         componentClass: BibliographySearchComponent,
       },
-      { componentClass: LineageControlComponent, priority: 0 },
-      { componentClass: LifecycleComponent, priority: 100 },
     ],
   };
 }

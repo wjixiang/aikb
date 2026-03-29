@@ -30,6 +30,8 @@ import { createA2AClient } from '../a2a/index.js';
 import type { IA2AClient, A2ATaskResult } from '../a2a/index.js';
 import { lineageSchemaRegistry } from './LineageSchemaRegistry.js';
 import { createAgentSoulByType } from '../AgentSoulRegistry.js';
+import type { AgentBlueprint } from '../agent/AgentFactory.js';
+import type { AgentFactoryOptions } from '../agent/AgentFactory.js';
 
 export class RuntimeControlClientImpl implements IRuntimeControlClient {
   constructor(
@@ -151,27 +153,41 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     const soulToken = options.agent?.type;
     this.assertCanCreateAgent(soulToken);
 
+    let soulBlueprint: AgentBlueprint;
+
     if (soulToken && !options.agent?.sop) {
       try {
-        const soulBlueprint = createAgentSoulByType(soulToken as any);
-        const soulAgent = soulBlueprint.agent as
-          | Record<string, unknown>
-          | undefined;
-        options.agent = {
-          ...soulAgent,
-          ...options.agent,
-        } as RuntimeControlAgentOptions['agent'];
-        if (!options.components && soulBlueprint.components) {
-          options.components = soulBlueprint.components;
-        }
+        soulBlueprint = createAgentSoulByType(soulToken);
       } catch {
-        // Soul factory not registered (e.g., in tests or when agent-soul-hub not imported)
-        // Fall through to create with whatever options were provided
+        soulBlueprint = {
+          agent: options.agent as AgentBlueprint['agent'],
+          components: options.components ?? [],
+        };
       }
+    } else {
+      soulBlueprint = {
+        agent: options.agent as AgentBlueprint['agent'],
+        components: options.components ?? [],
+      };
     }
 
-    this.injectChildLineage(options, options.agent?.type);
-    return this.runtime._createChildAgent(this.callerInstanceId, options);
+    this.injectChildLineage(options, soulToken);
+
+    const mergedAgent: AgentBlueprint['agent'] = {
+      ...soulBlueprint.agent,
+      ...options.agent,
+    } as AgentBlueprint['agent'];
+
+    const soulWithOverrides: AgentBlueprint = {
+      agent: mergedAgent,
+      components: soulBlueprint.components,
+    };
+
+    return this.runtime.createAgent(soulWithOverrides, {
+      ...(options.api ? { api: options.api } : {}),
+      ...(options.observers ? { observers: options.observers } : {}),
+      parentInstanceId: this.callerInstanceId,
+    } as Partial<AgentFactoryOptions>);
   }
 
   async startAgent(instanceIdOrAlias: string): Promise<void> {

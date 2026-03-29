@@ -24,11 +24,6 @@ import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import type { A2AHandler } from '../a2a/index.js';
 
-interface ResolvedComponent {
-  component: ToolComponent;
-  priority?: number;
-}
-
 export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
   name: 'Default Workspace',
@@ -49,10 +44,7 @@ export interface ToolCallSummary {
 @injectable()
 export class VirtualWorkspace implements IVirtualWorkspace {
   private config: VirtualWorkspaceConfig;
-  private components: Array<{
-    component: ToolComponent;
-    priority?: number;
-  }> = [];
+  private components: Array<ToolComponent> = [];
   private toolManager: IToolManager;
   private toolCallLog: ToolCallSummary[] = [];
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
@@ -72,7 +64,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     config: Partial<VirtualWorkspaceConfig> = {},
     @inject(TYPES.ToolComponents)
     @optional()
-    diComponents?: ResolvedComponent[],
+    diComponents?: ToolComponent[],
     @inject(TYPES.IA2AHandler)
     @optional()
     a2aHandler?: A2AHandler,
@@ -87,18 +79,13 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     this._a2aHandler = a2aHandler;
 
     if (diComponents && diComponents.length > 0) {
-      for (const reg of diComponents) {
-        this.components.push({
-          component: reg.component,
-          priority: reg.priority,
-        });
-      }
+      this.components.push(...diComponents);
     }
   }
 
   @postConstruct()
   private init(): void {
-    for (const { component } of this.components) {
+    for (const component of this.components) {
       this._registerToolProvider(component);
     }
     this.toolManager.registerProvider(this.globalToolProvider);
@@ -118,12 +105,11 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   }
 
   getComponent(id: string): ToolComponent | undefined {
-    return this.components.find((c) => c.component.componentId === id)
-      ?.component;
+    return this.components.find((c) => c.componentId === id);
   }
 
   getComponentKeys(): string[] {
-    return this.components.map((c) => c.component.componentId);
+    return this.components.map((c) => c.componentId);
   }
 
   getA2AHandler(): A2AHandler | undefined {
@@ -283,7 +269,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   async renderComponentToolsSection(): Promise<TUIElement | null> {
     const tools: Tool[] = [];
 
-    for (const { component } of this.components) {
+    for (const component of this.components) {
       for (const tool of component.toolSet.values()) {
         if (this.toolManager.isToolEnabled(tool.toolName)) {
           tools.push(tool);
@@ -396,11 +382,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       );
     }
 
-    const sorted = [...this.components].sort(
-      (a, b) => (a.priority ?? 0) - (b.priority ?? 0),
-    );
-
-    for (const { component } of sorted) {
+    for (const component of this.components) {
       const componentContainer = new MdDiv(
         {
           content: `## ${component.componentId}`,
@@ -463,11 +445,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
       );
     }
 
-    const sorted = [...this.components].sort(
-      (a, b) => (a.priority ?? 0) - (b.priority ?? 0),
-    );
-
-    for (const { component } of sorted) {
+    for (const component of this.components) {
       const componentContainer = new tdiv({
         content: component.componentId,
         styles: { showBorder: true },
@@ -507,13 +485,13 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     totalTools: number;
   } {
     let totalTools = 0;
-    for (const { component } of this.components) {
+    for (const component of this.components) {
       totalTools += component.toolSet.size;
     }
 
     return {
       componentCount: this.components.length,
-      componentKeys: this.components.map((c) => c.component.componentId),
+      componentKeys: this.components.map((c) => c.componentId),
       totalTools,
     };
   }
@@ -593,7 +571,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   ): Promise<Record<string, ExportResult>> {
     const results: Record<string, ExportResult> = {};
 
-    for (const { component } of this.components) {
+    for (const component of this.components) {
       try {
         const result = await component.exportData(options);
         results[component.componentId] = result;
@@ -628,7 +606,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   exportComponentStates(): Map<string, ComponentStateBase> {
     const states = new Map<string, ComponentStateBase>();
 
-    for (const { component } of this.components) {
+    for (const component of this.components) {
       if (component.exportState) {
         try {
           states.set(component.componentId, component.exportState());
@@ -648,10 +626,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     for (const [componentId, state] of states) {
       try {
         const entry = this.components.find(
-          (c) => c.component.componentId === componentId,
+          (c) => c.componentId === componentId,
         );
-        if (entry?.component.restoreState) {
-          entry.component.restoreState(state);
+        if (entry?.restoreState) {
+          entry.restoreState(state);
         }
       } catch (error) {
         console.error(
