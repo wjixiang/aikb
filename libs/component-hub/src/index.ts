@@ -29,14 +29,6 @@ export type {
   CancelTaskParams,
 } from './lineage-control/index.js';
 
-// Bookshelf
-export {
-  BookViewerComponent,
-  WorkspaceInfoComponent,
-} from './bookshelf/index.js';
-
-// Knowledge
-export { KnowledgeManageComponent } from './knowledge/index.js';
 
 // Bibliography Search
 export { BibliographySearchComponent } from './bibliographySearch/bibliographySearchComponent.js';

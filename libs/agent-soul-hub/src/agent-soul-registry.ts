@@ -111,7 +111,7 @@ registerAgentSoul({
 
 registerAgentSoul({
   token: 'article-retrieve-router',
-  name: 'Router Agent',
+  name: 'Article Retrieve Router Agent',
   type: 'router',
   description: '路由Agent，负责协调多个Agent之间的工作',
   factory: createArticleRetrieveRouterAgentSoul,
@@ -132,4 +132,12 @@ registerAgentSoul({
   description:
     '联网搜索Agent，通过搜索引擎从互联网获取最新信息，支持意图识别、域名过滤、时间范围筛选等高级搜索功能',
   factory: createWebSearchAgentSoul,
+});
+
+registerAgentSoul({
+  token: 'web-search-router',
+  name: 'Web Search Router',
+  type: 'router',
+  description: '路由Agent，负责协调多个Agent之间的工作',
+  factory: createArticleRetrieveRouterAgentSoul,
 });

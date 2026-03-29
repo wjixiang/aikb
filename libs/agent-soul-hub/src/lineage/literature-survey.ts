@@ -48,6 +48,16 @@ export const literatureSurveyLineage: LineageSchema = {
           },
         ],
       },
+      {
+        role: 'root',
+        soulToken: 'web-search-router',
+        children: [
+          {
+            role: 'worker',
+            soulToken: 'web-search',
+          },
+        ]
+      }
     ],
   },
 };
