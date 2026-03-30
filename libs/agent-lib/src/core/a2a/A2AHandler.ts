@@ -67,6 +67,11 @@ export interface IA2AHandler {
 
   /** Signal that an A2A task has been completed (calls the registered callback) */
   completeTask(conversationId: string, output: unknown, status: string): void;
+
+  /** Set callback for any message received (called before type-specific handlers) */
+  setOnMessageReceivedCallback(
+    callback: (conversationId: string, message: A2AMessage) => void,
+  ): void;
 }
 
 /**
@@ -118,6 +123,14 @@ export class A2AHandler implements IA2AHandler {
     status: string,
   ) => void;
 
+  /**
+   * Callback for any message received (before type-specific handlers)
+   */
+  private onMessageReceivedCallback?: (
+    conversationId: string,
+    message: A2AMessage,
+  ) => void;
+
   constructor(messageBus: IMessageBus, config: A2AHandlerConfig) {
     this.logger = pino({
       level: 'debug',
@@ -140,6 +153,8 @@ export class A2AHandler implements IA2AHandler {
       );
       return;
     }
+
+    this.onMessageReceivedCallback?.(message.conversationId, message);
 
     this.logger.info(
       {
@@ -264,6 +279,31 @@ export class A2AHandler implements IA2AHandler {
       }
 
       const content = topologyMessage.content;
+
+      // Trigger callback for any message that could wake up a sleeping agent
+      // This includes 'result' messages from completeTask
+      if (
+        topologyMessage.messageType === 'result' ||
+        this.isA2AMessage(content)
+      ) {
+        // Construct a minimal A2AMessage-like object for the callback
+        const callbackMessage = this.isA2AMessage(content)
+          ? content
+          : {
+              messageId: topologyMessage.messageId,
+              conversationId: topologyMessage.conversationId,
+              messageType: 'response' as const,
+              from: topologyMessage.from,
+              to: topologyMessage.to,
+              content: content,
+              timestamp: topologyMessage.timestamp,
+            };
+        this.onMessageReceivedCallback?.(
+          topologyMessage.conversationId,
+          callbackMessage as any,
+        );
+      }
+
       if (this.isA2AMessage(content)) {
         this.handleMessage(content).catch((error) => {
           this.logger.error({ error }, '[A2AHandler] Error handling message');
@@ -415,6 +455,16 @@ export class A2AHandler implements IA2AHandler {
         'No task completion callback registered',
       );
     }
+  }
+
+  /**
+   * Set callback for any message received
+   * Called before type-specific handlers (task/query/event/cancel)
+   */
+  setOnMessageReceivedCallback(
+    callback: (conversationId: string, message: A2AMessage) => void,
+  ): void {
+    this.onMessageReceivedCallback = callback;
   }
 
   /**

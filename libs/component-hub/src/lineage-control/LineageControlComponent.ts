@@ -7,7 +7,6 @@ import { tdiv, th } from 'agent-lib/components/ui';
 import { TYPES } from 'agent-lib/core';
 import type { IA2AHandler } from 'agent-lib/core';
 import type { IA2AClient } from 'agent-lib/core';
-import type { IAgentSleepControl } from 'agent-lib/core';
 import type { RuntimeControlState } from 'agent-lib/core';
 import type { IRuntimeControlClient } from 'agent-lib/core';
 import type { AgentLineageInfo } from 'agent-lib/core';
@@ -16,6 +15,8 @@ import { getGlobalAgentRegistry } from 'agent-lib/core';
 import { agentSoulRegistry } from 'agent-lib/core';
 import { lineageSchemaRegistry } from 'agent-lib/core';
 import type { IAgentCardRegistry } from 'agent-lib/core';
+import type { HookModule } from 'agent-lib/core';
+import { HookType } from 'agent-lib/core';
 import {
   lineageControlToolSchemas,
   type LineageControlToolReturnTypes,
@@ -24,7 +25,6 @@ import {
   type FailTaskParams,
   type SendTaskParams,
   type SendQueryParams,
-  type WaitForResultParams,
   type CancelTaskParams,
   type CreateAgentByTypeParams,
   type StartAgentParams,
@@ -87,16 +87,16 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
 
   protected a2aHandler: IA2AHandler;
   protected a2aClient: IA2AClient;
-  protected sleepControl: IAgentSleepControl;
   private agentRegistry: IAgentCardRegistry;
   private runtimeState?: RuntimeControlState;
   protected lineage?: AgentLineageInfo;
+  private hookModule: HookModule;
 
   constructor(
     @inject(TYPES.AgentInstanceId) private instanceId: string,
     @inject(TYPES.IA2AHandler) a2aHandler: IA2AHandler,
     @inject(TYPES.IA2AClient) a2aClient: IA2AClient,
-    @inject(TYPES.AgentSleepControl) sleepControl: IAgentSleepControl,
+    @inject(TYPES.HookModule) hookModule: HookModule,
     @inject(TYPES.RuntimeControlState)
     @optional()
     runtimeState?: RuntimeControlState,
@@ -107,10 +107,35 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
     super();
     this.a2aHandler = a2aHandler;
     this.a2aClient = a2aClient;
-    this.sleepControl = sleepControl;
     this.agentRegistry = getGlobalAgentRegistry();
     this.runtimeState = runtimeState;
     this.lineage = lineage;
+    this.hookModule = hookModule;
+
+    this.hookModule.on(HookType.AGENT_WOKEN, (ctx) => {
+      const data = ctx.data as
+        | {
+            conversationId?: string;
+            messageType?: string;
+            from?: string;
+            content?: unknown;
+          }
+        | undefined;
+      if (data?.messageType === 'response' && data.conversationId) {
+        for (const task of Object.values(this.reactive.sentTasks)) {
+          if (
+            task.conversationId === data.conversationId &&
+            task.status === 'in-flight'
+          ) {
+            task.status = 'completed';
+            task.resultSummary = summarizeOutput(
+              data.content as { output?: unknown },
+            );
+            task.completedAt = Date.now();
+          }
+        }
+      }
+    });
   }
 
   private get runtimeClient(): IRuntimeControlClient | undefined {
@@ -154,10 +179,6 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
         checkSent: {
           desc: lineageControlToolSchemas.checkSent.desc,
           paramsSchema: lineageControlToolSchemas.checkSent.paramsSchema,
-        },
-        waitForResult: {
-          desc: lineageControlToolSchemas.waitForResult.desc,
-          paramsSchema: lineageControlToolSchemas.waitForResult.paramsSchema,
         },
         cancelTask: {
           desc: lineageControlToolSchemas.cancelTask.desc,
@@ -406,8 +427,6 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       };
       this.reactive.sentTasks[params.taskId] = sentTask;
 
-      this.trackSentTaskInfo(sentTask).catch(() => {});
-
       return {
         success: true,
         data: {
@@ -482,103 +501,6 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
     };
   }
 
-  async onWaitForResult(
-    params: WaitForResultParams,
-  ): Promise<ToolCallResult<LineageControlToolReturnTypes['waitForResult']>> {
-    const sentTask = Object.values(this.snapshot.sentTasks).find(
-      (t) => t.conversationId === params.conversationId,
-    );
-
-    if (!sentTask) {
-      return {
-        success: false,
-        data: {
-          success: false,
-          conversationId: params.conversationId,
-          error: `No sent task found with conversationId: ${params.conversationId}`,
-        },
-        summary: `[Sent] No sent task found for conversationId: ${params.conversationId}`,
-      };
-    }
-
-    if (sentTask.status === 'completed') {
-      return {
-        success: true,
-        data: {
-          success: true,
-          conversationId: params.conversationId,
-          resultSummary: sentTask.resultSummary,
-        },
-        summary: `[Sent] Task already completed: ${params.conversationId}`,
-      };
-    }
-
-    if (sentTask.status === 'failed' || sentTask.status === 'timeout') {
-      return {
-        success: false,
-        data: {
-          success: false,
-          conversationId: params.conversationId,
-          error: sentTask.error,
-        },
-        summary: `[Sent] Task already ${sentTask.status}: ${params.conversationId}`,
-      };
-    }
-
-    if (sentTask.status === 'cancelled') {
-      return {
-        success: false,
-        data: {
-          success: false,
-          conversationId: params.conversationId,
-          error: 'Task was cancelled',
-        },
-        summary: `[Sent] Task was cancelled: ${params.conversationId}`,
-      };
-    }
-
-    try {
-      await this.sleepControl.sleep(
-        `Waiting for A2A result: ${params.conversationId}`,
-      );
-
-      const task = this.snapshot.sentTasks[sentTask.taskId];
-      if (task && task.status === 'completed') {
-        return {
-          success: true,
-          data: {
-            success: true,
-            conversationId: params.conversationId,
-            resultSummary: task.resultSummary,
-          },
-          summary: `[Sent] Woke up, result received: ${params.conversationId}`,
-        };
-      }
-
-      return {
-        success: false,
-        data: {
-          success: false,
-          conversationId: params.conversationId,
-          error: task?.error ?? 'Woken up without result (possibly aborted)',
-        },
-        summary: `[Sent] Woken up without result: ${params.conversationId}`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: {
-          success: false,
-          conversationId: params.conversationId,
-          error: error instanceof Error ? error.message : String(error),
-        },
-        summary: `[Sent] Failed to wait: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      };
-    }
-  }
-
   async onCancelTask(
     params: CancelTaskParams,
   ): Promise<ToolCallResult<LineageControlToolReturnTypes['cancelTask']>> {
@@ -620,10 +542,6 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
         status: 'cancelled',
         cancelledAt: Date.now(),
       };
-
-      if (this.sleepControl.isSleeping()) {
-        this.sleepControl.wakeUp(undefined);
-      }
 
       return {
         success: true,
@@ -894,39 +812,6 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   }
 
   // ===========================================================================
-  // Background tracking
-  // ===========================================================================
-
-  private async trackSentTaskInfo(sentTask: SentTaskInfo): Promise<void> {
-    try {
-      const result = await this.a2aClient.waitForResult(
-        sentTask.conversationId,
-      );
-
-      this.reactive.sentTasks[sentTask.taskId] = {
-        ...sentTask,
-        status: 'completed',
-        resultSummary: summarizeOutput(result as any),
-        completedAt: Date.now(),
-      };
-      if (this.sleepControl.isSleeping()) {
-        this.sleepControl.wakeUp(result);
-      }
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      this.reactive.sentTasks[sentTask.taskId] = {
-        ...sentTask,
-        status: msg.includes('Timeout') ? 'timeout' : 'failed',
-        error: msg,
-        completedAt: Date.now(),
-      };
-      if (this.sleepControl.isSleeping()) {
-        this.sleepControl.wakeUp(undefined);
-      }
-    }
-  }
-
-  // ===========================================================================
   // Rendering
   // ===========================================================================
 
@@ -1169,8 +1054,7 @@ You have an Agent Mailbox for collaborating with other agents.
 1. sendTask — delegate work asynchronously (returns immediately after ACK)
 2. sendQuery — ask a quick question and get an immediate response
 3. checkSent — view status of all delegated tasks
-4. waitForResult — sleep until a delegated task completes
-5. cancelTask — cancel an in-flight task
+4. cancelTask — cancel an in-flight task
 
 ## Contacts
 - discoverAgents — find agents by capability or skill
@@ -1222,7 +1106,7 @@ You are a router. You manage child agents and delegate work to them.
 1. listChildAgents — find available children
 2. sendTask — delegate a task asynchronously
 3. sendQuery — ask a quick question
-4. checkSent / waitForResult — track progress
+4. checkSent — track progress
 5. cancelTask — cancel if needed
 
 ## Info

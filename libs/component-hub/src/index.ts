@@ -25,10 +25,8 @@ export type {
   SendTaskParams,
   SendQueryParams,
   CheckSentParams,
-  WaitForResultParams,
   CancelTaskParams,
 } from './lineage-control/index.js';
-
 
 // Bibliography Search
 export { BibliographySearchComponent } from './bibliographySearch/bibliographySearchComponent.js';

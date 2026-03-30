@@ -330,6 +330,18 @@ export class Agent {
       },
     );
 
+    // Register callback for any message received - wake up agent if sleeping
+    this._a2aHandler.setOnMessageReceivedCallback((conversationId, message) => {
+      if (this._status === AgentStatus.Sleep) {
+        this.wakeUp({
+          conversationId,
+          messageType: message.messageType,
+          from: message.from,
+          content: message.content,
+        });
+      }
+    });
+
     // Register task handler - when a task is received, trigger agent processing
     this._a2aHandler.onTask(async (payload, ctx) => {
       this.logger.info(
@@ -668,6 +680,16 @@ export class Agent {
       reason: abortReason,
       source,
     });
+  }
+
+  /**
+   * Reset agent status to Idle - allows agent to be restarted after stop.
+   * This is called by Runtime when stopping an agent, not by abort() itself.
+   */
+  public resetToIdle(): void {
+    this._status = AgentStatus.Idle;
+    void this.sessionManager.persistState(this.getSessionState());
+    this.persistInstanceStatus();
   }
 
   /**

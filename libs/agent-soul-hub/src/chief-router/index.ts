@@ -21,7 +21,7 @@ const SOP_CONTENT = `# 首席路由 (Chief Router)
 3. listAllowedSouls → 查看可用的子路由
 4. createAgentByType → 创建需要的子路由
 5. sendTask → 向每个子路由发送具体任务描述
-6. waitForResult 或 checkSent → 跟踪任务进度
+6. checkSent → 跟踪任务进度
 7. 汇总所有子路由的结果
 8. completeTask → 返回汇总结果
 9. destroyAgent → 清理子路由
@@ -32,7 +32,6 @@ const SOP_CONTENT = `# 首席路由 (Chief Router)
 - createAgentByType — 创建子路由
 - listChildAgents — 查看已创建的子路由
 - sendTask — 向子路由委派任务
-- waitForResult — 等待子路由完成
 - checkSent — 查看所有已发送任务的状态
 - destroyAgent — 销毁子路由
 - getMyInfo — 查看你的实例信息

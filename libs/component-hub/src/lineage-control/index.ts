@@ -21,6 +21,5 @@ export type {
   SendTaskParams,
   SendQueryParams,
   CheckSentParams,
-  WaitForResultParams,
   CancelTaskParams,
 } from './schemas.js';

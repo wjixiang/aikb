@@ -140,7 +140,7 @@ async function run() {
     // Step 3: Create task
     console.log('\n📝 Step 3: Create task');
     const taskRes = await request('POST', '/tasks', {
-      description: '进行血管外科最新文献的调查',
+      description: '进行血管外科最新文献的调查,请你仅联网检索',
       targetInstanceId: agentId,
       priority: 'normal',
     });

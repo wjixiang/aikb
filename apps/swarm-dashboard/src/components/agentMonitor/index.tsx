@@ -27,6 +27,7 @@ export function AgentMonitor() {
     contexts: workspaceContexts,
     totalEntries: workspaceTotal,
     loading: workspaceLoading,
+    refetch: refetchWorkspace,
   } = useAgentWorkspaceContexts(selectedId);
 
   const handleSelect = (instanceId: string) => {
@@ -50,12 +51,16 @@ export function AgentMonitor() {
       if (action === 'destroy') {
         handleClose();
       } else {
-        await Promise.all([refetchDetail(), refetchMemory()]);
+        await Promise.all([refetchDetail(), refetchMemory(), refetchWorkspace()]);
       }
     } catch {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const handleRefresh = async () => {
+    await Promise.all([refetchDetail(), refetchMemory(), refetchWorkspace()]);
   };
 
   return (
@@ -78,6 +83,7 @@ export function AgentMonitor() {
         workspaceContexts={workspaceContexts}
         workspaceTotal={workspaceTotal}
         workspaceLoading={workspaceLoading}
+        onRefresh={handleRefresh}
       />
     </div>
   );

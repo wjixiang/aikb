@@ -8,7 +8,7 @@ import {
   type TopologyEdge,
   type EdgeActivity,
 } from '@/lib/api';
-import { Network } from 'lucide-react';
+import { Network, RefreshCw } from 'lucide-react';
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -443,6 +443,7 @@ export function AgentTopology({
   );
 
   const prevDataRef = useRef<string>('');
+  const fetchRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -478,6 +479,7 @@ export function AgentTopology({
       }
     };
 
+    fetchRef.current = fetchData;
     fetchData();
     const interval = setInterval(fetchData, 10000);
 
@@ -505,6 +507,13 @@ export function AgentTopology({
             Agent Topology
           </span>
           <span id="topology-count" className="text-xs text-muted-foreground" />
+          <button
+            onClick={() => fetchRef.current()}
+            className="p-1.5 rounded-md hover:bg-muted transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col flex-1 min-h-0">

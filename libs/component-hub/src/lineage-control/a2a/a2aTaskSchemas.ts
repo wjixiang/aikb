@@ -69,16 +69,6 @@ export const checkSentParamsSchema = z.object({}).passthrough();
 
 export type CheckSentParams = z.infer<typeof checkSentParamsSchema>;
 
-export const waitForResultParamsSchema = z.object({
-  conversationId: z
-    .string()
-    .describe(
-      'Conversation ID of the sent task to wait for. Obtained from sendTask or checkSent result.',
-    ),
-});
-
-export type WaitForResultParams = z.infer<typeof waitForResultParamsSchema>;
-
 export const cancelTaskParamsSchema = z.object({
   conversationId: z
     .string()
@@ -154,7 +144,7 @@ export const a2aTaskToolSchemas = {
   },
   sendTask: {
     toolName: 'sendTask',
-    desc: 'Delegate a task to another agent asynchronously. The agent ACKs immediately and processes in the background. Use checkSent or waitForResult to track progress.',
+    desc: 'Delegate a task to another agent asynchronously. The agent ACKs immediately and processes in the background. Use checkSent to track progress.',
     paramsSchema: sendTaskParamsSchema,
   },
   sendQuery: {
@@ -166,11 +156,6 @@ export const a2aTaskToolSchemas = {
     toolName: 'checkSent',
     desc: 'View the status of all tasks you have delegated to other agents. Shows in-flight, completed, failed, and cancelled tasks.',
     paramsSchema: checkSentParamsSchema,
-  },
-  waitForResult: {
-    toolName: 'waitForResult',
-    desc: 'Sleep and wait for the result of a previously sent task. The agent will automatically wake up when the result arrives. Use this when you need the result before proceeding.',
-    paramsSchema: waitForResultParamsSchema,
   },
   cancelTask: {
     toolName: 'cancelTask',
@@ -215,12 +200,6 @@ export interface A2ATaskToolReturnTypes {
     inFlightCount: number;
     completedCount: number;
     failedCount: number;
-  };
-  waitForResult: {
-    success: boolean;
-    conversationId: string;
-    resultSummary?: string;
-    error?: string;
   };
   cancelTask: { success: boolean; conversationId: string };
   discoverAgents: {

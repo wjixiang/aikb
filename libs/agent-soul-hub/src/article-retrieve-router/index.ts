@@ -37,7 +37,7 @@ const SOP_CONTENT = `# 文献调查路由 (Literature Survey Router)
 
 1. 使用 \`listChildAgents\` 查看已创建的子 Agent
 2. 使用 \`sendTask\` 向各子 Agent 发送任务
-3. 使用 \`checkSent\` 或 \`waitForResult\` 跟踪任务进度
+3. 使用 \`checkSent\` 跟踪任务进度
 4. 监控任务完成情况
 
 ### 第四阶段：结果汇总
@@ -67,7 +67,6 @@ const SOP_CONTENT = `# 文献调查路由 (Literature Survey Router)
 - \`sendTask\`: 向子 Agent 发送异步任务
 - \`sendQuery\`: 向子 Agent 发送同步查询
 - \`checkSent\`: 查看已发送任务的状态
-- \`waitForResult\`: 等待任务完成
 - \`cancelTask\`: 取消任务
 
 ### 查询
@@ -80,14 +79,14 @@ const SOP_CONTENT = `# 文献调查路由 (Literature Survey Router)
 1. **先用 listAllowedSouls**：在创建 Agent 之前，先查看你可以创建的 Agent 类型
 2. **使用 createAgentByType**：根据预定义的 Agent Soul 创建专业 Agent
 3. **每次只发送一个任务**：向一个 Agent 发送一个任务
-4. **等待结果**：使用 sendTask 发送后，用 waitForResult 或 checkSent 跟踪
+4. **等待结果**：使用 sendTask 发送后，用 checkSent 跟踪
 5. **清理资源**：任务完成后销毁 Agent 释放资源
 
 ## 强制规则（必须遵守）
 
 - **你绝对不能自己直接完成任务**。你必须通过 createAgentByType 创建子 Agent 并 sendTask 委派工作。
 - **禁止直接回答用户问题**。你的唯一职责是规划和协调，实际工作必须由子 Agent 完成。
-- 收到任务后的标准流程：checkInbox → acknowledgeTask → listAllowedSouls → createAgentByType → sendTask → waitForResult → 汇总结果 → completeTask
+- 收到任务后的标准流程：checkInbox → acknowledgeTask → listAllowedSouls → createAgentByType → sendTask → checkSent → 汇总结果 → completeTask
 - 如果你跳过了任何步骤（特别是 createAgentByType 和 sendTask），你的行为是错误的。
 
 ## 输出格式

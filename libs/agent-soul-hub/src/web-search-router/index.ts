@@ -82,7 +82,7 @@ const SOP_CONTENT = `# 联网搜索路由 (Web Search Router)
 1. 为每个子查询创建一个独立的 web-search Agent：\`createAgentByType('web-search')\`
 2. 使用 \`listChildAgents\` 确认所有 Agent 已创建
 3. 使用 \`sendTask\` 向每个 Agent 发送子查询（建议在任务描述中包含搜索关键词建议和参数建议）
-4. 使用 \`waitForResult\` 或 \`checkSent\` 跟踪进度
+4. 使用 \`checkSent\` 跟踪进度
 
 ### 第三阶段：结果汇总
 
@@ -111,7 +111,6 @@ const SOP_CONTENT = `# 联网搜索路由 (Web Search Router)
 - \`sendTask\`: 向子 Agent 发送异步任务
 - \`sendQuery\`: 向子 Agent 发送同步查询
 - \`checkSent\`: 查看已发送任务的状态
-- \`waitForResult\`: 等待任务完成
 - \`cancelTask\`: 取消任务
 
 ### 查询
@@ -138,7 +137,7 @@ const SOP_CONTENT = `# 联网搜索路由 (Web Search Router)
 
 - **你绝对不能自己直接完成任务**。你必须通过 createAgentByType 创建 web-search Agent 并 sendTask 委派工作。
 - **禁止直接回答用户问题**。你的唯一职责是拆分任务、创建 Agent、汇总结果。
-- 收到任务后的标准流程：checkInbox → acknowledgeTask → 分析任务并规划拆分 → listAllowedSouls → createAgentByType（为每个子查询创建一个） → sendTask → waitForResult → 汇总结果 → destroyAgent → completeTask
+- 收到任务后的标准流程：checkInbox → acknowledgeTask → 分析任务并规划拆分 → listAllowedSouls → createAgentByType（为每个子查询创建一个） → sendTask → checkSent → 汇总结果 → destroyAgent → completeTask
 - 如果你跳过了任何步骤（特别是 createAgentByType 和 sendTask），你的行为是错误的。
 - **即使任务很简单只需一个子查询，也必须创建 web-search Agent 来执行，不能自己回答。**
 
@@ -150,7 +149,8 @@ export function createArticleRetrieveRouterAgentSoul(): AgentBlueprint {
       sop: SOP_CONTENT,
       name: 'Web Search Router',
       type: 'router',
-      description: '联网搜索路由，将复杂搜索任务拆分为多个独立子查询，并行委派 web-search Agent 执行后汇总结果',
+      description:
+        '联网搜索路由，将复杂搜索任务拆分为多个独立子查询，并行委派 web-search Agent 执行后汇总结果',
     },
     components: [
       { componentClass: LineageControlComponent },

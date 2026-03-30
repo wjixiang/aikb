@@ -806,13 +806,15 @@ export class AgentRuntime implements IAgentRuntime {
       throw new Error(`Agent is not idle: ${currentStatus}`);
     }
 
-    await agent.start();
-
-    // Update registry
+    // Update registry BEFORE starting - this ensures correct status during agent execution
     this.registry.update(instanceId, { status: AgentStatus.Running });
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:started', { instanceId });
+
+    // Start agent - this blocks until agent completes
+    // Registry status will be updated to actual final status by complete()/abort()
+    await agent.start();
   }
 
   /**
@@ -838,6 +840,10 @@ export class AgentRuntime implements IAgentRuntime {
     ) {
       agent.abort('Runtime stop', 'manual');
     }
+
+    // Reset agent internal status to Idle so it can be restarted
+    // Note: abort() sets _status to Aborted, but stop should allow restart
+    agent.resetToIdle();
 
     // Update registry
     this.registry.update(instanceId, { status: AgentStatus.Idle });

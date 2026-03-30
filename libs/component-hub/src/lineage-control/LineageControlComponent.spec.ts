@@ -7,7 +7,6 @@ import {
 } from '../../core/a2a/AgentCard.js';
 import type { IA2AHandler, PendingTask } from '../../core/a2a/A2AHandler.js';
 import type { IA2AClient } from '../../core/a2a/A2AClient.js';
-import type { IAgentSleepControl } from '../../core/runtime/AgentSleepControl.js';
 import { RuntimeControlState } from '../../core/runtime/RuntimeControlState.js';
 import type { IRuntimeControlClient } from '../../core/runtime/types.js';
 import type { AgentLineageInfo } from '../../core/runtime/types.js';
@@ -41,16 +40,7 @@ function createMockA2AClient(): IA2AClient {
     sendResponse: vi.fn().mockResolvedValue(undefined),
     sendEvent: vi.fn().mockResolvedValue(undefined),
     sendCancel: vi.fn().mockResolvedValue(undefined),
-    waitForResult: vi.fn().mockResolvedValue({ output: 'done' }),
     getInstanceId: vi.fn().mockReturnValue(INSTANCE_ID),
-  };
-}
-
-function createMockSleepControl(): IAgentSleepControl {
-  return {
-    isSleeping: vi.fn().mockReturnValue(false),
-    sleep: vi.fn().mockResolvedValue(undefined),
-    wakeUp: vi.fn(),
   };
 }
 
@@ -115,7 +105,6 @@ function createComponent(opts?: {
 }) {
   const a2aHandler = createMockA2AHandler();
   const a2aClient = createMockA2AClient();
-  const sleepControl = createMockSleepControl();
   const runtimeState = opts?.runtimeClient
     ? createRuntimeState(opts.runtimeClient)
     : undefined;
@@ -125,12 +114,11 @@ function createComponent(opts?: {
     INSTANCE_ID,
     a2aHandler,
     a2aClient,
-    sleepControl,
     runtimeState,
     lineage,
   );
 
-  return { component, a2aHandler, a2aClient, sleepControl, runtimeState };
+  return { component, a2aHandler, a2aClient, runtimeState };
 }
 
 describe('LineageControlComponent', () => {
@@ -209,7 +197,6 @@ describe('LineageControlComponent', () => {
       expect(tools.has('sendTask')).toBe(true);
       expect(tools.has('sendQuery')).toBe(true);
       expect(tools.has('checkSent')).toBe(true);
-      expect(tools.has('waitForResult')).toBe(true);
       expect(tools.has('cancelTask')).toBe(true);
       expect(tools.has('createAgentByType')).toBe(true);
       expect(tools.has('startAgent')).toBe(true);
@@ -246,7 +233,6 @@ describe('LineageControlComponent', () => {
       expect(tools.has('sendTask')).toBe(false);
       expect(tools.has('sendQuery')).toBe(false);
       expect(tools.has('checkSent')).toBe(false);
-      expect(tools.has('waitForResult')).toBe(false);
       expect(tools.has('cancelTask')).toBe(false);
       expect(tools.has('createAgentByType')).toBe(false);
       expect(tools.has('startAgent')).toBe(false);
@@ -627,9 +613,6 @@ describe('LineageControlComponent', () => {
     it('should track sent tasks', async () => {
       const { component, a2aClient } = createComponent();
       vi.mocked(a2aClient.sendTaskAndWaitForAck).mockResolvedValue('conv-1');
-      vi.mocked(a2aClient.waitForResult).mockImplementation(
-        () => new Promise(() => {}),
-      );
 
       await component.handleToolCall('sendTask', {
         targetAgentId: 'child-1',
@@ -645,66 +628,6 @@ describe('LineageControlComponent', () => {
       const result = await component.handleToolCall('checkSent', {});
       expect(result.data.tasks).toHaveLength(2);
       expect(result.data.inFlightCount).toBe(2);
-    });
-  });
-
-  describe('onWaitForResult', () => {
-    it('should return error when task not found', async () => {
-      const { component } = createComponent();
-      const result = await component.handleToolCall('waitForResult', {
-        conversationId: 'nonexistent',
-      });
-      expect(result.success).toBe(false);
-      expect(result.data.error).toContain('No sent task found');
-    });
-
-    it('should return immediately for completed task', async () => {
-      const { component, a2aClient } = createComponent();
-      vi.mocked(a2aClient.sendTaskAndWaitForAck).mockResolvedValue('conv-c');
-      vi.mocked(a2aClient.waitForResult).mockImplementation(
-        () => new Promise(() => {}),
-      );
-
-      await component.handleToolCall('sendTask', {
-        targetAgentId: 'child-1',
-        taskId: 'task-c',
-        description: 'Wait task',
-      });
-
-      (component as any).reactive.sentTasks['task-c'] = {
-        ...(component as any).snapshot.sentTasks['task-c'],
-        status: 'completed',
-        resultSummary: 'done!',
-        completedAt: Date.now(),
-      };
-
-      const result = await component.handleToolCall('waitForResult', {
-        conversationId: 'conv-c',
-      });
-      expect(result.success).toBe(true);
-      expect(result.data.resultSummary).toBe('done!');
-    });
-
-    it('should return error for failed task', async () => {
-      const { component, a2aClient, sleepControl } = createComponent();
-      vi.mocked(a2aClient.sendTaskAndWaitForAck).mockResolvedValue('conv-f');
-      vi.mocked(a2aClient.waitForResult).mockRejectedValue(
-        new Error('Task failed'),
-      );
-      vi.mocked(sleepControl.isSleeping).mockReturnValue(true);
-
-      await component.handleToolCall('sendTask', {
-        targetAgentId: 'child-1',
-        taskId: 'task-f',
-        description: 'Fail wait',
-      });
-
-      const result = await component.handleToolCall('waitForResult', {
-        conversationId: 'conv-f',
-      });
-
-      expect(result.success).toBe(false);
-      expect(sleepControl.wakeUp).toHaveBeenCalled();
     });
   });
 
@@ -729,9 +652,6 @@ describe('LineageControlComponent', () => {
       const { component, a2aClient } = createComponent();
       vi.mocked(a2aClient.sendTaskAndWaitForAck).mockResolvedValue(
         'conv-cancel',
-      );
-      vi.mocked(a2aClient.waitForResult).mockImplementation(
-        () => new Promise(() => {}),
       );
 
       await component.handleToolCall('sendTask', {
@@ -766,8 +686,6 @@ describe('LineageControlComponent', () => {
       await component.handleToolCall('cancelTask', {
         conversationId: 'conv-wake',
       });
-
-      expect(sleepControl.wakeUp).toHaveBeenCalled();
     });
   });
 

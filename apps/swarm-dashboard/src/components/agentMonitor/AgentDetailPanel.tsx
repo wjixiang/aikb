@@ -22,6 +22,7 @@ import {
   Monitor,
   ChevronDown,
   ChevronRight,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { STATUS_BADGE } from './constants';
@@ -43,6 +44,7 @@ interface AgentDetailPanelProps {
   workspaceContexts: WorkspaceContextEntry[];
   workspaceTotal: number;
   workspaceLoading: boolean;
+  onRefresh: () => void;
 }
 
 export function AgentDetailPanel({
@@ -59,6 +61,7 @@ export function AgentDetailPanel({
   workspaceContexts,
   workspaceTotal,
   workspaceLoading,
+  onRefresh,
 }: AgentDetailPanelProps) {
   const memoryScrollRef = useRef<HTMLDivElement>(null);
 
@@ -83,9 +86,19 @@ export function AgentDetailPanel({
                     detail.instanceId.slice(0, 12)}
                 </span>
               </span>
-              <Button variant="ghost" size="icon-xs" onClick={onClose}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <span className="flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={onRefresh}
+                  title="Refresh"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon-xs" onClick={onClose}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </span>
             </CardTitle>
           </CardHeader>
 

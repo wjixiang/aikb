@@ -8,7 +8,6 @@ import type {
   SendTaskParams,
   SendQueryParams,
   CheckSentParams,
-  WaitForResultParams,
   CancelTaskParams,
   SentTaskInfo,
   IncomingTaskInfo,
@@ -21,7 +20,6 @@ import {
   sendTaskParamsSchema,
   sendQueryParamsSchema,
   checkSentParamsSchema,
-  waitForResultParamsSchema,
   cancelTaskParamsSchema,
   discoverAgentsParamsSchema,
 } from './a2a/a2aTaskSchemas.js';
@@ -34,7 +32,6 @@ export {
   sendTaskParamsSchema,
   sendQueryParamsSchema,
   checkSentParamsSchema,
-  waitForResultParamsSchema,
   cancelTaskParamsSchema,
 } from './a2a/a2aTaskSchemas.js';
 
@@ -152,11 +149,6 @@ export const lineageControlToolSchemas = {
     desc: 'View status of all delegated tasks.',
     paramsSchema: checkSentParamsSchema,
   },
-  waitForResult: {
-    toolName: 'waitForResult',
-    desc: 'Sleep until a delegated task completes.',
-    paramsSchema: waitForResultParamsSchema,
-  },
   cancelTask: {
     toolName: 'cancelTask',
     desc: 'Cancel an in-flight delegated task.',
@@ -250,12 +242,6 @@ export interface LineageControlToolReturnTypes {
     completedCount: number;
     failedCount: number;
   };
-  waitForResult: {
-    success: boolean;
-    conversationId: string;
-    resultSummary?: string;
-    error?: string;
-  };
   cancelTask: { success: boolean; conversationId: string };
   listChildAgents: {
     agents: Array<{
@@ -312,7 +298,6 @@ export type {
   SendTaskParams,
   SendQueryParams,
   CheckSentParams,
-  WaitForResultParams,
   CancelTaskParams,
   DiscoverAgentsParams,
   SentTaskInfo,
