@@ -1,9 +1,9 @@
-import { MinerUClient } from './mineru-client';
-import {} from '@aikb/s3-service';
+import { MinerUClient } from '../mineru-client';
+
 
 const TEST_PDF_S3_KEY = 'test/pdf/acei.pdf';
 
-async function getTestPdfS3Url() {}
+async function getTestPdfS3Url() { }
 
 describe('mineru-client-e2e', () => {
   let client: MinerUClient;
@@ -23,5 +23,5 @@ describe('mineru-client-e2e', () => {
     client = new MinerUClient(mockConfig);
   });
 
-  it('e2e: convert pdf to markdown', async () => {});
+  it('e2e: convert pdf to markdown', async () => { });
 });

@@ -1,4 +1,4 @@
-import { ZipProcessor } from './zip-processor';
+import { ZipProcessor } from '../zip-processor';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ Item (文献/书籍) ============
+
+model Item {
+  id         String   @id @default(uuid())
+  type       String   @default("article")
+  title      String   @db.Text
+  subtitle   String?  @db.Text
+  authors    String[]
+  abstract   String?  @db.Text
+  year       Int?
+  source     String?  @db.Text
+  doi        String?  @unique
+  isbn       String?  @unique
+  pmid       BigInt?
+  url        String?
+  coverUrl   String?
+  notes      String?  @db.Text
+  isFavorite Boolean  @default(false)
+  isRead     Boolean  @default(false)
+  rating     Int?
+  customMeta Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tags        ItemTag[]
+  attachments Attachment[]
+
+  @@index([type])
+  @@index([year])
+  @@index([isFavorite])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ============ Tag (标签) ============
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  color       String?
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  items ItemTag[]
+
+  @@index([name])
+}
+
+// ============ ItemTag (多对多关联) ============
+
+model ItemTag {
+  id        String   @id @default(uuid())
+  itemId    String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, tagId])
+  @@index([itemId])
+  @@index([tagId])
+}
+
+// ============ Attachment (附件) ============
+
+model Attachment {
+  id        String   @id @default(uuid())
+  itemId    String
+  fileName  String
+  fileType  String
+  fileSize  BigInt?
+  filePath  String
+  createdAt DateTime @default(now())
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
