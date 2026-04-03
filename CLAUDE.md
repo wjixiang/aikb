@@ -4,222 +4,138 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AIKB (AI Knowledge Base) is a knowledge management system integrated with agents. It manages PubMed biomedical literature, provides embedding/chunking capabilities, and includes an agent framework for knowledge tasks. The system supports evidence-based medicine (EBM) workflows with Expert-based agent orchestration.
+AIKB (AI Knowledge Base) is a knowledge management system integrated with agents. It manages PubMed biomedical literature, provides embedding/chunking capabilities, and includes an agent framework for knowledge tasks. The system supports evidence-based medicine (EBM) workflows with Expert-based agent orchestration and A2A (agent-to-agent) communication.
 
 ## Build System
 
 - **Package Manager**: pnpm (v10.7.0)
-- **Monorepo**: NX with pnpm workspaces
-- **Build Tools**: tsup for standalone libraries
-- **Testing**: Vitest with unit, integrated, and e2e test configurations
+- **Monorepo**: NX with pnpm workspaces (`libs/*`, `apps/*`)
+- **Build Tools**: tsup for standalone libraries, tsc for apps
+- **Testing**: Vitest with unit, integrated, and e2e configurations
+- **Linting**: ESLint (flat config) + Prettier (`singleQuote: true`, `trailingComma: all`)
+- **Databases**: Prisma 7 with `@prisma/adapter-pg` for PostgreSQL, pgvector for vector search
 
 ## Common Commands
 
-### Install Dependencies
-
 ```bash
-pnpm install
-```
+pnpm install                    # Install all dependencies
 
-### Build Libraries
+# Build
+cd libs/<pkg> && pnpm build     # Build individual lib (tsup)
+cd apps/swarm-runtime && pnpm build  # Build individual app (tsc)
 
-```bash
-# Build all libs with NX
-npx nx run-many -t build -p bib-lib agent-lib
+# Type check
+cd libs/<pkg> && pnpm type-check
 
-# Or build individual libs (they use tsup)
-cd libs/bib-lib && pnpm build
-cd libs/ai-embed && pnpm build
-cd libs/agent-lib && pnpm build
-```
+# Lint
+npx eslint libs/<pkg>/src       # Lint a package
 
-### Test
+# Test (Vitest)
+cd libs/<pkg> && pnpm test          # Unit tests (watch)
+cd libs/<pkg> && pnpm test:run      # Unit tests (single run)
+cd libs/<pkg> && pnpm test:integrated  # Integration tests (real DB)
 
-```bash
-# Run unit tests via NX
-npx nx test agent-lib
+# NX targets (agent-lib)
+npx nx test agent-lib               # Unit tests
+npx nx integrate agent-lib          # Integration tests
+npx nx run agent-lib:db-push        # Push schema
+npx nx run agent-lib:gen-client     # Generate Prisma client
+npx nx run agent-lib:studio         # Prisma Studio
 
-# Run tests directly with vitest
-cd libs/bib-lib && pnpm test          # unit tests
-cd libs/bib-lib && pnpm test:run      # run once
-cd libs/bib-lib && pnpm test:integrated
-cd libs/ai-embed && pnpm test
-```
-
-### Database (Prisma)
-
-```bash
-# bib-lib
+# Prisma (bib-lib, direct)
 cd libs/bib-lib
 pnpm prisma:generate    # Generate Prisma client
 pnpm prisma:migrate     # Run migrations
 pnpm prisma:push        # Push schema to DB
 
-# agent-lib (uses NX)
-npx nx run agent-lib:db-pull
-npx nx run agent-lib:db-push
-npx nx run agent-lib:gen-client
-npx nx run agent-lib:studio
+# Expert CLI (agent-lib)
+cd libs/agent-lib
+pnpm expert:list / expert:new / expert:validate / expert:show / expert:test
+
+# Agent CLI (agent-lib)
+cd libs/agent-lib
+pnpm agent:runtime:start / agent:runtime:stop / agent:runtime:status
+pnpm agent:test:basic / agent:test:a2a / agent:test:redis
+pnpm agent:monitor:runtime
+
+# Development servers
+cd libs/bib-lib && pnpm start       # Express server
+cd apps/swarm-runtime && pnpm dev   # Fastify dev server (tsx watch)
+
+# Docker services
+cd docker && docker compose up -d   # Redis, PostgreSQL+pgvector, RustFS, LiteLLM
 ```
 
-### Development Servers
+## Architecture
 
-```bash
-# bib-lib standalone server
-cd libs/bib-lib && pnpm start
+### Agent Framework (`libs/agent-lib`)
 
-# Run sync CLI
-cd libs/bib-lib && pnpm sync
-cd libs/bib-lib && pnpm embed
-```
-
-### Expert CLI (ebm-agent)
-
-```bash
-cd apps/ebm-agent
-pnpm expert:new <name>     # Create new Expert
-pnpm expert:list            # List all Experts
-pnpm expert:validate       # Validate Expert configs
-pnpm expert:show <name>    # Show Expert details
-pnpm expert:test           # Run Expert tests
-```
-
-## Project Structure
+The core framework uses **InversifyJS** for dependency injection. Key architectural layers:
 
 ```
-/
-├── apps/                    # NX applications
-│   ├── auth-service/       # Authentication service (NestJS)
-│   ├── bibliography-service/
-│   ├── pdf2md-service/
-│   └── ebm-agent/         # Evidence-based medicine agent (Expert system)
-├── libs/                   # Libraries
-│   ├── bib-lib/           # PubMed bibliography management
-│   │   ├── prisma/        # Database schema
-│   │   └── src/
-│   │       ├── sync/     # PubMed sync & embedding
-│   │       ├── search/   # Keyword, semantic, hybrid search
-│   │       └── export/   # Export functionality
-│   ├── ai-embed/          # @ai-embed/core - Embedding/chunking
-│   ├── agent-lib/        # Agent framework with Expert system
-│   │   └── src/
-│   │       ├── core/
-│   │       │   ├── expert/    # Expert orchestration system
-│   │       │   ├── api-client/  # LLM API clients
-│   │       │   ├── di/       # Dependency injection (InversifyJS)
-│   │       │   └── memory/   # Agent memory
-│   │       ├── tools/          # Tool definitions
-│   │       │   └── baml_client/    # BAML integration
-│   │       └── components/    # Built-in components (Mail, BibliographySearch, PICOS, PRISMA, etc.)
-│   ├── knowledgeBase/     # Knowledge graph system
-│   │   ├── knowledge-db/
-│   │   │   ├── entity-db/  # Entity storage (Prisma)
-│   │   │   ├── graph-db/   # Graph storage (Prisma)
-│   │   │   └── property-db/
-│   │   └── knowledgeBase-lib/  # Knowledge management
-│   ├── pdf-converter/     # PDF to Markdown conversion
-│   ├── mineru-client/     # MinerU PDF parser client
-│   ├── embedding/         # Embedding utilities
-│   ├── chunking/          # Text chunking
-│   └── ...
-├── ml/                     # Python ML utilities
-├── docker/                 # Docker compose configurations
-├── docs/                  # Architecture documentation
-├── pnpm-workspace.yaml
-└── package.json
+Agent → VirtualWorkspace → Components/Tools → Memory → API Client
 ```
 
-## Key Libraries
+**DI System** (`src/core/di/types.ts`): All services registered via `TYPES` symbols. Scopes:
+- **Singleton**: Container, IToolManager, IMessageBus, PrismaClient, IA2AClient
+- **Request**: VirtualWorkspace, MemoryModule, ApiClient (shared within agent creation)
+- **Transient**: Agent, IToolProvider (new per request)
 
-### @ai-embed/core (`libs/ai-embed`)
+**Two-Tier Memory**:
+1. `Agent._conversationHistory` — dialogue messages (always exists)
+2. `MemoryModule.memoryStore` — full workspace context via ContextMemoryStore (optional)
 
-Simplified embedding and chunking library. Exports:
+**Component System**: `ToolComponent` base class. Components provide tools to agents. Domain components live in `libs/component-hub`, agent-specific ones in `libs/agent-lib/src/components/`.
 
-- `Embedding` class - wraps embedding provider responses
-- `EmbeddingProvider` enum - supported providers (OpenAI, Alibaba, Ollama)
-- Chunking functions for text splitting
+**A2A Communication**: Agent-to-agent messaging via `MessageBus` (memory or Redis-backed). Message types: `task`, `query`, `event`. Service discovery via `IAgentRegistry`.
 
-Used by bib-lib for article embeddings.
+**Expert System**: Multi-expert orchestration with strategies (sequential, parallel, dependency-ordered, conditional). Key classes: `ExpertExecutor`, `ExpertInstance`, `ExpertOrchestrator`, `ExpertRegistry`.
 
-### bib-lib (`libs/bib-lib`)
+**Persistence**: PostgreSQL via Prisma. Models: `AgentInstance`, `AgentSession`, `AgentMemory`, `ComponentState`, `RuntimeTask`, `A2AConversationLog`.
 
-PubMed bibliography management with:
+### Key Libraries
 
-- **Prisma 7** with PostgreSQL adapter and pgvector for vector search
-- **Sync**: Fetch and parse PubMed XML data
-- **Embed**: Generate article embeddings using @ai-embed/core
-- **Search**: Keyword, semantic (vector), and hybrid search
-- **Export**: Export bibliography in various formats
+| Package | Purpose |
+|---|---|
+| `agent-lib` | Agent framework: DI, Expert system, A2A, runtime |
+| `llm-api-client` | LLM API abstraction (Anthropic, OpenAI, Alibaba, GLM, LM Studio) |
+| `agent-soul-hub` | Agent type registry and factory |
+| `component-hub` | Domain-specific agent components (search, PICOS, PRISMA, etc.) |
+| `bib-lib` | PubMed bibliography: sync, embed, search, export, library management |
+| `@ai-embed/core` | Embedding providers and text chunking |
+| `shared-types` | Shared TypeScript types |
 
-Key models: `Article`, `Journal`, `Author`, `ArticleEmbedding`, `MeshHeading`, `Chemical`, `Grant`, `ArticleId`
+### Key Applications
 
-### agent-lib (`libs/agent-lib`)
+| App | Stack | Purpose |
+|---|---|---|
+| `swarm-runtime` | Fastify | Agent runtime server (one server = one runtime), A2A communication |
+| `swarm-dashboard` | React 19 + Vite | Agent topology visualization and monitoring |
+| `bib-max-api` | Fastify + Prisma | Bibliography API with S3 storage |
+| `bib-max` | React 19 + Vite | Bibliography management frontend |
+| `case-hub` | NestJS + Prisma | Medical case management with LLM generation |
+| `auto-review` | Fastify + Prisma | Literature review automation |
 
-Agent framework with:
+### Infrastructure (Docker)
 
-- **BAML integration** for structured output
-- **Tool system** for agent actions
-- **Memory** components
-- **API clients** for OpenAI-compatible endpoints
-- **Expert system** for multi-agent orchestration
-- **Dependency Injection** using InversifyJS
+Services in `docker/docker-compose.yml`:
+- **PostgreSQL** (pgvector/pgvector:pg16) — port 5432
+- **Redis** — port 6379 (MessageBus backend)
+- **RustFS** — ports 9000/9001 (S3-compatible storage)
+- **LiteLLM** — port 4000 (LLM proxy: MiniMax, GLM, Kimi models)
 
-Key Expert classes:
+### Testing Patterns
 
-- `ExpertExecutor` - Creates and executes Expert instances
-- `ExpertInstance` - Running Expert with Agent
-- `ExpertOrchestrator` - Multi-expert orchestration
-- `ExpertRegistry` - Expert configuration management
+- `*.spec.ts` — Unit tests
+- `*.integrated.test.ts` — Integration tests (real DB connections)
+- `*.e2e.test.ts` — End-to-end tests
+- `vitest.unit.config.ts` / `vite.config.mts` — Unit test configs
+- `vitest.integrated.config.ts` / `vite.config.integrated.mts` — Integration test configs
 
-### Built-in Components (`agent-lib`)
+### Environment Variables
 
-Reusable agent components for EBM workflows (now part of agent-lib):
-
-- `RuntimeTaskComponent` - In-memory task queue for agent communication (replaces MailComponent)
-- `MailComponent` - Email-style messaging for agent communication (legacy, use RuntimeTaskComponent)
-- `BibliographySearchComponent` - PubMed literature search
-- `PaperAnalysisComponent` - Scientific paper analysis
-- `PicosComponent` - PICO framework extraction
-- `PrismaCheckListComponent` / `PrismaFlowComponent` - PRISMA checklist and flow diagram
-
-### ebm-agent (`apps/ebm-agent`)
-
-Evidence-based medicine agent application using the Expert system:
-
-- Expert-based agent orchestration
-- Built-in Experts: `hi-agent`, `pubmed-retrieve`
-- Configurable via `config.json` and `sop.yaml`
-
-## Database
-
-- **Prisma 7** with `@prisma/adapter-pg` for PostgreSQL
-- **pgvector** extension enabled for similarity search
-- Multiple databases: bib-lib, agent-lib, knowledgeBase (entity/graph/property)
-
-## Testing Patterns
-
-Tests use Vitest with different configurations:
-
-- `vitest.unit.config.ts` - Unit tests (mocked dependencies)
-- `vitest.integrated.config.ts` - Integration tests (real DB)
-- `vite.config.mts` - Standard config
-- `vite.config.integrated.mts` - Integration config
-
-Test files:
-
-- `*.spec.ts` - Unit tests
-- `*.integrated.test.ts` - Integration tests
-- `*.e2e.test.ts` - End-to-end tests
-
-## Environment Variables
-
-Key environment files:
-
-- `libs/bib-lib/.env` - Database connection, embedding providers
-- `libs/bib-lib/.env.example`
-
-Typical variables:
-
-- `DATABASE_URL` - PostgreSQL connection
-- `OPENAI_API_KEY` - For embeddings
-- Provider-specific API keys
+- `DATABASE_URL`, `AGENT_DATABASE_URL`, `BIB_DATABASE_URL` — PostgreSQL connections
+- `OPENAI_API_KEY`, `GLM_API_KEY`, `MINIMAX_API_KEY`, `KIMI_API_KEY` — LLM providers
+- `A2A_MESSAGE_BUS_MODE` — `memory` or `redis`
+- `A2A_REDIS_URL` — Redis URL for MessageBus
+- AWS S3 credentials for storage services
