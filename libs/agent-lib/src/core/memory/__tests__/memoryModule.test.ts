@@ -1,5 +1,5 @@
 import { MemoryModule } from "../MemoryModule";
-import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from "../../api-client";
+import { ApiClient, ApiResponse, ApiTimeoutConfig, ChatCompletionTool } from "llm-api-client";
 import { ThinkingRound } from "../Turn";
 import { Logger } from "pino";
 import { MessageBuilder } from "../types";

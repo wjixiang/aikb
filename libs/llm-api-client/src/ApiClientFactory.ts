@@ -1,7 +1,7 @@
 import { ApiClient } from './ApiClient.interface.js';
 import { OpenaiCompatibleApiClient } from './OpenaiCompatibleApiClient.js';
 import { AnthropicCompatibleApiClient } from './AnthropicCompatibleApiClient.js';
-import { ProviderSettings } from '../types/provider-settings.js';
+import { ProviderSettings } from './provider-settings.js';
 
 /**
  * Factory class for creating ApiClient instances

@@ -9,6 +9,10 @@ import type * as z from 'zod';
 import type { IToolManager } from '../../core/index.js';
 import type { ToolComponent } from './toolComponent.js';
 import type { TUIElement } from '../ui/TUIElement.js';
+import type { Tool, ToolExample } from 'llm-api-client';
+
+// Re-export Tool and ToolExample from llm-api-client
+export type { Tool, ToolExample } from 'llm-api-client';
 
 /**
  * Interface for VirtualWorkspace
@@ -327,29 +331,6 @@ export interface ScriptExecutionResult {
   message: string;
   output?: any;
   error?: string;
-}
-
-/**
- * Tool example for demonstrating proper usage
- */
-export interface ToolExample {
-  /** Brief description of what this example demonstrates */
-  description: string;
-  /** Example parameters to use */
-  params: Record<string, unknown>;
-  /** Expected result or behavior */
-  expectedResult?: string;
-}
-
-/**
- * Tool definition for components
- */
-export interface Tool {
-  toolName: string;
-  paramsSchema: z.ZodTypeAny;
-  desc: string;
-  /** Optional examples to help LLM understand how to use this tool */
-  examples?: ToolExample[];
 }
 
 /**

@@ -1,164 +1,20 @@
-import { z } from 'zod';
+// Re-export from llm-api-client (moved to independent package)
+export {
+  providerNames,
+  providerNamesSchema,
+  isProviderName,
+  providerSettingsSchema,
+  providerSettingsWithIdSchema,
+  PROVIDER_SETTINGS_KEYS,
+  modelIdKeys,
+  getModelId,
+  ANTHROPIC_STYLE_PROVIDERS,
+  getApiProtocol,
+} from 'llm-api-client';
 
-/**
- * constants
- */
-
-export const DEFAULT_CONSECUTIVE_MISTAKE_LIMIT = 3;
-
-/**
- * ProviderName
- */
-
-export const providerNames = [
-  'anthropic',
-  'openai',
-  'openai-native',
-  'zai',
-  'moonshot',
-  'ollama',
-  'lmstudio',
-  'vscode-lm',
-  'minimax',
-] as const;
-
-export const providerNamesSchema = z.enum(providerNames);
-
-export type ProviderName = z.infer<typeof providerNamesSchema>;
-
-export const isProviderName = (key: unknown): key is ProviderName =>
-  typeof key === 'string' && providerNames.includes(key as ProviderName);
-
-/**
- * ProviderSettings
- */
-
-const baseProviderSettingsSchema = z.object({
-  includeMaxTokens: z.boolean().optional(),
-  diffEnabled: z.boolean().optional(),
-  todoListEnabled: z.boolean().optional(),
-  fuzzyMatchThreshold: z.number().optional(),
-  modelTemperature: z.number().nullish(),
-  rateLimitSeconds: z.number().optional(),
-  consecutiveMistakeLimit: z.number().min(0).optional(),
-  modelMaxTokens: z.number().optional(),
-  toolProtocol: z.enum(['xml', 'native']).optional(),
-});
-
-const zaiSchema = baseProviderSettingsSchema.extend({
-  apiKey: z.string().optional(),
-  apiModelId: z.string().optional(),
-  zaiApiLine: z.enum(['international_coding', 'china_coding']).optional(),
-});
-
-const moonshotSchema = baseProviderSettingsSchema.extend({
-  apiKey: z.string().optional(),
-  apiModelId: z.string().optional(),
-  moonshotBaseUrl: z.string().optional(),
-  moonshotApiLine: z.enum(['standard', 'coding']).optional(),
-});
-
-const anthropicSchema = baseProviderSettingsSchema.extend({
-  apiKey: z.string().optional(),
-  apiModelId: z.string().optional(),
-  anthropicBaseUrl: z.string().optional(),
-});
-
-const openAiSchema = baseProviderSettingsSchema.extend({
-  apiKey: z.string().optional(),
-  apiModelId: z.string().optional(),
-  openAiBaseUrl: z.string().optional(),
-});
-
-const openAiNativeSchema = baseProviderSettingsSchema.extend({
-  apiKey: z.string().optional(),
-  apiModelId: z.string().optional(),
-  openAiNativeBaseUrl: z.string().optional(),
-});
-
-const ollamaSchema = baseProviderSettingsSchema.extend({
-  ollamaModelId: z.string().optional(),
-  ollamaBaseUrl: z.string().optional(),
-});
-
-const lmStudioSchema = baseProviderSettingsSchema.extend({
-  lmStudioModelId: z.string().optional(),
-  lmStudioBaseUrl: z.string().optional(),
-});
-
-const vsCodeLmSchema = baseProviderSettingsSchema.extend({
-  vsCodeLmModelSelector: z
-    .object({
-      vendor: z.string().optional(),
-      family: z.string().optional(),
-      version: z.string().optional(),
-      id: z.string().optional(),
-    })
-    .optional(),
-});
-
-const minimaxSchema = baseProviderSettingsSchema.extend({
-  apiKey: z.string().optional(),
-  apiModelId: z.string().optional(),
-  minimaxModelId: z.string().optional(),
-  minimaxBaseUrl: z.string().optional(),
-});
-
-export const providerSettingsSchema = z.object({
-  apiProvider: providerNamesSchema.optional(),
-  ...zaiSchema.shape,
-  ...moonshotSchema.shape,
-  ...anthropicSchema.shape,
-  ...openAiSchema.shape,
-  ...openAiNativeSchema.shape,
-  ...ollamaSchema.shape,
-  ...lmStudioSchema.shape,
-  ...vsCodeLmSchema.shape,
-  ...minimaxSchema.shape,
-});
-
-export type ProviderSettings = z.infer<typeof providerSettingsSchema>;
-
-export const providerSettingsWithIdSchema = providerSettingsSchema.extend({
-  id: z.string().optional(),
-});
-
-export type ProviderSettingsWithId = z.infer<
-  typeof providerSettingsWithIdSchema
->;
-
-export const PROVIDER_SETTINGS_KEYS = providerSettingsSchema.keyof().options;
-
-/**
- * ModelIdKey
- */
-
-export const modelIdKeys = [
-  'apiModelId',
-  'ollamaModelId',
-  'lmStudioModelId',
-  'minimaxModelId',
-] as const satisfies readonly (keyof ProviderSettings)[];
-
-export type ModelIdKey = (typeof modelIdKeys)[number];
-
-export const getModelId = (settings: ProviderSettings): string | undefined => {
-  const modelIdKey = modelIdKeys.find((key) => settings[key]);
-  return modelIdKey ? settings[modelIdKey] : undefined;
-};
-
-/**
- * ANTHROPIC_STYLE_PROVIDERS
- */
-
-export const ANTHROPIC_STYLE_PROVIDERS: ProviderName[] = ['anthropic'];
-
-export const getApiProtocol = (
-  provider: ProviderName | undefined,
-  modelId?: string,
-): 'anthropic' | 'openai' => {
-  if (provider && ANTHROPIC_STYLE_PROVIDERS.includes(provider)) {
-    return 'anthropic';
-  }
-  return 'openai';
-};
+export type {
+  ProviderName,
+  ProviderSettings,
+  ProviderSettingsWithId,
+  ModelIdKey,
+} from 'llm-api-client';

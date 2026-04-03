@@ -2,9 +2,8 @@ import { z } from 'zod';
 import {
     DefaultToolCallConverter,
     createOpenAIFunctionCallingParams,
-    OpenAIFunctionCallingParams,
-} from '../ToolCallConvert';
-import { Tool } from '../../components/core/types';
+} from '../ToolCallConvert.js';
+import type { Tool } from '../types.js';
 
 describe('DefaultToolCallConverter', () => {
     const converter = new DefaultToolCallConverter();

@@ -38,8 +38,8 @@ export type {
 // Assistant Message
 export { NativeToolCallParser } from './assistant-message/NativeToolCallParser.js';
 
-// API Client
-export * from './api-client/index.js';
+// API Client (re-exported from llm-api-client)
+export * from 'llm-api-client';
 
 // Common Types
 export * from './common/types.js';

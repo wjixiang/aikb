@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { Tool, ToolExample } from '../../components/core/types.js';
+import { Tool, ToolExample } from './types.js';
 import { ChatCompletionTool, FunctionDefinition, FunctionParameters } from './ApiClient.interface.js';
 
 /**

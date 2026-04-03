@@ -5,7 +5,7 @@ import { AgentStatus } from '../common/types.js';
 import { MessageTokenUsage, ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
-import { DefaultToolCallConverter } from '../api-client/index.js';
+import { DefaultToolCallConverter } from 'llm-api-client';
 import { AgentError, NoToolsUsedError } from '../common/errors.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
@@ -13,7 +13,7 @@ import type {
   ApiClient,
   ChatCompletionTool,
   ToolCall,
-} from '../api-client/index.js';
+} from 'llm-api-client';
 import type { IToolManager } from '../tools/index.js';
 import { TYPES } from '../di/types.js';
 import type { IVirtualWorkspace } from '../../components/core/types.js';

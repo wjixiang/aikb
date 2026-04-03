@@ -1,4 +1,4 @@
-import { Tool } from '../../components/core/types.js';
+import { Tool } from './types.js';
 
 /**
  * Interface for providing tools to API clients

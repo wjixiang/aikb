@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { AgentFactory } from '../AgentFactory.js';
-import type { ApiClient } from '../../api-client/index.js';
+import type { ApiClient } from 'llm-api-client';
 import { AgentStatus } from '../../common/types.js';
 import { MessageBus } from '../../runtime/topology/messaging/MessageBus.js';
 

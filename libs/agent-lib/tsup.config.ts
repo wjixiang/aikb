@@ -23,5 +23,6 @@ export default defineConfig({
     '@apollo/client/dev',
     'ioredis',
     'events',
+    'llm-api-client',
   ],
 });

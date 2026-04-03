@@ -1,7 +1,7 @@
-import { ApiClientFactory } from '../ApiClientFactory';
-import { AnthropicCompatibleApiClient } from '../AnthropicCompatibleApiClient';
-import { OpenaiCompatibleApiClient } from '../OpenaiCompatibleApiClient';
-import { ProviderSettings } from '../../types/provider-settings';
+import { ApiClientFactory } from '../ApiClientFactory.js';
+import { AnthropicCompatibleApiClient } from '../AnthropicCompatibleApiClient.js';
+import { OpenaiCompatibleApiClient } from '../OpenaiCompatibleApiClient.js';
+import { ProviderSettings } from '../provider-settings.js';
 
 describe('ApiClientFactory', () => {
     describe('create', () => {

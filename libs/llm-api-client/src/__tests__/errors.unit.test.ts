@@ -14,7 +14,7 @@ import {
     parseError,
     isRetryableError,
     getErrorMessageWithSuggestions,
-} from '../errors';
+} from '../errors.js';
 
 describe('Error Types', () => {
     describe('ApiClientError', () => {
@@ -208,8 +208,6 @@ describe('parseError', () => {
     it('should parse ETIMEDOUT as TimeoutError (timeout check takes priority)', () => {
         const error = new Error('ETIMEDOUT: Connection timed out');
         const result = parseError(error);
-        // The timeout check comes before network check in parseError, so ETIMEDOUT
-        // with "timed out" in message gets parsed as TimeoutError
         expect(result).toBeInstanceOf(TimeoutError);
     });
 
@@ -240,7 +238,6 @@ describe('parseError', () => {
     it('should parse rate limit message - checks quota before rate limit', () => {
         const error = new Error('Rate limit exceeded, please slow down');
         const result = parseError(error);
-        // Quota check comes before rate limit check, so it matches quota first
         expect(result).toBeInstanceOf(QuotaExceededError);
     });
 
@@ -263,7 +260,6 @@ describe('parseError', () => {
     });
 
     it('should parse content policy violations with exact keywords', () => {
-        // Must contain exact keywords: "content policy", "safety", or "moderation"
         const error1 = new Error('content policy violation detected');
         expect(parseError(error1)).toBeInstanceOf(ContentPolicyError);
 

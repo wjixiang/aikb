@@ -13,7 +13,7 @@ import { ApiMessage, WorkspaceContextEntry } from './types.js';
 import type { IMemoryModule, MemoryModuleConfig } from './types.js';
 import { TYPES } from '../di/types.js';
 import { tiktoken } from '../utils/tiktoken.js';
-import type { ApiClient } from '../api-client/index.js';
+import type { ApiClient } from 'llm-api-client';
 import type { IPersistenceService } from '../persistence/types.js';
 import { diffChars } from 'diff';
 

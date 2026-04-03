@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
-import { DefaultToolCallConverter } from '../../api-client/ToolCallConvert';
+import { DefaultToolCallConverter } from 'llm-api-client';
 import { ToolManager } from '../../tools/index.js';
 import { ComponentToolProvider } from '../../tools/providers/ComponentToolProvider.js';
 import { ComponentRegistry } from '../../../components/ComponentRegistry.js';
