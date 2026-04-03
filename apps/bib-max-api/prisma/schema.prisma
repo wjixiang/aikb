@@ -85,7 +85,7 @@ model Attachment {
   fileName  String
   fileType  String
   fileSize  BigInt?
-  filePath  String
+  s3Key     String
   createdAt DateTime @default(now())
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
