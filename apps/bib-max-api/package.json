@@ -12,7 +12,8 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
     "lint": "eslint \"src/**/*.ts\" --fix",
-    "test": "vitest"
+    "test": "vitest --config vite.config.mts",
+    "test:integrated": "vitest --config vite.config.integrated.mts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1023.0",

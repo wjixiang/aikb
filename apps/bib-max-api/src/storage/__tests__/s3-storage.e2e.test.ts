@@ -1,9 +1,9 @@
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import { createStorageService } from "../index.js";
 
 describe("s3 e2e test: use RustFS", () => {
     const s3Service = createStorageService({
-        region: "",
+        region: "cn-east-1",
         bucket: "knowledge-base",
         accessKeyId: "aVzc02Qxp3MBUko97wJ4",
         secretAccessKey: "MVHtKLSIRvNnfPduEopJT5DaBrAbxmz3W9QXw6i7",
