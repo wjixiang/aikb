@@ -14,7 +14,7 @@ import {
     parseError,
     isRetryableError,
     getErrorMessageWithSuggestions,
-} from '../errors.js';
+} from '../errors/errors.js';
 
 describe('Error Types', () => {
     describe('ApiClientError', () => {

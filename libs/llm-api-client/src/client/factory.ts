@@ -1,12 +1,17 @@
-import { ApiClient } from './ApiClient.interface.js';
-import { OpenaiCompatibleApiClient } from './OpenaiCompatibleApiClient.js';
-import { AnthropicCompatibleApiClient } from './AnthropicCompatibleApiClient.js';
-import { ProviderSettings } from './provider-settings.js';
+import pino from 'pino';
+import { ApiClient } from '../types/api-client.js';
+import { OpenaiCompatibleApiClient } from './openai.js';
+import { AnthropicCompatibleApiClient } from './anthropic.js';
+import { ProviderSettings } from '../types/provider-settings.js';
+import { ConfigurationError } from '../errors/errors.js';
+import { createLogger } from './logger.js';
+
+const logger = createLogger({ component: 'ApiClientFactory' });
 
 /**
  * Factory class for creating ApiClient instances
  *
- * Simplified factory that creates OpenAI-compatible API clients based on provider configuration.
+ * Creates the appropriate API client based on provider configuration.
  *
  * @example
  * ```ts
@@ -23,23 +28,20 @@ export class ApiClientFactory {
    * Create an ApiClient instance based on provider configuration
    *
    * @param config - The provider settings
-   * @returns An OpenaiCompatibleApiClient instance
+   * @returns An ApiClient instance
    * @throws Error if required configuration is missing
    */
   static create(config: ProviderSettings): ApiClient {
-    console.log(
-      '[ApiClientFactory.create] Creating API client for provider:',
-      config.apiProvider,
-    );
+    logger.info({ provider: config.apiProvider }, 'Creating API client');
 
     const apiKey = config.apiKey;
     if (!apiKey) {
-      throw new Error('API key is required');
+      throw new ConfigurationError('API key is required', 'apiKey');
     }
 
     const model = config.apiModelId;
     if (!model) {
-      throw new Error('Model ID is required');
+      throw new ConfigurationError('Model ID is required', 'apiModelId');
     }
 
     const provider = config.apiProvider || 'openai';
@@ -48,12 +50,7 @@ export class ApiClientFactory {
       case 'anthropic': {
         const baseURL =
           config.anthropicBaseUrl || 'https://api.anthropic.com/v1';
-        console.log(
-          '[ApiClientFactory.create] Creating AnthropicCompatibleApiClient with model:',
-          model,
-          'baseURL:',
-          baseURL,
-        );
+        logger.info({ provider, model, baseURL }, 'Creating AnthropicCompatibleApiClient');
         return new AnthropicCompatibleApiClient({
           apiKey,
           model,
@@ -71,12 +68,7 @@ export class ApiClientFactory {
             | string
             | undefined) ||
           'https://api.openai.com/v1';
-        console.log(
-          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
-          model,
-          'baseURL:',
-          baseURL,
-        );
+        logger.info({ provider, model, baseURL }, 'Creating OpenaiCompatibleApiClient');
         return new OpenaiCompatibleApiClient({
           apiKey,
           model,
@@ -87,12 +79,7 @@ export class ApiClientFactory {
       }
       case 'ollama': {
         const baseURL = config.ollamaBaseUrl || 'http://localhost:11434/v1';
-        console.log(
-          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
-          model,
-          'baseURL:',
-          baseURL,
-        );
+        logger.info({ provider, model, baseURL }, 'Creating OpenaiCompatibleApiClient');
         return new OpenaiCompatibleApiClient({
           apiKey,
           model,
@@ -103,12 +90,7 @@ export class ApiClientFactory {
       }
       case 'lmstudio': {
         const baseURL = config.lmStudioBaseUrl || 'http://localhost:1234/v1';
-        console.log(
-          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
-          model,
-          'baseURL:',
-          baseURL,
-        );
+        logger.info({ provider, model, baseURL }, 'Creating OpenaiCompatibleApiClient');
         return new OpenaiCompatibleApiClient({
           apiKey,
           model,
@@ -118,18 +100,12 @@ export class ApiClientFactory {
         });
       }
       case 'zai': {
-        // ZAI uses different endpoints based on line
         const line = config.zaiApiLine || 'china_coding';
         const baseURL =
           line === 'international_coding'
             ? 'https://open.bigmodel.cn/api/paas/v4'
             : 'https://open.bigmodel.cn/api/coding/paas/v4';
-        console.log(
-          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
-          model,
-          'baseURL:',
-          baseURL,
-        );
+        logger.info({ provider, model, baseURL, line }, 'Creating OpenaiCompatibleApiClient');
         return new OpenaiCompatibleApiClient({
           apiKey,
           model,
@@ -139,19 +115,13 @@ export class ApiClientFactory {
         });
       }
       case 'moonshot': {
-        // Moonshot uses different endpoints based on api line
         const line = config.moonshotApiLine || 'standard';
         const baseURL =
           config.moonshotBaseUrl ||
           (line === 'coding'
             ? 'https://api.kimi.com/coding/'
             : 'https://api.moonshot.cn/v1');
-        console.log(
-          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
-          model,
-          'baseURL:',
-          baseURL,
-        );
+        logger.info({ provider, model, baseURL, line }, 'Creating OpenaiCompatibleApiClient');
         return new OpenaiCompatibleApiClient({
           apiKey,
           model,
@@ -161,15 +131,8 @@ export class ApiClientFactory {
         });
       }
       case 'minimax': {
-        // MiniMax Token Plan uses Anthropic-compatible API
-        // https://platform.minimaxi.com/docs/token-plan/quickstart
         const baseURL = config.minimaxBaseUrl || 'https://api.minimaxi.com/anthropic';
-        console.log(
-          '[ApiClientFactory.create] Creating AnthropicCompatibleApiClient for MiniMax with model:',
-          model,
-          'baseURL:',
-          baseURL,
-        );
+        logger.info({ provider, model, baseURL }, 'Creating AnthropicCompatibleApiClient');
         return new AnthropicCompatibleApiClient({
           apiKey,
           model,
@@ -178,12 +141,14 @@ export class ApiClientFactory {
           maxTokens: config.modelMaxTokens,
         });
       }
-      default: {
-        console.log(
-          '[ApiClientFactory.create] Creating OpenaiCompatibleApiClient with model:',
-          model,
-          'baseURL: undefined',
+      case 'vscode-lm': {
+        throw new ConfigurationError(
+          'vscode-lm provider is not yet implemented. Use a different provider.',
+          'apiProvider',
         );
+      }
+      default: {
+        logger.info({ provider, model }, 'Creating OpenaiCompatibleApiClient with default baseURL');
         return new OpenaiCompatibleApiClient({
           apiKey,
           model,

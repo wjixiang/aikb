@@ -1,4 +1,6 @@
-import { Tool } from './types.js';
+import { Tool } from '../types/tool.js';
+import type { ChatCompletionTool } from '../types/api-client.js';
+import { DefaultToolCallConverter } from './converter.js';
 
 /**
  * Interface for providing tools to API clients
@@ -28,7 +30,7 @@ export interface ToolProvider {
      * This method should convert tools to the format expected by OpenAI API
      * @returns Array of OpenAI-compatible tool definitions
      */
-    getToolsForOpenAI(): any[];
+    getToolsForOpenAI(): ChatCompletionTool[];
 
     /**
      * Optional: Get a specific tool by name for validation
@@ -53,7 +55,7 @@ export class EmptyToolProvider implements ToolProvider {
         return [];
     }
 
-    getToolsForOpenAI(): any[] {
+    getToolsForOpenAI(): ChatCompletionTool[] {
         return [];
     }
 
@@ -80,9 +82,7 @@ export class StaticToolProvider implements ToolProvider {
         return Array.from(this.tools.values());
     }
 
-    getToolsForOpenAI(): any[] {
-        // Import converter dynamically to avoid circular dependency
-        const { DefaultToolCallConverter } = require('./ToolCallConvert');
+    getToolsForOpenAI(): ChatCompletionTool[] {
         const converter = new DefaultToolCallConverter();
         return converter.convertTools(this.getTools());
     }

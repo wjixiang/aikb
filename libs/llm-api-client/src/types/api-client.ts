@@ -1,5 +1,3 @@
-import OpenAI from 'openai';
-
 /**
  * Unified ToolCall interface compatible with OpenAI format
  * Supports both single and multiple tool calls in one response

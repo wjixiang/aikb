@@ -1,5 +1,5 @@
-import { OpenaiCompatibleApiClient } from '../OpenaiCompatibleApiClient.js';
-import { ConfigurationError } from '../errors.js';
+import { OpenaiCompatibleApiClient } from '../client/openai.js';
+import { ConfigurationError } from '../errors/errors.js';
 
 describe('OpenaiCompatibleApiClient - Configuration', () => {
     describe('validateConfig', () => {

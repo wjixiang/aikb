@@ -1,18 +1,28 @@
-import { ApiClientFactory } from '../ApiClientFactory.js';
-import { AnthropicCompatibleApiClient } from '../AnthropicCompatibleApiClient.js';
-import { OpenaiCompatibleApiClient } from '../OpenaiCompatibleApiClient.js';
-import { ProviderSettings } from '../provider-settings.js';
+import { ApiClientFactory } from '../client/factory.js';
+import { AnthropicCompatibleApiClient } from '../client/anthropic.js';
+import { OpenaiCompatibleApiClient } from '../client/openai.js';
+import { ConfigurationError } from '../errors/errors.js';
+import { ProviderSettings } from '../types/provider-settings.js';
 
 describe('ApiClientFactory', () => {
     describe('create', () => {
-        it('should throw when apiKey is missing', () => {
+        it('should throw ConfigurationError when apiKey is missing', () => {
             const config = { apiProvider: 'openai', apiModelId: 'gpt-4' } as ProviderSettings;
-            expect(() => ApiClientFactory.create(config)).toThrow('API key is required');
+            expect(() => ApiClientFactory.create(config)).toThrow(ConfigurationError);
         });
 
-        it('should throw when modelId is missing', () => {
+        it('should throw ConfigurationError when modelId is missing', () => {
             const config = { apiProvider: 'openai', apiKey: 'test-key' } as ProviderSettings;
-            expect(() => ApiClientFactory.create(config)).toThrow('Model ID is required');
+            expect(() => ApiClientFactory.create(config)).toThrow(ConfigurationError);
+        });
+
+        it('should throw ConfigurationError for vscode-lm provider', () => {
+            const config: ProviderSettings = {
+                apiProvider: 'vscode-lm',
+                apiKey: 'test-key',
+                apiModelId: 'some-model',
+            };
+            expect(() => ApiClientFactory.create(config)).toThrow(ConfigurationError);
         });
 
         it('should create OpenaiCompatibleApiClient for openai provider', () => {
