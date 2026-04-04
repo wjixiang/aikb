@@ -1,12 +1,13 @@
 import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
+import multipart from '@fastify/multipart';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { validatorCompiler, serializerCompiler, jsonSchemaTransform } from 'fastify-type-provider-zod';
 import { config } from './config.js';
 import { registerRoutes } from './routes/index.js';
-import { NotFoundError } from './errors.js';
+import { NotFoundError, BadRequestError, UpstreamError } from './errors.js';
 
 const swaggerOptions = {
   openapi: {
@@ -46,6 +47,12 @@ export async function createApp() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
+  await app.register(multipart, {
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB
+    },
+  });
+
   await app.register(swagger, {
     ...swaggerOptions,
     transform: jsonSchemaTransform,
@@ -60,6 +67,22 @@ export async function createApp() {
       return reply.status(404).send({
         statusCode: 404,
         error: 'Not Found',
+        message: err.message,
+      });
+    }
+
+    if (err instanceof BadRequestError) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: err.message,
+      });
+    }
+
+    if (err instanceof UpstreamError) {
+      return reply.status(502).send({
+        statusCode: 502,
+        error: 'Upstream Service Error',
         message: err.message,
       });
     }

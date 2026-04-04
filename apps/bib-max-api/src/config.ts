@@ -20,6 +20,11 @@ export const config = {
     forcePathStyle: process.env['S3_FORCE_PATH_STYLE'] === 'true',
     publicUrl: process.env['S3_PUBLIC_URL'],
   },
+  llm: {
+    provider: process.env['LLM_PROVIDER'] || 'zai',
+    apiKey: process.env['LLM_API_KEY'] || '',
+    modelId: process.env['LLM_MODEL_ID'] || 'glm-4-flash',
+  },
 } as const;
 
 if (!config.databaseUrl) {

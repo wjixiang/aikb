@@ -172,6 +172,20 @@ export interface ConfirmUploadInput {
   fileSize?: number;
 }
 
+// ============ Extracted Metadata ============
+
+export interface ExtractedMetadata {
+  title: string;
+  authors?: string[];
+  abstract?: string;
+  year?: number;
+  source?: string;
+  doi?: string;
+  isbn?: string;
+  pmid?: string;
+  type?: ItemType;
+}
+
 // ============ Common ============
 
 export interface Pagination {

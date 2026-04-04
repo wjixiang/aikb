@@ -103,7 +103,11 @@ export function PageSlot({
       const ctx = canvas.getContext("2d")!;
       const task = page.render({ canvasContext: ctx, viewport });
       renderTaskRef.current = task;
-      await task.promise;
+      try {
+        await task.promise;
+      } catch {
+        return;
+      }
 
       // Text layer
       if (!cancelled && textLayerRef.current) {
@@ -120,7 +124,11 @@ export function PageSlot({
           viewport,
         });
         textLayerInstance.current = tl;
-        await tl.render();
+        try {
+          await tl.render();
+        } catch {
+          return;
+        }
       }
     }
 

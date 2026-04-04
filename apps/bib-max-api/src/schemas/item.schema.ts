@@ -117,3 +117,15 @@ export const PaginatedItemsSchema = z.object({
   data: z.array(ItemSchema),
   pagination: PaginationSchema,
 });
+
+export const ExtractedMetadataResponseSchema = z.object({
+  title: z.string(),
+  authors: z.array(z.string()).optional(),
+  abstract: z.string().optional(),
+  year: z.number().int().optional(),
+  source: z.string().optional(),
+  doi: z.string().optional(),
+  isbn: z.string().optional(),
+  pmid: z.string().optional(),
+  type: ItemTypeSchema.optional(),
+});

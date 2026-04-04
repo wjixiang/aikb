@@ -8,6 +8,7 @@ import type {
   BatchOperationType,
   BatchResult,
   TagRef,
+  ExtractedMetadata,
 } from "./types";
 
 const BASE = "/api/items";
@@ -39,5 +40,9 @@ export const itemsApi = {
 
   batch(itemIds: string[], operation: BatchOperationType, tagIds?: string[]): Promise<BatchResult> {
     return apiClient.post<BatchResult>(`${BASE}/batch`, { itemIds, operation, tagIds });
+  },
+
+  extractMetadata(file: File): Promise<ExtractedMetadata> {
+    return apiClient.upload<ExtractedMetadata>(`${BASE}/extract-metadata`, file);
   },
 };

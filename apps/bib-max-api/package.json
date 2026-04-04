@@ -19,6 +19,7 @@
     "@aws-sdk/client-s3": "^3.1023.0",
     "@aws-sdk/s3-request-presigner": "^3.1023.0",
     "@fastify/cors": "^10.0.2",
+    "@fastify/multipart": "^9.4.0",
     "@fastify/swagger": "^9.5.0",
     "@fastify/swagger-ui": "^5.2.5",
     "@prisma/adapter-pg": "^7.5.0",
@@ -26,6 +27,7 @@
     "dotenv": "^17.3.1",
     "fastify": "^5.8.4",
     "fastify-type-provider-zod": "^6.1.0",
+    "llm-api-client": "workspace:*",
     "pdfjs-dist": "^5.6.205",
     "pg": "^8.16.3",
     "zod": "^4.3.6"
