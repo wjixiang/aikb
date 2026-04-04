@@ -84,8 +84,8 @@ export const ItemQuerySchema = z.object({
   type: ItemTypeSchema.optional(),
   search: z.string().optional(),
   tagIds: z.array(z.string().uuid()).optional(),
-  isFavorite: z.boolean().optional(),
-  isRead: z.boolean().optional(),
+  isFavorite: z.coerce.boolean().optional(),
+  isRead: z.coerce.boolean().optional(),
   sortBy: z.enum(['createdAt', 'updatedAt', 'year', 'title']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
