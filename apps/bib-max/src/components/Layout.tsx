@@ -1,9 +1,18 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { BookOpen, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 
+const FULLSCREEN_ROUTES = ["/items/", "/tags/"];
+
+function isFullscreenRoute(pathname: string) {
+  return FULLSCREEN_ROUTES.some((r) => pathname.startsWith(r) && pathname !== r);
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const fullscreen = isFullscreenRoute(location.pathname);
+
   return (
     <div className="flex h-svh">
       <aside className="flex w-56 shrink-0 flex-col border-r bg-card">
@@ -32,7 +41,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <ThemeToggle />
         </div>
       </aside>
-      <main className="flex-1 overflow-auto p-6">{children}</main>
+      <main className={cn("flex-1 overflow-auto", !fullscreen && "p-6")}>{children}</main>
     </div>
   );
 }

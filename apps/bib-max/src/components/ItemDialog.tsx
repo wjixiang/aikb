@@ -33,7 +33,7 @@ interface Props {
   onSaved: () => void;
 }
 
-const emptyForm: CreateItemInput & { authorsStr: string } = {
+const emptyForm: Omit<CreateItemInput, "tagIds"> & { authorsStr: string; tagIds: string[] } = {
   type: "article",
   title: "",
   authorsStr: "",
@@ -53,7 +53,7 @@ const emptyForm: CreateItemInput & { authorsStr: string } = {
 };
 
 export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props) {
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<typeof emptyForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 

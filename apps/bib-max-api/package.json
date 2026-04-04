@@ -26,6 +26,7 @@
     "dotenv": "^17.3.1",
     "fastify": "^5.8.4",
     "fastify-type-provider-zod": "^6.1.0",
+    "pdfjs-dist": "^5.6.205",
     "pg": "^8.16.3",
     "zod": "^4.3.6"
   },

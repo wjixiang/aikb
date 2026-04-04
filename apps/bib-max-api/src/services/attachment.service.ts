@@ -1,6 +1,7 @@
 import { prisma } from '../db.js';
 import { storage } from '../storage/instance.js';
 import { NotFoundError } from '../errors.js';
+import { categorizeByMimeType, type AttachmentCategory } from '../schemas/attachment.schema.js';
 
 // ============ Types ============
 
@@ -16,6 +17,7 @@ export interface FormattedAttachment {
   fileName: string;
   fileType: string;
   fileSize: number | null;
+  category: AttachmentCategory;
   createdAt: Date;
 }
 
@@ -37,6 +39,7 @@ function formatAttachment(attachment: {
   return {
     ...attachment,
     fileSize: attachment.fileSize != null ? Number(attachment.fileSize) : null,
+    category: categorizeByMimeType(attachment.fileType),
   };
 }
 

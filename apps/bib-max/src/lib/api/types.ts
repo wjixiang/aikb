@@ -132,12 +132,25 @@ export interface ItemQuery {
 
 // ============ Attachment ============
 
+export type AttachmentCategory =
+  | "pdf"
+  | "image"
+  | "video"
+  | "audio"
+  | "markdown"
+  | "document"
+  | "code"
+  | "text"
+  | "archive"
+  | "unknown";
+
 export interface Attachment {
   id: string;
   itemId: string;
   fileName: string;
   fileType: string;
   fileSize?: number | null;
+  category: AttachmentCategory;
   createdAt: string;
 }
 

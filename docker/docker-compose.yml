@@ -96,24 +96,24 @@ services:
     networks:
       - bib-network
 
-  litellm:
-    image: docker.litellm.ai/berriai/litellm:main-latest
-    restart: always
-    ports:
-      - '4000:4000'
-    volumes:
-      - ./litellm_config.yaml:/app/config.yaml
-    environment:
-      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
-      - ZAI_API_KEY=${ZAI_API_KEY}
-      - ZAI_TRY_API_KEY=${ZAI_TRY_API_KEY}
-      - KIMI_API_KEY=${KIMI_API_KEY}
-      - LITELLM_ANTHROPIC_DISABLE_URL_SUFFIX=true
-      - LITELLM_OPENAI_DISABLE_URL_SUFFIX=true
-    command: --config /app/config.yaml --detailed_debug
-    networks:
-      - bib-network
-
+  # litellm:
+  #   image: docker.litellm.ai/berriai/litellm:main-latest
+  #   restart: always
+  #   ports:
+  #     - '4000:4000'
+  #   volumes:
+  #     - ./litellm_config.yaml:/app/config.yaml
+  #   environment:
+  #     - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+  #     - ZAI_API_KEY=${ZAI_API_KEY}
+  #     - ZAI_TRY_API_KEY=${ZAI_TRY_API_KEY}
+  #     - KIMI_API_KEY=${KIMI_API_KEY}
+  #     - LITELLM_ANTHROPIC_DISABLE_URL_SUFFIX=true
+  #     - LITELLM_OPENAI_DISABLE_URL_SUFFIX=true
+  #   command: --config /app/config.yaml --detailed_debug
+  #   networks:
+  #     - bib-network
+  #
   # mineru:
   #   image: mineru:latest
   #   container_name: mineru
