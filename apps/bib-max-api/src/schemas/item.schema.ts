@@ -79,8 +79,8 @@ export const UpdateItemSchema = z.object({
 });
 
 export const ItemQuerySchema = z.object({
-  page: z.number().int().min(1).optional(),
-  pageSize: z.number().int().min(1).max(100).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
   type: ItemTypeSchema.optional(),
   search: z.string().optional(),
   tagIds: z.array(z.string().uuid()).optional(),
