@@ -358,11 +358,6 @@ export const TYPES = {
    */
   AgentSleepControl: Symbol('AgentSleepControl'),
 
-  /**
-   * AgentLineageInfo - Lineage info for the agent (role, allowed children, etc.)
-   * @scope Singleton - Optional, bound when agent has lineage metadata
-   */
-  AgentLineageInfo: Symbol('AgentLineageInfo'),
 } as const;
 
 export type TestOverrides = {

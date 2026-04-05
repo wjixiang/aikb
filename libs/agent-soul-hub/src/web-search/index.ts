@@ -2,7 +2,6 @@ import { AgentBlueprint } from 'agent-lib/core';
 import {
   WebSearchComponent,
   ZhipuWebSearchProvider,
-  LineageControlComponent,
   LifecycleComponent,
 } from 'component-hub';
 import type { WebSearchProvider } from 'component-hub';
@@ -171,7 +170,6 @@ export function createWebSearchAgentSoul(): AgentBlueprint {
       {
         componentInstance: new WebSearchComponent(createDefaultProvider()),
       },
-      { componentClass: LineageControlComponent },
       { componentClass: LifecycleComponent },
     ],
   };

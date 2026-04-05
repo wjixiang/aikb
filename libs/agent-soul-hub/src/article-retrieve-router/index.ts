@@ -1,5 +1,5 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { LineageControlComponent, LifecycleComponent } from 'component-hub';
+import { LifecycleComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 文献调查路由 (Literature Survey Router)
 
@@ -124,7 +124,6 @@ export function createArticleRetrieveRouterAgentSoul(): AgentBlueprint {
       description: '文献调查路由，负责协调多个专业 Agent 完成系统性文献调查',
     },
     components: [
-      { componentClass: LineageControlComponent },
       { componentClass: LifecycleComponent },
     ],
   };

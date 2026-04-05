@@ -1,7 +1,6 @@
 import { AgentBlueprint } from 'agent-lib/core';
 import {
   BibliographySearchComponent,
-  LineageControlComponent,
   LifecycleComponent,
 } from 'component-hub';
 
@@ -164,7 +163,6 @@ export function createEpidemiologyAgentSoul(): AgentBlueprint {
     },
     components: [
       { componentClass: LifecycleComponent },
-      { componentClass: LineageControlComponent },
       {
         componentClass: BibliographySearchComponent,
       },

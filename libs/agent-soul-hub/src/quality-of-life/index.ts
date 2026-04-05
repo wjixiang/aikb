@@ -1,7 +1,6 @@
 import { AgentBlueprint } from 'agent-lib/core';
 import {
   BibliographySearchComponent,
-  LineageControlComponent,
   LifecycleComponent,
 } from 'component-hub';
 
@@ -157,7 +156,6 @@ export function createQualityOfLifeAgentSoul(): AgentBlueprint {
       {
         componentClass: BibliographySearchComponent,
       },
-      { componentClass: LineageControlComponent },
       { componentClass: LifecycleComponent },
     ],
   };

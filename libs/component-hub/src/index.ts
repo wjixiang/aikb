@@ -7,27 +7,6 @@
 // Lifecycle
 export { LifecycleComponent } from './lifecycle/index.js';
 
-// Lineage Control
-export { LineageControlComponent } from './lineage-control/index.js';
-export { lineageControlToolSchemas } from './lineage-control/index.js';
-export type {
-  GetMyInfoParams,
-  GetStatsParams,
-  DiscoverAgentsParams,
-  LineageControlToolName,
-  LineageControlToolReturnTypes,
-  SentTaskInfo,
-  IncomingTaskInfo,
-  CheckInboxParams,
-  AcknowledgeTaskParams,
-  CompleteTaskParams,
-  FailTaskParams,
-  SendTaskParams,
-  SendQueryParams,
-  CheckSentParams,
-  CancelTaskParams,
-} from './lineage-control/index.js';
-
 // Bibliography Search
 export { BibliographySearchComponent } from './bibliographySearch/bibliographySearchComponent.js';
 

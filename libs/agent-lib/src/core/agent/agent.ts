@@ -165,6 +165,9 @@ export class Agent {
   private _sleepResolve: ((data?: unknown) => void) | null = null;
   private _sleepReason: string | null = null;
 
+  // When true, the agent enters sleep immediately on start instead of making an initial LLM call
+  private _skipInitialTurn = false;
+
   // Persistence service (for component states - instance-level)
   private persistenceService?: IPersistenceService;
 
@@ -582,6 +585,14 @@ export class Agent {
   // Lifecycle status: running / completed / idle / aborted
 
   /**
+   * Skip the initial LLM call on start — agent goes directly to sleep
+   * and waits for the first A2A message to wake it up.
+   */
+  setSkipInitialTurn(skip: boolean): void {
+    this._skipInitialTurn = skip;
+  }
+
+  /**
    * Start agent with a user query
    */
   async start(): Promise<Agent> {
@@ -908,6 +919,14 @@ export class Agent {
     this.resetCollectedErrors();
     // Reset consecutive error count for new operation
     this.resetConsecutiveErrorCount();
+
+    // If skipInitialTurn is set, sleep immediately and wait for wakeUp.
+    // After waking, the flag is cleared so subsequent loop iterations proceed normally.
+    if (this._skipInitialTurn) {
+      this._skipInitialTurn = false;
+      const wakeData = await this.sleep('Waiting for first message');
+      this.logger.info('[Agent] Woken from initial sleep, processing pending messages');
+    }
 
     // Track if we need to continue the loop
     let needsNewTurn = true;

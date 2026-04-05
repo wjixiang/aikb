@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { chatApi } from "@/lib/api/chat";
-import type { ChatMessage } from "@/lib/api/chat";
+import { useLocation, useParams } from "react-router-dom";
+import { chatApi, sendMessageStream } from "@/lib/api/chat";
+import type { ChatMessage, UserContext } from "@/lib/api/chat";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, X, SendHorizontal, Loader2 } from "lucide-react";
@@ -9,6 +10,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage as ChatMessageItem } from "./ChatMessage";
 
 export function ChatPanel() {
+  const location = useLocation();
+  const params = useParams<{ itemId?: string; attId?: string }>();
   const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -16,6 +19,14 @@ export function ChatPanel() {
   const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const getUserContext = useCallback((): UserContext | undefined => {
+    const { pathname } = location;
+    if (pathname.startsWith('/items/') && params.itemId) {
+      return { route: pathname, itemId: params.itemId, attId: params.attId };
+    }
+    return { route: pathname };
+  }, [location, params.itemId, params.attId]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -63,20 +74,31 @@ export function ChatPanel() {
     };
     setMessages((prev) => [...prev, userMsg]);
 
-    try {
-      const res = await chatApi.sendMessage(text);
-      // Reload full history to get properly formatted messages
-      const history = await chatApi.getHistory();
-      setMessages(history.messages);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to send message';
-      setError(msg);
-      // Remove optimistic user message on error
-      setMessages((prev) => prev.slice(0, -1));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [input, isLoading]);
+    await sendMessageStream(
+      text,
+      {
+        onStarted: () => {
+          // Agent is processing — loading state already set
+        },
+        onCompleted: (data) => {
+          const output = typeof data === 'string' ? data : (data as { output?: string })?.output ?? JSON.stringify(data);
+          const assistantMsg: ChatMessage = {
+            role: 'assistant',
+            content: [{ type: 'text', text: output }],
+            ts: Date.now(),
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+        },
+        onError: (message) => {
+          setError(message);
+          setMessages((prev) => prev.slice(0, -1));
+        },
+      },
+      getUserContext(),
+    );
+
+    setIsLoading(false);
+  }, [input, isLoading, getUserContext]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

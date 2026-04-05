@@ -3,9 +3,17 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { getRuntime, getCopilotAgentId } from '../services/agent-runtime.js';
 import { UpstreamError } from '../errors.js';
+import { prisma } from '../db.js';
+
+const UserContextSchema = z.object({
+  route: z.string(),
+  itemId: z.string().optional(),
+  attId: z.string().optional(),
+});
 
 const SendMessageBodySchema = z.object({
   message: z.string().min(1).max(4000),
+  context: UserContextSchema.optional(),
 });
 
 const ChatMessageSchema = z.object({
@@ -28,6 +36,43 @@ const ChatMessageResponseSchema = z.object({
   data: z.unknown(),
 });
 
+async function buildContextBlock(context: z.infer<typeof UserContextSchema>): Promise<string> {
+  const parts: string[] = [];
+  parts.push(`[User Context]`);
+  parts.push(`- Page: ${context.route}`);
+
+  if (context.itemId) {
+    const item = await prisma.item.findUnique({
+      where: { id: context.itemId },
+      include: { tags: { include: { tag: true } } },
+    });
+    if (item) {
+      const authors = item.authors?.join(', ') || 'Unknown';
+      const year = item.year ?? '';
+      parts.push(`- Viewing: "${item.title}"${year ? ` (${year})` : ''} by ${authors}`);
+      if (item.abstract) {
+        parts.push(`- Abstract: ${item.abstract.length > 300 ? item.abstract.slice(0, 300) + '...' : item.abstract}`);
+      }
+      if (item.tags.length > 0) {
+        parts.push(`- Tags: ${item.tags.map((t) => (t as { tag: { name: string } }).tag.name).join(', ')}`);
+      }
+      if (item.doi) parts.push(`- DOI: ${item.doi}`);
+      if (item.pmid) parts.push(`- PMID: ${String(item.pmid)}`);
+    }
+  }
+
+  if (context.attId) {
+    const attachment = await prisma.attachment.findUnique({
+      where: { id: context.attId },
+    });
+    if (attachment) {
+      parts.push(`- Attachment: ${attachment.fileName}`);
+    }
+  }
+
+  return parts.join('\n') + '\n';
+}
+
 export async function registerChatRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/chat/messages',
@@ -41,13 +86,18 @@ export async function registerChatRoutes(app: FastifyInstance) {
       },
     },
     async (request) => {
-      const { message } = request.body;
+      const { message, context } = request.body;
 
       try {
         const runtime = getRuntime();
         const agentId = getCopilotAgentId();
         const client = runtime.getRuntimeClient('bib-max-server');
-        const result = await client.sendA2AQuery(agentId, message, {
+
+        const enrichedMessage = context
+          ? `${await buildContextBlock(context)}\n${message}`
+          : message;
+
+        const result = await client.sendA2AQuery(agentId, enrichedMessage, {
           timeout: 60000,
         });
 
@@ -57,6 +107,54 @@ export async function registerChatRoutes(app: FastifyInstance) {
         const msg = err instanceof Error ? err.message : 'Failed to get response from agent';
         throw new UpstreamError(msg);
       }
+    },
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().post(
+    '/chat/messages/stream',
+    {
+      schema: {
+        body: SendMessageBodySchema,
+        tags: ['Chat'],
+        summary: 'Stream copilot agent response via SSE',
+        description: 'Send a message and receive real-time SSE events: started, completed, error.',
+      },
+    },
+    async (request, reply) => {
+      const { message, context } = request.body;
+
+      reply.raw.setHeader('Content-Type', 'text/event-stream');
+      reply.raw.setHeader('Cache-Control', 'no-cache');
+      reply.raw.setHeader('Connection', 'keep-alive');
+      reply.raw.setHeader('X-Accel-Buffering', 'no');
+      reply.raw.flushHeaders();
+
+      const send = (event: string, data: unknown) => {
+        reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      };
+
+      send('started', { ts: Date.now() });
+
+      try {
+        const runtime = getRuntime();
+        const agentId = getCopilotAgentId();
+        const client = runtime.getRuntimeClient('bib-max-server');
+
+        const enrichedMessage = context
+          ? `${await buildContextBlock(context)}\n${message}`
+          : message;
+
+        const result = await client.sendA2AQuery(agentId, enrichedMessage, {
+          timeout: 60000,
+        });
+
+        send('completed', { data: result, ts: Date.now() });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Failed to get response from agent';
+        send('error', { message: msg, ts: Date.now() });
+      }
+
+      reply.raw.end();
     },
   );
 

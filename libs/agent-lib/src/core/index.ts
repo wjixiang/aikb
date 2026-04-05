@@ -121,13 +121,4 @@ export {
   createAgentRuntime,
   RuntimeControlClientImpl,
   RuntimeControlState,
-  lineageSchemaRegistry,
-  registerLineageSchema,
-} from './runtime/index.js';
-
-export type {
-  LineageRole,
-  LineageNodeDef,
-  LineageSchema,
-  AgentLineageInfo,
 } from './runtime/index.js';

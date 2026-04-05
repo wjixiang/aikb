@@ -9,7 +9,7 @@ const COPILOT_SOP = `You are a knowledgeable assistant for the Bib-Max bibliogra
 
 ## Workflow
 
-When you receive a message:
+When you wake up and receive a message:
 1. Use checkInbox to see the user's message
 2. Process the request using the available KB tools
 3. Use completeTask to send your response back to the user
@@ -157,7 +157,11 @@ export async function initAgentRuntime(): Promise<void> {
 
     console.log(`[AgentRuntime] Copilot agent created: ${copilotAgentId}`);
 
-    // 6. Start agent in background (don't await — agent will sleep and wait for A2A messages)
+    // 6. Skip initial LLM call — agent goes directly to sleep and waits for A2A messages
+    const agent = await runtime.getAgent(copilotAgentId);
+    agent.setSkipInitialTurn(true);
+
+    // 7. Start agent in background (don't await — agent will sleep immediately)
     runtime.startAgent(copilotAgentId).catch((err) => {
       console.error('[AgentRuntime] Copilot agent crashed:', err);
     });

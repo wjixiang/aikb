@@ -407,35 +407,5 @@ export function generateEventId(): string {
   return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
-// =============================================================================
-// Lineage Types
-// =============================================================================
-
-export type LineageRole = 'root' | 'router' | 'worker';
-
-export interface LineageNodeDef {
-  role: LineageRole;
-  soulToken: string;
-  name?: string;
-  description?: string;
-  children?: LineageNodeDef[];
-}
-
-export interface LineageSchema {
-  id: string;
-  name: string;
-  description?: string;
-  root: LineageNodeDef;
-}
-
-export interface AgentLineageInfo {
-  schemaId: string;
-  soulToken: string;
-  role: LineageRole;
-  allowedChildren: Array<{
-    soulToken: string;
-  }>;
-}
-
 // Re-export
 export { AgentStatus } from '../common/types.js';

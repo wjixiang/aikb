@@ -1,5 +1,5 @@
 import { AgentBlueprint } from 'agent-lib/core';
-import { LineageControlComponent, LifecycleComponent } from 'component-hub';
+import { LifecycleComponent } from 'component-hub';
 
 const SOP_CONTENT = `# 联网搜索路由 (Web Search Router)
 
@@ -153,7 +153,6 @@ export function createArticleRetrieveRouterAgentSoul(): AgentBlueprint {
         '联网搜索路由，将复杂搜索任务拆分为多个独立子查询，并行委派 web-search Agent 执行后汇总结果',
     },
     components: [
-      { componentClass: LineageControlComponent },
       { componentClass: LifecycleComponent },
     ],
   };
