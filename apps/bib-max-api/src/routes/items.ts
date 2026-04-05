@@ -131,7 +131,7 @@ export async function registerItemRoutes(app: FastifyInstance) {
         response: { 200: BatchResponseSchema },
         tags: ['Items'],
         summary: '批量操作',
-        description: '支持: delete, setTags, addTags, removeTags, markAsRead, markAsUnread, toggleFavorite',
+        description: '支持: delete, setTags, addTags, removeTags, toggleFavorite',
       },
     },
     async (request) => {

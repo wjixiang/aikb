@@ -2,6 +2,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { Prisma as PrismaNamespace } from '../generated/prisma/client.js';
 import { prisma } from '../db.js';
 import { NotFoundError } from '../errors.js';
+import { storage } from '../storage/instance.js';
 
 // ============ Query Types ============
 
@@ -12,7 +13,6 @@ export interface ItemQuery {
   search?: string;
   tagIds?: string[];
   isFavorite?: boolean;
-  isRead?: boolean;
   sortBy?: string;
   sortOrder?: string;
 }
@@ -33,7 +33,6 @@ export interface CreateItemInput {
   coverUrl?: string;
   notes?: string;
   isFavorite?: boolean;
-  isRead?: boolean;
   rating?: number;
   customMeta?: unknown;
 }
@@ -62,7 +61,6 @@ interface RawItem {
   coverUrl: string | null;
   notes: string | null;
   isFavorite: boolean;
-  isRead: boolean;
   rating: number | null;
   customMeta: Prisma.JsonValue | null;
   createdAt: Date;
@@ -88,7 +86,6 @@ export interface FormattedItem {
   coverUrl: string | null;
   notes: string | null;
   isFavorite: boolean;
-  isRead: boolean;
   rating: number | null;
   customMeta: Prisma.JsonValue | null;
   createdAt: Date;
@@ -122,7 +119,6 @@ export async function listItems(query: ItemQuery): Promise<PaginatedItems> {
   const where: Record<string, unknown> = {};
   if (query.type) where.type = query.type;
   if (query.isFavorite !== undefined) where.isFavorite = query.isFavorite;
-  if (query.isRead !== undefined) where.isRead = query.isRead;
 
   if (query.search) {
     where.OR = [
@@ -231,10 +227,18 @@ export async function updateItem(id: string, input: UpdateItemInput): Promise<Fo
 }
 
 export async function removeItem(id: string): Promise<void> {
-  const existing = await prisma.item.findUnique({ where: { id } });
+  const existing = await prisma.item.findUnique({
+    where: { id },
+    include: { attachments: { select: { s3Key: true } } },
+  });
   if (!existing) {
     throw new NotFoundError('Item', id);
   }
+
+  // Delete S3 objects for all attachments
+  await Promise.allSettled(
+    existing.attachments.map((att) => storage.delete(att.s3Key)),
+  );
 
   await prisma.item.delete({ where: { id } });
 }
@@ -299,16 +303,6 @@ export async function batchOperation(
       await prisma.itemTag.deleteMany({
         where: { itemId: { in: itemIds }, tagId: { in: tagIds! } },
       });
-      return { success: true, updated: itemIds.length };
-    }
-
-    case 'markAsRead': {
-      await prisma.item.updateMany({ where: { id: { in: itemIds } }, data: { isRead: true } });
-      return { success: true, updated: itemIds.length };
-    }
-
-    case 'markAsUnread': {
-      await prisma.item.updateMany({ where: { id: { in: itemIds } }, data: { isRead: false } });
       return { success: true, updated: itemIds.length };
     }
 

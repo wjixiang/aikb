@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ItemDialog } from "./ItemDialog";
 import { ItemDetail } from "./ItemDetail";
-import { Plus, MoreHorizontal, Pencil, Trash2, Star, BookOpenCheck, BookOpen, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, Star, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ItemsPage() {
@@ -74,11 +74,6 @@ export function ItemsPage() {
 
   const toggleFavorite = async (item: Item) => {
     await itemsApi.update(item.id, { isFavorite: !item.isFavorite });
-    setVersion((v) => v + 1);
-  };
-
-  const toggleRead = async (item: Item) => {
-    await itemsApi.update(item.id, { isRead: !item.isRead });
     setVersion((v) => v + 1);
   };
 
@@ -186,9 +181,6 @@ export function ItemsPage() {
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <button onClick={() => toggleRead(item)} className="p-1">
-                      {item.isRead ? <BookOpenCheck className="size-4 text-muted-foreground" /> : <BookOpen className="size-4 text-muted-foreground" />}
-                    </button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon-sm">

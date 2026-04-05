@@ -49,7 +49,6 @@ const emptyForm: Omit<CreateItemInput, "tagIds"> & { authorsStr: string; tagIds:
   url: "",
   notes: "",
   isFavorite: false,
-  isRead: false,
   rating: undefined,
   tagIds: [],
 };
@@ -77,7 +76,6 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
         url: item.url ?? "",
         notes: item.notes ?? "",
         isFavorite: item.isFavorite,
-        isRead: item.isRead,
         rating: item.rating ?? undefined,
         tagIds: item.tags.map((t) => t.id),
       });
@@ -119,7 +117,6 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
         url: form.url || undefined,
         notes: form.notes || undefined,
         isFavorite: form.isFavorite,
-        isRead: form.isRead,
         rating: form.rating,
         tagIds: form.tagIds.length > 0 ? form.tagIds : undefined,
       };
@@ -245,10 +242,6 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={form.isFavorite} onCheckedChange={(v) => setField("isFavorite", v)} />
           Favorite
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <Switch checked={form.isRead} onCheckedChange={(v) => setField("isRead", v)} />
-          Read
         </label>
       </div>
 

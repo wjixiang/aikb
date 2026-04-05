@@ -68,7 +68,6 @@ export interface Item {
   coverUrl?: string | null;
   notes?: string | null;
   isFavorite: boolean;
-  isRead: boolean;
   rating?: number | null;
   customMeta?: unknown;
   createdAt: string;
@@ -91,7 +90,6 @@ export interface CreateItemInput {
   coverUrl?: string;
   notes?: string;
   isFavorite?: boolean;
-  isRead?: boolean;
   rating?: number;
   customMeta?: unknown;
   tagIds?: string[];
@@ -112,7 +110,6 @@ export interface UpdateItemInput {
   coverUrl?: string;
   notes?: string;
   isFavorite?: boolean;
-  isRead?: boolean;
   rating?: number;
   customMeta?: unknown;
   tagIds?: string[];
@@ -125,7 +122,6 @@ export interface ItemQuery {
   search?: string;
   tagIds?: string[];
   isFavorite?: boolean;
-  isRead?: boolean;
   sortBy?: SortField;
   sortOrder?: SortOrder;
 }

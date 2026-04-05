@@ -28,7 +28,6 @@ export const ItemSchema = z.object({
   coverUrl: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   isFavorite: z.boolean(),
-  isRead: z.boolean(),
   rating: z.number().int().min(1).max(5).nullable().optional(),
   customMeta: z.unknown().nullable().optional(),
   createdAt: z.date(),
@@ -51,7 +50,6 @@ export const CreateItemSchema = z.object({
   coverUrl: z.string().optional(),
   notes: z.string().optional(),
   isFavorite: z.boolean().optional(),
-  isRead: z.boolean().optional(),
   rating: z.number().int().min(1).max(5).optional(),
   customMeta: z.unknown().optional(),
   tagIds: z.array(z.string().uuid()).optional(),
@@ -72,7 +70,6 @@ export const UpdateItemSchema = z.object({
   coverUrl: z.string().optional(),
   notes: z.string().optional(),
   isFavorite: z.boolean().optional(),
-  isRead: z.boolean().optional(),
   rating: z.number().int().min(1).max(5).optional(),
   customMeta: z.unknown().optional(),
   tagIds: z.array(z.string().uuid()).optional(),
@@ -85,7 +82,6 @@ export const ItemQuerySchema = z.object({
   search: z.string().optional(),
   tagIds: z.array(z.string().uuid()).optional(),
   isFavorite: z.coerce.boolean().optional(),
-  isRead: z.coerce.boolean().optional(),
   sortBy: z.enum(['createdAt', 'updatedAt', 'year', 'title']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
@@ -96,7 +92,7 @@ export const SetItemTagsSchema = z.object({
 
 export const BatchOperationSchema = z.object({
   itemIds: z.array(z.string().uuid()).min(1),
-  operation: z.enum(['addTags', 'removeTags', 'setTags', 'delete', 'markAsRead', 'markAsUnread', 'toggleFavorite']),
+  operation: z.enum(['addTags', 'removeTags', 'setTags', 'delete', 'toggleFavorite']),
   tagIds: z.array(z.string().uuid()).optional(),
 });
 
