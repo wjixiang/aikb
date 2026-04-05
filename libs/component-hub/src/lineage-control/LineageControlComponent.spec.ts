@@ -4,13 +4,12 @@ import {
   setGlobalAgentRegistry,
   getGlobalAgentRegistry,
   AgentCardRegistry,
-} from '../../core/a2a/AgentCard.js';
-import type { IA2AHandler, PendingTask } from '../../core/a2a/A2AHandler.js';
-import type { IA2AClient } from '../../core/a2a/A2AClient.js';
-import { RuntimeControlState } from '../../core/runtime/RuntimeControlState.js';
-import type { IRuntimeControlClient } from '../../core/runtime/types.js';
-import type { AgentLineageInfo } from '../../core/runtime/types.js';
-import { AgentStatus } from '../../core/common/types.js';
+} from 'agent-lib/core';
+import type { IA2AHandler, PendingTask } from 'agent-lib/core';
+import type { IA2AClient } from 'agent-lib/core';
+import { RuntimeControlState } from 'agent-lib/core';
+import type { IRuntimeControlClient } from 'agent-lib/core';
+import { AgentStatus } from 'agent-lib/core';
 
 const INSTANCE_ID = 'test-instance-abc1234567890';
 
@@ -80,6 +79,10 @@ function createMockRuntimeClient(): IRuntimeControlClient {
   };
 }
 
+function createMockHookModule() {
+  return { on: vi.fn(), executeHooks: vi.fn() } as any;
+}
+
 function createRuntimeState(
   client?: IRuntimeControlClient,
 ): RuntimeControlState {
@@ -88,34 +91,22 @@ function createRuntimeState(
   return state;
 }
 
-function createLineage(
-  role: 'root' | 'router' | 'worker' = 'router',
-): AgentLineageInfo {
-  return {
-    schemaId: 'test-schema',
-    soulToken: 'node-1',
-    role,
-    allowedChildren: role !== 'worker' ? [{ soulToken: 'worker-a' }] : [],
-  };
-}
-
 function createComponent(opts?: {
-  lineage?: AgentLineageInfo;
   runtimeClient?: IRuntimeControlClient;
 }) {
   const a2aHandler = createMockA2AHandler();
   const a2aClient = createMockA2AClient();
+  const hookModule = createMockHookModule();
   const runtimeState = opts?.runtimeClient
     ? createRuntimeState(opts.runtimeClient)
     : undefined;
-  const lineage = opts?.lineage;
 
   const component = new LineageControlComponent(
     INSTANCE_ID,
     a2aHandler,
     a2aClient,
+    hookModule,
     runtimeState,
-    lineage,
   );
 
   return { component, a2aHandler, a2aClient, runtimeState };
@@ -128,61 +119,25 @@ describe('LineageControlComponent', () => {
   });
 
   describe('constructor', () => {
-    it('should create instance with no lineage', () => {
+    it('should create instance', () => {
       const { component } = createComponent();
       expect(component).toBeInstanceOf(LineageControlComponent);
       expect(component.componentId).toBe('lineage-control');
       expect(component.displayName).toBe('Lineage Control');
     });
-
-    it('should create instance with router lineage', () => {
-      const { component } = createComponent({
-        lineage: createLineage('router'),
-      });
-      expect(component).toBeInstanceOf(LineageControlComponent);
-    });
-
-    it('should create instance with worker lineage', () => {
-      const { component } = createComponent({
-        lineage: createLineage('worker'),
-      });
-      expect(component).toBeInstanceOf(LineageControlComponent);
-    });
   });
 
   describe('componentPrompt', () => {
-    it('should return noLineagePrompt when no lineage', () => {
+    it('should return default prompt with all tools', () => {
       const { component } = createComponent();
       expect(component.componentPrompt).toContain('Agent Mailbox');
       expect(component.componentPrompt).toContain('discoverAgents');
-    });
-
-    it('should return workerPrompt when role is worker', () => {
-      const { component } = createComponent({
-        lineage: createLineage('worker'),
-      });
-      expect(component.componentPrompt).toContain('worker agent');
-      expect(component.componentPrompt).toContain('checkInbox');
-      expect(component.componentPrompt).not.toContain('createAgentByType');
-    });
-
-    it('should return routerPrompt when role is router', () => {
-      const { component } = createComponent({
-        lineage: createLineage('router'),
-      });
-      expect(component.componentPrompt).toContain('router');
-      expect(component.componentPrompt).toContain('child agents');
-      expect(component.componentPrompt).toContain('worker-a');
-    });
-
-    it('should return routerPrompt when role is root', () => {
-      const { component } = createComponent({ lineage: createLineage('root') });
-      expect(component.componentPrompt).toContain('router');
+      expect(component.componentPrompt).toContain('createAgentByType');
     });
   });
 
   describe('toolDefs', () => {
-    it('should include inbox tools for all roles', () => {
+    it('should include inbox tools', () => {
       const { component } = createComponent();
       const tools = component.toolSet;
       expect(tools.has('checkInbox')).toBe(true);
@@ -191,7 +146,7 @@ describe('LineageControlComponent', () => {
       expect(tools.has('failTask')).toBe(true);
     });
 
-    it('should include router tools when no lineage', () => {
+    it('should include all tools', () => {
       const { component } = createComponent();
       const tools = component.toolSet;
       expect(tools.has('sendTask')).toBe(true);
@@ -207,42 +162,6 @@ describe('LineageControlComponent', () => {
       expect(tools.has('getMyInfo')).toBe(true);
       expect(tools.has('getStats')).toBe(true);
       expect(tools.has('discoverAgents')).toBe(true);
-    });
-
-    it('should include router tools for router role', () => {
-      const { component } = createComponent({
-        lineage: createLineage('router'),
-      });
-      const tools = component.toolSet;
-      expect(tools.has('sendTask')).toBe(true);
-      expect(tools.has('createAgentByType')).toBe(true);
-    });
-
-    it('should not include discoverAgents for router role', () => {
-      const { component } = createComponent({
-        lineage: createLineage('router'),
-      });
-      expect(component.toolSet.has('discoverAgents')).toBe(false);
-    });
-
-    it('should not include router tools for worker role', () => {
-      const { component } = createComponent({
-        lineage: createLineage('worker'),
-      });
-      const tools = component.toolSet;
-      expect(tools.has('sendTask')).toBe(false);
-      expect(tools.has('sendQuery')).toBe(false);
-      expect(tools.has('checkSent')).toBe(false);
-      expect(tools.has('cancelTask')).toBe(false);
-      expect(tools.has('createAgentByType')).toBe(false);
-      expect(tools.has('startAgent')).toBe(false);
-      expect(tools.has('stopAgent')).toBe(false);
-      expect(tools.has('destroyAgent')).toBe(false);
-      expect(tools.has('listChildAgents')).toBe(false);
-      expect(tools.has('listAllowedSouls')).toBe(false);
-      expect(tools.has('getMyInfo')).toBe(false);
-      expect(tools.has('getStats')).toBe(false);
-      expect(tools.has('discoverAgents')).toBe(false);
     });
 
     it('should have descriptions for all tools', () => {
@@ -499,7 +418,7 @@ describe('LineageControlComponent', () => {
   });
 
   // ===========================================================================
-  // SENT (router)
+  // SENT
   // ===========================================================================
 
   describe('onSendTask', () => {
@@ -671,26 +590,10 @@ describe('LineageControlComponent', () => {
         'conv-cancel',
       );
     });
-
-    it('should wake up sleep control on cancel', async () => {
-      const { component, a2aClient, sleepControl } = createComponent();
-      vi.mocked(a2aClient.sendTaskAndWaitForAck).mockResolvedValue('conv-wake');
-      vi.mocked(sleepControl.isSleeping).mockReturnValue(true);
-
-      await component.handleToolCall('sendTask', {
-        targetAgentId: 'child-1',
-        taskId: 'task-wake',
-        description: 'Wake cancel',
-      });
-
-      await component.handleToolCall('cancelTask', {
-        conversationId: 'conv-wake',
-      });
-    });
   });
 
   // ===========================================================================
-  // LIFECYCLE (router)
+  // LIFECYCLE
   // ===========================================================================
 
   describe('lifecycle - no runtime client', () => {
@@ -873,19 +776,7 @@ describe('LineageControlComponent', () => {
   // ===========================================================================
 
   describe('onListAllowedSouls', () => {
-    it('should list allowed souls from lineage', async () => {
-      const { component } = createComponent({
-        lineage: createLineage('router'),
-      });
-
-      const result = await component.handleToolCall('listAllowedSouls', {});
-
-      expect(result.success).toBe(true);
-      expect(result.data.souls).toHaveLength(1);
-      expect(result.data.souls[0].soulToken).toBe('worker-a');
-    });
-
-    it('should work without lineage', async () => {
+    it('should list all registered souls', async () => {
       const { component } = createComponent();
       const result = await component.handleToolCall('listAllowedSouls', {});
 
@@ -895,19 +786,16 @@ describe('LineageControlComponent', () => {
   });
 
   describe('onGetMyInfo', () => {
-    it('should return instance info without lineage', async () => {
+    it('should return instance info', async () => {
       const { component } = createComponent();
       const result = await component.handleToolCall('getMyInfo', {});
 
       expect(result.success).toBe(true);
       expect(result.data.instanceId).toBe(INSTANCE_ID);
-      expect(result.data.role).toBeUndefined();
-      expect(result.data.allowedChildren).toEqual([]);
     });
 
-    it('should return instance info with lineage', async () => {
+    it('should return parentInstanceId when runtime client available', async () => {
       const { component } = createComponent({
-        lineage: createLineage('router'),
         runtimeClient: createMockRuntimeClient(),
       });
 
@@ -915,10 +803,6 @@ describe('LineageControlComponent', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.instanceId).toBe(INSTANCE_ID);
-      expect(result.data.role).toBe('router');
-      expect(result.data.schemaId).toBe('test-schema');
-      expect(result.data.soulToken).toBe('node-1');
-      expect(result.data.allowedChildren).toHaveLength(1);
       expect(result.data.parentInstanceId).toBe('parent-abc');
     });
   });
@@ -972,17 +856,6 @@ describe('LineageControlComponent', () => {
       expect(data.failedCount).toBe(0);
       expect(data.inboxPendingCount).toBe(0);
       expect(data.inboxProcessingCount).toBe(0);
-    });
-
-    it('should export state with lineage', async () => {
-      const { component } = createComponent({
-        lineage: createLineage('router'),
-      });
-      const result = await component.exportData();
-      const data = result.data as Record<string, unknown>;
-
-      expect(data.lineage).toBeDefined();
-      expect((data.lineage as AgentLineageInfo).role).toBe('router');
     });
   });
 

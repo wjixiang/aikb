@@ -9,11 +9,9 @@ import type { IA2AHandler } from 'agent-lib/core';
 import type { IA2AClient } from 'agent-lib/core';
 import type { RuntimeControlState } from 'agent-lib/core';
 import type { IRuntimeControlClient } from 'agent-lib/core';
-import type { AgentLineageInfo } from 'agent-lib/core';
 import type { AgentMetadata } from 'agent-lib/core';
 import { getGlobalAgentRegistry } from 'agent-lib/core';
 import { agentSoulRegistry } from 'agent-lib/core';
-import { lineageSchemaRegistry } from 'agent-lib/core';
 import type { IAgentCardRegistry } from 'agent-lib/core';
 import type { HookModule } from 'agent-lib/core';
 import { HookType } from 'agent-lib/core';
@@ -76,20 +74,13 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
     'Unified component for agent inbox, task delegation, and lineage-based agent lifecycle management';
 
   override get componentPrompt(): string {
-    if (!this.lineage) {
-      return this.noLineagePrompt;
-    }
-    if (this.lineage.role === 'worker') {
-      return this.workerPrompt;
-    }
-    return this.routerPrompt;
+    return this.defaultPrompt;
   }
 
   protected a2aHandler: IA2AHandler;
   protected a2aClient: IA2AClient;
   private agentRegistry: IAgentCardRegistry;
   private runtimeState?: RuntimeControlState;
-  protected lineage?: AgentLineageInfo;
   private hookModule: HookModule;
 
   constructor(
@@ -100,16 +91,12 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
     @inject(TYPES.RuntimeControlState)
     @optional()
     runtimeState?: RuntimeControlState,
-    @inject(TYPES.AgentLineageInfo)
-    @optional()
-    lineage?: AgentLineageInfo,
   ) {
     super();
     this.a2aHandler = a2aHandler;
     this.a2aClient = a2aClient;
     this.agentRegistry = getGlobalAgentRegistry();
     this.runtimeState = runtimeState;
-    this.lineage = lineage;
     this.hookModule = hookModule;
 
     this.hookModule.on(HookType.AGENT_WOKEN, (ctx) => {
@@ -147,7 +134,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   }
 
   protected override toolDefs() {
-    const tools: Record<string, { desc: string; paramsSchema: any }> = {
+    return {
       checkInbox: {
         desc: lineageControlToolSchemas.checkInbox.desc,
         paramsSchema: lineageControlToolSchemas.checkInbox.paramsSchema,
@@ -164,70 +151,60 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
         desc: lineageControlToolSchemas.failTask.desc,
         paramsSchema: lineageControlToolSchemas.failTask.paramsSchema,
       },
+      sendTask: {
+        desc: lineageControlToolSchemas.sendTask.desc,
+        paramsSchema: lineageControlToolSchemas.sendTask.paramsSchema,
+      },
+      sendQuery: {
+        desc: lineageControlToolSchemas.sendQuery.desc,
+        paramsSchema: lineageControlToolSchemas.sendQuery.paramsSchema,
+      },
+      checkSent: {
+        desc: lineageControlToolSchemas.checkSent.desc,
+        paramsSchema: lineageControlToolSchemas.checkSent.paramsSchema,
+      },
+      cancelTask: {
+        desc: lineageControlToolSchemas.cancelTask.desc,
+        paramsSchema: lineageControlToolSchemas.cancelTask.paramsSchema,
+      },
+      listChildAgents: {
+        desc: lineageControlToolSchemas.listChildAgents.desc,
+        paramsSchema: lineageControlToolSchemas.listChildAgents.paramsSchema,
+      },
+      createAgentByType: {
+        desc: lineageControlToolSchemas.createAgentByType.desc,
+        paramsSchema:
+          lineageControlToolSchemas.createAgentByType.paramsSchema,
+      },
+      startAgent: {
+        desc: lineageControlToolSchemas.startAgent.desc,
+        paramsSchema: lineageControlToolSchemas.startAgent.paramsSchema,
+      },
+      stopAgent: {
+        desc: lineageControlToolSchemas.stopAgent.desc,
+        paramsSchema: lineageControlToolSchemas.stopAgent.paramsSchema,
+      },
+      destroyAgent: {
+        desc: lineageControlToolSchemas.destroyAgent.desc,
+        paramsSchema: lineageControlToolSchemas.destroyAgent.paramsSchema,
+      },
+      listAllowedSouls: {
+        desc: lineageControlToolSchemas.listAllowedSouls.desc,
+        paramsSchema: lineageControlToolSchemas.listAllowedSouls.paramsSchema,
+      },
+      getMyInfo: {
+        desc: lineageControlToolSchemas.getMyInfo.desc,
+        paramsSchema: lineageControlToolSchemas.getMyInfo.paramsSchema,
+      },
+      getStats: {
+        desc: lineageControlToolSchemas.getStats.desc,
+        paramsSchema: lineageControlToolSchemas.getStats.paramsSchema,
+      },
+      discoverAgents: {
+        desc: lineageControlToolSchemas.discoverAgents.desc,
+        paramsSchema: lineageControlToolSchemas.discoverAgents.paramsSchema,
+      },
     };
-
-    if (!this.lineage || this.lineage.role !== 'worker') {
-      Object.assign(tools, {
-        sendTask: {
-          desc: lineageControlToolSchemas.sendTask.desc,
-          paramsSchema: lineageControlToolSchemas.sendTask.paramsSchema,
-        },
-        sendQuery: {
-          desc: lineageControlToolSchemas.sendQuery.desc,
-          paramsSchema: lineageControlToolSchemas.sendQuery.paramsSchema,
-        },
-        checkSent: {
-          desc: lineageControlToolSchemas.checkSent.desc,
-          paramsSchema: lineageControlToolSchemas.checkSent.paramsSchema,
-        },
-        cancelTask: {
-          desc: lineageControlToolSchemas.cancelTask.desc,
-          paramsSchema: lineageControlToolSchemas.cancelTask.paramsSchema,
-        },
-        listChildAgents: {
-          desc: lineageControlToolSchemas.listChildAgents.desc,
-          paramsSchema: lineageControlToolSchemas.listChildAgents.paramsSchema,
-        },
-        createAgentByType: {
-          desc: lineageControlToolSchemas.createAgentByType.desc,
-          paramsSchema:
-            lineageControlToolSchemas.createAgentByType.paramsSchema,
-        },
-        startAgent: {
-          desc: lineageControlToolSchemas.startAgent.desc,
-          paramsSchema: lineageControlToolSchemas.startAgent.paramsSchema,
-        },
-        stopAgent: {
-          desc: lineageControlToolSchemas.stopAgent.desc,
-          paramsSchema: lineageControlToolSchemas.stopAgent.paramsSchema,
-        },
-        destroyAgent: {
-          desc: lineageControlToolSchemas.destroyAgent.desc,
-          paramsSchema: lineageControlToolSchemas.destroyAgent.paramsSchema,
-        },
-        listAllowedSouls: {
-          desc: lineageControlToolSchemas.listAllowedSouls.desc,
-          paramsSchema: lineageControlToolSchemas.listAllowedSouls.paramsSchema,
-        },
-        getMyInfo: {
-          desc: lineageControlToolSchemas.getMyInfo.desc,
-          paramsSchema: lineageControlToolSchemas.getMyInfo.paramsSchema,
-        },
-        getStats: {
-          desc: lineageControlToolSchemas.getStats.desc,
-          paramsSchema: lineageControlToolSchemas.getStats.paramsSchema,
-        },
-      });
-
-      if (!this.lineage) {
-        tools['discoverAgents'] = {
-          desc: lineageControlToolSchemas.discoverAgents.desc,
-          paramsSchema: lineageControlToolSchemas.discoverAgents.paramsSchema,
-        };
-      }
-    }
-
-    return tools;
   }
 
   // ===========================================================================
@@ -572,7 +549,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       success: false,
       data: {
         error:
-          'Runtime control client not available. Agent must have lineage info.',
+          'Runtime control client not available.',
       } as T,
       summary: '[Lifecycle] Runtime control client not available',
     };
@@ -704,29 +681,12 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   async onListAllowedSouls(): Promise<
     ToolCallResult<LineageControlToolReturnTypes['listAllowedSouls']>
   > {
-    let souls: Array<{
-      soulToken: string;
-      name?: string;
-      description?: string;
-    }>;
-    if (this.lineage?.allowedChildren) {
-      souls = this.lineage.allowedChildren.map((c) => {
-        const found = lineageSchemaRegistry.findBySoulToken(c.soulToken);
-        const node = found?.node;
-        return {
-          soulToken: c.soulToken,
-          name: node?.name,
-          description: node?.description,
-        };
-      });
-    } else {
-      const allSouls = agentSoulRegistry.getAll();
-      souls = allSouls.map((s) => ({
-        soulToken: s.type as string,
-        name: s.name,
-        description: s.description,
-      }));
-    }
+    const allSouls = agentSoulRegistry.getAll();
+    const souls = allSouls.map((s) => ({
+      soulToken: s.type as string,
+      name: s.name,
+      description: s.description,
+    }));
     return {
       success: true,
       data: { souls },
@@ -742,13 +702,9 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       success: true,
       data: {
         instanceId: this.instanceId,
-        role: this.lineage?.role,
-        schemaId: this.lineage?.schemaId,
-        soulToken: this.lineage?.soulToken,
-        allowedChildren: this.lineage?.allowedChildren ?? [],
         parentInstanceId,
       },
-      summary: `[Info] ${this.instanceId.slice(0, 8)} role=${this.lineage?.role ?? 'none'}`,
+      summary: `[Info] ${this.instanceId.slice(0, 8)}`,
     };
   }
 
@@ -830,7 +786,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
 
     elements.push(
       new th({
-        content: `Lineage Control (${this.lineage?.role ?? 'none'})`,
+        content: `Agent Control`,
         styles: { align: 'center' },
       }),
     );
@@ -898,127 +854,111 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
       }
     }
 
-    // SENT (router only)
-    if (this.lineage?.role !== 'worker') {
-      const sentInFlight = sent.filter((t) => t.status === 'in-flight');
-      const sentDone = sent.filter((t) => t.status === 'completed');
-      const sentFailed = sent.filter(
-        (t) => t.status === 'failed' || t.status === 'timeout',
+    // SENT
+    const sentInFlight = sent.filter((t) => t.status === 'in-flight');
+    const sentDone = sent.filter((t) => t.status === 'completed');
+    const sentFailed = sent.filter(
+      (t) => t.status === 'failed' || t.status === 'timeout',
+    );
+    const sentCancelled = sent.filter((t) => t.status === 'cancelled');
+
+    const hasSent =
+      sentInFlight.length > 0 ||
+      sentDone.length > 0 ||
+      sentFailed.length > 0 ||
+      sentCancelled.length > 0;
+
+    if (hasSent) {
+      elements.push(
+        new th({
+          content: `SENT (${sentInFlight.length} in-flight, ${sentDone.length} done, ${sentFailed.length} failed, ${sentCancelled.length} cancelled)`,
+          styles: { align: 'left' },
+        }),
       );
-      const sentCancelled = sent.filter((t) => t.status === 'cancelled');
 
-      const hasSent =
-        sentInFlight.length > 0 ||
-        sentDone.length > 0 ||
-        sentFailed.length > 0 ||
-        sentCancelled.length > 0;
-
-      if (hasSent) {
+      for (const t of sentInFlight) {
+        const elapsed = this.formatElapsed(now - t.sentAt);
         elements.push(
-          new th({
-            content: `SENT (${sentInFlight.length} in-flight, ${sentDone.length} done, ${sentFailed.length} failed, ${sentCancelled.length} cancelled)`,
-            styles: { align: 'left' },
+          new tdiv({
+            content: `  -> [IN-FLIGHT] ${t.description} -> ${t.targetAgentName ?? t.targetAgentId} (${elapsed} ago)`,
           }),
         );
+      }
 
-        for (const t of sentInFlight) {
-          const elapsed = this.formatElapsed(now - t.sentAt);
+      for (const t of sentDone.slice(-3)) {
+        const elapsed = t.completedAt
+          ? this.formatElapsed(t.completedAt - t.sentAt)
+          : '?';
+        elements.push(
+          new tdiv({
+            content: `  \u2713 [DONE] ${t.description} -> ${t.targetAgentName ?? t.targetAgentId} (${elapsed})`,
+          }),
+        );
+      }
+
+      for (const t of sentFailed.slice(-3)) {
+        elements.push(
+          new tdiv({
+            content: `  x [FAILED] ${t.description} -> ${t.targetAgentName ?? t.targetAgentId}: ${t.error ?? t.status}`,
+          }),
+        );
+      }
+
+      for (const t of sentCancelled.slice(-2)) {
+        elements.push(
+          new tdiv({
+            content: `  - [CANCELLED] ${t.description} -> ${t.targetAgentName ?? t.targetAgentId}`,
+          }),
+        );
+      }
+    }
+
+    // REGISTERED SOULS
+    const allSouls = agentSoulRegistry.getAll();
+    if (allSouls.length > 0) {
+      elements.push(
+        new th({
+          content: `REGISTERED SOULS (${allSouls.length})`,
+          styles: { align: 'left' },
+        }),
+      );
+      for (const soul of allSouls) {
+        elements.push(
+          new tdiv({
+            content: `  * ${soul.name || soul.type} [${soul.type}]`,
+          }),
+        );
+        if (soul.description) {
+          const truncated =
+            soul.description.length > 80
+              ? soul.description.slice(0, 80) + '...'
+              : soul.description;
           elements.push(
             new tdiv({
-              content: `  -> [IN-FLIGHT] ${t.description} -> ${t.targetAgentName ?? t.targetAgentId} (${elapsed} ago)`,
-            }),
-          );
-        }
-
-        for (const t of sentDone.slice(-3)) {
-          const elapsed = t.completedAt
-            ? this.formatElapsed(t.completedAt - t.sentAt)
-            : '?';
-          elements.push(
-            new tdiv({
-              content: `  \u2713 [DONE] ${t.description} -> ${t.targetAgentName ?? t.targetAgentId} (${elapsed})`,
-            }),
-          );
-        }
-
-        for (const t of sentFailed.slice(-3)) {
-          elements.push(
-            new tdiv({
-              content: `  x [FAILED] ${t.description} -> ${t.targetAgentName ?? t.targetAgentId}: ${t.error ?? t.status}`,
-            }),
-          );
-        }
-
-        for (const t of sentCancelled.slice(-2)) {
-          elements.push(
-            new tdiv({
-              content: `  - [CANCELLED] ${t.description} -> ${t.targetAgentName ?? t.targetAgentId}`,
+              content: `    ${truncated}`,
             }),
           );
         }
       }
     }
 
-    // ALLOWED SOULS (router only)
-    if (this.lineage?.role !== 'worker') {
-      const allowed = this.lineage?.allowedChildren ?? [];
-      if (allowed.length > 0) {
+    // CHILDREN
+    const localChildren = Object.values(this.snapshot.childAgents);
+    if (localChildren.length > 0) {
+      elements.push(
+        new th({
+          content: `MY CHILDREN (${localChildren.length})`,
+          styles: { align: 'left' },
+        }),
+      );
+      for (const child of localChildren) {
+        const age = Math.round((Date.now() - child.createdAt) / 1000);
+        const suffix = child.soulToken ? ` [${child.soulToken}]` : '';
         elements.push(
-          new th({
-            content: `ALLOWED SOULS (${allowed.length})`,
-            styles: { align: 'left' },
+          new tdiv({
+            content: `  + ${child.name}${suffix} (${child.instanceId.slice(0, 8)}) ${age}s ago`,
           }),
         );
-        for (const entry of allowed) {
-          const found = lineageSchemaRegistry.findBySoulToken(entry.soulToken);
-          const node = found?.node;
-          const label = node?.name || entry.soulToken;
-          const role = node?.role || '?';
-          const desc = node?.description || '';
-          const childCount = node?.children?.length ?? 0;
-
-          elements.push(
-            new tdiv({
-              content: `  * ${label} [${role}]`,
-            }),
-          );
-          elements.push(
-            new tdiv({
-              content: `    soulToken=${entry.soulToken}  children=${childCount}`,
-            }),
-          );
-          if (desc) {
-            const truncated =
-              desc.length > 80 ? desc.slice(0, 80) + '...' : desc;
-            elements.push(
-              new tdiv({
-                content: `    ${truncated}`,
-              }),
-            );
-          }
-        }
-      }
-    }
-
-    // CHILDREN (router only)
-    if (this.lineage?.role !== 'worker') {
-      const localChildren = Object.values(this.snapshot.childAgents);
-      if (localChildren.length > 0) {
-        elements.push(
-          new th({
-            content: `MY CHILDREN (${localChildren.length})`,
-            styles: { align: 'left' },
-          }),
-        );
-        for (const child of localChildren) {
-          const age = Math.round((Date.now() - child.createdAt) / 1000);
-          const suffix = child.soulToken ? ` [${child.soulToken}]` : '';
-          elements.push(
-            new tdiv({
-              content: `  + ${child.name}${suffix} (${child.instanceId.slice(0, 8)}) ${age}s ago`,
-            }),
-          );
-        }
       }
     }
 
@@ -1037,7 +977,7 @@ export class LineageControlComponent extends ToolComponent<LineageControlState> 
   // Prompts
   // ===========================================================================
 
-  private noLineagePrompt = `## Agent Mailbox
+  private defaultPrompt = `## Agent Mailbox
 You have an Agent Mailbox for collaborating with other agents.
 
 **At the start of every turn, call checkInbox first** to see if new tasks arrived.
@@ -1064,57 +1004,8 @@ You have an Agent Mailbox for collaborating with other agents.
 2. createAgentByType — create a new child agent from a predefined soul
 3. startAgent / stopAgent / destroyAgent — lifecycle management
 4. listAllowedSouls — see what soul types you can create
-5. getMyInfo — your own instance ID and lineage info
+5. getMyInfo — your own instance ID
 6. getStats — runtime statistics`;
-
-  private workerPrompt = `## Task Processing
-
-You are a worker agent. You receive tasks from your router and return results.
-
-**At the start of every turn, call checkInbox first.**
-
-**Workflow:**
-1. checkInbox — check for new tasks
-2. acknowledgeTask — accept a task
-3. Process the task using your domain tools
-4. completeTask — return the result
-5. failTask — report failure if you cannot complete
-
-You cannot create agents or send tasks to others. Focus on your specialized work.`;
-
-  private get routerPrompt(): string {
-    const allowed = (this.lineage?.allowedChildren ?? [])
-      .map((c) => c.soulToken)
-      .join(', ');
-    return `## Agent Control Panel
-
-You are a router. You manage child agents and delegate work to them.
-
-**At the start of every turn, call checkInbox first.**
-
-## Receiving tasks
-1. checkInbox — check for new tasks from your parent
-2. acknowledgeTask → process → completeTask
-
-## Managing child agents (allowed types: [${allowed}])
-1. listAllowedSouls — see what types you can create
-2. createAgentByType — create a child agent (will auto-start)
-3. listChildAgents — see your children
-4. stopAgent / destroyAgent — lifecycle management
-
-## Delegating work
-1. listChildAgents — find available children
-2. sendTask — delegate a task asynchronously
-3. sendQuery — ask a quick question
-4. checkSent — track progress
-5. cancelTask — cancel if needed
-
-## Info
-- getMyInfo — your instance ID, role, and lineage
-- getStats — runtime statistics
-
-**Important:** Only send tasks to your own child agents.`;
-  }
 
   // ===========================================================================
   // Export
@@ -1128,7 +1019,6 @@ You are a router. You manage child agents and delegate work to them.
       return {
         data: {
           instanceId: this.instanceId,
-          lineage: this.lineage,
           sentTasks,
           incomingTasks,
           childAgents,

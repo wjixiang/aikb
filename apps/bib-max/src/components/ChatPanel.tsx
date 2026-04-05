@@ -27,7 +27,7 @@ export function ChatPanel() {
     if (!isOpen) return;
     chatApi.getHistory()
       .then((res) => setMessages(res.messages))
-      .catch(() => {});
+      .catch(() => { });
   }, [isOpen]);
 
   // Keyboard: Escape to close
@@ -122,7 +122,7 @@ export function ChatPanel() {
           <div className="px-4 py-3 space-y-3">
             {messages.length === 0 && !isLoading && (
               <p className="text-center text-xs text-muted-foreground py-8">
-                Ask me anything about your bibliography.
+                Ask me anything about your knowledge base.
               </p>
             )}
             {messages.map((msg, i) => (

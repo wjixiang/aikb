@@ -37,7 +37,7 @@ import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
 import type { IA2AClient } from '../a2a/index.js';
 import { getGlobalAgentRegistry } from '../a2a/index.js';
 import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
-import type { AgentLineageInfo } from '../runtime/types.js';
+
 
 type Logger = ReturnType<typeof pino>;
 
@@ -311,7 +311,7 @@ export class AgentContainer {
             throw new Error('Database URL not configured');
           }
           const pool = new pg.Pool({ connectionString });
-          const adapter = new PrismaPg(pool);
+          const adapter = new PrismaPg({ connectionString });
           return new PrismaClient({ adapter });
         })
         .inSingletonScope();
@@ -354,16 +354,6 @@ export class AgentContainer {
       this.container
         .bind(TYPES.RuntimeControlRESTConfig)
         .toConstantValue(this.config.runtimeControl);
-    }
-
-    // Bind AgentLineageInfo if present in agent metadata (used by LineageControlComponent)
-    const lineage = this.config.agent.metadata?.['lineage'] as
-      | AgentLineageInfo
-      | undefined;
-    if (lineage) {
-      this.container
-        .bind<AgentLineageInfo>(TYPES.AgentLineageInfo)
-        .toConstantValue(lineage);
     }
 
     // Bind AgentSleepControl - lazy proxy to avoid circular dependency
