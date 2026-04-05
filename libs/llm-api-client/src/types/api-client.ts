@@ -114,14 +114,12 @@ export interface ApiResponse {
 /**
  * A single item in the memory context array.
  * Supports multiple formats for different conversation structures:
- * - string: legacy format, treated as user message
  * - { role, content }: plain text message with explicit role
  * - { role: 'assistant', tool_calls }: assistant message with structured tool calls (OpenAI format)
  * - { role: 'tool', tool_call_id, content }: tool result message (OpenAI format)
  * - { role, contentBlocks }: message with structured content blocks (Anthropic format)
  */
 export type MemoryContextItem =
-  | string
   | {
       role: 'user' | 'assistant' | 'system';
       content: string;

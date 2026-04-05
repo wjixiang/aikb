@@ -59,7 +59,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
     console.debug(
       chalk.bgGreen(
         'memoryContext\n',
-        memoryContext.map((e) => (typeof e === 'string' ? e : `[${e.role}] ${e.content}`) + '\n'),
+        memoryContext.map((e) => `[${e.role}] ${'content' in e ? e.content : JSON.stringify(e)}` + '\n'),
       ),
     );
   }
@@ -131,9 +131,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
     ];
 
     for (const item of memoryContext) {
-      if (typeof item === 'string') {
-        messages.push({ role: 'user', content: item });
-      } else if ('tool_calls' in item && item.tool_calls) {
+      if ('tool_calls' in item && item.tool_calls) {
         // Assistant message with structured tool_calls
         messages.push({
           role: 'assistant',

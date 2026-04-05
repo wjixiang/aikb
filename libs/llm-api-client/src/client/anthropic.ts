@@ -122,9 +122,7 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
     ];
 
     for (const item of memoryContext) {
-      if (typeof item === 'string') {
-        messages.push({ role: 'user', content: item });
-      } else if ('tool_calls' in item && item.tool_calls) {
+      if ('tool_calls' in item && item.tool_calls) {
         // Assistant message with tool_calls (OpenAI format) → convert to Anthropic tool_use blocks
         const content: Anthropic.ContentBlockParam[] = [];
         if (item.content) {

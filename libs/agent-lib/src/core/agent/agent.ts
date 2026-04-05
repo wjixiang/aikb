@@ -1049,7 +1049,6 @@ export class Agent {
       // This ensures workspace context appears after each assistant response in history
       const historyContext = this.memoryModule.getHistoryForPrompt(true);
       const memoryContext: MemoryContextItem[] = historyContext.map((m) => {
-        if (typeof m === 'string') return m;
         if (!Array.isArray(m.content)) {
           return { role: m.role, content: String(m.content) };
         }

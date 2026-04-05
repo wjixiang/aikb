@@ -724,8 +724,8 @@ export class MemoryModule implements IMemoryModule {
       SUMMARIZATION_PROMPT,
       '', // workspace context - empty for summarization
       [
-        this.formatMessageAsString(systemMsg),
-        this.formatMessageAsString(userMsg),
+        { role: 'system' as const, content: this.formatMessageAsString(systemMsg) },
+        { role: 'user' as const, content: this.formatMessageAsString(userMsg) },
       ],
       { timeout: 60000 },
       [], // no tools
