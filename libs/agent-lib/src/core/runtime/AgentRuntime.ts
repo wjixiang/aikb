@@ -46,6 +46,7 @@
 import type { Agent } from '../agent/agent.js';
 import type { AgentContainer, AgentCreationOptions } from '../di/container.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
+import type { ClientPool } from 'llm-api-client';
 import {
   AgentFactory,
   type AgentFactoryOptions,
@@ -476,6 +477,9 @@ export class AgentRuntime implements IAgentRuntime {
   /** Default API configuration for all agents */
   private defaultApiConfig: Partial<RuntimeControlProviderSettings> | undefined;
 
+  /** ClientPool for shared LLM client management */
+  private clientPool: ClientPool;
+
   /**
    * Map of agent instance IDs to their DI containers.
    * Each container provides isolated dependency resolution for its agent.
@@ -551,12 +555,13 @@ export class AgentRuntime implements IAgentRuntime {
    *   }
    * });
    */
-  constructor(config: AgentRuntimeConfig = {}) {
+  constructor(config: AgentRuntimeConfig) {
     this.config = {
       ...config,
     };
 
     this.defaultApiConfig = config.defaultApiConfig;
+    this.clientPool = config.clientPool;
 
     // Initialize core components that don't require DI container
     // These are shared across all agents managed by this runtime
@@ -669,6 +674,7 @@ export class AgentRuntime implements IAgentRuntime {
       ...(this.config.runtimeControl
         ? { runtimeControl: this.config.runtimeControl }
         : {}),
+      clientPool: this.clientPool,
     };
 
     const parentInstanceId = (
@@ -1536,6 +1542,6 @@ export class AgentRuntime implements IAgentRuntime {
  *   config: { agent: { name: 'worker', type: 'worker' } }
  * });
  */
-export function createAgentRuntime(config?: AgentRuntimeConfig): IAgentRuntime {
+export function createAgentRuntime(config: AgentRuntimeConfig): IAgentRuntime {
   return new AgentRuntime(config);
 }

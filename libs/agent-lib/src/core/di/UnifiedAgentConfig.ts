@@ -4,6 +4,7 @@ import type { MemoryModuleConfig } from '../memory/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { PersistenceConfig } from '../persistence/types.js';
 import type { ToolComponent } from '../../components/core/toolComponent.js';
+import type { ClientPool } from 'llm-api-client';
 import type { HookConfig } from '../hooks/types.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
@@ -56,6 +57,11 @@ export interface UnifiedAgentConfig {
     restBaseUrl?: string;
     apiKey?: string;
   };
+
+  /**
+   * ClientPool for shared LLM client management.
+   */
+  clientPool?: ClientPool;
 }
 
 export interface AgentCreationOptions {
@@ -97,6 +103,11 @@ export interface AgentCreationOptions {
     restBaseUrl?: string;
     apiKey?: string;
   };
+
+  /**
+   * ClientPool for shared LLM client management.
+   */
+  clientPool?: ClientPool;
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {
@@ -167,6 +178,8 @@ export function mergeWithDefaults(
     hooks: partial.hooks,
     // Pass runtime control config
     runtimeControl: partial.runtimeControl,
+    // Pass client pool for shared LLM client management
+    clientPool: partial.clientPool,
   };
   return result;
 }

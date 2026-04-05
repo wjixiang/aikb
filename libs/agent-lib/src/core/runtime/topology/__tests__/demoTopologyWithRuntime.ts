@@ -21,6 +21,7 @@ const logger = pino({
 });
 
 import { createAgentRuntime } from '../../index.js';
+import { ClientPool } from 'llm-api-client';
 import type { TopologyMessage } from '../types.js';
 
 async function sleep(ms: number): Promise<void> {
@@ -34,6 +35,7 @@ async function main() {
   // Step 1: Create AgentRuntime (includes topology network)
   // ============================================================
   const runtime = createAgentRuntime({
+    clientPool: ClientPool.getInstance(),
     defaultApiConfig: {
       apiProvider: 'openai',
       apiBaseUrl: 'https://ark.cn-beijing.volces.com/api/coding/v3',

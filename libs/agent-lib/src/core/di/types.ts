@@ -59,6 +59,12 @@ export const TYPES = {
   ApiClient: Symbol('ApiClient'),
 
   /**
+   * ClientPool for managing shared LLM client instances
+   * @scope Singleton - Shared across all agents in the runtime
+   */
+  ClientPool: Symbol('ClientPool'),
+
+  /**
    * MemoryModule concrete class
    * @scope Request - Shared within an agent creation request
    */

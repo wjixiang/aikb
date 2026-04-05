@@ -3,6 +3,7 @@ import { Agent } from './agent.js';
 import type { AgentConfig, SOP } from './agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
+import type { ClientPool } from 'llm-api-client';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';
 import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import {
@@ -49,6 +50,7 @@ export interface AgentFactoryOptions extends AgentBlueprint {
     restBaseUrl?: string;
     apiKey?: string;
   };
+  clientPool: ClientPool;
 }
 
 /**

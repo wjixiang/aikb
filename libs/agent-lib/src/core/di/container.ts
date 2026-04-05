@@ -7,14 +7,13 @@ import type { IAgentSleepControl } from '../runtime/AgentSleepControl.js';
 import { LazySleepControl } from '../runtime/AgentSleepControl.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
-import { ApiClientFactory } from 'llm-api-client';
 import { ToolManager } from '../tools/ToolManager.js';
 import { PostgresPersistenceService } from '../persistence/PostgresPersistenceService.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
 import { AgentSessionManager } from '../session/AgentSessionManager.js';
-import type { ApiClient } from 'llm-api-client';
+import type { ApiClient, ClientPool } from 'llm-api-client';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { IToolManager } from '../tools/index.js';
@@ -287,13 +286,16 @@ export class AgentContainer {
       })
       .inSingletonScope();
 
-    // API Client
+    // API Client — always obtained from ClientPool
     this.container
       .bind<ApiClient>(TYPES.ApiClient)
-      .toDynamicValue(() => {
-        return ApiClientFactory.create(this.config.api);
-      })
+      .toDynamicValue(() => this.config.clientPool!.getOrCreate(this.config.api))
       .inSingletonScope();
+
+    // ClientPool
+    this.container
+      .bind<ClientPool>(TYPES.ClientPool)
+      .toConstantValue(this.config.clientPool!);
 
     // // Persistence Service (if enabled)
     // if (this.config.persistence?.enabled !== false) {
