@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -257,27 +258,29 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-xl flex flex-col">
         <DialogHeader>
           <DialogTitle>{item ? "Edit Item" : "New Item"}</DialogTitle>
         </DialogHeader>
 
-        {isEditMode ? (
-          formContent
-        ) : (
-          <div className="min-w-0">
-          <Tabs defaultValue="manual" className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="manual" className="flex-1">Manual</TabsTrigger>
-              <TabsTrigger value="pdf" className="flex-1">PDF Upload</TabsTrigger>
-            </TabsList>
-            <TabsContent value="manual">{formContent}</TabsContent>
-            <TabsContent value="pdf">
-              <PdfUploadTab allTags={allTags} onSaved={onSaved} onClose={() => onOpenChange(false)} />
-            </TabsContent>
-          </Tabs>
-          </div>
-        )}
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          {isEditMode ? (
+            formContent
+          ) : (
+            <div className="min-w-0">
+            <Tabs defaultValue="manual" className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="manual" className="flex-1">Manual</TabsTrigger>
+                <TabsTrigger value="pdf" className="flex-1">PDF Upload</TabsTrigger>
+              </TabsList>
+              <TabsContent value="manual">{formContent}</TabsContent>
+              <TabsContent value="pdf">
+                <PdfUploadTab allTags={allTags} onSaved={onSaved} onClose={() => onOpenChange(false)} />
+              </TabsContent>
+            </Tabs>
+            </div>
+          )}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

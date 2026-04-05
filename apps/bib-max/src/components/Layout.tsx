@@ -42,8 +42,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <ThemeToggle />
         </div>
       </aside>
-      <main className={cn("flex-1 overflow-auto", !fullscreen && "p-6")}>{children}</main>
-      <ChatPanel />
+      <div className="flex flex-1 overflow-hidden">
+        <main className={cn("flex-1 overflow-auto", !fullscreen && "p-6")}>{children}</main>
+        <ChatPanel />
+      </div>
     </div>
   );
 }

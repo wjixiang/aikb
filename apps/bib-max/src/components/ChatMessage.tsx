@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import type { ChatMessage } from '@/lib/api/chat";
+import type { ChatMessage } from '@/lib/api/chat';
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronRight, ChevronDown, Wrench, CheckCircle2, XCircle } from "lucide-react";
 
 interface Props {
@@ -88,16 +89,20 @@ export function ChatMessage({ message }: Props) {
               <div className="border-t px-2 py-1.5">
                 <div className="mb-1">
                   <span className="text-xs font-medium text-muted-foreground">Input:</span>
-                  <pre className="mt-0.5 overflow-auto max-h-32 rounded bg-background p-1.5 text-xs font-mono">
-                    {tc.input}
-                  </pre>
+                  <ScrollArea className="mt-0.5 max-h-32">
+                    <pre className="rounded bg-background p-1.5 text-xs font-mono">
+                      {tc.input}
+                    </pre>
+                  </ScrollArea>
                 </div>
                 {tc.result && (
                   <div>
                     <span className="text-xs font-medium text-muted-foreground">Result:</span>
-                    <pre className="mt-0.5 overflow-auto max-h-48 rounded bg-background p-1.5 text-xs font-mono">
-                      {tc.result.content}
-                    </pre>
+                    <ScrollArea className="mt-0.5 max-h-48">
+                      <pre className="rounded bg-background p-1.5 text-xs font-mono">
+                        {tc.result.content}
+                      </pre>
+                    </ScrollArea>
                   </div>
                 )}
               </div>

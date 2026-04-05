@@ -4,10 +4,12 @@ import type { ChatMessage } from "@/lib/api/chat";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, X, SendHorizontal, Loader2 } from "lucide-react";
-import { ChatMessageView } from "./ChatMessage";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChatMessage as ChatMessageItem } from "./ChatMessage";
 
 export function ChatPanel() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -85,11 +87,11 @@ export function ChatPanel() {
 
   return (
     <>
-      {/* Toggle button — visible when panel is closed */}
+      {/* Collapsed toggle button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed right-3 top-1/2 -translate-y-1/2 z-40 flex h-10 w-10 items-center justify-center rounded-full border bg-card shadow-md transition-colors hover:bg-accent"
+          className="shrink-0 w-10 flex items-center justify-center border-l bg-card text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           title="Open AI Assistant"
         >
           <MessageSquare className="size-5" />
@@ -99,12 +101,12 @@ export function ChatPanel() {
       {/* Panel */}
       <div
         className={cn(
-          "fixed right-0 top-0 z-50 flex h-full w-[400px] flex-col border-l bg-card shadow-xl transition-transform duration-300",
-          isOpen ? "translate-x-0" : "translate-x-full",
+          "shrink-0 overflow-hidden border-l bg-card transition-all duration-300 flex flex-col h-full",
+          isOpen ? "w-[400px]" : "w-0 border-l-0",
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
           <h2 className="text-sm font-semibold">AI Assistant</h2>
           <Button
             variant="ghost"
@@ -116,29 +118,31 @@ export function ChatPanel() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-          {messages.length === 0 && !isLoading && (
-            <p className="text-center text-xs text-muted-foreground py-8">
-              Ask me anything about your bibliography.
-            </p>
-          )}
-          {messages.map((msg, i) => (
-            <ChatMessageView key={i} message={msg} />
-          ))}
-          {isLoading && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="size-3 animate-spin" />
-              Thinking...
-            </div>
-          )}
-          {error && (
-            <p className="text-xs text-destructive">{error}</p>
-          )}
-          <div ref={bottomRef} />
-        </div>
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-4 py-3 space-y-3">
+            {messages.length === 0 && !isLoading && (
+              <p className="text-center text-xs text-muted-foreground py-8">
+                Ask me anything about your bibliography.
+              </p>
+            )}
+            {messages.map((msg, i) => (
+              <ChatMessageItem key={i} message={msg} />
+            ))}
+            {isLoading && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="size-3 animate-spin" />
+                Thinking...
+              </div>
+            )}
+            {error && (
+              <p className="text-xs text-destructive">{error}</p>
+            )}
+            <div ref={bottomRef} />
+          </div>
+        </ScrollArea>
 
         {/* Input */}
-        <div className="border-t p-3">
+        <div className="border-t p-3 shrink-0">
           <div className="flex items-end gap-2">
             <Textarea
               ref={textareaRef}
