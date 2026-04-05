@@ -264,7 +264,7 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{item ? "Edit Item" : "New Item"}</DialogTitle>
         </DialogHeader>
@@ -272,6 +272,7 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
         {isEditMode ? (
           formContent
         ) : (
+          <div className="min-w-0">
           <Tabs defaultValue="manual" className="w-full">
             <TabsList className="w-full">
               <TabsTrigger value="manual" className="flex-1">Manual</TabsTrigger>
@@ -279,9 +280,10 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
             </TabsList>
             <TabsContent value="manual">{formContent}</TabsContent>
             <TabsContent value="pdf">
-              <PdfUploadTab allTags={allTags} onSaved={onSaved} />
+              <PdfUploadTab allTags={allTags} onSaved={onSaved} onClose={() => onOpenChange(false)} />
             </TabsContent>
           </Tabs>
+          </div>
         )}
       </DialogContent>
     </Dialog>

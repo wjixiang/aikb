@@ -1,7 +1,5 @@
 import { z } from 'zod';
-import { ApiClientFactory } from 'llm-api-client';
-import type { ProviderSettings } from 'llm-api-client';
-import { config } from '../config.js';
+import { getLlmClient } from './llm-pool.js';
 
 // ============ Schema ============
 
@@ -46,26 +44,8 @@ JSON schema:
 
 // ============ Service ============
 
-function createClient() {
-  const { provider, apiKey, modelId } = config.llm;
-
-  if (!apiKey) {
-    throw new Error('LLM_API_KEY environment variable is not set');
-  }
-
-  const settings: ProviderSettings = {
-    apiProvider: provider as ProviderSettings['apiProvider'],
-    apiKey,
-    apiModelId: modelId,
-    modelMaxTokens: 4096,
-    modelTemperature: 0.1,
-  };
-
-  return ApiClientFactory.create(settings);
-}
-
 export async function extractMetadataFromText(pdfText: string): Promise<ExtractedMetadata> {
-  const client = createClient();
+  const client = getLlmClient();
 
   // Truncate if too long (rough estimate: ~4 chars per token, keep under 12k tokens)
   const maxTextLength = 48000;

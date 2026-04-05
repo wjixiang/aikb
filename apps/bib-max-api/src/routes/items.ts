@@ -9,7 +9,7 @@ import {
   setItemTags,
   batchOperation,
 } from '../services/item.service.js';
-import { extractTextFromPdf } from '../services/pdf-extract.service.js';
+import { getPdfExtractor } from '../pdf/instance.js';
 import { extractMetadataFromText } from '../services/metadata-extract.service.js';
 import {
   CreateItemSchema,
@@ -167,7 +167,8 @@ export async function registerItemRoutes(app: FastifyInstance) {
       const buffer = Buffer.concat(chunks);
 
       try {
-        const text = await extractTextFromPdf(buffer);
+        const pdfExtractor = getPdfExtractor();
+        const text = await pdfExtractor.extractText(buffer);
         if (!text.trim()) {
           throw new BadRequestError('Could not extract any text from the PDF');
         }

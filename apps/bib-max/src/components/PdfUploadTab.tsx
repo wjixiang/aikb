@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   allTags: Tag[];
   onSaved: () => void;
+  onClose: () => void;
 }
 
 type Phase = "idle" | "uploading" | "extracting" | "preview" | "saving" | "error";
@@ -42,7 +43,7 @@ const emptyForm = {
   tagIds: [] as string[],
 };
 
-export function PdfUploadTab({ allTags, onSaved }: Props) {
+export function PdfUploadTab({ allTags, onSaved, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -139,6 +140,7 @@ export function PdfUploadTab({ allTags, onSaved }: Props) {
       });
 
       onSaved();
+      onClose();
     } catch (err: any) {
       setError(err.message || "Failed to create item");
       setPhase("preview");
@@ -208,9 +210,9 @@ export function PdfUploadTab({ allTags, onSaved }: Props) {
 
   // Preview: extracted metadata form
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       {/* File indicator */}
-      <div className="flex items-center gap-2 rounded border bg-muted/50 px-2 py-1.5">
+      <div className="flex min-w-0 items-center gap-2 overflow-hidden rounded border bg-muted/50 px-2 py-1.5">
         <FileText className="size-4 shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate text-xs">{file?.name}</span>
         <button onClick={handleReset} className="shrink-0 text-xs text-muted-foreground hover:text-foreground">
