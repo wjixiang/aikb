@@ -174,24 +174,43 @@ describe('ClientPool - Get / GetOrCreate', () => {
       name: 'existing',
       settings: { apiProvider: 'openai', apiKey: 'k1', apiModelId: 'm' },
     });
-    const client = pool.getOrCreate('existing', {
-      apiProvider: 'openai',
-      apiKey: 'k2',
-      apiModelId: 'm',
-    });
+    const client = pool.getOrCreate(
+      { apiProvider: 'openai', apiKey: 'k2', apiModelId: 'm' },
+      'existing',
+    );
     expect(client).toBeDefined();
     expect(pool.list()).toEqual(['existing']);
   });
 
   it('should getOrCreate register new client if not found', () => {
     const pool = ClientPool.getInstance();
-    const client = pool.getOrCreate('new', {
+    const client = pool.getOrCreate(
+      { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+      'new',
+    );
+    expect(client).toBeDefined();
+    expect(pool.has('new')).toBe(true);
+  });
+
+  it('should auto-generate ID when name is omitted in register', () => {
+    const pool = ClientPool.getInstance();
+    const name = pool.register({
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    expect(name).toMatch(/^client-\d+$/);
+    expect(pool.has(name)).toBe(true);
+  });
+
+  it('should auto-generate ID when name is omitted in getOrCreate', () => {
+    const pool = ClientPool.getInstance();
+    const client = pool.getOrCreate({
       apiProvider: 'openai',
       apiKey: 'k',
       apiModelId: 'm',
     });
     expect(client).toBeDefined();
-    expect(pool.has('new')).toBe(true);
+    expect(pool.list().length).toBe(1);
+    expect(pool.list()[0]).toMatch(/^client-\d+$/);
   });
 });
 

@@ -7,6 +7,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { validatorCompiler, serializerCompiler, jsonSchemaTransform } from 'fastify-type-provider-zod';
 import { config } from './config.js';
 import { registerRoutes } from './routes/index.js';
+import { initLlmPool } from './services/llm-pool.js';
 import { NotFoundError, BadRequestError, UpstreamError } from './errors.js';
 
 const swaggerOptions = {
@@ -60,6 +61,7 @@ export async function createApp() {
 
   await app.register(swaggerUi, { routePrefix: '/docs' });
 
+  initLlmPool();
   registerRoutes(app);
 
   app.setErrorHandler((err: unknown, _request, reply) => {

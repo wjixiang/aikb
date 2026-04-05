@@ -3,11 +3,13 @@ import type { ApiClientError } from '../errors/errors.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 
 /**
- * Configuration for registering a client in the pool
+ * Configuration for registering a client in the pool.
+ *
+ * If `name` is omitted, an auto-generated ID is assigned.
  */
 export interface PoolEntryConfig {
-  /** Unique name to identify this client in the pool */
-  name: string;
+  /** Unique name to identify this client in the pool. Auto-generated if omitted. */
+  name?: string;
   /** Provider settings used to create the client */
   settings: ProviderSettings;
   /** Whether this client is enabled (default: true) */

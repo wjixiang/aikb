@@ -157,6 +157,7 @@ export class ClientPool {
   private static instance: ClientPool | null = null;
   private entries: Map<string, PoolEntry> = new Map();
   private logger: ReturnType<typeof createLogger>;
+  private idCounter = 0;
 
   /**
    * Optional factory override for testing. When set, register() uses
@@ -164,6 +165,11 @@ export class ClientPool {
    * @internal
    */
   _clientFactory: ((settings: ProviderSettings) => ApiClient) | null = null;
+
+  private generateId(): string {
+    this.idCounter++;
+    return `client-${this.idCounter}`;
+  }
 
   private constructor() {
     this.logger = createLogger({ component: 'ClientPool' });
@@ -194,7 +200,9 @@ export class ClientPool {
    * @throws Error if a client with the same name already exists
    */
   register(config: PoolEntryConfig): string {
-    const { name, settings, enabled = true } = config;
+    const name = config.name ?? this.generateId();
+    const settings = config.settings;
+    const enabled = config.enabled ?? true;
 
     if (this.entries.has(name)) {
       throw new Error(
@@ -258,17 +266,22 @@ export class ClientPool {
   }
 
   /**
-   * Get an existing client or create and register it if not found.
+   * Get an existing client by name, or create and register a new one.
+   *
+   * If `name` is omitted and only `settings` is provided, an auto-generated
+   * ID is assigned. If the named client already exists, the settings are
+   * ignored.
    */
   getOrCreate(
-    name: string,
     settings: ProviderSettings,
+    name?: string,
   ): ApiClient {
-    if (this.entries.has(name)) {
-      return this.get(name)!;
+    const resolvedName = name ?? this.generateId();
+    if (this.entries.has(resolvedName)) {
+      return this.get(resolvedName)!;
     }
-    this.register({ name, settings });
-    return this.get(name)!;
+    this.register({ name: resolvedName, settings });
+    return this.get(resolvedName)!;
   }
 
   /**
