@@ -102,15 +102,22 @@ export function PdfViewer({ url, fileName }: PdfViewerProps) {
     setDrawPageIndex(null);
   }, [url]);
 
-  // Measure container width
+  // Measure container width (debounced to avoid scroll reset during layout transitions)
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
+    let timerId: ReturnType<typeof setTimeout>;
     const observer = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width);
+      clearTimeout(timerId);
+      timerId = setTimeout(() => {
+        setContainerWidth(entry.contentRect.width);
+      }, 350);
     });
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(timerId);
+    };
   }, []);
 
   // Track visible page from scroll position
