@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ItemDialog } from "./ItemDialog";
 import { ItemDetail } from "./ItemDetail";
-import { Plus, MoreHorizontal, Pencil, Trash2, Star, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, Star, ChevronDown, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ItemsPage() {
@@ -64,12 +64,19 @@ export function ItemsPage() {
     }, 300);
   }, []);
 
-  const setSort = (field: SortField) => {
-    setQuery((q) => ({
-      ...q,
-      sortBy: field,
-      sortOrder: q.sortBy === field && q.sortOrder === "desc" ? "asc" : "desc",
-    }));
+  const SORT_FIELDS: SortField[] = ["createdAt", "updatedAt", "year", "title"];
+
+  const cycleSort = () => {
+    setQuery((q) => {
+      const current = q.sortBy ?? "createdAt";
+      const idx = SORT_FIELDS.indexOf(current);
+      const next = SORT_FIELDS[(idx + 1) % SORT_FIELDS.length];
+      return {
+        ...q,
+        sortBy: next,
+        sortOrder: q.sortBy === next && q.sortOrder === "desc" ? "asc" : "desc",
+      };
+    });
   };
 
   const toggleFavorite = async (item: Item) => {
@@ -113,8 +120,8 @@ export function ItemsPage() {
             <SelectItem value="book">Book</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" onClick={() => setSort("updatedAt")} className="text-xs">
-          Sort: {query.sortBy ?? "createdAt"} {query.sortOrder === "asc" ? "^" : "v"}
+        <Button variant="outline" size="sm" onClick={cycleSort} className="text-xs">
+          {query.sortBy ?? "createdAt"} {query.sortOrder === "asc" ? <ArrowUp className="inline size-3" /> : <ArrowDown className="inline size-3" />}
         </Button>
         <Button
           onClick={() => {
