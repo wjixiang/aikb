@@ -5,6 +5,7 @@ import { BaseApiClient, BaseClientConfig } from './base.js';
 import {
   ApiResponse,
   ChatCompletionTool,
+  MemoryContextItem,
   ToolCall,
   TokenUsage,
 } from '../types/api-client.js';
@@ -48,7 +49,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
   protected override logDebugInputs(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: string[],
+    memoryContext: MemoryContextItem[],
   ): void {
     if (!this.config.enableLogging) return;
     console.debug(chalk.bgCyanBright('systemPrompt\n', systemPrompt));
@@ -58,7 +59,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
     console.debug(
       chalk.bgGreen(
         'memoryContext\n',
-        memoryContext.map((e) => e + '\n'),
+        memoryContext.map((e) => (typeof e === 'string' ? e : `[${e.role}] ${e.content}`) + '\n'),
       ),
     );
   }
@@ -67,7 +68,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
     requestId: string,
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: string[],
+    memoryContext: MemoryContextItem[],
     tools: ChatCompletionTool[] | undefined,
   ): Promise<ApiResponse> {
     const messages = this.buildMessages(
@@ -116,7 +117,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
   private buildMessages(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: string[],
+    memoryContext: MemoryContextItem[],
   ): OpenAI.Chat.ChatCompletionMessageParam[] {
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
@@ -129,14 +130,66 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
       },
     ];
 
-    for (const historyItem of memoryContext) {
-      messages.push({
-        role: 'user',
-        content: historyItem,
-      });
+    for (const item of memoryContext) {
+      if (typeof item === 'string') {
+        messages.push({ role: 'user', content: item });
+      } else if ('tool_calls' in item && item.tool_calls) {
+        // Assistant message with structured tool_calls
+        messages.push({
+          role: 'assistant',
+          content: item.content ?? null,
+          tool_calls: item.tool_calls,
+        });
+      } else if ('tool_call_id' in item && item.role === 'tool') {
+        // Tool result message
+        messages.push({
+          role: 'tool',
+          tool_call_id: item.tool_call_id,
+          content: item.content,
+        });
+      } else if ('contentBlocks' in item && item.contentBlocks) {
+        // Structured content blocks — flatten tool_results to individual tool messages
+        for (const block of item.contentBlocks) {
+          if (block.type === 'tool_result') {
+            messages.push({
+              role: 'tool',
+              tool_call_id: String(block.tool_use_id),
+              content: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
+            });
+          } else if (block.type === 'text') {
+            messages.push({ role: item.role, content: String(block.text) });
+          }
+        }
+      } else {
+        const role = item.role === 'system' ? 'user' : item.role;
+        messages.push({ role, content: item.content! });
+      }
     }
 
-    return messages;
+    // OpenAI requires alternating user/assistant messages.
+    // Merge consecutive same-role messages into one.
+    return this.mergeConsecutiveMessages(messages);
+  }
+
+  /**
+   * Merge consecutive messages with the same role to satisfy OpenAI's alternating constraint.
+   */
+  private mergeConsecutiveMessages(
+    messages: OpenAI.Chat.ChatCompletionMessageParam[],
+  ): OpenAI.Chat.ChatCompletionMessageParam[] {
+    if (messages.length === 0) return messages;
+
+    const merged: OpenAI.Chat.ChatCompletionMessageParam[] = [messages[0]];
+    for (let i = 1; i < messages.length; i++) {
+      const prev = merged[merged.length - 1];
+      const curr = messages[i];
+      if (prev.role === curr.role && typeof prev.content === 'string' && typeof curr.content === 'string') {
+        (prev as any).content = (prev.content as string) + '\n\n' + (curr.content as string);
+      } else {
+        merged.push(curr);
+      }
+    }
+    return merged;
   }
 
   private convertOpenAIResponse(

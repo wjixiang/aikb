@@ -4,6 +4,7 @@ import {
   ApiResponse,
   ApiTimeoutConfig,
   ChatCompletionTool,
+  MemoryContextItem,
 } from '../types/api-client.js';
 import {
   ApiClientError,
@@ -72,7 +73,7 @@ export abstract class BaseApiClient implements ApiClient {
     requestId: string,
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: string[],
+    memoryContext: MemoryContextItem[],
     tools: ChatCompletionTool[] | undefined,
   ): Promise<ApiResponse>;
 
@@ -83,7 +84,7 @@ export abstract class BaseApiClient implements ApiClient {
   protected logDebugInputs(
     _systemPrompt: string,
     _workspaceContext: string,
-    _memoryContext: string[],
+    _memoryContext: MemoryContextItem[],
   ): void {
     // Default: no-op. Subclasses can override for provider-specific debug logging.
   }
@@ -119,7 +120,7 @@ export abstract class BaseApiClient implements ApiClient {
   async makeRequest(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: string[],
+    memoryContext: MemoryContextItem[],
     timeoutConfig?: ApiTimeoutConfig,
     tools?: ChatCompletionTool[],
   ): Promise<ApiResponse> {
@@ -222,7 +223,7 @@ export abstract class BaseApiClient implements ApiClient {
   protected validateRequestInputs(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: string[],
+    memoryContext: MemoryContextItem[],
     tools?: ChatCompletionTool[],
   ): void {
     if (typeof systemPrompt !== 'string') {

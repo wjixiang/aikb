@@ -12,6 +12,7 @@ import type { MemoryModuleConfig } from '../memory/types.js';
 import type {
   ApiClient,
   ChatCompletionTool,
+  MemoryContextItem,
   ToolCall,
 } from 'llm-api-client';
 import type { IToolManager } from '../tools/index.js';
@@ -1047,9 +1048,69 @@ export class Agent {
       // Get conversation history with workspace contexts interleaved
       // This ensures workspace context appears after each assistant response in history
       const historyContext = this.memoryModule.getHistoryForPrompt(true);
-      const memoryContext = historyContext.map((m) =>
-        typeof m === 'string' ? m : this.formatMessage(m),
-      );
+      const memoryContext: MemoryContextItem[] = historyContext.map((m) => {
+        if (typeof m === 'string') return m;
+        if (!Array.isArray(m.content)) {
+          return { role: m.role, content: String(m.content) };
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const blocks = m.content as any[];
+        const hasToolUse = blocks.some((b: any) => b.type === 'tool_use');
+        const hasToolResult = blocks.some((b: any) => b.type === 'tool_result');
+        const textParts = blocks
+          .filter((b: any) => b.type === 'text')
+          .map((b: any) => String(b.text))
+          .join('\n');
+        const toolUseBlocks = blocks.filter((b: any) => b.type === 'tool_use');
+        const toolResultBlocks = blocks.filter((b: any) => b.type === 'tool_result');
+
+        // Assistant message with tool_use: emit as structured tool_calls
+        if (m.role === 'assistant' && hasToolUse) {
+          return {
+            role: 'assistant' as const,
+            content: textParts || undefined,
+            tool_calls: toolUseBlocks.map((b: any) => ({
+              id: String(b.id),
+              type: 'function' as const,
+              function: {
+                name: String(b.name),
+                arguments: typeof b.input === 'string' ? b.input : JSON.stringify(b.input ?? {}),
+              },
+            })),
+          };
+        }
+
+        // User message with tool_result: emit as structured tool result
+        if (m.role === 'user' && hasToolResult && !hasToolUse) {
+          if (toolResultBlocks.length === 1) {
+            const tr = toolResultBlocks[0];
+            return {
+              role: 'tool' as const,
+              tool_call_id: String(tr.tool_use_id),
+              content: typeof tr.content === 'string' ? tr.content : JSON.stringify(tr.content),
+            };
+          }
+          // Multiple tool results: emit as structured content blocks
+          return {
+            role: 'user' as const,
+            contentBlocks: toolResultBlocks.map((tr: any) => ({
+              type: 'tool_result',
+              tool_use_id: String(tr.tool_use_id),
+              content: typeof tr.content === 'string' ? tr.content : JSON.stringify(tr.content),
+              ...(tr.is_error ? { is_error: true } : {}),
+            })),
+          };
+        }
+
+        // System message: emit as user (both OpenAI and Anthropic handle system via system prompt)
+        if (m.role === 'system') {
+          return { role: 'user' as const, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
+        }
+
+        // Default: plain text message
+        return { role: m.role, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
+      });
 
       // Call LLM
       const response = await this.apiClient.makeRequest(
@@ -1065,11 +1126,27 @@ export class Agent {
       this._tokenUsage.totalTokensOut += response.tokenUsage.completionTokens;
       this._tokenUsage.contextTokens += response.tokenUsage.promptTokens;
 
-      // Add assistant message to memory
+      // Add assistant message to memory (including tool_use blocks for multi-turn context)
+      const assistantContent: Array<Record<string, unknown>> = [];
       if (response.textResponse) {
+        assistantContent.push({ type: 'text' as const, text: response.textResponse });
+      }
+      if (response.toolCalls && response.toolCalls.length > 0) {
+        for (const tc of response.toolCalls) {
+          let parsedArgs: unknown = {};
+          try { parsedArgs = JSON.parse(tc.arguments); } catch { parsedArgs = tc.arguments; }
+          assistantContent.push({
+            type: 'tool_use' as const,
+            id: tc.id,
+            name: tc.name,
+            input: parsedArgs,
+          });
+        }
+      }
+      if (assistantContent.length > 0) {
         const assistantMsg: ApiMessage = {
           role: 'assistant',
-          content: [{ type: 'text' as const, text: response.textResponse }],
+          content: assistantContent as any,
           ts: Date.now(),
         };
         await this.memoryModule.addMessage(assistantMsg);
@@ -1090,7 +1167,7 @@ export class Agent {
           this.memoryModule.pushErrors([new Error(errorMsg)]);
           // Create error tool result and add to memory
           const errorResult: ApiMessage = {
-            role: 'system',
+            role: 'user',
             content: [
               {
                 type: 'tool_result' as const,
@@ -1194,7 +1271,7 @@ export class Agent {
 
         // Add tool result message to memory
         const toolResultMsg: ApiMessage = {
-          role: 'system',
+          role: 'user',
           content: [
             {
               type: 'tool_result' as const,
@@ -1241,7 +1318,7 @@ export class Agent {
 
         // Record failure in memory as tool_result message
         const errorToolResultMsg: ApiMessage = {
-          role: 'system',
+          role: 'user',
           content: [
             {
               type: 'tool_result' as const,

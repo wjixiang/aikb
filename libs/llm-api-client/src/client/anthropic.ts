@@ -4,6 +4,7 @@ import { BaseApiClient, BaseClientConfig } from './base.js';
 import {
   ApiResponse,
   ChatCompletionTool,
+  MemoryContextItem,
   ToolCall,
   TokenUsage,
 } from '../types/api-client.js';
@@ -56,10 +57,10 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
     requestId: string,
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: string[],
+    memoryContext: MemoryContextItem[],
     tools: ChatCompletionTool[] | undefined,
   ): Promise<ApiResponse> {
-    const messages = this.buildMessages(workspaceContext, memoryContext);
+    const { systemContext, messages } = this.buildMessages(systemPrompt, workspaceContext, memoryContext);
     const anthropicTools = this.convertToolsToAnthropicFormat(tools);
 
     const startTime = Date.now();
@@ -68,7 +69,7 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
       model: this.config.model as string,
       max_tokens: (this.config.maxTokens as number) ?? 4096,
       messages,
-      system: systemPrompt,
+      system: systemContext,
       temperature: this.config.temperature as number | undefined,
     };
 
@@ -108,9 +109,11 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
   // --- Anthropic-specific methods ---
 
   private buildMessages(
+    systemPrompt: string,
     workspaceContext: string,
-    memoryContext: string[],
-  ): Anthropic.MessageParam[] {
+    memoryContext: MemoryContextItem[],
+  ): { systemContext: string; messages: Anthropic.MessageParam[] } {
+    const systemParts: string[] = [systemPrompt];
     const messages: Anthropic.MessageParam[] = [
       {
         role: 'user',
@@ -118,14 +121,47 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
       },
     ];
 
-    for (const historyItem of memoryContext) {
-      messages.push({
-        role: 'user',
-        content: historyItem,
-      });
+    for (const item of memoryContext) {
+      if (typeof item === 'string') {
+        messages.push({ role: 'user', content: item });
+      } else if ('tool_calls' in item && item.tool_calls) {
+        // Assistant message with tool_calls (OpenAI format) → convert to Anthropic tool_use blocks
+        const content: Anthropic.ContentBlockParam[] = [];
+        if (item.content) {
+          content.push({ type: 'text', text: item.content });
+        }
+        for (const tc of item.tool_calls) {
+          content.push({
+            type: 'tool_use',
+            id: tc.id,
+            name: tc.function.name,
+            input: JSON.parse(tc.function.arguments),
+          });
+        }
+        messages.push({ role: 'assistant', content });
+      } else if ('tool_call_id' in item && item.role === 'tool') {
+        // Tool result → Anthropic requires role:user with tool_result content block
+        messages.push({
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: item.tool_call_id,
+              content: item.content,
+            },
+          ],
+        });
+      } else if ('contentBlocks' in item && item.contentBlocks) {
+        // Structured content blocks — pass through directly
+        messages.push({ role: item.role, content: item.contentBlocks as unknown as Anthropic.ContentBlockParam[] });
+      } else if (item.role === 'system') {
+        systemParts.push(item.content!);
+      } else {
+        messages.push({ role: item.role, content: item.content! });
+      }
     }
 
-    return messages;
+    return { systemContext: systemParts.join('\n\n'), messages };
   }
 
   private convertToolsToAnthropicFormat(

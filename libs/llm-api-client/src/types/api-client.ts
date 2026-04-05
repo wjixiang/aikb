@@ -112,6 +112,50 @@ export interface ApiResponse {
 }
 
 /**
+ * A single item in the memory context array.
+ * Supports multiple formats for different conversation structures:
+ * - string: legacy format, treated as user message
+ * - { role, content }: plain text message with explicit role
+ * - { role: 'assistant', tool_calls }: assistant message with structured tool calls (OpenAI format)
+ * - { role: 'tool', tool_call_id, content }: tool result message (OpenAI format)
+ * - { role, contentBlocks }: message with structured content blocks (Anthropic format)
+ */
+export type MemoryContextItem =
+  | string
+  | {
+      role: 'user' | 'assistant' | 'system';
+      content: string;
+      tool_calls?: undefined;
+      tool_call_id?: undefined;
+      contentBlocks?: undefined;
+    }
+  | {
+      role: 'assistant';
+      content?: string;
+      tool_calls: Array<{
+        id: string;
+        type: 'function';
+        function: { name: string; arguments: string };
+      }>;
+      tool_call_id?: undefined;
+      contentBlocks?: undefined;
+    }
+  | {
+      role: 'tool';
+      tool_call_id: string;
+      content: string;
+      tool_calls?: undefined;
+      contentBlocks?: undefined;
+    }
+  | {
+      role: 'user' | 'assistant';
+      contentBlocks: Array<Record<string, unknown>>;
+      content?: undefined;
+      tool_calls?: undefined;
+      tool_call_id?: undefined;
+    };
+
+/**
  * Configuration for API request timeout
  */
 export interface ApiTimeoutConfig {
@@ -135,7 +179,7 @@ export interface ApiClient {
      *
      * @param systemPrompt - The system prompt defining agent behavior
      * @param workspaceContext - Current workspace state and information
-     * @param memoryContext - Conversation history formatted as XML strings
+     * @param memoryContext - Conversation history with role information
      * @param timeoutConfig - Optional timeout configuration
      * @param tools - Optional array of tool definitions in OpenAI ChatCompletionTool format
      * @returns Promise resolving to the API response (array of tool calls)
@@ -144,7 +188,7 @@ export interface ApiClient {
     makeRequest(
         systemPrompt: string,
         workspaceContext: string,
-        memoryContext: string[],
+        memoryContext: MemoryContextItem[],
         timeoutConfig?: ApiTimeoutConfig,
         tools?: ChatCompletionTool[]
     ): Promise<ApiResponse>;
