@@ -77,6 +77,9 @@ export const config = {
   llm: {
     clients: parseLlmClients(),
   },
+  agent: {
+    databaseUrl: process.env['AGENT_DATABASE_URL'] || undefined,
+  },
 } as const;
 
 if (!config.databaseUrl) {

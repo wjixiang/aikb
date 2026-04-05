@@ -232,6 +232,15 @@ importers:
       '@prisma/client':
         specifier: ^7.5.0
         version: 7.5.0(prisma@7.5.0(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+      agent-lib:
+        specifier: workspace:*
+        version: link:../../libs/agent-lib
+      bib-copilot:
+        specifier: workspace:*
+        version: link:../../libs/bib-copilot
+      component-hub:
+        specifier: workspace:*
+        version: link:../../libs/component-hub
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
@@ -623,8 +632,8 @@ importers:
         version: 3.25.1(zod@3.25.76)
     devDependencies:
       '@types/pg':
-        specifier: ^8.15.6
-        version: 8.15.6
+        specifier: ^8.20.0
+        version: 8.20.0
       '@vitest/coverage-v8':
         specifier: ^4.0.0
         version: 4.0.15(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.32.0)(msw@2.11.6(@types/node@25.5.0)(typescript@5.9.2))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
@@ -690,6 +699,28 @@ importers:
       vitest:
         specifier: ^4.0.0
         version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@22.18.6)(jiti@2.6.1)(jsdom@26.1.0(canvas@3.2.1))(less@4.4.2)(lightningcss@1.32.0)(msw@2.11.6(@types/node@22.18.6)(typescript@5.9.3))(sass-embedded@1.93.2)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
+
+  libs/bib-copilot:
+    dependencies:
+      agent-lib:
+        specifier: workspace:*
+        version: link:../agent-lib
+      inversify:
+        specifier: ^7.11.0
+        version: 7.11.0(reflect-metadata@0.2.2)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      zod:
+        specifier: ^3.25.1
+        version: 3.25.76
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(@microsoft/api-extractor@7.53.3(@types/node@25.5.0))(@swc/core@1.15.3(@swc/helpers@0.5.17))(jiti@2.6.1)(postcss@8.5.8)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   libs/bib-lib:
     dependencies:

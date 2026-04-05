@@ -8,6 +8,7 @@ import { validatorCompiler, serializerCompiler, jsonSchemaTransform } from 'fast
 import { config } from './config.js';
 import { registerRoutes } from './routes/index.js';
 import { initLlmPool } from './services/llm-pool.js';
+import { initAgentRuntime, registerRuntimeHooks } from './services/agent-runtime.js';
 import { NotFoundError, BadRequestError, UpstreamError } from './errors.js';
 
 const swaggerOptions = {
@@ -24,6 +25,7 @@ const swaggerOptions = {
       { name: 'Items', description: '文献/书籍管理' },
       { name: 'Tags', description: '标签管理' },
       { name: 'Attachments', description: '附件管理' },
+      { name: 'Chat', description: 'AI 助手对话' },
     ],
   },
 };
@@ -63,6 +65,8 @@ export async function createApp() {
 
   initLlmPool();
   registerRoutes(app);
+  await initAgentRuntime();
+  registerRuntimeHooks(app);
 
   app.setErrorHandler((err: unknown, _request, reply) => {
     if (err instanceof NotFoundError) {

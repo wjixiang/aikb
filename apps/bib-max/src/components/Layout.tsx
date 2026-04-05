@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { BookOpen, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { ChatPanel } from "./ChatPanel";
 
 const FULLSCREEN_ROUTES = ["/items/", "/tags/"];
 
@@ -42,6 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <main className={cn("flex-1 overflow-auto", !fullscreen && "p-6")}>{children}</main>
+      <ChatPanel />
     </div>
   );
 }
