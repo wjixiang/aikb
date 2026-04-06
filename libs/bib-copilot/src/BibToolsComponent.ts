@@ -27,10 +27,37 @@ export interface BibToolsDeps {
   listAttachments: (itemId: string) => Promise<unknown>;
 }
 
+// ============ State Types ============
+
+interface BrowsingItem {
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string | null;
+  authors: string[];
+  abstract: string | null;
+  year: number | null;
+  source: string | null;
+  doi: string | null;
+  pmid: string | null;
+  url: string | null;
+  notes: string | null;
+  isFavorite: boolean;
+  rating: number | null;
+  tags: Array<{ id: string; name: string; color: string | null }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BibToolsState {
+  currentItem: BrowsingItem | null;
+  lastSearchSummary: string | null;
+}
+
 // ============ Component ============
 
 @injectable()
-export class BibToolsComponent extends ToolComponent {
+export class BibToolsComponent extends ToolComponent<BibToolsState> {
   componentId = 'bib-tools';
   displayName = 'Bibliography Tools';
   description = 'Knowledge base operations for searching and managing bibliography items, tags, and attachments';
@@ -63,6 +90,10 @@ You have access to tools for managing a bibliography knowledge base.
   constructor(deps: BibToolsDeps) {
     super();
     this.deps = deps;
+  }
+
+  protected initialState(): BibToolsState {
+    return { currentItem: null, lastSearchSummary: null };
   }
 
   protected toolDefs() {
@@ -109,6 +140,7 @@ You have access to tools for managing a bibliography knowledge base.
       const { page, pageSize, ...query } = params;
       const result = await this.deps.listItems(query);
       const data = result as { pagination: { total: number; totalPages: number }; data: unknown[] };
+      this.reactive.lastSearchSummary = `Found ${data.pagination.total} items` + (params.search ? ` for "${params.search}"` : '');
       return {
         success: true,
         data: { total: data.pagination.total, items: data.data },
@@ -122,6 +154,7 @@ You have access to tools for managing a bibliography knowledge base.
   async onGet_item(params: z.infer<typeof GetItemParamsSchema>): Promise<ToolCallResult> {
     try {
       const item = await this.deps.getItemById(params.id);
+      this.reactive.currentItem = this.normalizeItem(item);
       return { success: true, data: item, summary: `[BibTools] Retrieved item` };
     } catch (error) {
       return { success: false, data: { error: String(error) }, summary: `[BibTools] Get item failed` };
@@ -141,6 +174,9 @@ You have access to tools for managing a bibliography knowledge base.
     try {
       const { id, ...data } = params;
       const item = await this.deps.updateItem(id, data);
+      if (this.snapshot.currentItem?.id === id) {
+        this.reactive.currentItem = this.normalizeItem(item);
+      }
       return { success: true, data: item, summary: `[BibTools] Updated item ${id}` };
     } catch (error) {
       return { success: false, data: { error: String(error) }, summary: `[BibTools] Update failed` };
@@ -150,6 +186,9 @@ You have access to tools for managing a bibliography knowledge base.
   async onDelete_item(params: z.infer<typeof DeleteItemParamsSchema>): Promise<ToolCallResult> {
     try {
       await this.deps.removeItem(params.id);
+      if (this.snapshot.currentItem?.id === params.id) {
+        this.reactive.currentItem = null;
+      }
       return { success: true, data: { deleted: params.id }, summary: `[BibTools] Deleted item ${params.id}` };
     } catch (error) {
       return { success: false, data: { error: String(error) }, summary: `[BibTools] Delete failed` };
@@ -191,11 +230,76 @@ You have access to tools for managing a bibliography knowledge base.
   // ============ Rendering ============
 
   renderImply = async () => {
-    return [
-      new tdiv({
-        content: '## Bibliography Tools\n\nKnowledge base operations for items, tags, and attachments.',
-        styles: { width: 80 },
-      }),
-    ];
+    const { currentItem, lastSearchSummary } = this.snapshot;
+    const content = currentItem ? this.formatItem(currentItem) : 'No item currently being viewed.';
+
+    const elements: tdiv[] = [new tdiv({ content, styles: { width: 80 } })];
+
+    if (lastSearchSummary) {
+      elements.push(new tdiv({ content: `Last search: ${lastSearchSummary}`, styles: { width: 80 } }));
+    }
+
+    return elements;
   };
+
+  private formatItem(item: BrowsingItem): string {
+    const lines: string[] = [];
+
+    lines.push(`## ${item.title}`);
+    lines.push('');
+
+    const meta: string[] = [];
+    meta.push(`Type: ${item.type}`);
+    if (item.subtitle) meta.push(`Subtitle: ${item.subtitle}`);
+    if (item.authors.length > 0) meta.push(`Authors: ${item.authors.join(', ')}`);
+    if (item.year) meta.push(`Year: ${item.year}`);
+    if (item.source) meta.push(`Source: ${item.source}`);
+    if (item.doi) meta.push(`DOI: ${item.doi}`);
+    if (item.pmid) meta.push(`PMID: ${item.pmid}`);
+    if (item.url) meta.push(`URL: ${item.url}`);
+    if (item.isFavorite) meta.push(`Favorite: Yes`);
+    if (item.rating) meta.push(`Rating: ${'★'.repeat(item.rating)}${'☆'.repeat(5 - item.rating)}`);
+    if (item.tags.length > 0) meta.push(`Tags: ${item.tags.map((t) => t.name).join(', ')}`);
+    if (item.notes) meta.push(`Notes: ${item.notes}`);
+
+    lines.push(meta.join('\n'));
+
+    if (item.abstract) {
+      lines.push('');
+      lines.push('### Abstract');
+      const abstractText = item.abstract.length > 500 ? item.abstract.slice(0, 500) + '...' : item.abstract;
+      lines.push(abstractText);
+    }
+
+    return lines.join('\n');
+  }
+
+  private normalizeItem(raw: unknown): BrowsingItem {
+    const item = raw as Record<string, unknown>;
+    return {
+      id: String(item.id),
+      type: String(item.type ?? 'article'),
+      title: String(item.title ?? ''),
+      subtitle: (item.subtitle as string | null) ?? null,
+      authors: Array.isArray(item.authors) ? item.authors.map(String) : [],
+      abstract: (item.abstract as string | null) ?? null,
+      year: (item.year as number | null) ?? null,
+      source: (item.source as string | null) ?? null,
+      doi: (item.doi as string | null) ?? null,
+      pmid: (item.pmid as string | null) ?? null,
+      url: (item.url as string | null) ?? null,
+      notes: (item.notes as string | null) ?? null,
+      isFavorite: Boolean(item.isFavorite),
+      rating: (item.rating as number | null) ?? null,
+      tags: Array.isArray(item.tags)
+        ? item.tags.map((t: Record<string, unknown>) => ({
+            id: String(t.id),
+            name: String(t.name),
+            color: (t.color as string | null) ?? null,
+          }))
+        : [],
+      createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : String(item.createdAt ?? ''),
+      updatedAt: item.updatedAt instanceof Date ? item.updatedAt.toISOString() : String(item.updatedAt ?? ''),
+    };
+  }
 }
