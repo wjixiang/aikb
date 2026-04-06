@@ -160,8 +160,8 @@ export class AgentContainer {
       const persistenceService = this.container.get<IPersistenceService>(
         TYPES.IPersistenceService,
       );
-      // Exclude non-serializable components from config
-      const { components, ...serializableConfig } = this.config;
+      // Exclude non-serializable fields from config
+      const { components, clientPool, ...serializableConfig } = this.config;
       await persistenceService.saveInstanceMetadata(this.instanceId, {
         status: AgentStatus.Idle,
         config: serializableConfig,

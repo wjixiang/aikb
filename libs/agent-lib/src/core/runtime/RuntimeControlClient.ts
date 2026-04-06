@@ -21,7 +21,7 @@ import type { AgentRuntime } from './AgentRuntime.js';
 import type { ITopologyGraph } from './topology/graph/TopologyGraph.js';
 import type { RoutingStats } from './topology/types.js';
 import { createA2AClient } from '../a2a/index.js';
-import type { IA2AClient, A2ATaskResult } from '../a2a/index.js';
+import type { IA2AClient } from '../a2a/index.js';
 import { createAgentSoulByType } from '../AgentSoulRegistry.js';
 import type { AgentBlueprint } from '../agent/AgentFactory.js';
 import type { AgentFactoryOptions } from '../agent/AgentFactory.js';
@@ -208,51 +208,15 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     );
   }
 
-  async sendA2ATask(
-    targetAgentIdOrAlias: string,
-    taskId: string,
-    description: string,
-    input: Record<string, unknown>,
-    options?: {
-      priority?: 'low' | 'normal' | 'high' | 'urgent';
-    },
-  ): Promise<A2ATaskResult> {
-    const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const a2aClient = this.createDirectA2AClient();
-    return a2aClient.sendTask(
-      targetAgentId,
-      taskId,
-      description,
-      input,
-      options,
-    );
-  }
-
-  async sendA2ATaskAndWaitForAck(
-    targetAgentIdOrAlias: string,
-    taskId: string,
-    description: string,
-    input: Record<string, unknown>,
-    options?: {
-      priority?: 'low' | 'normal' | 'high' | 'urgent';
-    },
-  ): Promise<string> {
-    const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const a2aClient = this.createDirectA2AClient();
-    return a2aClient.sendTaskAndWaitForAck(
-      targetAgentId,
-      taskId,
-      description,
-      input,
-      options,
-    );
-  }
-
   async sendA2AQuery(
     targetAgentIdOrAlias: string,
     query: string,
     options?: {
       expectedFormat?: string;
+      input?: Record<string, unknown>;
+      description?: string;
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      ackOnly?: boolean;
       timeout?: number;
     },
   ): Promise<unknown> {

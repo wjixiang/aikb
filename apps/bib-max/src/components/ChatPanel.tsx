@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { chatApi, sendMessageStream } from "@/lib/api/chat";
-import type { ChatMessage, UserContext } from "@/lib/api/chat";
+import type { ChatMessage, UserContext, ToolStartedEvent, ToolCompletedEvent } from "@/lib/api/chat";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, X, SendHorizontal, Loader2 } from "lucide-react";
@@ -17,7 +17,8 @@ export function ChatPanel() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [pendingToolCalls, setPendingToolCalls] = useState<Set<string>>(new Set());
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const getUserContext = useCallback((): UserContext | undefined => {
@@ -30,7 +31,11 @@ export function ChatPanel() {
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const viewport = scrollAreaRef.current?.querySelector<HTMLElement>(
+      '[data-slot="scroll-area-viewport"]',
+    );
+    if (!viewport) return;
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
   }, [messages, isLoading]);
 
   // Load history when panel opens
@@ -80,14 +85,62 @@ export function ChatPanel() {
         onStarted: () => {
           // Agent is processing — loading state already set
         },
+        onMessageAdded: (message) => {
+          // Incrementally render assistant messages as they're added to memory
+          if (message.role === 'assistant') {
+            setMessages((prev) => [...prev, message]);
+          }
+        },
+        onToolStarted: (data: ToolStartedEvent) => {
+          // Track tool IDs that are in progress (for loading indicator)
+          setPendingToolCalls((prev) => new Set(prev).add(data.toolName));
+        },
+        onToolCompleted: (data: ToolCompletedEvent) => {
+          // Remove from pending, then merge result into the matching assistant message
+          setPendingToolCalls((prev) => {
+            const next = new Set(prev);
+            next.delete(data.toolName);
+            return next;
+          });
+          setMessages((prev) => {
+            // Find the most recent assistant message that has a tool_use block with this name
+            for (let i = prev.length - 1; i >= 0; i--) {
+              const msg = prev[i];
+              if (msg.role !== 'assistant') continue;
+              const hasToolUse = msg.content.some(
+                (b) => b.type === 'tool_use' && (b as { name: string }).name === data.toolName,
+              );
+              if (!hasToolUse) continue;
+              // Append a tool_result block to this message's content
+              const updatedContent = [
+                ...msg.content,
+                {
+                  type: 'tool_result',
+                  toolName: data.toolName,
+                  content: typeof data.result === 'string' ? data.result : JSON.stringify(data.result ?? ''),
+                  is_error: !data.success,
+                },
+              ];
+              const updated = [...prev];
+              updated[i] = { ...msg, content: updatedContent };
+              return updated;
+            }
+            return prev;
+          });
+        },
         onCompleted: (data) => {
+          // If no incremental messages arrived, fall back to final result
           const output = typeof data === 'string' ? data : (data as { output?: string })?.output ?? JSON.stringify(data);
-          const assistantMsg: ChatMessage = {
-            role: 'assistant',
-            content: [{ type: 'text', text: output }],
-            ts: Date.now(),
-          };
-          setMessages((prev) => [...prev, assistantMsg]);
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            const hasAssistantContent = lastMsg?.role === 'assistant';
+            if (hasAssistantContent) return prev; // Already rendered incrementally
+            return [...prev, {
+              role: 'assistant',
+              content: [{ type: 'text', text: output }],
+              ts: Date.now(),
+            }];
+          });
         },
         onError: (message) => {
           setError(message);
@@ -140,7 +193,7 @@ export function ChatPanel() {
         </div>
 
         {/* Messages */}
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0">
           <div className="px-4 py-3 space-y-3">
             {messages.length === 0 && !isLoading && (
               <p className="text-center text-xs text-muted-foreground py-8">
@@ -148,7 +201,7 @@ export function ChatPanel() {
               </p>
             )}
             {messages.map((msg, i) => (
-              <ChatMessageItem key={i} message={msg} />
+              <ChatMessageItem key={i} message={msg} pendingToolCalls={pendingToolCalls} />
             ))}
             {isLoading && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -159,7 +212,6 @@ export function ChatPanel() {
             {error && (
               <p className="text-xs text-destructive">{error}</p>
             )}
-            <div ref={bottomRef} />
           </div>
         </ScrollArea>
 

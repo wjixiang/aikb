@@ -10,7 +10,6 @@
  */
 
 import type { AgentStatus } from '../common/types.js';
-import type { A2ATaskResult } from '../a2a/types.js';
 import type { IMessageBus } from './topology/messaging/MessageBus.js';
 import type { DIComponentRegistration } from '../di/UnifiedAgentConfig.js';
 
@@ -152,42 +151,18 @@ export interface IRuntimeControlClient {
   // ============================================
 
   /**
-   * Send a task to another agent via A2A protocol
-   */
-  sendA2ATask(
-    targetAgentId: string,
-    taskId: string,
-    description: string,
-    input: Record<string, unknown>,
-    options?: {
-      priority?: 'low' | 'normal' | 'high' | 'urgent';
-    },
-  ): Promise<A2ATaskResult>;
-
-  /**
-   * Send a task and wait only for ACK (asynchronous mode)
-   * Returns after ACK is received with the conversationId
-   */
-  sendA2ATaskAndWaitForAck(
-    targetAgentId: string,
-    taskId: string,
-    description: string,
-    input: Record<string, unknown>,
-    options?: {
-      priority?: 'low' | 'normal' | 'high' | 'urgent';
-      /** ACK timeout in ms */
-      ackTimeout?: number;
-    },
-  ): Promise<string>;
-
-  /**
-   * Send a query to another agent via A2A protocol
+   * Send a query to another agent via A2A protocol.
+   * When ackOnly is true, returns conversationId immediately after ACK.
    */
   sendA2AQuery(
     targetAgentId: string,
     query: string,
     options?: {
       expectedFormat?: string;
+      input?: Record<string, unknown>;
+      description?: string;
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      ackOnly?: boolean;
       /** Timeout in ms */
       timeout?: number;
     },

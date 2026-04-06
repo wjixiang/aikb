@@ -57,7 +57,6 @@ export interface AgentCardSummary {
  * A2A Message Types - High-level protocol messages
  */
 export type A2AMessageType =
-  | 'task'
   | 'query'
   | 'response'
   | 'event'
@@ -123,26 +122,21 @@ export interface A2AMessage {
 }
 
 /**
- * Task delegation message
- */
-export interface A2ATaskMessage extends Omit<A2AMessage, 'content'> {
-  messageType: 'task';
-  content: {
-    taskId: string;
-    description: string;
-    input: Record<string, unknown>;
-    priority?: 'low' | 'normal' | 'high' | 'urgent';
-  };
-}
-
-/**
  * Query request message
+ *
+ * Supports both simple query strings and structured input (absorbed from former task messages).
  */
 export interface A2AQueryMessage extends Omit<A2AMessage, 'content'> {
   messageType: 'query';
   content: {
     query: string;
     expectedFormat?: string;
+    /** Structured input data (for complex queries) */
+    input?: Record<string, unknown>;
+    /** Human-readable description */
+    description?: string;
+    /** Message priority */
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
   };
 }
 
@@ -204,13 +198,6 @@ export interface A2AHandlerConfig {
 // =============================================================================
 
 /**
- * Task handler function signature
- */
-export interface A2ATaskHandler {
-  (payload: A2APayload, context: A2AContext): Promise<A2ATaskResult>;
-}
-
-/**
  * Query handler function signature
  */
 export interface A2AQueryHandler {
@@ -228,7 +215,7 @@ export interface A2AEventHandler {
  * Cancel handler function signature
  */
 export interface A2ACancelHandler {
-  (taskId: string, context: A2AContext): Promise<void>;
+  (conversationId: string, context: A2AContext): Promise<void>;
 }
 
 /**
@@ -248,22 +235,6 @@ export interface A2AContext {
 }
 
 /**
- * Result of processing an A2A task
- */
-export interface A2ATaskResult {
-  /** Task ID */
-  taskId: string;
-  /** Task status */
-  status: A2ATaskStatus;
-  /** Task output */
-  output?: unknown;
-  /** Error message if failed */
-  error?: string;
-  /** Processing metadata */
-  metadata?: Record<string, unknown>;
-}
-
-/**
  * A2A Response wrapper
  */
 export interface A2AResponse {
@@ -275,6 +246,8 @@ export interface A2AResponse {
   success: boolean;
   /** Error message if failed */
   error?: string;
+  /** Task ID (for task-originated queries) */
+  taskId?: string;
 }
 
 // =============================================================================
@@ -300,10 +273,9 @@ export type A2AEventType =
   | 'agent:unregistered'
   | 'message:sent'
   | 'message:received'
-  | 'task:delegated'
-  | 'task:completed'
-  | 'task:failed'
   | 'query:received'
+  | 'query:completed'
+  | 'query:failed'
   | 'response:received';
 
 export interface A2AEvent {
@@ -361,41 +333,18 @@ export function createA2AMessage(
 }
 
 /**
- * Create an A2A task message
- */
-export function createA2ATaskMessage(
-  from: string,
-  to: string,
-  taskId: string,
-  description: string,
-  input: Record<string, unknown>,
-  options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
-): A2ATaskMessage {
-  return {
-    messageId: createA2AMessageId(),
-    conversationId: createConversationId(),
-    messageType: 'task',
-    from,
-    to,
-    content: {
-      taskId,
-      description,
-      input,
-      priority: options?.priority ?? 'normal',
-    },
-    timestamp: Date.now(),
-    priority: options?.priority ?? 'normal',
-  };
-}
-
-/**
  * Create an A2A query message
  */
 export function createA2AQueryMessage(
   from: string,
   to: string,
   query: string,
-  options?: { expectedFormat?: string },
+  options?: {
+    expectedFormat?: string;
+    input?: Record<string, unknown>;
+    description?: string;
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+  },
 ): A2AQueryMessage {
   return {
     messageId: createA2AMessageId(),
@@ -406,8 +355,12 @@ export function createA2AQueryMessage(
     content: {
       query,
       expectedFormat: options?.expectedFormat,
+      input: options?.input,
+      description: options?.description,
+      priority: options?.priority,
     },
     timestamp: Date.now(),
+    priority: options?.priority ?? 'normal',
   };
 }
 

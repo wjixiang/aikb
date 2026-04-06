@@ -68,3 +68,22 @@ export { RuntimeControlState } from './RuntimeControlState.js';
 
 export type { IAgentSleepControl } from './AgentSleepControl.js';
 
+// Event Stream
+export type {
+  IAgentEventStream,
+  AgentEventType,
+  AgentEvent,
+  AgentEventDataMap,
+  AgentStatusEventData,
+  MessageAddedEventData,
+  ToolStartedEventData,
+  ToolCompletedEventData,
+  LlmCompletedEventData,
+  ErrorEventData,
+} from '../events/index.js';
+
+export {
+  createAgentEventStream,
+  createAgentEvent,
+} from '../events/index.js';
+

@@ -38,6 +38,8 @@ import {
   type ComponentAfterUnregisterContext,
   type ToolBeforeExecuteContext,
   type ToolAfterExecuteContext,
+  type MessageAddedContext,
+  type LlmCallCompletedContext,
 } from './types.js';
 
 // =============================================================================
@@ -243,6 +245,38 @@ export function onToolAfterExecute(
 ): HookEntry {
   return {
     type: HookType.TOOL_AFTER_EXECUTE,
+    handler: handler as HookHandler,
+    options,
+  };
+}
+
+// =============================================================================
+// Memory Hook Factories
+// =============================================================================
+
+/**
+ * Create a hook for when a message is added to agent memory
+ */
+export function onMessageAdded(
+  handler: HookHandler<MessageAddedContext>,
+  options?: HookRegistrationOptions,
+): HookEntry {
+  return {
+    type: HookType.MESSAGE_ADDED,
+    handler: handler as HookHandler,
+    options,
+  };
+}
+
+/**
+ * Create a hook for when an LLM API call completes
+ */
+export function onLlmCallCompleted(
+  handler: HookHandler<LlmCallCompletedContext>,
+  options?: HookRegistrationOptions,
+): HookEntry {
+  return {
+    type: HookType.LLM_CALL_COMPLETED,
     handler: handler as HookHandler,
     options,
   };

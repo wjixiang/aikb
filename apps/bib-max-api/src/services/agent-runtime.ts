@@ -106,12 +106,14 @@ export async function initAgentRuntime(): Promise<void> {
   //    agent-lib's PersistenceService auto-initializes on module import, which would
   //    try to connect to the database before we can validate it.
   const { createAgentRuntime } = await import('agent-lib/core');
+  const { ClientPool } = await import('llm-api-client');
   const { BibToolsComponent } = await import('bib-copilot');
-  const { LineageControlComponent, LifecycleComponent } = await import('component-hub');
+  const { LifecycleComponent } = await import('component-hub');
 
   // 4. Create and start runtime
   const apiConfig = resolveApiConfig();
   const runtimeConfig: AgentRuntimeConfig = {
+    clientPool: ClientPool.getInstance(),
     defaultApiConfig: apiConfig,
     persistence: { databaseUrl: dbUrl },
     messageBus: { mode: 'memory' },
@@ -148,7 +150,6 @@ export async function initAgentRuntime(): Promise<void> {
         },
         components: [
           { componentInstance: bibTools },
-          { componentClass: LineageControlComponent },
           { componentClass: LifecycleComponent },
         ],
       },

@@ -45,6 +45,8 @@
 
 import type { Agent } from '../agent/agent.js';
 import type { AgentContainer, AgentCreationOptions } from '../di/container.js';
+import { TYPES } from '../di/types.js';
+import type { HookModule } from '../hooks/HookModule.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { ClientPool } from 'llm-api-client';
 import {
@@ -94,6 +96,13 @@ import {
 import type { IAgentCardRegistry } from '../a2a/index.js';
 import type { AgentCard } from '../a2a/types.js';
 import { createUserContext, type IUserContext } from './UserContext.js';
+
+// Event Stream
+import {
+  AgentEventStream,
+  type IAgentEventStream,
+} from '../events/AgentEventStream.js';
+import type { AgentEvent } from '../events/types.js';
 
 function generateShortUuid(length = 4): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -268,6 +277,12 @@ export interface IAgentRuntime {
     eventType: RuntimeEventType,
     handler: (event: RuntimeEvent) => void,
   ): () => void;
+
+  /**
+   * Get the event stream for real-time agent event push.
+   * Subscribe to granular events like messages, tool calls, and status changes.
+   */
+  getEventStream(): IAgentEventStream;
 
   // ============================================
   // Runtime Control
@@ -535,6 +550,13 @@ export class AgentRuntime implements IAgentRuntime {
   private eventUnsubscribers: (() => void)[] = [];
 
   // ============================================
+  // Event Stream
+  // ============================================
+
+  /** Unified event stream for real-time agent event push */
+  private eventStream: AgentEventStream;
+
+  // ============================================
   // Constructor
   // ============================================
 
@@ -567,6 +589,7 @@ export class AgentRuntime implements IAgentRuntime {
     // These are shared across all agents managed by this runtime
     this.registry = new AgentRegistry();
     this.eventDispatcher = new EventDispatcher();
+    this.eventStream = new AgentEventStream();
 
     // Initialize topology network for agent communication
     this.topologyGraph = createTopologyGraph();
@@ -706,6 +729,12 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Store container
     this.containers.set(instanceId, container);
+
+    // Wire event stream into agent's HookModule
+    const hookModule = container.getContainer().get<HookModule>(TYPES.HookModule);
+    if (hookModule) {
+      this.eventStream.wireAgent(hookModule, instanceId);
+    }
 
     // Register in registry
     const unifiedConfig = container.getConfig();
@@ -1080,6 +1109,14 @@ export class AgentRuntime implements IAgentRuntime {
     handler: (event: RuntimeEvent) => void,
   ): () => void {
     return this.eventDispatcher.subscribe(eventType, handler);
+  }
+
+  /**
+   * Get the event stream for real-time agent event push.
+   * Use this to subscribe to granular events (messages, tool calls, status changes).
+   */
+  getEventStream(): IAgentEventStream {
+    return this.eventStream;
   }
 
   // ============================================
@@ -1482,6 +1519,12 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Stop the agent
     await this.stopAgent(instanceId);
+
+    // Unwire event stream from agent's HookModule
+    const hookModule = container.getContainer().get<HookModule>(TYPES.HookModule);
+    if (hookModule) {
+      this.eventStream.unwireAgent(hookModule, instanceId);
+    }
 
     // Remove from parent's child list
     const metadata = this.registry.get(instanceId);

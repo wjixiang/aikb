@@ -110,6 +110,16 @@ export type {
   TopologyEdge,
   RoutingStats,
   IAgentSleepControl,
+  IAgentEventStream,
+  AgentEventType,
+  AgentEvent,
+  AgentEventDataMap,
+  AgentStatusEventData,
+  MessageAddedEventData,
+  ToolStartedEventData,
+  ToolCompletedEventData,
+  LlmCompletedEventData,
+  ErrorEventData,
 } from './runtime/index.js';
 export {
   generateEventId,
@@ -121,4 +131,6 @@ export {
   createAgentRuntime,
   RuntimeControlClientImpl,
   RuntimeControlState,
+  createAgentEventStream,
+  createAgentEvent,
 } from './runtime/index.js';

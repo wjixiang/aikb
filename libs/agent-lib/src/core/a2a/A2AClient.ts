@@ -11,52 +11,32 @@ import type {
   A2AMessage,
   A2AMessageType,
   A2APayload,
-  A2ATaskResult,
   A2AClientConfig,
   A2ATaskStatus,
 } from './types.js';
 import {
   createA2AMessage,
-  createA2ATaskMessage,
   createA2AQueryMessage,
   createA2AResponseMessage,
   createA2AEventMessage,
-  createConversationId,
 } from './types.js';
 import type { AgentCardRegistry, IAgentCardRegistry } from './AgentCard.js';
 
 export interface IA2AClient {
   /**
-   * Send a task to another agent and wait for result (synchronous)
+   * Send a query to another agent and wait for response.
+   * When ackOnly is true, returns conversationId immediately after ACK.
    */
-  sendTask(
-    targetAgentId: string,
-    taskId: string,
-    description: string,
-    input: Record<string, unknown>,
-    options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
-  ): Promise<A2ATaskResult>;
-
-  /**
-   * Send a task and wait only for ACK (asynchronous mode)
-   * Returns after ACK is received with the conversationId
-   */
-  sendTaskAndWaitForAck(
-    targetAgentId: string,
-    taskId: string,
-    description: string,
-    input: Record<string, unknown>,
-    options?: {
-      priority?: 'low' | 'normal' | 'high' | 'urgent';
-      ackTimeout?: number;
-    },
-  ): Promise<string>;
-
-  /** Send a query to another agent and wait for response */
   sendQuery(
     targetAgentId: string,
     query: string,
-    options?: { expectedFormat?: string },
+    options?: {
+      expectedFormat?: string;
+      input?: Record<string, unknown>;
+      description?: string;
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      ackOnly?: boolean;
+    },
   ): Promise<unknown>;
 
   /** Send a response to a previous message */
@@ -79,15 +59,19 @@ export interface IA2AClient {
     data: unknown,
   ): Promise<void>;
 
-  /** Send a cancel message for a task */
+  /** Send a cancel message for a query */
   sendCancel(
     targetAgentId: string,
-    taskId: string,
     conversationId: string,
   ): Promise<void>;
 
-  /** Wait for result of a previously sent task (by conversationId) */
-  waitForResult(conversationId: string): Promise<A2ATaskResult>;
+  /** Wait for result of a previously sent query (by conversationId) */
+  waitForResult(conversationId: string): Promise<{
+    status: A2ATaskStatus;
+    output?: unknown;
+    error?: string;
+    taskId?: string;
+  }>;
 
   /** Get the client instance ID */
   getInstanceId(): string;
@@ -104,7 +88,6 @@ export class A2AClient implements IA2AClient {
   private readonly instanceId: string;
   private readonly messageBus: IMessageBus;
   private readonly agentRegistry: IAgentCardRegistry;
-  private readonly retryConfig?: { maxAttempts: number; backoffMs: number };
 
   constructor(
     messageBus: IMessageBus,
@@ -118,28 +101,24 @@ export class A2AClient implements IA2AClient {
     this.instanceId = config.instanceId;
     this.messageBus = messageBus;
     this.agentRegistry = agentRegistry;
-    this.retryConfig = config.retry;
   }
 
   /**
-   * Send a task to another agent and wait for result
+   * Send a query to another agent.
+   * By default waits for the full result. Set ackOnly to return after ACK only.
    */
-  async sendTask(
+  async sendQuery(
     targetAgentId: string,
-    taskId: string,
-    description: string,
-    input: Record<string, unknown>,
-    options?: { priority?: 'low' | 'normal' | 'high' | 'urgent' },
-  ): Promise<A2ATaskResult> {
-    this.logger.info(
-      {
-        targetAgentId,
-        taskId,
-        description,
-        priority: options?.priority ?? 'normal',
-      },
-      'Sending task to agent',
-    );
+    query: string,
+    options?: {
+      expectedFormat?: string;
+      input?: Record<string, unknown>;
+      description?: string;
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      ackOnly?: boolean;
+    },
+  ): Promise<unknown> {
+    this.logger.info({ targetAgentId, query, ackOnly: options?.ackOnly }, 'Sending query to agent');
 
     const resolvedId = this.agentRegistry.resolveAgentId(targetAgentId);
     if (!resolvedId) {
@@ -152,179 +131,13 @@ export class A2AClient implements IA2AClient {
         .join(', ');
 
       this.logger.error(
-        {
-          targetAgentId,
-          taskId,
-          availableAgents: availableAgents || 'none',
-        },
+        { targetAgentId, availableAgents: availableAgents || 'none' },
         'Target agent not found in registry',
       );
 
       throw new Error(
         `Target agent not found: ${targetAgentId}. Available agents: ${availableAgents || 'none'}`,
       );
-    }
-
-    const targetAgent = this.agentRegistry.getAgent(resolvedId);
-    this.logger.info(
-      {
-        targetAgentId,
-        resolvedId,
-        targetAgentName: targetAgent?.name ?? 'unknown',
-        taskId,
-        priority: options?.priority ?? 'normal',
-        capabilities: targetAgent?.capabilities ?? [],
-      },
-      'Target agent found, proceeding with task send',
-    );
-
-    const a2aMessage = createA2ATaskMessage(
-      this.instanceId,
-      resolvedId,
-      taskId,
-      description,
-      input,
-      options,
-    );
-
-    const topologyMessage = this.convertToTopologyMessage(a2aMessage);
-
-    this.logger.debug(
-      {
-        taskId,
-        from: this.instanceId,
-        to: resolvedId,
-        conversationId: a2aMessage.conversationId,
-        topologyTo: topologyMessage.to,
-      },
-      '[A2AClient] Created topology message for sending',
-    );
-
-    const maxAttempts = this.retryConfig?.maxAttempts ?? 3;
-    const backoffMs = this.retryConfig?.backoffMs ?? 1000;
-    let lastError: Error | undefined;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        this.logger.debug(
-          {
-            attempt,
-            taskId,
-            targetAgentId,
-            conversationId: a2aMessage.conversationId,
-          },
-          `Sending task attempt ${attempt}/${maxAttempts}`,
-        );
-
-        // Send via MessageBus and wait for result
-        const ack = await this.messageBus.send(topologyMessage);
-
-        this.logger.info(
-          {
-            taskId,
-            messageId: ack.messageId,
-            conversationId: a2aMessage.conversationId,
-          },
-          'Task sent successfully, received ACK',
-        );
-
-        this.logger.debug({ ack: ack.messageId }, 'Received ACK for task');
-
-        // Wait for result
-        this.logger.info(
-          {
-            taskId,
-            conversationId: a2aMessage.conversationId,
-          },
-          'Waiting for task result',
-        );
-
-        const result = await this.waitForResult(a2aMessage.conversationId);
-
-        this.logger.info(
-          {
-            taskId,
-            conversationId: a2aMessage.conversationId,
-            status: result.status,
-          },
-          'Task result received successfully',
-        );
-
-        return result;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-
-        this.logger.error(
-          { error, targetAgentId, taskId, attempt },
-          'Failed to send task',
-        );
-        throw error;
-      }
-    }
-
-    // Should not reach here, but just in case
-    throw lastError ?? new Error('Task failed after retries');
-  }
-
-  /**
-   * Send a task and wait only for ACK (asynchronous mode)
-   * Returns after ACK is received with the conversationId
-   */
-  async sendTaskAndWaitForAck(
-    targetAgentId: string,
-    taskId: string,
-    description: string,
-    input: Record<string, unknown>,
-    options?: {
-      priority?: 'low' | 'normal' | 'high' | 'urgent';
-      ackTimeout?: number;
-    },
-  ): Promise<string> {
-    this.logger.info(
-      { targetAgentId, taskId, description },
-      'Sending task and waiting for ACK only',
-    );
-
-    const resolvedId = this.agentRegistry.resolveAgentId(targetAgentId);
-    if (!resolvedId) {
-      throw new Error(`Target agent not found: ${targetAgentId}`);
-    }
-
-    const a2aMessage = createA2ATaskMessage(
-      this.instanceId,
-      resolvedId,
-      taskId,
-      description,
-      input,
-      options,
-    );
-
-    const topologyMessage = this.convertToTopologyMessage(a2aMessage);
-
-    // Wait for ACK only
-    await this.messageBus.send(topologyMessage);
-
-    this.logger.info(
-      { taskId, conversationId: a2aMessage.conversationId },
-      'ACK received for task',
-    );
-
-    return a2aMessage.conversationId;
-  }
-
-  /**
-   * Send a query to another agent and wait for response
-   */
-  async sendQuery(
-    targetAgentId: string,
-    query: string,
-    options?: { expectedFormat?: string },
-  ): Promise<unknown> {
-    this.logger.info({ targetAgentId, query }, 'Sending query to agent');
-
-    const resolvedId = this.agentRegistry.resolveAgentId(targetAgentId);
-    if (!resolvedId) {
-      throw new Error(`Target agent not found: ${targetAgentId}`);
     }
 
     const a2aMessage = createA2AQueryMessage(
@@ -334,13 +147,19 @@ export class A2AClient implements IA2AClient {
       options,
     );
 
-    // Convert to Topology message and send
     const topologyMessage = this.convertToTopologyMessage(a2aMessage);
 
     try {
       const ack = await this.messageBus.send(topologyMessage);
-
       this.logger.debug({ ack: ack.messageId }, 'Received ACK for query');
+
+      if (options?.ackOnly) {
+        this.logger.info(
+          { conversationId: a2aMessage.conversationId },
+          'ACK-only mode, returning conversationId',
+        );
+        return a2aMessage.conversationId;
+      }
 
       // Wait for result
       const result = await this.waitForResult(a2aMessage.conversationId);
@@ -422,15 +241,14 @@ export class A2AClient implements IA2AClient {
   }
 
   /**
-   * Send a cancel message for a task
+   * Send a cancel message for a query
    */
   async sendCancel(
     targetAgentId: string,
-    taskId: string,
     conversationId: string,
   ): Promise<void> {
     this.logger.info(
-      { targetAgentId, taskId, conversationId },
+      { targetAgentId, conversationId },
       'Sending cancel to agent',
     );
 
@@ -438,7 +256,6 @@ export class A2AClient implements IA2AClient {
       this.agentRegistry.resolveAgentId(targetAgentId) ?? targetAgentId;
 
     const payload: A2APayload = {
-      taskId,
       status: 'cancelled',
     };
 
@@ -480,7 +297,12 @@ export class A2AClient implements IA2AClient {
    */
   async waitForResult(
     conversationId: string,
-  ): Promise<A2ATaskResult> {
+  ): Promise<{
+    status: A2ATaskStatus;
+    output?: unknown;
+    error?: string;
+    taskId?: string;
+  }> {
     const rawResult = await new Promise<unknown>((resolve, reject) => {
       const handleEvent = (event: { type: string; payload: unknown }) => {
         const payload = event.payload as {
@@ -532,26 +354,11 @@ export class A2AClient implements IA2AClient {
     const maybePayload = topologyMsg.content?.content ?? topologyMsg.content;
     const a2aPayload =
       (maybePayload as A2APayload) ?? (rawResult as A2APayload);
-    return this.parseTaskResult(a2aPayload);
-  }
-
-  /**
-   * Sleep for a given number of milliseconds
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Parse task result from A2A payload
-   */
-  private parseTaskResult(payload: A2APayload): A2ATaskResult {
     return {
-      taskId: payload.taskId ?? '',
-      status: payload.status ?? 'failed',
-      output: payload.output,
-      error: payload.error,
-      metadata: payload.metadata,
+      taskId: a2aPayload.taskId,
+      status: a2aPayload.status ?? 'failed',
+      output: a2aPayload.output,
+      error: a2aPayload.error,
     };
   }
 }

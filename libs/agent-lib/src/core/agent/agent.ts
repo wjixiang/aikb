@@ -323,8 +323,8 @@ export class Agent {
       return;
     }
 
-    // Register callback for completeTask tool to signal A2A task completion
-    this._a2aHandler.setTaskCompletionCallback(
+    // Register callback for completeTask tool to signal A2A query completion
+    this._a2aHandler.setQueryCompletionCallback(
       (conversationId, output, status) => {
         this.completeA2ATask(
           conversationId,
@@ -346,99 +346,90 @@ export class Agent {
       }
     });
 
-    // Register task handler - when a task is received, trigger agent processing
-    this._a2aHandler.onTask(async (payload, ctx) => {
+    // Register unified query handler — handles all incoming A2A requests
+    this._a2aHandler.onQuery(async (payload, ctx) => {
       this.logger.info(
         { messageId: ctx.message.messageId, from: ctx.message.from },
-        '[Agent] Received A2A task, processing',
+        '[Agent] Received A2A query, processing',
       );
 
-      // Handle special "start" task - auto respond without LLM
-      if (payload.description === 'start') {
-        this.logger.info(
-          { taskId: payload.taskId },
-          '[Agent] Received start task, auto-responding',
-        );
-        // Transition to running if idle
+      const queryPayload = payload as unknown as { query?: string };
+
+      // Handle special "start" query - auto respond without LLM
+      if (queryPayload.query === 'start' || payload.description === 'start') {
+        this.logger.info('[Agent] Received start query, auto-responding');
         if (
           this._status === AgentStatus.Idle ||
           this._status === AgentStatus.Completed
         ) {
           this._status = AgentStatus.Running;
         }
-        // Send ACK for start task
-        await ctx.acknowledge();
         return {
-          taskId: payload.taskId || '',
-          status: AgentStatus.Completed as const,
-          output: { started: true, message: 'Agent started' },
+          messageId: ctx.message.messageId,
+          content: {
+            output: { started: true, message: 'Agent started' },
+            status: 'completed',
+          },
+          success: true,
         };
       }
 
-      // Send acknowledgment for the task (When autoAck is enabled in agentConfig)
+      // Send acknowledgment when autoAck is enabled
       if (this.config.autoAck) await ctx.acknowledge();
 
-      // Inject A2A task as a user message so the LLM can process it
-      const taskDescription = payload.description || 'Task received';
-      const taskInput = payload.input
-        ? this.safeStringify(payload.input, null, 2)
-        : '{}';
+      // Build user message from query text or description+input
+      const queryText = queryPayload.query || payload.description || 'Query received';
+      const inputText = payload.input
+        ? `\n\nInput:\n${this.safeStringify(payload.input, null, 2)}`
+        : '';
       const userMessage: ApiMessage = {
         role: 'user',
         content: [
           {
             type: 'text' as const,
-            text: `[A2A Task from ${ctx.message.from}]\n\nTask: ${taskDescription}\n\nInput:\n${taskInput}`,
+            text: `[A2A Query from ${ctx.message.from}]\n\n${queryText}${inputText}`,
           },
         ],
         ts: Date.now(),
       };
-      await this.memoryModule.addMessage(userMessage);
+      await this.addMessageToMemory(userMessage);
 
       // Store message for processing in requestLoop
       this._pendingA2AMessages.push(ctx.message);
 
-      // Wake up agent if idle and process the task
-      // Wait for completeTask to be called to signal completion
-      let taskOutput: unknown = null;
-      let taskStatus: 'completed' | 'failed' = 'completed';
-
+      // If agent is idle/completed, start requestLoop
       if (
         this._status === AgentStatus.Idle ||
         this._status === AgentStatus.Completed
       ) {
         this._status = AgentStatus.Running;
-
-        // Start processing and wait for completeTask to be called
-        // Run requestLoop in background and wait for completion
-        const processingPromise = this.requestLoop();
-
-        // Wait for either completeTask or requestLoop to finish
-        try {
-          const result = await Promise.race([
-            this.waitForA2ATaskCompletion(ctx.message.conversationId),
-            processingPromise, // Fallback: if requestLoop finishes first, use its result
-          ]);
-
-          // If we got result from completeTask
-          if (result && typeof result === 'object' && 'output' in result) {
-            taskOutput = result.output;
-            taskStatus = result.status as 'completed' | 'failed';
-          }
-        } catch (error) {
-          this.logger.warn(
-            { error, conversationId: ctx.message.conversationId },
-            '[Agent] A2A task completion wait error',
-          );
-        }
+        void this.requestLoop();
       }
 
-      // Return the task result
-      return {
-        taskId: payload.taskId || '',
-        status: this._status === AgentStatus.Aborted ? 'failed' : taskStatus,
-        output: taskOutput,
-      };
+      // Wait for completeTask to be called (works for both idle and sleeping agents)
+      try {
+        const result = await this.waitForA2ATaskCompletion(
+          ctx.message.conversationId,
+        );
+        return {
+          messageId: ctx.message.messageId,
+          content: {
+            output: result.output,
+            status: result.status === 'completed' ? 'completed' : 'failed',
+          },
+          success: result.status === 'completed',
+          taskId: payload.taskId,
+        };
+      } catch (error) {
+        return {
+          messageId: ctx.message.messageId,
+          content: { output: null, status: 'failed' },
+          success: false,
+          taskId: payload.taskId,
+          error:
+            error instanceof Error ? error.message : 'Query processing failed',
+        };
+      }
     });
 
     // Register event handler
@@ -447,6 +438,22 @@ export class Agent {
         { from: ctx.message.from },
         '[Agent] Received A2A event',
       );
+    });
+  }
+
+  // ==================== Memory Helpers ====================
+
+  /**
+   * Add a message to memory and emit MESSAGE_ADDED hook.
+   * Centralizes all memoryModule.addMessage calls so events are never missed.
+   */
+  private async addMessageToMemory(msg: ApiMessage): Promise<void> {
+    await this.memoryModule.addMessage(msg);
+    await this.hookModule.executeHooks(HookType.MESSAGE_ADDED, {
+      type: HookType.MESSAGE_ADDED,
+      timestamp: new Date(),
+      instanceId: this.instanceId,
+      message: msg,
     });
   }
 
@@ -969,7 +976,7 @@ export class Agent {
             ],
             ts: Date.now(),
           };
-          await this.memoryModule.addMessage(errorApiMessage);
+          await this.addMessageToMemory(errorApiMessage);
 
           // Track consecutive error for abort (NoToolsUsedError counts as an error)
           this.handleConsecutiveError({ errorMessage });
@@ -990,7 +997,7 @@ export class Agent {
               ],
               ts: Date.now(),
             };
-            await this.memoryModule.addMessage(errorApiMessage);
+            await this.addMessageToMemory(errorApiMessage);
 
             // Track consecutive error for abort
             this.handleConsecutiveError({ errorMessage });
@@ -1147,6 +1154,17 @@ export class Agent {
       this._tokenUsage.totalTokensOut += response.tokenUsage.completionTokens;
       this._tokenUsage.contextTokens += response.tokenUsage.promptTokens;
 
+      // Emit LLM call completed hook
+      await this.hookModule.executeHooks(HookType.LLM_CALL_COMPLETED, {
+        type: HookType.LLM_CALL_COMPLETED,
+        timestamp: new Date(),
+        instanceId: this.instanceId,
+        tokenUsage: {
+          promptTokens: response.tokenUsage.promptTokens,
+          completionTokens: response.tokenUsage.completionTokens,
+        },
+      });
+
       // Add assistant message to memory (including tool_use blocks for multi-turn context)
       const assistantContent: Array<Record<string, unknown>> = [];
       if (response.textResponse) {
@@ -1170,7 +1188,7 @@ export class Agent {
           content: assistantContent as any,
           ts: Date.now(),
         };
-        await this.memoryModule.addMessage(assistantMsg);
+        await this.addMessageToMemory(assistantMsg);
       }
 
       // Record current workspace context for future iterations (for next turn's historical record)
@@ -1200,7 +1218,7 @@ export class Agent {
             ],
             ts: Date.now(),
           };
-          await this.memoryModule.addMessage(errorResult);
+          await this.addMessageToMemory(errorResult);
           this.logger.warn(errorMsg);
           continue; // Let LLM retry
         }
@@ -1303,7 +1321,7 @@ export class Agent {
           ],
           ts: Date.now(),
         };
-        await this.memoryModule.addMessage(toolResultMsg);
+        await this.addMessageToMemory(toolResultMsg);
 
         // Track tool usage
         if (!this._toolUsage[toolCall.name]) {
@@ -1351,7 +1369,7 @@ export class Agent {
           ],
           ts: Date.now(),
         };
-        await this.memoryModule.addMessage(errorToolResultMsg);
+        await this.addMessageToMemory(errorToolResultMsg);
 
         // Track tool usage
         if (!this._toolUsage[toolCall.name]) {

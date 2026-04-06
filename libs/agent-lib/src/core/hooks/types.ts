@@ -7,6 +7,7 @@
 
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { Tool } from '../../components/core/types.js';
+import type { ApiMessage } from '../memory/types.js';
 
 // =============================================================================
 // Hook Categories (Enum)
@@ -32,6 +33,8 @@ export enum HookType {
   COMPONENT_AFTER_UNREGISTER = 'component:afterUnregister',
   TOOL_BEFORE_EXECUTE = 'tool:beforeExecute',
   TOOL_AFTER_EXECUTE = 'tool:afterExecute',
+  MESSAGE_ADDED = 'message:added',
+  LLM_CALL_COMPLETED = 'llm:callCompleted',
 }
 
 // =============================================================================
@@ -225,6 +228,27 @@ export interface ToolAfterExecuteContext extends HookContextBase {
 }
 
 /**
+ * Message added context — fired when any message is added to agent memory
+ */
+export interface MessageAddedContext extends HookContextBase {
+  type: HookType.MESSAGE_ADDED;
+  /** The message that was added */
+  message: ApiMessage;
+}
+
+/**
+ * LLM call completed context — fired after a full LLM API call returns
+ */
+export interface LlmCallCompletedContext extends HookContextBase {
+  type: HookType.LLM_CALL_COMPLETED;
+  /** Token usage from the LLM response */
+  tokenUsage: {
+    promptTokens: number;
+    completionTokens: number;
+  };
+}
+
+/**
  * Union type of all hook contexts
  */
 export type HookContext =
@@ -243,7 +267,9 @@ export type HookContext =
   | ComponentBeforeUnregisterContext
   | ComponentAfterUnregisterContext
   | ToolBeforeExecuteContext
-  | ToolAfterExecuteContext;
+  | ToolAfterExecuteContext
+  | MessageAddedContext
+  | LlmCallCompletedContext;
 // =============================================================================
 // Hook Handler Types
 // =============================================================================

@@ -85,7 +85,7 @@ export function ItemDetail({ item }: Props) {
   const metaFields = getMeta(item);
 
   return (
-    <div className="border-t bg-muted/30 px-3 py-3">
+    <div className="p-4">
       {item.abstract && (
         <div className="mb-3">
           <div className="mb-1 text-xs font-medium text-muted-foreground">Abstract</div>

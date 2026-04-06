@@ -2,10 +2,12 @@ import { useState } from 'react';
 import type { ChatMessage } from '@/lib/api/chat';
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronRight, ChevronDown, Wrench, CheckCircle2, XCircle } from "lucide-react";
+import { ChevronRight, ChevronDown, Wrench, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 interface Props {
   message: ChatMessage;
+  /** Tool names that are currently executing (shown with spinner) */
+  pendingToolCalls?: Set<string>;
 }
 
 function extractText(blocks: Array<Record<string, unknown>>): string {
@@ -34,7 +36,7 @@ function extractToolResult(blocks: Array<Record<string, unknown>>): Array<{ name
     });
 }
 
-export function ChatMessage({ message }: Props) {
+export function ChatMessage({ message, pendingToolCalls }: Props) {
   const [expandedTool, setExpandedTool] = useState<string | null>(null);
 
   if (message.role === 'user') {
@@ -68,6 +70,7 @@ export function ChatMessage({ message }: Props) {
       {toolCalls.map((tc, i) => {
         const key = `tool-${i}`;
         const isExpanded = expandedTool === key;
+        const isPending = pendingToolCalls?.has(tc.name) ?? false;
         return (
           <div key={key} className="rounded-md border bg-muted/50">
             <button
@@ -77,13 +80,15 @@ export function ChatMessage({ message }: Props) {
               {isExpanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
               <Wrench className="size-3" />
               <span className="font-medium">{tc.name}</span>
-              {tc.result && (
+              {isPending ? (
+                <Loader2 className="size-3 animate-spin text-blue-500" />
+              ) : tc.result ? (
                 tc.result.isError ? (
                   <XCircle className="size-3 text-destructive" />
                 ) : (
                   <CheckCircle2 className="size-3 text-green-500" />
                 )
-              )}
+              ) : null}
             </button>
             {isExpanded && (
               <div className="border-t px-2 py-1.5">

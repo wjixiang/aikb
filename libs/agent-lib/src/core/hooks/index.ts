@@ -46,6 +46,8 @@ export type {
   ComponentAfterUnregisterContext,
   ToolBeforeExecuteContext,
   ToolAfterExecuteContext,
+  MessageAddedContext,
+  LlmCallCompletedContext,
   // Handler Types
   HookHandler,
   HookRegistrationOptions,
@@ -73,6 +75,9 @@ export {
   // Tool hooks
   onToolBeforeExecute,
   onToolAfterExecute,
+  // Memory hooks
+  onMessageAdded,
+  onLlmCallCompleted,
   // Builder
   createHookConfig,
   HookConfigBuilder,

@@ -12,23 +12,18 @@ import type {
   A2AMessageType,
   A2APayload,
   A2AContext,
-  A2ATaskHandler,
   A2AQueryHandler,
   A2AEventHandler,
   A2ACancelHandler,
   A2AHandlerConfig,
-  A2ATaskResult,
   A2ATaskStatus,
 } from './types.js';
 
 export interface IA2AHandler {
   /** Handle an incoming A2A message */
-  handleMessage(message: A2AMessage): Promise<A2ATaskResult | void>;
+  handleMessage(message: A2AMessage): Promise<void>;
 
-  /** Register a task handler */
-  onTask(handler: A2ATaskHandler): void;
-
-  /** Register a query handler */
+  /** Register a query handler (unified handler for all request messages) */
   onQuery(handler: A2AQueryHandler): void;
 
   /** Register an event handler */
@@ -43,48 +38,18 @@ export interface IA2AHandler {
   /** Stop listening for messages */
   stopListening(): void;
 
-  /** Get pending task messages awaiting acknowledgment */
-  getPendingTasks(): PendingTask[];
-
-  /** Send acknowledgment for a message */
-  acknowledge(conversationId: string): Promise<void>;
-
-  /** Send task result response */
-  sendTaskResult(
-    conversationId: string,
-    output: unknown,
-    status: A2ATaskStatus,
-    error?: string,
-  ): Promise<void>;
-
-  /** Send error response */
-  sendTaskError(conversationId: string, error: string): Promise<void>;
-
-  /** Set callback for when a task is completed via completeTask tool */
-  setTaskCompletionCallback(
+  /** Set callback for when a query is completed via completeTask tool */
+  setQueryCompletionCallback(
     callback: (conversationId: string, output: unknown, status: string) => void,
   ): void;
 
-  /** Signal that an A2A task has been completed (calls the registered callback) */
-  completeTask(conversationId: string, output: unknown, status: string): void;
+  /** Signal that an A2A query has been completed (calls the registered callback) */
+  completeQuery(conversationId: string, output: unknown, status: string): void;
 
   /** Set callback for any message received (called before type-specific handlers) */
   setOnMessageReceivedCallback(
     callback: (conversationId: string, message: A2AMessage) => void,
   ): void;
-}
-
-/**
- * Pending task awaiting acknowledgment
- */
-export interface PendingTask {
-  conversationId: string;
-  messageId: string;
-  messageType: A2AMessageType;
-  from: string;
-  payload: A2APayload;
-  receivedAt: number;
-  acknowledged?: boolean;
 }
 
 /**
@@ -100,7 +65,6 @@ export class A2AHandler implements IA2AHandler {
   private readonly messageBus: IMessageBus;
   private readonly handlerTimeout: number;
 
-  private taskHandler?: A2ATaskHandler;
   private queryHandler?: A2AQueryHandler;
   private eventHandler?: A2AEventHandler;
   private cancelHandler?: A2ACancelHandler;
@@ -109,15 +73,9 @@ export class A2AHandler implements IA2AHandler {
   private isListening = false;
 
   /**
-   * Pending tasks awaiting acknowledgment
-   * Key: conversationId
+   * Callback for when query is completed via completeTask tool
    */
-  private pendingTasks: Map<string, PendingTask> = new Map();
-
-  /**
-   * Callback for when task is completed via completeTask tool
-   */
-  private taskCompletionCallback?: (
+  private queryCompletionCallback?: (
     conversationId: string,
     output: unknown,
     status: string,
@@ -145,7 +103,7 @@ export class A2AHandler implements IA2AHandler {
   /**
    * Handle an incoming A2A message
    */
-  async handleMessage(message: A2AMessage): Promise<A2ATaskResult | void> {
+  async handleMessage(message: A2AMessage): Promise<void> {
     if (message.to !== this.instanceId) {
       this.logger.warn(
         { messageTo: message.to, myId: this.instanceId },
@@ -170,26 +128,25 @@ export class A2AHandler implements IA2AHandler {
       startTime: Date.now(),
       metadata: {},
       acknowledge: async () => {
-        await this.acknowledge(message.conversationId);
+        await this.sendAck(message);
       },
     };
 
     try {
       switch (message.messageType) {
-        case 'task':
-          return await this.processTask(message, context);
         case 'query':
-          return await this.processQuery(message, context);
+          await this.processQuery(message, context);
+          return;
         case 'event':
-          return await this.processEvent(message, context);
+          await this.processEvent(message, context);
+          return;
         case 'cancel':
-          return await this.processCancel(message, context);
+          await this.processCancel(message, context);
+          return;
         case 'response':
-          // Response messages are handled by the conversation tracking in MessageBus
           this.logger.debug('Response message received, handled by MessageBus');
           return;
         case 'stream':
-          // Streaming not yet implemented
           this.logger.warn('Streaming not yet implemented');
           return;
         default:
@@ -217,14 +174,6 @@ export class A2AHandler implements IA2AHandler {
       // Send error response
       await this.sendErrorResponse(message, errorInfo.message || String(error));
     }
-  }
-
-  /**
-   * Register a task handler
-   */
-  onTask(handler: A2ATaskHandler): void {
-    this.taskHandler = handler;
-    this.logger.debug('Task handler registered');
   }
 
   /**
@@ -342,172 +291,39 @@ export class A2AHandler implements IA2AHandler {
   }
 
   /**
-   * Get all pending tasks awaiting acknowledgment
+   * Set callback for when query is completed via completeTask tool
    */
-  getPendingTasks(): PendingTask[] {
-    return Array.from(this.pendingTasks.values());
-  }
-
-  /**
-   * Set callback for when task is completed via completeTask tool
-   */
-  setTaskCompletionCallback(
+  setQueryCompletionCallback(
     callback: (conversationId: string, output: unknown, status: string) => void,
   ): void {
-    this.taskCompletionCallback = callback;
+    this.queryCompletionCallback = callback;
   }
 
   /**
-   * Send acknowledgment for a pending task
+   * Signal that an A2A query has been completed
    */
-  async acknowledge(conversationId: string): Promise<void> {
-    const pending = this.pendingTasks.get(conversationId);
-    if (!pending) {
-      this.logger.warn(
-        { conversationId },
-        'No pending task found for acknowledgment',
-      );
-      return;
-    }
-
-    try {
-      await this.messageBus.sendAck(pending.from, conversationId, {
-        messageId: pending.messageId,
-        status: 'acknowledged',
-      });
-      pending.acknowledged = true;
-      this.logger.debug({ conversationId }, 'Sent ACK');
-    } catch (error) {
-      this.logger.error({ error, conversationId }, 'Failed to send ACK');
-      throw error;
-    }
-  }
-
-  /**
-   * Send task result response
-   */
-  async sendTaskResult(
-    conversationId: string,
-    output: unknown,
-    status: A2ATaskStatus,
-    error?: string,
-  ): Promise<void> {
-    const pending = this.pendingTasks.get(conversationId);
-    if (!pending) {
-      this.logger.warn(
-        { conversationId },
-        'No pending task found for sending result',
-      );
-      throw new Error(`No pending task found: ${conversationId}`);
-    }
-
-    try {
-      await this.messageBus.sendResult(pending.from, conversationId, {
-        output,
-        status,
-        error,
-      });
-      this.pendingTasks.delete(conversationId);
-      this.logger.debug({ conversationId, status }, 'Sent result');
-    } catch (error) {
-      this.logger.error({ error, conversationId }, 'Failed to send result');
-      throw error;
-    }
-  }
-
-  /**
-   * Send error response
-   */
-  async sendTaskError(conversationId: string, error: string): Promise<void> {
-    const pending = this.pendingTasks.get(conversationId);
-    if (!pending) {
-      this.logger.warn(
-        { conversationId },
-        'No pending task found for sending error',
-      );
-      throw new Error(`No pending task found: ${conversationId}`);
-    }
-
-    try {
-      await this.messageBus.sendError(pending.from, conversationId, error);
-      this.pendingTasks.delete(conversationId);
-      this.logger.debug({ conversationId }, 'Sent error');
-    } catch (err) {
-      this.logger.error({ err, conversationId }, 'Failed to send error');
-      throw err;
-    }
-  }
-
-  /**
-   * Signal that an A2A task has been completed
-   * Calls the registered callback to notify the waiting task handler
-   */
-  completeTask(conversationId: string, output: unknown, status: string): void {
-    if (this.taskCompletionCallback) {
-      this.taskCompletionCallback(conversationId, output, status);
+  completeQuery(conversationId: string, output: unknown, status: string): void {
+    if (this.queryCompletionCallback) {
+      this.queryCompletionCallback(conversationId, output, status);
       this.logger.debug(
         { conversationId, status },
-        'Task completion callback invoked',
+        'Query completion callback invoked',
       );
     } else {
       this.logger.warn(
         { conversationId },
-        'No task completion callback registered',
+        'No query completion callback registered',
       );
     }
   }
 
   /**
    * Set callback for any message received
-   * Called before type-specific handlers (task/query/event/cancel)
    */
   setOnMessageReceivedCallback(
     callback: (conversationId: string, message: A2AMessage) => void,
   ): void {
     this.onMessageReceivedCallback = callback;
-  }
-
-  /**
-   * Process a task message
-   * Stores in pendingTasks for manual ACK, does NOT auto-ACK
-   */
-  private async processTask(
-    message: A2AMessage,
-    context: A2AContext,
-  ): Promise<A2ATaskResult | void> {
-    if (!this.taskHandler) {
-      this.logger.warn('No task handler registered, sending error response');
-      await this.sendErrorResponse(message, 'No task handler registered');
-      return;
-    }
-
-    const payload = message.content;
-
-    // Store as pending task (component will control ACK via acknowledge())
-    this.pendingTasks.set(message.conversationId, {
-      conversationId: message.conversationId,
-      messageId: message.messageId,
-      messageType: message.messageType,
-      from: message.from,
-      payload,
-      receivedAt: Date.now(),
-    });
-
-    // Call task handler with timeout (handler should call acknowledge() when ready)
-    const result = await this.taskHandler(payload, context);
-
-    // If handler returns a result, send it automatically
-    if (result) {
-      await this.sendResult(
-        message,
-        result.output,
-        result.status,
-        result.error,
-      );
-      return result;
-    }
-
-    return;
   }
 
   /**
@@ -570,19 +386,11 @@ export class A2AHandler implements IA2AHandler {
       return;
     }
 
-    const payload = message.content;
-    const taskId = payload.taskId;
-
-    if (!taskId) {
-      this.logger.warn('Cancel message missing taskId');
-      return;
-    }
-
     // Send acknowledgment
     await this.sendAck(message);
 
     // Call cancel handler
-    await this.cancelHandler(taskId, context);
+    await this.cancelHandler(message.conversationId, context);
   }
 
   /**
