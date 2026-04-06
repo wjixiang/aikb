@@ -71,7 +71,7 @@ ${instructions}
 
 # Next Steps
 
-If you have completed the user's task, use the attempt_completion tool.
+If you have completed the user's task, output your summary as plain text, then use the attempt_completion tool (no parameters).
 If you require additional information from the user, use the ask_followup_question tool.
 Otherwise, if you have not completed the task and do not need additional information, then proceed with the next step of the task.
 (This is an automated message, so do not respond to it conversationally.)`;
@@ -291,10 +291,9 @@ Tool uses are formatted using XML-style tags. The tool name itself becomes the X
 For example, to use the attempt_completion tool:
 
 <attempt_completion>
-<result>
-I have completed the task...
-</result>
 </attempt_completion>
+
+Note: attempt_completion takes no parameters. Output your summary as plain text BEFORE calling this tool.
 
 Always use the actual tool name as the XML tag name for proper parsing and execution.`;
 

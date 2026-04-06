@@ -28,7 +28,7 @@ export interface FileEntry {
 
 export interface NativeToolArgs {
   read_file?: { files: FileEntry[] };
-  attempt_completion?: { result: any };
+  attempt_completion?: Record<string, never>;
   execute_command?: { command: string; cwd?: string };
   write_to_file?: { path: string; content: string };
   ask_followup_question?: { question: string; follow_up?: string[] };

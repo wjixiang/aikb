@@ -4,7 +4,7 @@ import { chatApi, sendMessageStream } from "@/lib/api/chat";
 import type { ChatMessage, UserContext, ToolStartedEvent, ToolCompletedEvent } from "@/lib/api/chat";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, X, SendHorizontal, Loader2 } from "lucide-react";
+import { MessageSquare, X, SendHorizontal, Loader2, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage as ChatMessageItem } from "./ChatMessage";
@@ -15,11 +15,12 @@ export function ChatPanel() {
   const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'running'>('idle');
   const [error, setError] = useState("");
   const [pendingToolCalls, setPendingToolCalls] = useState<Set<string>>(new Set());
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
 
   const getUserContext = useCallback((): UserContext | undefined => {
     const { pathname } = location;
@@ -36,7 +37,7 @@ export function ChatPanel() {
     );
     if (!viewport) return;
     viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages, status]);
 
   // Load history when panel opens
   useEffect(() => {
@@ -63,13 +64,18 @@ export function ChatPanel() {
     }
   }, [isOpen]);
 
+  const finishTurn = useCallback(() => {
+    setStatus('idle');
+    cancelRef.current = null;
+  }, []);
+
   const sendMessage = useCallback(async () => {
     const text = input.trim();
-    if (!text || isLoading) return;
+    if (!text || status !== 'idle') return;
 
     setInput('');
     setError('');
-    setIsLoading(true);
+    setStatus('running');
 
     // Optimistically add user message
     const userMsg: ChatMessage = {
@@ -79,31 +85,24 @@ export function ChatPanel() {
     };
     setMessages((prev) => [...prev, userMsg]);
 
-    await sendMessageStream(
+    const { cancel } = await sendMessageStream(
       text,
       {
-        onStarted: () => {
-          // Agent is processing — loading state already set
-        },
         onMessageAdded: (message) => {
-          // Incrementally render assistant messages as they're added to memory
           if (message.role === 'assistant') {
             setMessages((prev) => [...prev, message]);
           }
         },
         onToolStarted: (data: ToolStartedEvent) => {
-          // Track tool IDs that are in progress (for loading indicator)
           setPendingToolCalls((prev) => new Set(prev).add(data.toolName));
         },
         onToolCompleted: (data: ToolCompletedEvent) => {
-          // Remove from pending, then merge result into the matching assistant message
           setPendingToolCalls((prev) => {
             const next = new Set(prev);
             next.delete(data.toolName);
             return next;
           });
           setMessages((prev) => {
-            // Find the most recent assistant message that has a tool_use block with this name
             for (let i = prev.length - 1; i >= 0; i--) {
               const msg = prev[i];
               if (msg.role !== 'assistant') continue;
@@ -111,7 +110,6 @@ export function ChatPanel() {
                 (b) => b.type === 'tool_use' && (b as { name: string }).name === data.toolName,
               );
               if (!hasToolUse) continue;
-              // Append a tool_result block to this message's content
               const updatedContent = [
                 ...msg.content,
                 {
@@ -128,13 +126,18 @@ export function ChatPanel() {
             return prev;
           });
         },
+        onStatusChange: (data) => {
+          if (data.status === 'completed' || data.status === 'aborted') {
+            finishTurn();
+          }
+        },
         onCompleted: (data) => {
-          // If no incremental messages arrived, fall back to final result
+          // Agent final output — add as assistant message if no incremental messages arrived
           const output = typeof data === 'string' ? data : (data as { output?: string })?.output ?? JSON.stringify(data);
           setMessages((prev) => {
             const lastMsg = prev[prev.length - 1];
             const hasAssistantContent = lastMsg?.role === 'assistant';
-            if (hasAssistantContent) return prev; // Already rendered incrementally
+            if (hasAssistantContent) return prev;
             return [...prev, {
               role: 'assistant',
               content: [{ type: 'text', text: output }],
@@ -144,14 +147,18 @@ export function ChatPanel() {
         },
         onError: (message) => {
           setError(message);
-          setMessages((prev) => prev.slice(0, -1));
+          finishTurn();
         },
       },
       getUserContext(),
     );
 
-    setIsLoading(false);
-  }, [input, isLoading, getUserContext]);
+    cancelRef.current = cancel;
+  }, [input, status, getUserContext, finishTurn]);
+
+  const handleCancel = () => {
+    cancelRef.current?.();
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -159,6 +166,8 @@ export function ChatPanel() {
       sendMessage();
     }
   };
+
+  const isRunning = status === 'running';
 
   return (
     <>
@@ -183,19 +192,26 @@ export function ChatPanel() {
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
           <h2 className="text-sm font-semibold">AI Assistant</h2>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setIsOpen(false)}
-          >
-            <X className="size-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {isRunning && (
+              <Button variant="ghost" size="icon-sm" onClick={handleCancel} title="Cancel">
+                <Square className="size-3" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setIsOpen(false)}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Messages */}
         <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0">
           <div className="px-4 py-3 space-y-3">
-            {messages.length === 0 && !isLoading && (
+            {messages.length === 0 && !isRunning && (
               <p className="text-center text-xs text-muted-foreground py-8">
                 Ask me anything about your knowledge base.
               </p>
@@ -203,7 +219,7 @@ export function ChatPanel() {
             {messages.map((msg, i) => (
               <ChatMessageItem key={i} message={msg} pendingToolCalls={pendingToolCalls} />
             ))}
-            {isLoading && (
+            {isRunning && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="size-3 animate-spin" />
                 Thinking...
@@ -226,12 +242,12 @@ export function ChatPanel() {
               placeholder="Type a message... (Enter to send)"
               className="min-h-[40px] max-h-[120px] resize-none text-sm"
               rows={1}
-              disabled={isLoading}
+              disabled={isRunning}
             />
             <Button
               size="icon-sm"
               onClick={sendMessage}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isRunning}
             >
               <SendHorizontal className="size-4" />
             </Button>

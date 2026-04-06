@@ -114,22 +114,22 @@ services:
   #   networks:
   #     - bib-network
   #
-  # mineru:
-  #   image: mineru:latest
-  #   container_name: mineru
-  #   restart: always
-  #   ports:
-  #     - '40000:30000'
-  #     - '7860:7860'
-  #     - '8000:8000'
-  #   environment:
-  #     - NVIDIA_VISIBLE_DEVICES=all
-  #   volumes:
-  #     - mineru_data:/data
-  #   ipc: host
-  #   shm_size: '32g'
-  #   networks:
-  #     - bib-network
+  mineru:
+    image: opendatalab/mineru:latest
+    container_name: mineru
+    restart: always
+    ports:
+      - '30000:30000'
+      - '7860:7860'
+      - '8000:8000'
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - mineru_data:/data
+    ipc: host
+    shm_size: '32g'
+    networks:
+      - bib-network
 
 networks:
   bib-network:

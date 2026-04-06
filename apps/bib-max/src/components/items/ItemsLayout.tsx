@@ -46,6 +46,11 @@ export function ItemsLayout() {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [listCollapsed, setListCollapsed] = useState(false);
 
+  // Reset collapse when navigating away from a selected item
+  useEffect(() => {
+    if (!selectedItemId) setListCollapsed(false);
+  }, [selectedItemId]);
+
   useEffect(() => {
     tagsApi.list({ pageSize: 100, withCount: true }).then((res) => setAllTags(res.data));
   }, [version]);

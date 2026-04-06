@@ -89,16 +89,13 @@ export class GlobalToolProvider
     }
   }
 
-  private handleAttemptCompletion(params: any): {
+  private handleAttemptCompletion(_params: any): {
     success: boolean;
     completed: boolean;
-    result: string;
   } {
-    const result = typeof params?.result === 'string' ? params.result : '';
     return {
       success: true,
       completed: true,
-      result,
     };
   }
 

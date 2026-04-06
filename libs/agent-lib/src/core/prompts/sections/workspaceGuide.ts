@@ -54,7 +54,7 @@ When you need to perform an action:
 - Check the tool description in the workspace context for required and optional parameters
 - **Always check the current workspace state before making tool calls**
 - **After each tool call, review the updated workspace context before deciding on next actions**
-- When your task is complete, use the <attempt_completion> function
+- When your task is complete, output your summary as plain text first, then use <attempt_completion> to signal completion
 
     `;
 }

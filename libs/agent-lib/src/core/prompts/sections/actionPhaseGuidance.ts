@@ -65,8 +65,7 @@ that was generated during the thinking phase.
 
 5. ✅ COMPLETE THE TASK
    - Continue executing until the task is complete
-   - Call 'attempt_completion' when you have successfully completed the task
-   - Provide a clear summary of what was accomplished
+   - Output your summary as plain text, then call 'attempt_completion' (no parameters) to signal completion
 
 ════════════════════════════════════════════════════════════════════════════════
                             EXECUTION GUIDELINES
@@ -99,8 +98,8 @@ For each action:
 4. Proceed to the next step or adjust as needed
 
 When you have completed all planned actions:
-1. Call 'attempt_completion' with a summary of results
-2. Provide clear confirmation that the task is complete
+1. Output your task summary as plain text
+2. Call 'attempt_completion' (no parameters) to signal completion
 
 `
       : `
@@ -135,8 +134,7 @@ accomplish the user's task.
 
 4. ✅ COMPLETE THE TASK
    - Continue executing until the task is complete
-   - Call 'attempt_completion' when you have successfully completed the task
-   - Provide a clear summary of what was accomplished
+   - Output your summary as plain text, then call 'attempt_completion' (no parameters) to signal completion
 
 ════════════════════════════════════════════════════════════════════════════════
                             EXECUTION GUIDELINES

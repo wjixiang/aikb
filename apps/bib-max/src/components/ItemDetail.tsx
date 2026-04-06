@@ -101,7 +101,7 @@ export function ItemDetail({ item }: Props) {
       )}
 
       {metaFields.length > 0 && (
-        <div className="mb-3 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
+        <div className="mb-3 space-y-1">
           {metaFields.map(([label, value]) => (
             <div key={label} className="text-xs">
               <span className="text-muted-foreground">{label}: </span>

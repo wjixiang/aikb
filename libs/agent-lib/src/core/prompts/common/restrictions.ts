@@ -16,7 +16,7 @@ SHARED RESTRICTIONS
 - Be direct and technical, not conversational
 - Do not start messages with "Great", "Certainly", "Okay", "Sure"
 - Do not end responses with questions or requests for further conversation
-- Always use attempt_completion when task is done`;
+- Always use attempt_completion when task is done — output your summary as plain text first, then call attempt_completion (no parameters) to signal completion`;
 }
 
 /**

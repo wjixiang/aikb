@@ -2,6 +2,9 @@ import type { FastifyInstance } from 'fastify';
 import type { IAgentRuntime, AgentRuntimeConfig, RuntimeControlProviderSettings } from 'agent-lib/core';
 import type { BibToolsDeps } from 'bib-copilot';
 import { config } from '../config.js';
+import * as itemService from '../services/item.service.js';
+import * as tagService from '../services/tag.service.js';
+import * as attachmentService from '../services/attachment.service.js';
 
 // ============ Copilot SOP ============
 

@@ -1362,12 +1362,12 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
 3. Receive the tool result
 4. Analyze the result and decide next step
 5. Repeat until task is complete
-6. Call attempt_completion to finish
+6. Output your summary as plain text, then call attempt_completion to finish
 
 **Important Rules:**
 - Call ONLY ONE tool per response
 - After receiving the tool result, analyze it and decide if more tool calls are needed
-- When all tasks are done, call attempt_completion tool
+- When all tasks are done, output your summary as plain text, then call attempt_completion (no parameters)
 
 ## A2A Task Acknowledgment
 When you receive a task from another agent (identified by "[A2A Task from ...]" in the user message):
@@ -1396,7 +1396,7 @@ When you receive a task from another agent (identified by "[A2A Task from ...]" 
     parts.push(`# Tool Usage
 - Call only ONE tool per response
 - After receiving the result, analyze it and call another tool if needed
-- When all tasks are complete, call attempt_completion to finish
+- When all tasks are complete, output your summary as plain text, then call attempt_completion (no parameters)
 - If a tool fails, analyze the error and try an alternative approach`);
 
     // 3. Component prompts (from registered components)
