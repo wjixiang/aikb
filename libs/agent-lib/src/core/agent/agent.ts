@@ -27,7 +27,6 @@ import type {
   A2AClient,
   A2AMessage,
   A2APayload,
-  A2ATaskResult,
 } from '../a2a/index.js';
 import { createA2AHandler } from '../a2a/index.js';
 import type { HookModule } from '../hooks/HookModule.js';
@@ -119,7 +118,7 @@ export interface ToolExecutionResult {
 @injectable()
 export class Agent {
   workspace: VirtualWorkspace;
-  private _status: AgentStatus = AgentStatus.Idle;
+  private _status: AgentStatus = AgentStatus.Sleeping;
   private _taskId: string;
   private _tokenUsage: MessageTokenUsage = {
     totalTokensIn: 0,
@@ -161,12 +160,8 @@ export class Agent {
   // RuntimeControlComponent state (set via DI)
   private _runtimeControlState?: RuntimeControlState;
 
-  // Sleep mechanism: pause requestLoop and wait for wakeUp
-  private _sleepResolve: ((data?: unknown) => void) | null = null;
+  // Sleep reason (for observability)
   private _sleepReason: string | null = null;
-
-  // When true, the agent enters sleep immediately on start instead of making an initial LLM call
-  private _skipInitialTurn = false;
 
   // Persistence service (for component states - instance-level)
   private persistenceService?: IPersistenceService;
@@ -175,8 +170,6 @@ export class Agent {
     if (!this.persistenceService) return;
     void this.persistenceService.updateInstanceMetadata(this.instanceId, {
       status: this._status,
-      completedAt:
-        this._status === AgentStatus.Completed ? new Date() : undefined,
     });
   }
 
@@ -315,6 +308,57 @@ export class Agent {
   }
 
   /**
+   * Restore memory from persistence (instance-level)
+   */
+  public async restoreMemory(): Promise<void> {
+    if (!this.persistenceService) return;
+
+    try {
+      const savedMemory = await this.persistenceService.loadMemory(
+        this.instanceId,
+      );
+      if (savedMemory) {
+        (this.memoryModule as MemoryModule).import(savedMemory);
+        this.logger.info(
+          { instanceId: this.instanceId },
+          '[Agent] Memory restored from persistence',
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        { error, instanceId: this.instanceId },
+        '[Agent] Failed to restore memory',
+      );
+    }
+  }
+
+  /**
+   * Restore session state from persistence (token usage, error counts, etc.)
+   * Called after Agent instance is resolved during restore.
+   */
+  public async restoreSessionState(): Promise<void> {
+    try {
+      const savedState = await this.sessionManager.restoreSession();
+      if (savedState) {
+        this._tokenUsage = savedState.tokenUsage;
+        this._toolUsage = savedState.toolUsage;
+        this._consecutiveMistakeCount = savedState.consecutiveMistakeCount;
+        this._collectedErrors = savedState.collectedErrors;
+        this._abortInfo = savedState.abortInfo;
+        this.logger.info(
+          { instanceId: this.instanceId },
+          '[Agent] Session state restored',
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        { error, instanceId: this.instanceId },
+        '[Agent] Failed to restore session state',
+      );
+    }
+  }
+
+  /**
    * Setup A2A message handlers
    * Called from constructor when A2AHandler is injected via DI
    */
@@ -334,16 +378,11 @@ export class Agent {
       },
     );
 
-    // Register callback for any message received - wake up agent if sleeping
-    this._a2aHandler.setOnMessageReceivedCallback((conversationId, message) => {
-      if (this._status === AgentStatus.Sleep) {
-        this.wakeUp({
-          conversationId,
-          messageType: message.messageType,
-          from: message.from,
-          content: message.content,
-        });
-      }
+    // Register callback for any message received
+    // Note: With the new lifecycle, sleeping agents have unloaded containers,
+    // so this callback only fires for running agents (messages are queued).
+    this._a2aHandler.setOnMessageReceivedCallback((_conversationId, _message) => {
+      // No-op: sleeping agents are restored by the Runtime before processing
     });
 
     // Register unified query handler — handles all incoming A2A requests
@@ -359,8 +398,7 @@ export class Agent {
       if (queryPayload.query === 'start' || payload.description === 'start') {
         this.logger.info('[Agent] Received start query, auto-responding');
         if (
-          this._status === AgentStatus.Idle ||
-          this._status === AgentStatus.Completed
+          this._status === AgentStatus.Sleeping
         ) {
           this._status = AgentStatus.Running;
         }
@@ -397,10 +435,9 @@ export class Agent {
       // Store message for processing in requestLoop
       this._pendingA2AMessages.push(ctx.message);
 
-      // If agent is idle/completed, start requestLoop
+      // If agent is sleeping, start requestLoop
       if (
-        this._status === AgentStatus.Idle ||
-        this._status === AgentStatus.Completed
+        this._status === AgentStatus.Sleeping
       ) {
         this._status = AgentStatus.Running;
         void this.requestLoop();
@@ -589,15 +626,7 @@ export class Agent {
   }
 
   // ==================== Lifecycle Methods ====================
-  // Lifecycle status: running / completed / idle / aborted
-
-  /**
-   * Skip the initial LLM call on start — agent goes directly to sleep
-   * and waits for the first A2A message to wake it up.
-   */
-  setSkipInitialTurn(skip: boolean): void {
-    this._skipInitialTurn = skip;
-  }
+  // Lifecycle status: sleeping / running / aborted
 
   /**
    * Start agent with a user query
@@ -639,7 +668,7 @@ export class Agent {
       instanceId: this.instanceId,
     });
 
-    this._status = AgentStatus.Completed;
+    this._status = AgentStatus.Sleeping;
     void this.sessionManager.persistState(this.getSessionState());
     this.persistInstanceStatus();
     void this.endSession();
@@ -680,13 +709,6 @@ export class Agent {
       details,
     };
 
-    // Wake up from sleep if sleeping, so the blocked tool call can return
-    if (this._sleepResolve) {
-      const resolve = this._sleepResolve;
-      this._sleepResolve = null;
-      resolve(undefined);
-    }
-
     void this.sessionManager.persistState(this.getSessionState());
     this.persistInstanceStatus();
     void this.endSession('aborted');
@@ -702,11 +724,11 @@ export class Agent {
   }
 
   /**
-   * Reset agent status to Idle - allows agent to be restarted after stop.
+   * Reset agent status to Sleeping - allows agent to be restarted after stop.
    * This is called by Runtime when stopping an agent, not by abort() itself.
    */
-  public resetToIdle(): void {
-    this._status = AgentStatus.Idle;
+  public resetToSleeping(): void {
+    this._status = AgentStatus.Sleeping;
     void this.sessionManager.persistState(this.getSessionState());
     this.persistInstanceStatus();
   }
@@ -715,21 +737,21 @@ export class Agent {
    * Check if agent is sleeping
    */
   public isSleeping(): boolean {
-    return this._status === AgentStatus.Sleep;
+    return this._status === AgentStatus.Sleeping;
   }
 
   /**
-   * Put agent to sleep - pauses the requestLoop until wakeUp() is called.
-   * Returns a promise that resolves with wake-up data when the agent is woken.
+   * Save state and transition to Sleeping.
+   * The Runtime will unload the container after this call.
    * @param reason - Why the agent is sleeping (for observability)
    */
-  public sleep(reason: string): Promise<unknown> {
-    if (this._status !== AgentStatus.Running) {
-      throw new Error(`Agent cannot sleep from status: ${this._status}`);
-    }
-
-    this._status = AgentStatus.Sleep;
+  public async sleep(reason: string): Promise<void> {
+    this._status = AgentStatus.Sleeping;
     this._sleepReason = reason;
+
+    // Save component states and memory before unloading
+    await this.saveComponentStates();
+
     void this.sessionManager.persistState(this.getSessionState());
     this.persistInstanceStatus();
 
@@ -741,62 +763,6 @@ export class Agent {
     });
 
     this.logger.info({ reason }, '[Agent] Entering sleep state');
-
-    return new Promise<unknown>((resolve) => {
-      this._sleepResolve = resolve;
-    });
-  }
-
-  /**
-   * Wake up a sleeping agent - resumes the requestLoop.
-   * @param data - Optional data to pass back to the sleeping point (e.g., A2A result)
-   */
-  public wakeUp(data?: unknown): void {
-    if (this._status !== AgentStatus.Sleep) {
-      this.logger.warn(
-        { currentStatus: this._status },
-        '[Agent] Cannot wake up - not sleeping',
-      );
-      return;
-    }
-
-    this._status = AgentStatus.Running;
-    this._sleepReason = null;
-    void this.sessionManager.persistState(this.getSessionState());
-    this.persistInstanceStatus();
-
-    void this.hookModule.executeHooks(HookType.AGENT_WOKEN, {
-      type: HookType.AGENT_WOKEN,
-      timestamp: new Date(),
-      instanceId: this.instanceId,
-      data,
-    });
-
-    this.logger.info('[Agent] Woken up, resuming execution');
-
-    if (this._sleepResolve) {
-      this._sleepResolve(data);
-      this._sleepResolve = null;
-    }
-  }
-
-  /**
-   * Wake up agent for A2A task processing
-   * @deprecated Use A2A Handler instead
-   */
-  async wakeUpForTask(task: any): Promise<void> {
-    this.logger.info(`Waking up agent for task processing: ${task.taskId}`);
-
-    // Reset status to running if it was completed
-    if (
-      this._status === AgentStatus.Completed ||
-      this._status === AgentStatus.Idle
-    ) {
-      this._status = AgentStatus.Running;
-    }
-
-    // Trigger agent to process the task
-    await this.requestLoop();
   }
 
   /**
@@ -927,14 +893,6 @@ export class Agent {
     // Reset consecutive error count for new operation
     this.resetConsecutiveErrorCount();
 
-    // If skipInitialTurn is set, sleep immediately and wait for wakeUp.
-    // After waking, the flag is cleared so subsequent loop iterations proceed normally.
-    if (this._skipInitialTurn) {
-      this._skipInitialTurn = false;
-      const wakeData = await this.sleep('Waiting for first message');
-      this.logger.info('[Agent] Woken from initial sleep, processing pending messages');
-    }
-
     // Track if we need to continue the loop
     let needsNewTurn = true;
 
@@ -1041,7 +999,7 @@ export class Agent {
       resultContext = `[Agent Error: ${errorMessage}]`;
       // Still mark as completed to avoid hanging
       if (this._status !== AgentStatus.Aborted) {
-        this._status = AgentStatus.Completed;
+        this._status = AgentStatus.Sleeping;
         this.persistInstanceStatus();
       }
     }

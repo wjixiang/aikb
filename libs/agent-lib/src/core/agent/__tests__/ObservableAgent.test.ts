@@ -36,7 +36,7 @@ describe('ObservableAgent', () => {
       const observableAgent = createObservableAgent(agent, callbacks);
 
       expect(observableAgent).toBeDefined();
-      expect(observableAgent.status).toBe(AgentStatus.Idle);
+      expect(observableAgent.status).toBe(AgentStatus.Sleeping);
     });
 
     it('should notify onStatusChanged when status changes', () => {
@@ -63,7 +63,7 @@ describe('ObservableAgent', () => {
       const observableAgent = createObservableAgent(agent, callbacks);
 
       // Simulate completion
-      (observableAgent as any)._status = AgentStatus.Completed;
+      (observableAgent as any)._status = AgentStatus.Sleeping;
 
       expect(onTaskCompleted).toHaveBeenCalledWith(observableAgent.getTaskId);
     });
@@ -138,11 +138,11 @@ describe('ObservableAgent', () => {
 
       const observableAgent = factory.create(agent);
 
-      (observableAgent as any)._status = AgentStatus.Completed;
+      (observableAgent as any)._status = AgentStatus.Sleeping;
 
       expect(onStatusChanged).toHaveBeenCalledWith(
         observableAgent.getTaskId,
-        AgentStatus.Completed,
+        AgentStatus.Sleeping,
       );
       expect(onTaskCompleted).toHaveBeenCalledWith(observableAgent.getTaskId);
     });
@@ -193,10 +193,10 @@ describe('ObservableAgent', () => {
 
       expect(onStatusChanged).toHaveBeenCalledWith(
         observableAgent.getTaskId,
-        AgentStatus.Completed,
+        AgentStatus.Sleeping,
       );
       expect(onTaskCompleted).toHaveBeenCalledWith(observableAgent.getTaskId);
-      expect(observableAgent.status).toBe(AgentStatus.Completed);
+      expect(observableAgent.status).toBe(AgentStatus.Sleeping);
     });
 
     it('should work with abort() method', () => {

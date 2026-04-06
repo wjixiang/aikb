@@ -36,9 +36,9 @@ export interface IAgentRegistry {
   findByStatus(status: AgentStatus): AgentMetadata[];
 
   /**
-   * Find idle agents (status === 'idle')
+   * Find sleeping agents (status === 'sleeping')
    */
-  findIdle(): AgentMetadata[];
+  findSleeping(): AgentMetadata[];
 
   /**
    * Find agents by type
@@ -254,8 +254,8 @@ export class AgentRegistry implements IAgentRegistry {
     );
   }
 
-  findIdle(): AgentMetadata[] {
-    return this.findByStatus(AgentStatus.Idle);
+  findSleeping(): AgentMetadata[] {
+    return this.findByStatus(AgentStatus.Sleeping);
   }
 
   findByType(agentType: string): AgentMetadata[] {

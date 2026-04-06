@@ -19,7 +19,6 @@ import {
 import type { IAgentCardRegistry } from '../a2a/index.js';
 import type { IMessageBus } from './topology/messaging/MessageBus.js';
 import type { IRuntimeControlClient } from './types.js';
-import type { A2ATaskResult } from '../a2a/types.js';
 
 /**
  * Service identifiers for UserContext DI
@@ -54,7 +53,7 @@ export interface IUserContext {
     description: string,
     input: Record<string, unknown>,
     options?: UserTaskOptions,
-  ): Promise<A2ATaskResult>;
+  ): Promise<unknown>;
 }
 
 /**
@@ -201,10 +200,7 @@ export class UserContext implements IUserContext {
     description: string,
     input: Record<string, unknown>,
     options?: UserTaskOptions,
-  ): Promise<A2ATaskResult> {
-    const taskId =
-      options?.taskId ??
-      `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  ): Promise<unknown> {
     const timeout = options?.timeout ?? this.container.getDefaultTimeout();
 
     const client =
@@ -216,12 +212,14 @@ export class UserContext implements IUserContext {
           )
         : this.getA2AClient();
 
-    return client.sendTask(
+    return client.sendQuery(
       targetAgentId,
-      taskId,
       description,
-      input,
-      options?.priority ? { priority: options.priority } : undefined,
+      {
+        input,
+        description,
+        priority: options?.priority,
+      },
     );
   }
 

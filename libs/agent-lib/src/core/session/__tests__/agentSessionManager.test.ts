@@ -233,7 +233,7 @@ describe('AgentSessionManager', () => {
       expect(mockPersistenceService.updateSession).toHaveBeenCalledWith(
         state.instanceId,
         expect.objectContaining({
-          status: AgentStatus.Completed,
+          status: AgentStatus.Sleeping,
           abortReason: undefined,
           abortSource: 'system',
         }),
@@ -241,7 +241,7 @@ describe('AgentSessionManager', () => {
       expect(
         mockPersistenceService.updateInstanceMetadata,
       ).toHaveBeenCalledWith(state.instanceId, {
-        status: AgentStatus.Completed,
+        status: AgentStatus.Sleeping,
       });
     });
 
@@ -275,7 +275,7 @@ describe('AgentSessionManager', () => {
       expect(mockPersistenceService.updateSession).toHaveBeenCalledWith(
         state.instanceId,
         expect.objectContaining({
-          status: AgentStatus.Completed,
+          status: AgentStatus.Sleeping,
           abortReason: 'timeout',
           abortSource: 'system',
         }),

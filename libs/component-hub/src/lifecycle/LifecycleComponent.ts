@@ -34,16 +34,15 @@ export class LifecycleComponent extends ToolComponent {
   override get componentPrompt(): string {
     return `## Lifecycle Management
 
-You have access to lifecycle management tools for completing tasks and waiting for events.
+You have access to lifecycle management tools for completing tasks and saving state.
 
 **Available Tools:**
 - attempt_completion: Complete the task and return final result
-- sleep: Pause execution and wait for an external event to wake you up
+- sleep: Save current state and enter sleep mode (agent will be restored when needed)
 
 **Best Practices:**
 - Call attempt_completion when your task is fully accomplished
-- Call sleep when you need to wait for something (e.g., A2A response, external event)
-- When woken, check the wake-up data to understand what triggered the wake-up
+- Call sleep when you want to save progress and pause (the runtime will restore you later)
 - The agent will stop processing after attempt_completion is called`;
   }
 
@@ -97,12 +96,17 @@ You have access to lifecycle management tools for completing tasks and waiting f
     const reason = params.reason ?? 'waiting for event';
 
     try {
-      const wakeUpData = await this.sleepControl.sleep(reason);
+      await this.sleepControl.sleep(reason);
 
       return {
         success: true,
-        data: wakeUpData as WakeUpData,
-        summary: `[Lifecycle] Woken up by event`,
+        data: {
+          conversationId: '',
+          messageType: 'response',
+          from: '',
+          content: { status: 'sleeping', reason },
+        } as WakeUpData,
+        summary: `[Lifecycle] Agent entered sleep state: ${reason}`,
       };
     } catch (error) {
       return {

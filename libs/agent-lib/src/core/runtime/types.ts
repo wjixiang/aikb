@@ -106,6 +106,8 @@ export interface IRuntimeControlClient {
   createAgent(options: RuntimeControlAgentOptions): Promise<string>;
   startAgent(instanceId: string): Promise<void>;
   stopAgent(instanceId: string): Promise<void>;
+  sleepAgent(instanceId: string, reason?: string): Promise<void>;
+  restoreAgent(instanceId: string): Promise<unknown>;
   destroyAgent(
     instanceId: string,
     options?: { cascade?: boolean },
@@ -353,7 +355,7 @@ export type RuntimeEventType =
   | 'agent:stopped'
   | 'agent:destroyed'
   | 'agent:error'
-  | 'agent:idle';
+  | 'agent:sleeping';
 
 export interface AgentEventPayload {
   instanceId: string;

@@ -26,12 +26,12 @@
  * // 创建 A2A Handler（用于接收消息）
  * const handler = new A2AHandler(messageBus, {
  *   instanceId: 'my-agent-001',
- *   supportedTypes: ['task', 'query', 'event'],
+ *   supportedTypes: ['query', 'event'],
  * });
  *
- * // 注册任务处理器
- * handler.onTask(async (payload, ctx) => {
- *   return { taskId: payload.taskId!, status: 'completed', output: { result: 'done' } };
+ * // 注册查询处理器
+ * handler.onQuery(async (payload, ctx) => {
+ *   return { messageId: ctx.message.messageId, content: { output: { result: 'done' }, status: 'completed' }, success: true };
  * });
  *
  * // 启动监听

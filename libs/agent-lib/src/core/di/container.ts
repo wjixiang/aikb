@@ -163,7 +163,7 @@ export class AgentContainer {
       // Exclude non-serializable fields from config
       const { components, clientPool, ...serializableConfig } = this.config;
       await persistenceService.saveInstanceMetadata(this.instanceId, {
-        status: AgentStatus.Idle,
+        status: AgentStatus.Sleeping,
         config: serializableConfig,
         name: this.config.agent.name,
         agentType: this.config.agent.type,
@@ -259,7 +259,7 @@ export class AgentContainer {
     // A2A Handler configuration
     const a2aHandlerConfig: A2AHandlerConfig = {
       instanceId: this.instanceId,
-      supportedTypes: ['task', 'query', 'event'],
+      supportedTypes: ['query', 'event'],
       handlerTimeout: Math.max(
         300000,
         (this.config.agent.config.apiRequestTimeout || 120000) * 5,
@@ -427,9 +427,11 @@ export class AgentContainer {
       // Note: Components are now injected via DI constructor
       // No need to manually register here
 
-      // Restore component states if this is a restored instance
+      // Restore state if this is a restored instance
       if (this.isRestoring) {
-        this.agentInstance.restoreComponentStates();
+        await this.agentInstance.restoreMemory();
+        await this.agentInstance.restoreSessionState();
+        await this.agentInstance.restoreComponentStates();
         this.isRestoring = false;
       }
 
@@ -454,6 +456,58 @@ export class AgentContainer {
 
   getContainer(): Container {
     return this.container;
+  }
+
+  /**
+   * Unload the agent instance and release all DI container resources.
+   * Called when the agent enters sleeping state to free memory.
+   *
+   * Steps:
+   * 1. Stop A2A handler listening
+   * 2. Clear lazy sleep control
+   * 3. Unbind all DI bindings
+   * 4. Null out agent reference and init promise
+   */
+  unload(): void {
+    try {
+      // Stop A2A handler listening if bound
+      if (this.container.isBound(TYPES.IA2AHandler)) {
+        const handler = this.container.get<IA2AHandler>(TYPES.IA2AHandler);
+        handler.stopListening();
+      }
+    } catch {
+      // Container may already be partially disposed
+    }
+
+    // Clear lazy sleep control resolver
+    this.lazySleepControl = new LazySleepControl();
+
+    // Unbind all DI bindings to release resources
+    this.container.unbindAll();
+
+    // Null out references
+    this.agentInstance = null;
+    this.initPromise = null;
+  }
+
+  /**
+   * Restore an agent container from a previously unloaded instance.
+   * Creates a new container that restores config from DB, rebuilds DI bindings,
+   * and resolves the agent instance with full state restoration.
+   *
+   * @param instanceId - The instance ID of the agent to restore
+   * @param options - Agent creation options (used as base, merged with stored config)
+   * @param messageBus - The shared message bus
+   * @returns A fully restored AgentContainer with agent instance ready
+   */
+  static async restore(
+    instanceId: string,
+    options: AgentCreationOptions,
+    messageBus: IMessageBus,
+  ): Promise<AgentContainer> {
+    const container = new AgentContainer(options, messageBus, instanceId);
+    await container.getAgent();
+    return container;
   }
 }
 

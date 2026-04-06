@@ -78,7 +78,7 @@ export const runtimeRoutes: FastifyPluginAsync = async (fastify) => {
           properties: {
             status: {
               type: 'string',
-              description: 'Filter by agent status (running, stopped, idle)',
+              description: 'Filter by agent status (running, sleeping, aborted)',
             },
             type: { type: 'string', description: 'Filter by agent type' },
             name: { type: 'string', description: 'Filter by agent name' },

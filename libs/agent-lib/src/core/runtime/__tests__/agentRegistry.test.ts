@@ -10,7 +10,7 @@ describe('AgentRegistry', () => {
     overrides: Partial<AgentMetadata> = {},
   ): AgentMetadata => ({
     instanceId: 'test-instance-1',
-    status: AgentStatus.Idle,
+    status: AgentStatus.Sleeping,
     name: 'Test Agent',
     agentType: 'test',
     description: 'A test agent',
@@ -33,7 +33,7 @@ describe('AgentRegistry', () => {
     });
 
     it('should update agent on re-register with same instanceId', () => {
-      const metadata1 = createTestMetadata({ status: AgentStatus.Idle });
+      const metadata1 = createTestMetadata({ status: AgentStatus.Sleeping });
       const metadata2 = createTestMetadata({ status: AgentStatus.Running });
 
       registry.register(metadata1);
@@ -77,7 +77,7 @@ describe('AgentRegistry', () => {
   describe('findByStatus', () => {
     it('should find agents by status', () => {
       registry.register(
-        createTestMetadata({ instanceId: 'agent-1', status: AgentStatus.Idle }),
+        createTestMetadata({ instanceId: 'agent-1', status: AgentStatus.Sleeping }),
       );
       registry.register(
         createTestMetadata({
@@ -86,10 +86,10 @@ describe('AgentRegistry', () => {
         }),
       );
       registry.register(
-        createTestMetadata({ instanceId: 'agent-3', status: AgentStatus.Idle }),
+        createTestMetadata({ instanceId: 'agent-3', status: AgentStatus.Sleeping }),
       );
 
-      const idleAgents = registry.findByStatus(AgentStatus.Idle);
+      const idleAgents = registry.findByStatus(AgentStatus.Sleeping);
       const runningAgents = registry.findByStatus(AgentStatus.Running);
 
       expect(idleAgents).toHaveLength(2);
@@ -100,7 +100,7 @@ describe('AgentRegistry', () => {
     });
 
     it('should return empty array when no agents match status', () => {
-      registry.register(createTestMetadata({ status: AgentStatus.Idle }));
+      registry.register(createTestMetadata({ status: AgentStatus.Sleeping }));
 
       const runningAgents = registry.findByStatus(AgentStatus.Running);
 
@@ -108,10 +108,10 @@ describe('AgentRegistry', () => {
     });
   });
 
-  describe('findIdle', () => {
-    it('should return all idle agents', () => {
+  describe('findSleeping', () => {
+    it('should return all sleeping agents', () => {
       registry.register(
-        createTestMetadata({ instanceId: 'agent-1', status: AgentStatus.Idle }),
+        createTestMetadata({ instanceId: 'agent-1', status: AgentStatus.Sleeping }),
       );
       registry.register(
         createTestMetadata({
@@ -120,10 +120,10 @@ describe('AgentRegistry', () => {
         }),
       );
       registry.register(
-        createTestMetadata({ instanceId: 'agent-3', status: AgentStatus.Idle }),
+        createTestMetadata({ instanceId: 'agent-3', status: AgentStatus.Sleeping }),
       );
 
-      const idleAgents = registry.findIdle();
+      const idleAgents = registry.findSleeping();
 
       expect(idleAgents).toHaveLength(2);
     });
@@ -151,7 +151,7 @@ describe('AgentRegistry', () => {
 
   describe('update', () => {
     it('should update agent metadata', () => {
-      registry.register(createTestMetadata({ status: AgentStatus.Idle }));
+      registry.register(createTestMetadata({ status: AgentStatus.Sleeping }));
 
       registry.update('test-instance-1', { status: AgentStatus.Running });
 

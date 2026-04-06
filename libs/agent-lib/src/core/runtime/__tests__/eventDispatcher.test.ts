@@ -218,7 +218,7 @@ describe('EventDispatcher', () => {
         'agent:stopped',
         'agent:destroyed',
         'agent:error',
-        'agent:idle',
+        'agent:sleeping',
         'task:submitted',
         'task:assigned',
         'task:started',

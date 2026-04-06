@@ -85,7 +85,7 @@ export class AgentSessionManager implements ISessionManager {
     }
 
     const finalStatus =
-      reason === 'aborted' ? AgentStatus.Aborted : AgentStatus.Completed;
+      reason === 'aborted' ? AgentStatus.Aborted : AgentStatus.Sleeping;
 
     try {
       await this.persistenceService.updateSession(state.instanceId, {
@@ -113,6 +113,48 @@ export class AgentSessionManager implements ISessionManager {
         { error, instanceId: state.instanceId },
         '[AgentSessionManager] Failed to end session',
       );
+    }
+  }
+
+  async restoreSession(): Promise<SessionState | null> {
+    if (!this.persistenceService) return null;
+
+    try {
+      const data = await this.persistenceService.getSession(this.instanceId);
+      if (!data) return null;
+
+      const state: SessionState = {
+        instanceId: data.instanceId,
+        status: data.status,
+        tokenUsage: {
+          totalTokensIn: data.totalTokensIn,
+          totalTokensOut: data.totalTokensOut,
+          totalCost: data.totalCost,
+          contextTokens: 0,
+        },
+        toolUsage: (data.toolUsage as SessionState['toolUsage']) || {},
+        consecutiveMistakeCount: data.consecutiveMistakeCount,
+        collectedErrors: data.collectedErrors || [],
+        abortInfo: data.abortReason
+          ? {
+              reason: data.abortReason,
+              timestamp: Date.now(),
+              source: (data.abortSource as SessionState['abortInfo']['source']) || 'manual',
+            }
+          : null,
+      };
+
+      this.logger?.info(
+        { instanceId: this.instanceId, status: state.status },
+        '[AgentSessionManager] Session restored',
+      );
+      return state;
+    } catch (error) {
+      this.logger?.error(
+        { error, instanceId: this.instanceId },
+        '[AgentSessionManager] Failed to restore session',
+      );
+      return null;
     }
   }
 }

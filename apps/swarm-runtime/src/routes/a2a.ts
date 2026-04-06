@@ -176,15 +176,18 @@ export const a2aRoutes: FastifyPluginAsync = async (fastify) => {
           fastify.agentRuntime.getRuntimeClient(SERVER_INSTANCE_ID);
 
         console.log(
-          `[A2A] Sending task ${resolvedTaskId} to ${resolvedTargetId}, waiting for ACK...`,
+          `[A2A] Sending query ${resolvedTaskId} to ${resolvedTargetId}, waiting for ACK...`,
         );
-        const conversationId = await client.sendA2ATaskAndWaitForAck(
+        const conversationId = await client.sendA2AQuery(
           resolvedTargetId,
-          resolvedTaskId,
           resolvedDescription,
-          resolvedInput,
-          { priority: resolvedPriority },
-        );
+          {
+            input: resolvedInput,
+            description: resolvedDescription,
+            priority: resolvedPriority,
+            ackOnly: true,
+          },
+        ) as string;
         console.log(
           `[A2A] ACK received for task ${resolvedTaskId}, conversationId: ${conversationId}`,
         );

@@ -10,7 +10,7 @@ const MockAgentContainer = vi.hoisted(() => {
   class MockAgentContainer {
     getAgent = vi.fn().mockResolvedValue({
       getTaskId: 'mock-task-id',
-      status: AgentStatus.Idle,
+      status: AgentStatus.Sleeping,
       workspace: {},
       getMemoryModule: vi.fn().mockReturnValue({}),
     });

@@ -21,7 +21,13 @@ export interface ISessionManager {
 
   /**
    * End the current session
-   * Updates both Session and Instance status to 'completed' or 'aborted'
+   * Updates both Session and Instance status to 'sleeping' or 'aborted'
    */
   endSession(state: SessionState, reason?: string): Promise<void>;
+
+  /**
+   * Restore session state from persistence.
+   * Returns the saved SessionState or null if no session exists.
+   */
+  restoreSession(): Promise<SessionState | null>;
 }

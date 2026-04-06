@@ -283,17 +283,16 @@ async function testA2A(options: {
     for (let i = 0; i < taskCount; i++) {
       const taskId = `test-task-${i + 1}`;
       try {
-        const response = await sender
+        await sender
           .getRuntimeClient()
-          .sendA2ATask(
+          .sendA2AQuery(
             receiverId,
-            taskId,
             `Test task ${i + 1}: Search for literature`,
-            { query: `test query ${i + 1}` },
+            { input: { query: `test query ${i + 1}` }, description: `Test task ${i + 1}` },
           );
         results.push({
           taskId,
-          success: response.status === 'completed',
+          success: true,
         });
       } catch (error) {
         results.push({
@@ -421,17 +420,16 @@ async function testRedis(options: {
 
       if (agent1) {
         try {
-          const response = await agent1
+          await agent1
             .getRuntimeClient()
-            .sendA2ATask(
+            .sendA2AQuery(
               agent2Id,
-              'cross-runtime-test',
               'Cross-runtime test task',
-              { test: true },
+              { input: { test: true }, description: 'cross-runtime-test' },
             );
 
           spinner.succeed(
-            `Cross-runtime communication successful: ${response.status}`,
+            'Cross-runtime communication successful',
           );
         } catch (error) {
           spinner.warn(`Cross-runtime communication failed: ${error}`);

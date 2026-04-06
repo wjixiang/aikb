@@ -1,7 +1,6 @@
 export interface IAgentSleepControl {
   isSleeping(): boolean;
-  sleep(reason: string): Promise<unknown>;
-  wakeUp(data?: unknown): void;
+  sleep(reason: string): Promise<void>;
 }
 
 export class LazySleepControl implements IAgentSleepControl {
@@ -24,11 +23,7 @@ export class LazySleepControl implements IAgentSleepControl {
     return this.delegate.isSleeping();
   }
 
-  sleep(reason: string): Promise<unknown> {
+  sleep(reason: string): Promise<void> {
     return this.delegate.sleep(reason);
-  }
-
-  wakeUp(data?: unknown): void {
-    this.delegate.wakeUp(data);
   }
 }

@@ -290,7 +290,7 @@ export function createObservableAgent<T extends Agent>(
 
         // Update tracking variables
         lastStatus = newStatus;
-        isCompleted = newStatus === AgentStatus.Completed;
+        isCompleted = newStatus === AgentStatus.Sleeping;
         isAborted = newStatus === AgentStatus.Aborted;
 
         // Set the value first
@@ -347,7 +347,7 @@ function checkAndNotifyStatus(
   const taskId = agent.getTaskId;
 
   // Check for task completion
-  if (currentStatus === AgentStatus.Completed) {
+  if (currentStatus === AgentStatus.Sleeping) {
     callbacks.onTaskCompleted?.(taskId);
   }
 

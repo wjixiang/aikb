@@ -13,12 +13,15 @@ import type Anthropic from '@anthropic-ai/sdk';
 
 /**
  * Agent execution status
+ *
+ * Three states:
+ * - Sleeping: Agent is not running (covers former idle/completed/sleep)
+ * - Running: Agent is actively processing
+ * - Aborted: Agent was terminated
  */
 export enum AgentStatus {
-  Idle = 'idle',
+  Sleeping = 'sleeping',
   Running = 'running',
-  Sleep = 'sleep',
-  Completed = 'completed',
   Aborted = 'aborted',
 }
 

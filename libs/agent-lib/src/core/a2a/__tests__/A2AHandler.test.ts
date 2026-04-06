@@ -5,10 +5,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { A2AHandler } from '../A2AHandler';
 import type { IMessageBus } from '../../runtime/topology/messaging/MessageBus';
-import type { A2AMessage, A2APayload } from '../types';
+import type { A2AMessage } from '../types';
 import {
   createA2AMessage,
-  createA2ATaskMessage,
   createA2AQueryMessage,
 } from '../types';
 
@@ -39,90 +38,30 @@ describe('A2AHandler', () => {
   let handler: A2AHandler;
   let messageBus: IMessageBus;
 
-  const createTaskMessage = (from: string, to: string): A2AMessage => {
-    return createA2ATaskMessage(from, to, 'task-001', 'Test task', {
-      query: 'test',
-    });
-  };
-
-  const createQueryMessage = (from: string, to: string): A2AMessage => {
-    return createA2AQueryMessage(from, to, 'What is the status?');
+  const createQueryMessage = (from: string, to: string, query = 'What is the status?'): A2AMessage => {
+    return createA2AQueryMessage(from, to, query);
   };
 
   beforeEach(() => {
     messageBus = createMockMessageBus();
     handler = new A2AHandler(messageBus, {
       instanceId: 'test-agent-001',
-      supportedTypes: ['task', 'query', 'event', 'cancel', 'response'],
+      supportedTypes: ['query', 'event', 'cancel', 'response'],
       handlerTimeout: 5000,
     });
   });
 
   describe('constructor', () => {
     it('should create handler with correct instanceId', () => {
-      // Handler is created, just verify no error
       expect(handler).toBeDefined();
     });
   });
 
   describe('handleMessage', () => {
     it('should ignore messages not addressed to this agent', async () => {
-      const message = createTaskMessage('agent-002', 'agent-003'); // Not to test-agent-001
-
-      const result = await handler.handleMessage(message);
-
-      expect(result).toBeUndefined();
-    });
-
-    it('should process task message with registered handler', async () => {
-      const message = createTaskMessage('agent-002', 'test-agent-001');
-
-      handler.onTask(async (payload, ctx) => ({
-        taskId: 'task-001',
-        status: 'completed',
-        output: { result: 'success' },
-      }));
-
-      const result = await handler.handleMessage(message);
-
-      expect(result).toBeDefined();
-      expect(result?.status).toBe('completed');
-      // Note: sendAck is NOT called automatically anymore - task is stored in pendingTasks
-      // Component should call acknowledge() when ready to process
-      expect(messageBus.sendAck).not.toHaveBeenCalled();
-      expect(messageBus.sendResult).toHaveBeenCalled();
-    });
-
-    it('should store task in pendingTasks and allow manual acknowledge', async () => {
-      const message = createTaskMessage('agent-002', 'test-agent-001');
-
-      handler.onTask(async (payload, ctx) => ({
-        taskId: 'task-001',
-        status: 'completed',
-        output: { result: 'success' },
-      }));
-
-      const result = await handler.handleMessage(message);
-
-      // Task should be in pendingTasks
-      const pending = handler.getPendingTasks();
-      expect(pending).toHaveLength(1);
-      expect(pending[0].conversationId).toBe(message.conversationId);
-
-      // Manual acknowledge should send ACK
-      await handler.acknowledge(message.conversationId);
-      expect(messageBus.sendAck).toHaveBeenCalled();
-
-      // sendResult was called automatically after handler returned
-      expect(messageBus.sendResult).toHaveBeenCalled();
-    });
-
-    it('should send error when no task handler registered', async () => {
-      const message = createTaskMessage('agent-002', 'test-agent-001');
+      const message = createQueryMessage('agent-002', 'agent-003');
 
       await handler.handleMessage(message);
-
-      expect(messageBus.sendError).toHaveBeenCalled();
     });
 
     it('should process query message with registered handler', async () => {
@@ -130,7 +69,7 @@ describe('A2AHandler', () => {
 
       handler.onQuery(async (payload, ctx) => ({
         messageId: 'resp-001',
-        content: { output: 'Query result' },
+        content: { output: 'Query result', status: 'completed' },
         success: true,
       }));
 
@@ -153,7 +92,7 @@ describe('A2AHandler', () => {
         'agent-002',
         'test-agent-001',
         'event',
-        { eventType: 'task:completed', data: { taskId: 'task-001' } },
+        { eventType: 'query:completed', data: { queryId: 'q-001' } },
       );
 
       const eventHandler = vi.fn();
@@ -162,16 +101,6 @@ describe('A2AHandler', () => {
       await handler.handleMessage(eventMessage);
 
       expect(eventHandler).toHaveBeenCalled();
-    });
-  });
-
-  describe('onTask', () => {
-    it('should register task handler', () => {
-      const taskHandler = vi.fn();
-      handler.onTask(taskHandler);
-
-      // Just verify no error and handler can be called
-      expect(() => handler.onTask(taskHandler)).not.toThrow();
     });
   });
 
@@ -199,6 +128,17 @@ describe('A2AHandler', () => {
       handler.onCancel(cancelHandler);
 
       expect(() => handler.onCancel(cancelHandler)).not.toThrow();
+    });
+  });
+
+  describe('setQueryCompletionCallback / completeQuery', () => {
+    it('should invoke callback when completeQuery is called', () => {
+      const callback = vi.fn();
+      handler.setQueryCompletionCallback(callback);
+
+      handler.completeQuery('conv-001', { result: 'done' }, 'completed');
+
+      expect(callback).toHaveBeenCalledWith('conv-001', { result: 'done' }, 'completed');
     });
   });
 

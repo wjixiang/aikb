@@ -67,10 +67,10 @@ const agentRuntimePluginFunc = async (
     );
   });
 
-  runtime.on('agent:idle', (event: { payload: AgentEventPayload }) => {
+  runtime.on('agent:sleeping', (event: { payload: AgentEventPayload }) => {
     fastify.log.debug(
-      { event: 'agent:idle', instanceId: event.payload.instanceId },
-      'Agent idle',
+      { event: 'agent:sleeping', instanceId: event.payload.instanceId },
+      'Agent sleeping',
     );
   });
 

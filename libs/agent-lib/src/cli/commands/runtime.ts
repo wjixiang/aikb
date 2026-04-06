@@ -175,8 +175,8 @@ async function runtimeStart(options: {
     log.info(`Agent started: ${event.payload}`);
   });
 
-  runtime.on('agent:idle', (event) => {
-    log.debug(`Agent idle: ${event.payload}`);
+  runtime.on('agent:sleeping', (event) => {
+    log.debug(`Agent sleeping: ${event.payload}`);
   });
 
   runtime.on('agent:error', (event) => {

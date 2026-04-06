@@ -93,57 +93,6 @@ describe('A2AClient', () => {
     });
   });
 
-  describe('sendTask', () => {
-    it('should send task message via messageBus', async () => {
-      const taskId = 'task-001';
-      const description = 'Search PubMed for papers';
-      const input = { query: 'cancer treatment' };
-
-      registry.register({
-        instanceId: 'agent-002',
-        name: 'Agent 002',
-        description: 'Test agent',
-        version: '1.0.0',
-        capabilities: [],
-        skills: [],
-        endpoint: 'agent-002',
-      });
-
-      await client.sendTask('agent-002', taskId, description, input);
-
-      expect(messageBus.send).toHaveBeenCalled();
-      const sentMessage = (messageBus.send as any).mock.calls[0][0];
-      expect(sentMessage.from).toBe('test-agent-001');
-      expect(sentMessage.to).toBe('agent-002');
-      expect(sentMessage.content.content.taskId).toBe(taskId);
-      expect(sentMessage.content.content.description).toBe(description);
-      expect(sentMessage.content.content.input).toEqual(input);
-    });
-
-    it('should include priority when specified', async () => {
-      registry.register({
-        instanceId: 'agent-002',
-        name: 'Agent 002',
-        description: 'Test agent',
-        version: '1.0.0',
-        capabilities: [],
-        skills: [],
-        endpoint: 'agent-002',
-      });
-
-      await client.sendTask(
-        'agent-002',
-        'task-001',
-        'test',
-        {},
-        { priority: 'high' },
-      );
-
-      const sentMessage = (messageBus.send as any).mock.calls[0][0];
-      expect(sentMessage.content.content.priority).toBe('high');
-    });
-  });
-
   describe('sendQuery', () => {
     beforeEach(() => {
       registry.register({
@@ -175,6 +124,26 @@ describe('A2AClient', () => {
 
       const sentMessage = (messageBus.send as any).mock.calls[0][0];
       expect(sentMessage.content.content.expectedFormat).toBe('json');
+    });
+
+    it('should include input and description when specified', async () => {
+      await client.sendQuery('agent-002', 'test', {
+        input: { query: 'cancer treatment' },
+        description: 'Search PubMed',
+        priority: 'high',
+      });
+
+      const sentMessage = (messageBus.send as any).mock.calls[0][0];
+      expect(sentMessage.content.content.input).toEqual({ query: 'cancer treatment' });
+      expect(sentMessage.content.content.description).toBe('Search PubMed');
+      expect(sentMessage.content.content.priority).toBe('high');
+    });
+
+    it('should return conversationId in ackOnly mode', async () => {
+      const result = await client.sendQuery('agent-002', 'test', { ackOnly: true });
+
+      expect(typeof result).toBe('string');
+      expect((result as string).startsWith('conv_')).toBe(true);
     });
   });
 
@@ -225,12 +194,12 @@ describe('A2AClient', () => {
 
   describe('sendCancel', () => {
     it('should send cancel message', async () => {
-      await client.sendCancel('agent-002', 'task-001', 'conv-001');
+      await client.sendCancel('agent-002', 'conv-001');
 
       expect(messageBus.publish).toHaveBeenCalled();
       const publishedMessage = (messageBus.publish as any).mock.calls[0][0];
       expect(publishedMessage.content.messageType).toBe('cancel');
-      expect(publishedMessage.content.content.taskId).toBe('task-001');
+      expect(publishedMessage.content.content.status).toBe('cancelled');
     });
   });
 });

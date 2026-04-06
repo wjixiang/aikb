@@ -43,7 +43,7 @@ describe('Agent - Quick Integration Test', () => {
 
     const agent = await container.getAgent();
     expect(agent).toBeDefined();
-    expect(agent.status).toBe(AgentStatus.Idle);
+    expect(agent.status).toBe(AgentStatus.Sleeping);
   });
 
   it('should run agent with mocked ApiClient', async () => {

@@ -107,6 +107,19 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     return this.runtime.stopAgent(instanceId);
   }
 
+  async sleepAgent(
+    instanceIdOrAlias: string,
+    reason?: string,
+  ): Promise<void> {
+    const instanceId = this.resolveAgentId(instanceIdOrAlias);
+    return this.runtime.sleepAgent(instanceId, reason);
+  }
+
+  async restoreAgent(instanceIdOrAlias: string): Promise<unknown> {
+    const instanceId = this.resolveAgentId(instanceIdOrAlias);
+    return this.runtime.restoreAgent(instanceId);
+  }
+
   async destroyAgent(
     instanceIdOrAlias: string,
     options?: { cascade?: boolean },

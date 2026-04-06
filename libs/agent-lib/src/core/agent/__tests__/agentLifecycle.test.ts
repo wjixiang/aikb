@@ -10,13 +10,13 @@ import { AgentStatus } from '../../common/types.js';
  * 1. Agent internal status (_status) and registry status should be consistent
  * 2. listChildAgents reads from registry, not from agent's internal state
  * 3. startAgent should update registry BEFORE calling agent.start()
- * 4. stopAgent should reset agent internal state to Idle via resetToIdle()
+ * 4. stopAgent should reset agent internal state to Sleeping via resetToSleeping()
  */
 
 describe('Agent Lifecycle Status Documentation', () => {
   describe('Expected status transitions', () => {
-    it('createAgent: Initial status should be Idle', () => {
-      // After createAgent(), both agent._status and registry should show Idle
+    it('createAgent: Initial status should be Sleeping', () => {
+      // After createAgent(), both agent._status and registry should show Sleeping
       expect(true).toBe(true); // Documentation
     });
 
@@ -27,29 +27,27 @@ describe('Agent Lifecycle Status Documentation', () => {
       expect(true).toBe(true);
     });
 
-    it('stopAgent: Should call resetToIdle() after abort()', () => {
+    it('stopAgent: Should call resetToSleeping() after abort()', () => {
       // After stopAgent():
       // 1. agent.abort() sets agent._status = Aborted
-      // 2. agent.resetToIdle() sets agent._status = Idle
-      // 3. registry.update(Idle) sets registry status = Idle
-      // This ensures startAgent() can succeed (checks agent.status === Idle)
+      // 2. agent.resetToSleeping() sets agent._status = Sleeping
+      // 3. registry.update(Sleeping) sets registry status = Sleeping
+      // This ensures startAgent() can succeed (checks agent.status === Sleeping)
       expect(true).toBe(true);
     });
 
     it('listChildAgents should reflect current registry status', () => {
       // listChildAgents reads from registry, not from agent internal state
       // If registry shows Running, listChildAgents returns Running
-      // If registry shows Idle, listChildAgents returns Idle
+      // If registry shows Sleeping, listChildAgents returns Sleeping
       expect(true).toBe(true);
     });
   });
 
   describe('Agent status values', () => {
     it('should have correct status enum values', () => {
-      expect(AgentStatus.Idle).toBe('idle');
+      expect(AgentStatus.Sleeping).toBe('sleeping');
       expect(AgentStatus.Running).toBe('running');
-      expect(AgentStatus.Sleep).toBe('sleep');
-      expect(AgentStatus.Completed).toBe('completed');
       expect(AgentStatus.Aborted).toBe('aborted');
     });
   });
@@ -59,29 +57,21 @@ describe('Lifecycle State Machine', () => {
   /**
    * Valid state transitions:
    *
-   * Idle -> Running (via startAgent)
-   * Running -> Completed (via agent.complete())
+   * Sleeping -> Running (via startAgent or A2A query)
+   * Running -> Sleeping (via agent.complete() or agent.sleep())
    * Running -> Aborted (via agent.abort())
-   * Running -> Sleep (via agent.sleep())
-   * Sleep -> Running (via agent.wakeUp())
-   * Running -> Idle (via stopAgent + resetToIdle)
-   * Completed -> Idle (via resetToIdle)
-   * Aborted -> Idle (via resetToIdle)
+   * Aborted -> Sleeping (via stopAgent + resetToSleeping)
    */
 
   it('documents valid state transitions', () => {
     const transitions: Array<[AgentStatus, AgentStatus]> = [
-      [AgentStatus.Idle, AgentStatus.Running],
-      [AgentStatus.Running, AgentStatus.Completed],
+      [AgentStatus.Sleeping, AgentStatus.Running],
+      [AgentStatus.Running, AgentStatus.Sleeping],
       [AgentStatus.Running, AgentStatus.Aborted],
-      [AgentStatus.Running, AgentStatus.Sleep],
-      [AgentStatus.Sleep, AgentStatus.Running],
-      [AgentStatus.Running, AgentStatus.Idle],
-      [AgentStatus.Completed, AgentStatus.Idle],
-      [AgentStatus.Aborted, AgentStatus.Idle],
+      [AgentStatus.Aborted, AgentStatus.Sleeping],
     ];
 
     // All transitions should be valid
-    expect(transitions.length).toBe(8);
+    expect(transitions.length).toBe(4);
   });
 });

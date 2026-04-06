@@ -103,11 +103,8 @@ export class PostgresPersistenceService implements IPersistenceService {
     if (data.collectedErrors !== undefined)
       updateData.collectedErrors = data.collectedErrors;
 
-    // 自动设置 completedAt
-    if (
-      data.status === AgentStatus.Completed ||
-      data.status === AgentStatus.Aborted
-    ) {
+    // 自动设置 completedAt for aborted sessions
+    if (data.status === AgentStatus.Aborted) {
       updateData.completedAt = new Date();
     }
 
@@ -304,11 +301,8 @@ export class PostgresPersistenceService implements IPersistenceService {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.agentType !== undefined) updateData.agentType = data.agentType;
 
-    // 自动设置 completedAt
-    if (
-      data.status === AgentStatus.Completed ||
-      data.status === AgentStatus.Aborted
-    ) {
+    // 自动设置 completedAt for aborted instances
+    if (data.status === AgentStatus.Aborted) {
       updateData.completedAt = new Date();
     }
 

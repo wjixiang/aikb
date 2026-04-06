@@ -38,13 +38,14 @@
  *
  * 3. **Event System**
  *    - agent:created, agent:started, agent:stopped, agent:destroyed
- *    - agent:idle - agent became idle and is ready for work
+ *    - agent:sleeping - agent became sleeping and is ready for work
  *
  * @module AgentRuntime
  */
 
 import type { Agent } from '../agent/agent.js';
-import type { AgentContainer, AgentCreationOptions } from '../di/container.js';
+import { AgentContainer } from '../di/container.js';
+import type { AgentCreationOptions, UnifiedAgentConfig } from '../di/container.js';
 import { TYPES } from '../di/types.js';
 import type { HookModule } from '../hooks/HookModule.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
@@ -744,7 +745,7 @@ export class AgentRuntime implements IAgentRuntime {
     const metadata: AgentMetadata = {
       instanceId,
       alias,
-      status: AgentStatus.Idle,
+      status: AgentStatus.Sleeping,
       name: unifiedConfig.agent.name,
       agentType: unifiedConfig.agent.type,
       description: unifiedConfig.agent.description,
@@ -837,8 +838,8 @@ export class AgentRuntime implements IAgentRuntime {
     const agent = await container.getAgent();
     const currentStatus = agent.status;
 
-    if (currentStatus !== AgentStatus.Idle) {
-      throw new Error(`Agent is not idle: ${currentStatus}`);
+    if (currentStatus !== AgentStatus.Sleeping) {
+      throw new Error(`Agent is not sleeping: ${currentStatus}`);
     }
 
     // Update registry BEFORE starting - this ensures correct status during agent execution
@@ -868,20 +869,17 @@ export class AgentRuntime implements IAgentRuntime {
 
     const agent = await container.getAgent();
 
-    // Abort running or sleeping agent
-    if (
-      agent.status === AgentStatus.Running ||
-      agent.status === AgentStatus.Sleep
-    ) {
+    // Abort running agent
+    if (agent.status === AgentStatus.Running) {
       agent.abort('Runtime stop', 'manual');
     }
 
-    // Reset agent internal status to Idle so it can be restarted
+    // Reset agent internal status to Sleeping so it can be restarted
     // Note: abort() sets _status to Aborted, but stop should allow restart
-    agent.resetToIdle();
+    agent.resetToSleeping();
 
     // Update registry
-    this.registry.update(instanceId, { status: AgentStatus.Idle });
+    this.registry.update(instanceId, { status: AgentStatus.Sleeping });
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:stopped', { instanceId });
@@ -921,6 +919,126 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:destroyed', { instanceId });
+  }
+
+  /**
+   * Put an agent to sleep — saves state and unloads the container.
+   * The agent remains registered in the registry and can be restored later.
+   *
+   * @param instanceId The agent's unique instance identifier
+   * @param reason Optional reason for sleeping
+   */
+  async sleepAgent(
+    instanceId: string,
+    reason: string = 'Manual sleep',
+  ): Promise<void> {
+    const container = this.containers.get(instanceId);
+    if (!container) {
+      throw new Error(`Agent not found: ${instanceId}`);
+    }
+
+    const agent = await container.getAgent();
+
+    // Save state and transition to Sleeping
+    await agent.sleep(reason);
+
+    // Unwire event stream
+    const hookModule = container
+      .getContainer()
+      .get<HookModule>(TYPES.HookModule);
+    if (hookModule) {
+      this.eventStream.unwireAgent(hookModule, instanceId);
+    }
+
+    // Unload the container (releases all DI resources)
+    container.unload();
+
+    // Update registry status
+    this.registry.update(instanceId, { status: AgentStatus.Sleeping });
+
+    // Emit event
+    this.eventDispatcher.emitEvent('agent:sleeping', { instanceId, reason });
+  }
+
+  /**
+   * Restore a sleeping agent — rebuilds the container from DB state.
+   *
+   * @param instanceId The agent's unique instance identifier
+   * @returns The restored Agent instance
+   */
+  async restoreAgent(instanceId: string): Promise<Agent> {
+    const existingContainer = this.containers.get(instanceId);
+
+    // If container exists and has an agent, it's already running
+    if (existingContainer?.agent) {
+      const agent = await existingContainer.getAgent();
+      if (agent.status === AgentStatus.Running) {
+        return agent;
+      }
+    }
+
+    // Get stored config for the agent
+    const metadata = this.registry.get(instanceId);
+    if (!metadata) {
+      throw new Error(`Agent not found in registry: ${instanceId}`);
+    }
+
+    // Build options from stored config
+    const storedConfig = metadata.config as Partial<UnifiedAgentConfig> | undefined;
+    const options: AgentCreationOptions = {
+      agent: {
+        ...(storedConfig?.agent || {}),
+        name: metadata.name,
+        type: metadata.agentType,
+      },
+      api: (storedConfig?.api || this.defaultApiConfig) as AgentCreationOptions['api'],
+      workspace: storedConfig?.workspace,
+      memory: storedConfig?.memory,
+      persistence: storedConfig?.persistence,
+      components: storedConfig?.components,
+      hooks: storedConfig?.hooks,
+      runtimeControl: storedConfig?.runtimeControl,
+      clientPool: this.config.clientPool,
+    };
+
+    // Create new container via restore (loads config from DB)
+    const container = await AgentContainer.restore(
+      instanceId,
+      options,
+      this.messageBus,
+    );
+
+    // Store the new container
+    this.containers.set(instanceId, container);
+
+    // Get the restored agent
+    const agent = await container.getAgent();
+
+    // Re-inject runtime client
+    const controlClient = this.createControlClient(instanceId);
+    agent.setRuntimeClient(controlClient);
+
+    // Re-inject A2A client
+    const agentCardRegistry = getGlobalAgentRegistry();
+    const a2aClient = createA2AClient(this.messageBus, agentCardRegistry, {
+      instanceId,
+    });
+    agent.setA2AClient(a2aClient);
+
+    // Re-wire event stream
+    const hookModule = container
+      .getContainer()
+      .get<HookModule>(TYPES.HookModule);
+    if (hookModule) {
+      this.eventStream.wireAgent(hookModule, instanceId);
+    }
+
+    // Update registry status
+    this.registry.update(instanceId, { status: AgentStatus.Running });
+
+    console.log(`[AgentRuntime] Agent restored: ${instanceId}`);
+
+    return agent;
   }
 
   // ============================================
@@ -1092,7 +1210,7 @@ export class AgentRuntime implements IAgentRuntime {
    * - `agent:started` - Agent started
    * - `agent:stopped` - Agent stopped
    * - `agent:destroyed` - Agent destroyed
-   * - `agent:idle` - Agent became idle
+   * - `agent:sleeping` - Agent became sleeping
    *
    * @param eventType The type of event to subscribe to
    * @param handler Callback function for the event
@@ -1184,10 +1302,8 @@ export class AgentRuntime implements IAgentRuntime {
   async getStats(): Promise<RuntimeStats> {
     const allAgents = this.registry.getAll();
     const agentsByStatus: Record<AgentStatus, number> = {
-      [AgentStatus.Idle]: 0,
+      [AgentStatus.Sleeping]: 0,
       [AgentStatus.Running]: 0,
-      [AgentStatus.Sleep]: 0,
-      [AgentStatus.Completed]: 0,
       [AgentStatus.Aborted]: 0,
     };
 
@@ -1517,14 +1633,24 @@ export class AgentRuntime implements IAgentRuntime {
       }
     }
 
-    // Stop the agent
-    await this.stopAgent(instanceId);
+    // Abort the agent if running
+    const agent = container.agent;
+    if (agent && (agent.status === AgentStatus.Running)) {
+      agent.abort('Cascade destroy', 'manual');
+    }
 
     // Unwire event stream from agent's HookModule
-    const hookModule = container.getContainer().get<HookModule>(TYPES.HookModule);
-    if (hookModule) {
-      this.eventStream.unwireAgent(hookModule, instanceId);
+    try {
+      const hookModule = container.getContainer().get<HookModule>(TYPES.HookModule);
+      if (hookModule) {
+        this.eventStream.unwireAgent(hookModule, instanceId);
+      }
+    } catch {
+      // Container may already be partially disposed
     }
+
+    // Unload the container (releases all DI resources)
+    container.unload();
 
     // Remove from parent's child list
     const metadata = this.registry.get(instanceId);
