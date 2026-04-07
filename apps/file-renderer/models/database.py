@@ -1,113 +1,38 @@
 """
-Database models for document processing
+Database models and session management.
 
-Uses SQLAlchemy 2.0 with async support.
+Unified Task model for async task tracking + async/sync SQLAlchemy engines.
 """
 
 from datetime import datetime
+from typing import AsyncGenerator
 from uuid import uuid4
 
-from sqlalchemy import String, Text, Integer, Float, DateTime, JSON, Boolean
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import String, Text, Float, DateTime, JSON, func, select, delete as sa_delete
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, sessionmaker
+
+from config import settings
 
 
 class Base(DeclarativeBase):
     """Base class for all models"""
+
     pass
 
 
-class Document(Base):
-    """Document model for storing file metadata"""
+class Task(Base):
+    """Unified task model for conversion and chunking operations"""
 
-    __tablename__ = "documents"
-
-    id: Mapped[str] = mapped_column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid4()),
-    )
-    filename: Mapped[str] = mapped_column(String(512), nullable=False, index=True)
-    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
-    content_type: Mapped[str] = mapped_column(String(128), nullable=False)
-    file_path: Mapped[str] = mapped_column(String(1024), nullable=False)
-
-    # Document metadata
-    page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    title: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    author: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    subject: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    keywords: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        nullable=False,
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
-        nullable=False,
-    )
-
-    # Additional metadata
-    metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-
-    def __repr__(self) -> str:
-        return f"<Document(id={self.id}, filename={self.filename})>"
-
-
-class ConversionCache(Base):
-    """Conversion cache for storing conversion results"""
-
-    __tablename__ = "conversion_cache"
+    __tablename__ = "tasks"
 
     id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid4()),
     )
-    document_id: Mapped[str] = mapped_column(
-        String(36),
-        nullable=False,
-        index=True,
-    )
-    output_format: Mapped[str] = mapped_column(
+    task_type: Mapped[str] = mapped_column(
         String(32),
-        nullable=False,
-    )
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-
-    # Conversion metadata
-    page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    char_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    conversion_options: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        nullable=False,
-    )
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
-    def __repr__(self) -> str:
-        return f"<ConversionCache(id={self.id}, document_id={self.document_id}, format={self.output_format})>"
-
-
-class ConversionTaskDB(Base):
-    """Conversion task tracking model"""
-
-    __tablename__ = "conversion_tasks"
-
-    id: Mapped[str] = mapped_column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid4()),
-    )
-    document_id: Mapped[str] = mapped_column(
-        String(36),
         nullable=False,
         index=True,
     )
@@ -115,34 +40,125 @@ class ConversionTaskDB(Base):
         String(32),
         nullable=False,
         default="pending",
+        index=True,
     )
-    output_format: Mapped[str] = mapped_column(
-        String(32),
-        nullable=False,
-    )
-
-    # Progress tracking
-    progress: Mapped[float] = mapped_column(
-        Float,
-        default=0.0,
-        nullable=False,
-    )
+    input_params: Mapped[dict] = mapped_column(JSON, nullable=False)
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    progress: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Result reference
-    cache_id: Mapped[str | None] = mapped_column(
-        String(36),
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
 
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        nullable=False,
-    )
-    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
     def __repr__(self) -> str:
-        return f"<ConversionTaskDB(id={self.id}, status={self.status})>"
+        return f"<Task(id={self.id}, type={self.task_type}, status={self.status})>"
+
+
+# --- Async engine (for FastAPI endpoints) ---
+
+
+def _get_async_url() -> str:
+    url = settings.database.url
+    if url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
+async_engine = create_async_engine(
+    _get_async_url(),
+    pool_pre_ping=True,
+    pool_size=settings.database.pool_size,
+    max_overflow=settings.database.max_overflow,
+    pool_recycle=3600,
+    echo=settings.debug,
+)
+
+AsyncSessionLocal = async_sessionmaker(
+    async_engine,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
+)
+
+
+async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
+    """FastAPI dependency for async DB sessions."""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+
+async def init_db() -> None:
+    """Create all tables."""
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def check_db() -> bool:
+    """Check database connectivity."""
+    try:
+        async with async_engine.connect() as conn:
+            await conn.execute(select(1))
+        return True
+    except Exception:
+        return False
+
+
+async def dispose_db() -> None:
+    """Dispose the async engine."""
+    await async_engine.dispose()
+
+
+# --- Sync engine (lazy, for use inside ThreadPoolExecutor threads) ---
+
+_sync_engine = None
+_sync_session_local = None
+
+
+def _get_sync_url() -> str:
+    url = settings.database.url
+    if url.startswith("postgresql+asyncpg://"):
+        return url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    return url
+
+
+def get_sync_engine():
+    """Lazy-init sync engine (avoids psycopg2 import at module load)."""
+    global _sync_engine, _sync_session_local
+    if _sync_engine is None:
+        from sqlalchemy import create_engine
+
+        _sync_engine = create_engine(
+            _get_sync_url(),
+            pool_pre_ping=True,
+            pool_size=settings.database.pool_size,
+            max_overflow=settings.database.max_overflow,
+            pool_recycle=3600,
+            echo=False,
+        )
+        _sync_session_local = sessionmaker(
+            _sync_engine,
+            autocommit=False,
+            autoflush=False,
+            expire_on_commit=False,
+        )
+    return _sync_engine
+
+
+def SyncSessionLocal():
+    """Get a sync session factory (lazy-init)."""
+    get_sync_engine()
+    return _sync_session_local()

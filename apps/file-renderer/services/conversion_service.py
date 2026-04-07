@@ -5,18 +5,30 @@ Handles PDF to text/markdown conversion with optional OCR.
 """
 
 import logging
-import tempfile
-from pathlib import Path
 from typing import Optional
 
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions
-from docling.document_converter import DocumentConverter, FormatOption
-from docling.pipeline.standard_pdf_pipeline import StandardPdfPipelineOptions
+from docling.datamodel.pipeline_options import OcrOptions, PdfPipelineOptions
+from docling.document_converter import DocumentConverter, FormatOption, PdfFormatOption
+from docling_core.types.doc.document import TitleItem
 
 from config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_metadata(result) -> dict:
+    """Extract metadata from a Docling conversion result."""
+    title = None
+    for item in result.document.texts:
+        if isinstance(item, TitleItem):
+            title = item.text
+            break
+    return {
+        "pages": len(result.document.pages),
+        "format": str(result.input.format),
+        "title": title,
+    }
 
 
 class ConversionService:
@@ -30,27 +42,31 @@ class ConversionService:
     def _create_converter(self) -> DocumentConverter:
         """Create a configured Docling document converter"""
         # Configure PDF pipeline options
-        pipeline_options = StandardPdfPipelineOptions()
+        pipeline_options = PdfPipelineOptions()
 
         # OCR settings
         pipeline_options.do_ocr = settings.conversion.enable_ocr
-        pipeline_options.ocr_lang = settings.conversion.ocr_languages
+        pipeline_options.ocr_options = OcrOptions(
+            lang=settings.conversion.ocr_languages,
+        )
 
         # Table extraction
-        pipeline_options.do_table_structure = settings.conversion.enable_table_extraction
+        pipeline_options.do_table_structure = (
+            settings.conversion.enable_table_extraction
+        )
 
         # Other options
         pipeline_options.generate_page_images = False  # We don't need images
         pipeline_options.generate_picture_images = False
 
         # Create format options
-        format_options = {
-            InputFormat.PDF: FormatOption(pipeline_options=pipeline_options),
+        format_options: dict[InputFormat, FormatOption] = {
+            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
         }
 
         return DocumentConverter(format_options=format_options)
 
-    async def convert_pdf_to_text(
+    def convert_pdf_to_text(
         self,
         file_path: str,
         enable_ocr: Optional[bool] = None,
@@ -75,12 +91,7 @@ class ConversionService:
             text_content = result.document.export_to_markdown()
 
             # Extract metadata
-            metadata = {
-                "pages": len(result.document.pages),
-                "format": str(result.document.input_format),
-                "title": result.document.title,
-                "author": getattr(result.document, "author", None),
-            }
+            metadata = _extract_metadata(result)
 
             logger.info(f"Successfully converted PDF: {len(text_content)} chars")
             return text_content, metadata
@@ -89,7 +100,7 @@ class ConversionService:
             logger.error(f"Error converting PDF to text: {e}", exc_info=True)
             raise
 
-    async def convert_pdf_to_markdown(
+    def convert_pdf_to_markdown(
         self,
         file_path: str,
         enable_ocr: Optional[bool] = None,
@@ -117,22 +128,21 @@ class ConversionService:
 
             # Extract metadata
             metadata = {
-                "pages": len(result.document.pages),
-                "format": str(result.document.input_format),
-                "title": result.document.title,
-                "author": getattr(result.document, "author", None),
+                **_extract_metadata(result),
                 "tables": len(result.document.tables),
                 "figures": len(result.document.pictures),
             }
 
-            logger.info(f"Successfully converted PDF to markdown: {len(markdown_content)} chars")
+            logger.info(
+                f"Successfully converted PDF to markdown: {len(markdown_content)} chars"
+            )
             return markdown_content, metadata
 
         except Exception as e:
             logger.error(f"Error converting PDF to markdown: {e}", exc_info=True)
             raise
 
-    async def convert_document(
+    def convert_document(
         self,
         file_path: str,
         output_format: str = "markdown",
@@ -152,9 +162,9 @@ class ConversionService:
         logger.info(f"Converting document to {output_format}: {file_path}")
 
         if output_format == "text":
-            return await self.convert_pdf_to_text(file_path, **options)
+            return self.convert_pdf_to_text(file_path, **options)
         elif output_format == "markdown":
-            return await self.convert_pdf_to_markdown(file_path, **options)
+            return self.convert_pdf_to_markdown(file_path, **options)
         else:
             raise ValueError(f"Unsupported output format: {output_format}")
 

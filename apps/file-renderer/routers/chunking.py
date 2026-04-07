@@ -1,15 +1,17 @@
 """
 Text chunking API router
 
-Handles text chunking endpoints for embedding preparation.
+All endpoints create async tasks and return 202 with task_id.
 """
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.document import ChunkingRequest, ChunkingResponse
-from services import get_chunking_service
+from models.database import get_async_db
+from models.document import ChunkingRequest, TaskAcceptedResponse
+from services import get_task_service
 
 logger = logging.getLogger(__name__)
 
@@ -21,127 +23,92 @@ router = APIRouter(
 
 @router.post(
     "/chunk",
-    response_model=ChunkingResponse,
+    status_code=202,
+    response_model=TaskAcceptedResponse,
     summary="Chunk text for embeddings",
-    description="Split text into chunks for embedding generation",
 )
-async def chunk_text(request: ChunkingRequest):
-    """
-    Chunk text into smaller pieces
+async def chunk_text(
+    request: ChunkingRequest,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """Split text into chunks using the specified strategy."""
+    task_service = get_task_service()
+    task = await task_service.create_task(
+        db,
+        task_type="chunking",
+        input_params={
+            "text": request.text,
+            "strategy": request.chunking_strategy,
+            "chunk_size": request.chunk_size,
+            "chunk_overlap": request.chunk_overlap,
+        },
+    )
+    task_service.submit_task(task.id)
 
-    - **text**: Text to chunk
-    - **chunk_size**: Target chunk size (default from config)
-    - **chunk_overlap**: Overlap between chunks
-    - **chunking_strategy**: 'fixed' or 'semantic'
-    """
-    try:
-        chunking_service = get_chunking_service()
-
-        chunks, metadata = await chunking_service.chunk_text(
-            text=request.text,
-            strategy=request.chunking_strategy,
-            chunk_size=request.chunk_size,
-            chunk_overlap=request.chunk_overlap,
-        )
-
-        return ChunkingResponse(
-            success=True,
-            chunks=chunks,
-            chunk_count=len(chunks),
-            metadata=metadata,
-        )
-
-    except Exception as e:
-        logger.error(f"Error chunking text: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Chunking failed: {str(e)}",
-        )
+    return TaskAcceptedResponse(
+        task_id=task.id,
+        task_type="chunking",
+        message="Chunking task queued",
+    )
 
 
 @router.post(
     "/chunk/fixed",
-    response_model=ChunkingResponse,
+    status_code=202,
+    response_model=TaskAcceptedResponse,
     summary="Chunk text with fixed size",
-    description="Split text into fixed-size chunks with overlap",
 )
-async def chunk_text_fixed(request: ChunkingRequest):
-    """
-    Chunk text using fixed-size strategy
-
-    - **text**: Text to chunk
-    - **chunk_size**: Target chunk size
-    - **chunk_overlap**: Overlap between chunks
-    """
-    try:
-        chunking_service = get_chunking_service()
-
-        chunks = await chunking_service.chunk_text_fixed(
-            text=request.text,
-            chunk_size=request.chunk_size,
-            chunk_overlap=request.chunk_overlap,
-        )
-
-        metadata = {
+async def chunk_text_fixed(
+    request: ChunkingRequest,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """Split text into fixed-size chunks with overlap."""
+    task_service = get_task_service()
+    task = await task_service.create_task(
+        db,
+        task_type="chunking",
+        input_params={
+            "text": request.text,
             "strategy": "fixed",
-            "chunk_count": len(chunks),
-            "total_chars": sum(len(c) for c in chunks),
-        }
+            "chunk_size": request.chunk_size,
+            "chunk_overlap": request.chunk_overlap,
+        },
+    )
+    task_service.submit_task(task.id)
 
-        return ChunkingResponse(
-            success=True,
-            chunks=chunks,
-            chunk_count=len(chunks),
-            metadata=metadata,
-        )
-
-    except Exception as e:
-        logger.error(f"Error chunking text: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Chunking failed: {str(e)}",
-        )
+    return TaskAcceptedResponse(
+        task_id=task.id,
+        task_type="chunking",
+        message="Fixed-size chunking task queued",
+    )
 
 
 @router.post(
     "/chunk/semantic",
-    response_model=ChunkingResponse,
+    status_code=202,
+    response_model=TaskAcceptedResponse,
     summary="Chunk text semantically",
-    description="Split text based on paragraphs and semantic boundaries",
 )
-async def chunk_text_semantic(request: ChunkingRequest):
-    """
-    Chunk text using semantic strategy
-
-    - **text**: Text to chunk
-    - **chunk_size**: Target chunk size (soft limit)
-    - **chunk_overlap**: Overlap between chunks
-    """
-    try:
-        chunking_service = get_chunking_service()
-
-        chunks = await chunking_service.chunk_text_semantic(
-            text=request.text,
-            chunk_size=request.chunk_size,
-            chunk_overlap=request.chunk_overlap,
-        )
-
-        metadata = {
+async def chunk_text_semantic(
+    request: ChunkingRequest,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """Split text based on paragraphs and semantic boundaries."""
+    task_service = get_task_service()
+    task = await task_service.create_task(
+        db,
+        task_type="chunking",
+        input_params={
+            "text": request.text,
             "strategy": "semantic",
-            "chunk_count": len(chunks),
-            "total_chars": sum(len(c) for c in chunks),
-        }
+            "chunk_size": request.chunk_size,
+            "chunk_overlap": request.chunk_overlap,
+        },
+    )
+    task_service.submit_task(task.id)
 
-        return ChunkingResponse(
-            success=True,
-            chunks=chunks,
-            chunk_count=len(chunks),
-            metadata=metadata,
-        )
-
-    except Exception as e:
-        logger.error(f"Error chunking text: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Chunking failed: {str(e)}",
-        )
+    return TaskAcceptedResponse(
+        task_id=task.id,
+        task_type="chunking",
+        message="Semantic chunking task queued",
+    )

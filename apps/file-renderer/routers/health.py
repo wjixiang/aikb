@@ -54,11 +54,38 @@ async def health_check():
     description="Check if service is ready to handle requests",
 )
 async def readiness_check():
-    """Readiness check"""
-    return {
-        "status": "ready",
-        "timestamp": datetime.utcnow().isoformat(),
-    }
+    """Readiness check including database and S3 connectivity"""
+    checks = {"status": "ready"}
+
+    # Check database
+    try:
+        from models import check_db
+
+        if await check_db():
+            checks["database"] = "connected"
+        else:
+            checks["database"] = "unreachable"
+            checks["status"] = "degraded"
+    except Exception as e:
+        checks["database"] = f"error: {str(e)}"
+        checks["status"] = "degraded"
+
+    # Check S3
+    try:
+        from services import get_s3_storage_service
+
+        s3 = get_s3_storage_service()
+        if s3.bucket_exists():
+            checks["s3"] = "connected"
+        else:
+            checks["s3"] = "bucket_not_found"
+            checks["status"] = "degraded"
+    except Exception as e:
+        checks["s3"] = f"error: {str(e)}"
+        checks["status"] = "degraded"
+
+    checks["timestamp"] = datetime.utcnow().isoformat()
+    return checks
 
 
 @router.get(

@@ -4,6 +4,7 @@ Document processing models
 Defines request/response schemas for document conversion and chunking operations.
 """
 
+from datetime import datetime
 from enum import Enum
 from typing import Literal, Optional
 
@@ -18,13 +19,23 @@ class ConversionFormat(str, Enum):
     JSON = "json"
 
 
-class ConversionTaskStatus(str, Enum):
-    """Conversion task status"""
+class TaskType(str, Enum):
+    """Task type"""
+
+    CONVERSION = "conversion"
+    CHUNKING = "chunking"
+
+
+class TaskStatus(str, Enum):
+    """Task status"""
 
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+# --- Request models ---
 
 
 class ConversionRequest(BaseModel):
@@ -52,19 +63,26 @@ class ConversionRequest(BaseModel):
     )
 
 
-class ConversionResponse(BaseModel):
-    """Document conversion response"""
+class S3ConversionRequest(BaseModel):
+    """Convert a file already stored in S3"""
 
-    success: bool
-    task_id: str
-    status: ConversionTaskStatus
-    message: str
-    file_id: Optional[str] = None
-    output_format: ConversionFormat = None
-    content: Optional[str] = None
-    metadata: Optional[dict] = None
-    pages_count: Optional[int] = None
-    error: Optional[str] = None
+    s3_key: str = Field(
+        ...,
+        description="S3 key of the source file to convert",
+        min_length=1,
+    )
+    output_format: ConversionFormat = Field(
+        default=ConversionFormat.MARKDOWN,
+        description="Output format",
+    )
+    enable_ocr: Optional[bool] = Field(
+        default=None,
+        description="Override OCR setting",
+    )
+    output_s3_key: Optional[str] = Field(
+        default=None,
+        description="Override output S3 key (auto-derived from input if not provided)",
+    )
 
 
 class ChunkingRequest(BaseModel):
@@ -88,22 +106,40 @@ class ChunkingRequest(BaseModel):
     )
 
 
-class ChunkingResponse(BaseModel):
-    """Text chunking response"""
+# --- Response models ---
 
-    success: bool
-    chunks: list[str] = Field(
-        default_factory=list,
-        description="Text chunks",
-    )
-    chunk_count: int = Field(
-        default=0,
-        description="Number of chunks",
-    )
-    metadata: dict = Field(
-        default_factory=dict,
-        description="Chunking metadata",
-    )
+
+class TaskAcceptedResponse(BaseModel):
+    """Returned immediately when a task is created (HTTP 202)"""
+
+    task_id: str
+    task_type: str
+    status: str = "pending"
+    message: str = "Task accepted and queued for processing"
+
+
+class TaskDetailResponse(BaseModel):
+    """Full task detail for status queries"""
+
+    task_id: str
+    task_type: str
+    status: str
+    progress: float = 0.0
+    input_params: dict = Field(default_factory=dict)
+    result: Optional[dict] = None
+    error_message: Optional[str] = None
+    created_at: Optional[datetime] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+
+class TaskListResponse(BaseModel):
+    """Paginated task list"""
+
+    tasks: list[TaskDetailResponse] = Field(default_factory=list)
+    total: int = 0
+    limit: int = 50
+    offset: int = 0
 
 
 class DocumentMetadata(BaseModel):
@@ -124,22 +160,3 @@ class DocumentMetadata(BaseModel):
         default_factory=dict,
         description="Additional metadata",
     )
-
-
-class ConversionTask(BaseModel):
-    """Conversion task model"""
-
-    task_id: str
-    file_id: str
-    status: ConversionTaskStatus
-    output_format: ConversionFormat
-    created_at: str
-    started_at: Optional[str] = None
-    completed_at: Optional[str] = None
-    progress: float = Field(
-        default=0.0,
-        ge=0.0,
-        le=100.0,
-    )
-    error_message: Optional[str] = None
-    result: Optional[ConversionResponse] = None

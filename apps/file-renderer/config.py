@@ -14,6 +14,62 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class S3Settings(BaseSettings):
+    """S3/MinIO storage configuration"""
+
+    model_config = SettingsConfigDict(
+        env_prefix="S3_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    endpoint: str = Field(
+        default="192.168.123.98:9000",
+        description="S3 endpoint (without protocol)",
+    )
+    access_key_id: str = Field(
+        default="",
+        description="S3 Access Key ID",
+    )
+    access_key_secret: str = Field(
+        default="",
+        description="S3 Access Key Secret",
+    )
+    bucket: str = Field(
+        default="bib-max",
+        description="S3 bucket name",
+    )
+    region: str = Field(
+        default="us-east-1",
+        description="S3 region",
+    )
+    force_path_style: bool = Field(
+        default=True,
+        description="Use path-style addressing (true for MinIO)",
+    )
+
+
+class TaskSettings(BaseSettings):
+    """Async task execution configuration"""
+
+    model_config = SettingsConfigDict(
+        env_prefix="TASK_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    max_workers: int = Field(
+        default=4,
+        description="Max thread pool workers for blocking operations",
+    )
+    result_ttl_hours: int = Field(
+        default=168,
+        description="Hours before completed tasks are eligible for cleanup",
+    )
+
+
 class ConversionSettings(BaseSettings):
     """File conversion configuration"""
 
@@ -165,6 +221,12 @@ class Settings(BaseSettings):
     )
 
     # Nested settings
+    s3: S3Settings = Field(
+        default_factory=S3Settings,
+    )
+    task: TaskSettings = Field(
+        default_factory=TaskSettings,
+    )
     conversion: ConversionSettings = Field(
         default_factory=ConversionSettings,
     )

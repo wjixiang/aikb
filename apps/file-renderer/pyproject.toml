@@ -5,10 +5,14 @@ description = "BibMax Document Processing Service - PDF conversion and chunking 
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "asyncpg>=0.29.0",
+    "boto3>=1.35.0",
     "docling>=2.80.0",
     "fastapi[standard]>=0.115.0",
+    "numpy>=2.4.4",
     "pydantic>=2.9.0",
     "pydantic-settings>=2.6.0",
+    "sqlalchemy[asyncio]>=2.0.49",
     "uvicorn[standard]>=0.32.0",
 ]
 

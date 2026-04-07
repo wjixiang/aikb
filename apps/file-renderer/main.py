@@ -2,6 +2,7 @@
 BibMax Document Processing Service
 
 A focused service for converting PDFs to text/markdown and chunking for embeddings.
+All conversion and chunking operations run as async background tasks.
 """
 
 from contextlib import asynccontextmanager
@@ -12,26 +13,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from lib import setup_logging, get_logger
 from lib.middleware import LoggingMiddleware, ErrorHandlingMiddleware, TimingMiddleware
+from models import init_db, dispose_db
 from routers import (
     conversion_router,
     chunking_router,
     health_router,
+    tasks_router,
 )
 
 # Setup logging
 setup_logging()
 logger = get_logger(__name__)
 
-
 # API metadata
 TAGS_METADATA = [
     {
+        "name": "tasks",
+        "description": "Async task status and result queries",
+    },
+    {
         "name": "document-conversion",
-        "description": "PDF to text/markdown conversion endpoints",
+        "description": "PDF to text/markdown conversion (async task-based)",
     },
     {
         "name": "text-chunking",
-        "description": "Text chunking for embedding preparation",
+        "description": "Text chunking for embedding preparation (async task-based)",
     },
     {
         "name": "health",
@@ -53,9 +59,13 @@ async def lifespan(app: FastAPI):
         },
     )
 
+    await init_db()
+    logger.info("Database initialized")
+
     yield
 
     # Shutdown
+    await dispose_db()
     logger.info(f"Shutting down {settings.app_name}")
 
 
@@ -66,38 +76,32 @@ app = FastAPI(
     BibMax Document Processing Service
 
     A focused service for converting biomedical literature PDFs to searchable text
-    and chunking documents for embedding generation.
+    and chunking documents for embedding generation. All operations are **async task-based**:
+    submit a task, get a `task_id`, then poll for results.
 
-    ## Features
+    ## Workflow
 
-    - **PDF Conversion**: Convert PDFs to plain text or Markdown format
-    - **OCR Support**: Extract text from scanned PDFs
-    - **Table Extraction**: Preserve table structures
-    - **Text Chunking**: Split documents into chunks for embedding generation
-    - **Semantic Chunking**: Intelligent chunking based on document structure
+    1. Submit a conversion/chunking task → receive `task_id` (HTTP 202)
+    2. Poll task status: `GET /api/v1/tasks/{task_id}`
+    3. When `status=completed`, the `result` field contains the output
 
     ## Quick Start
 
-    1. Upload and convert:
     ```bash
-    curl -X POST "http://localhost:8001/api/v1/conversion/upload" \\
-      -F "file=@document.pdf" \\
-      -F "output_format=markdown"
-    ```
+    # Upload and convert (S3)
+    curl -X POST "http://localhost:8001/api/v1/conversion/upload-to-s3" \\
+      -F "file=@document.pdf" -F "output_format=markdown"
 
-    2. Chunk text:
-    ```bash
-    curl -X POST "http://localhost:8001/api/v1/chunking/chunk" \\
-      -H "Content-Type: application/json" \\
-      -d '{"text": "...", "chunking_strategy": "semantic"}'
+    # Check task status
+    curl http://localhost:8001/api/v1/tasks/{task_id}
     ```
 
     ## Configuration
 
-    Configure via environment variables:
     - `CONVERSION_ENABLE_OCR=true`: Enable OCR for scanned PDFs
-    - `CHUNKING_DEFAULT_CHUNK_SIZE=1000`: Default chunk size
-    - `SERVER_PORT=8001`: Service port
+    - `S3_ENDPOINT`: S3/MinIO endpoint
+    - `TASK_MAX_WORKERS=4`: Thread pool size for background tasks
+    - `DATABASE_URL`: PostgreSQL connection string
     """,
     version=settings.app_version,
     docs_url="/docs",
@@ -130,6 +134,7 @@ app.add_middleware(TimingMiddleware)
 app.add_middleware(LoggingMiddleware, exclude_paths=["/health", "/", "/docs"])
 
 # Include routers
+app.include_router(tasks_router, prefix="/api/v1")
 app.include_router(conversion_router, prefix="/api/v1")
 app.include_router(chunking_router, prefix="/api/v1")
 app.include_router(health_router)
