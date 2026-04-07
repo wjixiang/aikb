@@ -80,6 +80,11 @@ export const config = {
   agent: {
     databaseUrl: process.env['AGENT_DATABASE_URL'] || undefined,
   },
+  fileRenderer: {
+    baseUrl: process.env['FILE_RENDERER_URL'] || 'http://localhost:8001/api/v1',
+    timeout: Number(process.env['FILE_RENDERER_TIMEOUT']) || 300000,
+    pollInterval: Number(process.env['FILE_RENDERER_POLL_INTERVAL']) || 3000,
+  },
 } as const;
 
 if (!config.databaseUrl) {
