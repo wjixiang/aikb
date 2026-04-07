@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { attachmentsApi } from "@/lib/api/attachments";
 import type { Attachment } from "@/lib/api/types";
 import { PdfViewer } from "@/components/preview/PdfViewer";
+import { MarkdownViewer } from "@/components/preview/MarkdownViewer";
 import { PreviewFallback } from "@/components/preview/PreviewFallback";
 
 export function PreviewRoute() {
@@ -64,6 +65,10 @@ export function PreviewRoute() {
 
   if (attachment.category === "pdf") {
     return <PdfViewer url={url} fileName={attachment.fileName} />;
+  }
+
+  if (attachment.category === "markdown") {
+    return <MarkdownViewer url={url} fileName={attachment.fileName} />;
   }
 
   return <PreviewFallback />;

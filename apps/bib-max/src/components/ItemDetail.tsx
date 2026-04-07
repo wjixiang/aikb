@@ -20,7 +20,7 @@ const CATEGORY_STYLES: Record<AttachmentCategory, string> = {
   unknown: "bg-muted text-muted-foreground",
 };
 
-const PREVIEWABLE = new Set<AttachmentCategory>(["pdf"]);
+const PREVIEWABLE = new Set<AttachmentCategory>(["pdf", "markdown"]);
 
 interface Props {
   item: Item;
