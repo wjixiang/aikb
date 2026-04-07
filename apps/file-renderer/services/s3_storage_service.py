@@ -33,7 +33,7 @@ class S3StorageService:
             )
             self._client = boto3.client(
                 "s3",
-                endpoint_url=f"http://{settings.s3.endpoint}",
+                endpoint_url=settings.s3.endpoint if settings.s3.endpoint.startswith("http") else f"http://{settings.s3.endpoint}",
                 aws_access_key_id=settings.s3.access_key_id,
                 aws_secret_access_key=settings.s3.access_key_secret,
                 region_name=settings.s3.region,
@@ -80,7 +80,10 @@ class S3StorageService:
         key = self._normalize_key(key)
 
         try:
-            self.client.download_file(settings.s3.bucket, key, file_path)
+            response = self.client.get_object(Bucket=settings.s3.bucket, Key=key)
+            with open(file_path, "wb") as f:
+                for chunk in response["Body"].iter_chunks(chunk_size=8192):
+                    f.write(chunk)
             logger.debug(f"File downloaded to: {file_path}")
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "Unknown")
@@ -103,8 +106,14 @@ class S3StorageService:
             return True
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "Unknown")
-            if error_code == "NoSuchKey" or error_code == "404":
-                return False
+            if error_code in ("NoSuchKey", "404", "403"):
+                # 403 on head_object can happen with certain S3 configs;
+                # fall through to get_object check
+                try:
+                    self.client.get_object(Bucket=settings.s3.bucket, Key=key, Range="bytes=0-0")
+                    return True
+                except ClientError:
+                    return False
             return False
 
     def get_presigned_url(self, key: str, expires_in: int = 3600) -> str:
@@ -143,9 +152,14 @@ class S3StorageService:
     def _generate_url(self, key: str) -> str:
         """Generate direct access URL"""
         key = self._normalize_key(key)
+        ep = settings.s3.endpoint
+        if ep.startswith("http://") or ep.startswith("https://"):
+            base = ep
+        else:
+            base = f"http://{ep}"
         if settings.s3.force_path_style:
-            return f"http://{settings.s3.endpoint}/{settings.s3.bucket}/{key}"
-        return f"http://{settings.s3.bucket}.{settings.s3.endpoint}/{key}"
+            return f"{base}/{settings.s3.bucket}/{key}"
+        return f"http://{settings.s3.bucket}.{ep}/{key}"
 
 
 # Module-level singleton

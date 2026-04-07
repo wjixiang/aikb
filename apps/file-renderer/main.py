@@ -5,7 +5,19 @@ A focused service for converting PDFs to text/markdown and chunking for embeddin
 All conversion and chunking operations run as async background tasks.
 """
 
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env early so HF_ENDPOINT is available for huggingface_hub
+load_dotenv()
+
+# Propagate HuggingFace mirror setting to os.environ for huggingface_hub
+_hf_endpoint = os.environ.get("HF_ENDPOINT")
+if _hf_endpoint:
+    os.environ["HF_ENDPOINT"] = _hf_endpoint
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

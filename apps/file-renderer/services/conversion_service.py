@@ -8,8 +8,8 @@ import logging
 from typing import Optional
 
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import OcrOptions, PdfPipelineOptions
-from docling.document_converter import DocumentConverter, FormatOption, PdfFormatOption
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling_core.types.doc.document import TitleItem
 
 from config import settings
@@ -41,23 +41,12 @@ class ConversionService:
 
     def _create_converter(self) -> DocumentConverter:
         """Create a configured Docling document converter"""
-        # Configure PDF pipeline options
         pipeline_options = PdfPipelineOptions()
-
-        # OCR settings
-        pipeline_options.do_ocr = settings.conversion.enable_ocr
-        pipeline_options.ocr_options = OcrOptions(
-            lang=settings.conversion.ocr_languages,
-        )
-
-        # Table extraction
-        pipeline_options.do_table_structure = (
-            settings.conversion.enable_table_extraction
-        )
-
-        # Other options
-        pipeline_options.generate_page_images = False  # We don't need images
+        pipeline_options.do_table_structure = settings.conversion.enable_table_extraction
+        pipeline_options.generate_page_images = False
         pipeline_options.generate_picture_images = False
+        if settings.conversion.artifacts_path:
+            pipeline_options.artifacts_path = settings.conversion.artifacts_path
 
         # Create format options
         format_options: dict[InputFormat, FormatOption] = {

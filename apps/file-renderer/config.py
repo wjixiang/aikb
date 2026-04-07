@@ -104,6 +104,10 @@ class ConversionSettings(BaseSettings):
         default=True,
         description="Enable conversion result caching",
     )
+    artifacts_path: Optional[str] = Field(
+        default=None,
+        description="Path to pre-downloaded Docling model artifacts. If set, models are loaded locally instead of downloading from HuggingFace.",
+    )
 
 
 class ChunkingSettings(BaseSettings):
