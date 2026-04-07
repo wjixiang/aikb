@@ -31,4 +31,8 @@ export const attachmentsApi = {
   remove(itemId: string, id: string): Promise<{ success: boolean; id: string }> {
     return apiClient.del<{ success: boolean; id: string }>(`${BASE}/${itemId}/attachments/${id}`);
   },
+
+  convertToMd(itemId: string, attachmentId: string): Promise<Attachment> {
+    return apiClient.post<Attachment>(`${BASE}/${itemId}/attachments/convert-to-md`, { attachmentId });
+  },
 };

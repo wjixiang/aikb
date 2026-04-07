@@ -4,7 +4,7 @@ import { attachmentsApi } from "@/lib/api/attachments";
 import type { Item, Attachment, AttachmentCategory } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, Upload, X, FileText, Eye } from "lucide-react";
+import { Download, Upload, X, FileText, Eye, FileCode } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_STYLES: Record<AttachmentCategory, string> = {
@@ -33,22 +33,28 @@ function formatSize(bytes: number | null | undefined) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getMeta(item: Item): [string, string][] {
-  return [
-    item.subtitle && ["Subtitle", item.subtitle],
-    item.source && ["Source", item.source],
-    item.doi && ["DOI", item.doi],
-    item.isbn && ["ISBN", item.isbn],
-    item.pmid && ["PMID", item.pmid],
-    item.url && ["URL", item.url],
-    item.rating && ["Rating", `${"★".repeat(item.rating)}${"☆".repeat(5 - item.rating)}`],
-  ].filter(Boolean) as [string, string][];
+function getRows(item: Item): { label: string; value: React.ReactNode }[] {
+  const rows: { label: string; value: React.ReactNode }[] = [];
+  if (item.authors.length > 0) rows.push({ label: "Authors", value: item.authors.join(", ") });
+  if (item.year) rows.push({ label: "Year", value: String(item.year) });
+  if (item.source) rows.push({ label: "Source", value: item.source });
+  if (item.doi) rows.push({ label: "DOI", value: item.doi });
+  if (item.isbn) rows.push({ label: "ISBN", value: item.isbn });
+  if (item.pmid) rows.push({ label: "PMID", value: item.pmid });
+  if (item.url) rows.push({ label: "URL", value: <a href={item.url} target="_blank" rel="noreferrer" className="text-primary underline">{item.url}</a> });
+  if (item.rating) rows.push({ label: "Rating", value: `${"★".repeat(item.rating)}${"☆".repeat(5 - item.rating)}` });
+  if (item.tags.length > 0) rows.push({ label: "Tags", value: item.tags.map((t) => t.name).join(", ") });
+  if (item.abstract) rows.push({ label: "Abstract", value: item.abstract });
+  if (item.notes) rows.push({ label: "Notes", value: item.notes });
+  return rows;
 }
 
 export function ItemDetail({ item }: Props) {
   const navigate = useNavigate();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [convertingId, setConvertingId] = useState<string | null>(null);
+  const [convertError, setConvertError] = useState<string | null>(null);
 
   useEffect(() => {
     attachmentsApi.list(item.id).then((res) => setAttachments(res.data));
@@ -82,40 +88,36 @@ export function ItemDetail({ item }: Props) {
     attachmentsApi.list(item.id).then((res) => setAttachments(res.data));
   };
 
-  const metaFields = getMeta(item);
+  const handleConvertToMd = async (att: Attachment) => {
+    setConvertError(null);
+    setConvertingId(att.id);
+    try {
+      await attachmentsApi.convertToMd(item.id, att.id);
+      attachmentsApi.list(item.id).then((res) => setAttachments(res.data));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Conversion failed";
+      setConvertError(message);
+    } finally {
+      setConvertingId(null);
+    }
+  };
 
   return (
     <div className="p-4">
-      {item.abstract && (
-        <div className="mb-3">
-          <div className="mb-1 text-xs font-medium text-muted-foreground">Abstract</div>
-          <p className="text-sm leading-relaxed text-muted-foreground">{item.abstract}</p>
-        </div>
-      )}
+      <h1 className="mb-3 text-base font-semibold leading-snug">{item.title}</h1>
 
-      {item.notes && (
-        <div className="mb-3">
-          <div className="mb-1 text-xs font-medium text-muted-foreground">Notes</div>
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.notes}</p>
-        </div>
-      )}
-
-      {metaFields.length > 0 && (
-        <div className="mb-3 space-y-1">
-          {metaFields.map(([label, value]) => (
-            <div key={label} className="text-xs">
-              <span className="text-muted-foreground">{label}: </span>
-              {label === "URL" ? (
-                <a href={value} target="_blank" rel="noreferrer" className="text-primary underline">
-                  {value}
-                </a>
-              ) : (
-                <span className="font-medium">{value}</span>
-              )}
-            </div>
+      <table className="mb-3 w-full text-xs">
+        <tbody>
+          {getRows(item).map(({ label, value }) => (
+            <tr key={label} className="align-baseline">
+              <td className="shrink-0 py-0.5 pr-3 text-muted-foreground">{label}</td>
+              <td className={cn("py-0.5", (label === "Abstract" || label === "Notes") && "whitespace-pre-wrap leading-relaxed")}>
+                {value}
+              </td>
+            </tr>
           ))}
-        </div>
-      )}
+        </tbody>
+      </table>
 
       <Separator className="my-3" />
 
@@ -142,6 +144,9 @@ export function ItemDetail({ item }: Props) {
               </span>
             </Button>
           </label>
+          {convertingId && (
+            <span className="text-xs text-primary">Converting...</span>
+          )}
         </div>
 
         {attachments.length === 0 ? (
@@ -180,12 +185,30 @@ export function ItemDetail({ item }: Props) {
                 <button onClick={() => handleDownload(att)} className="p-0.5" title="Download">
                   <Download className="size-3.5 text-muted-foreground hover:text-foreground" />
                 </button>
+                {att.category === "pdf" && (
+                  <button
+                    onClick={() => handleConvertToMd(att)}
+                    className="p-0.5"
+                    title="Convert to Markdown"
+                    disabled={convertingId === att.id}
+                  >
+                    <FileCode className={cn(
+                      "size-3.5",
+                      convertingId === att.id
+                        ? "animate-spin text-primary"
+                        : "text-muted-foreground hover:text-foreground",
+                    )} />
+                  </button>
+                )}
                 <button onClick={() => handleDeleteAttachment(att)} className="p-0.5" title="Delete">
                   <X className="size-3.5 text-muted-foreground hover:text-destructive" />
                 </button>
               </div>
             ))}
           </div>
+        )}
+        {convertError && (
+          <p className="mt-1 text-xs text-destructive">{convertError}</p>
         )}
       </div>
 
