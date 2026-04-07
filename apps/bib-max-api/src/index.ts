@@ -10,6 +10,10 @@ import { registerRoutes } from './routes/index.js';
 import { initLlmPool } from './services/llm-pool.js';
 import { initAgentRuntime, registerRuntimeHooks } from './services/agent-runtime.js';
 import { NotFoundError, BadRequestError, UpstreamError } from './errors.js';
+import { bibItemPlugin } from 'bib-item-plugin';
+import { createItemRepository } from './adapters/item-repository.js';
+import { createAttachmentRepository } from './adapters/attachment-repository.js';
+import { getStorage } from './storage/instance.js';
 
 const swaggerOptions = {
   openapi: {
@@ -62,6 +66,15 @@ export async function createApp() {
   });
 
   await app.register(swaggerUi, { routePrefix: '/docs' });
+
+  // Register bib-item-plugin (Item + Attachment management)
+  await app.register(bibItemPlugin, {
+    prefix: '/api',
+    itemRepository: createItemRepository(),
+    attachmentRepository: createAttachmentRepository(),
+    storage: getStorage(),
+    notFoundError: (entity, id) => new NotFoundError(entity, id),
+  });
 
   initLlmPool();
   registerRoutes(app);
