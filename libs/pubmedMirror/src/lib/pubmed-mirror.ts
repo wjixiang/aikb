@@ -4,13 +4,13 @@ import * as path from 'path';
 import { tmpdir } from 'os';
 import { SyncResult } from './types.js';
 import {
-    getS3Client,
-    uploadToOSS,
-    listSyncedBaselineFiles,
-    fileExistsInOSS,
-    getBucketName,
-} from './oss-storage.js';
-import Bottleneck from 'bottleneck'
+    uploadToLocal,
+    listLocalFiles,
+    localFileExists,
+    getLocalRoot,
+    type FileType,
+} from './local-storage.js';
+import Bottleneck from 'bottleneck';
 
 // ============================================================================
 // Configuration
@@ -19,12 +19,14 @@ import Bottleneck from 'bottleneck'
 interface PubmedMirrorConfig {
     ftpHost: string;
     ftpBaselinePath: string;
+    ftpUpdatefilesPath: string;
 }
 
 const createConfig = (): PubmedMirrorConfig => {
     return {
         ftpHost: 'ftp.ncbi.nlm.nih.gov',
         ftpBaselinePath: 'pubmed/baseline',
+        ftpUpdatefilesPath: 'pubmed/updatefiles',
     };
 };
 
@@ -63,6 +65,16 @@ const connectToFtpBaseline = async (client: Client): Promise<void> => {
 };
 
 /**
+ * Connect to FTP server and navigate to updatefiles directory
+ */
+const connectToFtpUpdatefiles = async (client: Client): Promise<void> => {
+    await client.access({
+        host: config.ftpHost,
+    });
+    await client.cd(config.ftpUpdatefilesPath);
+};
+
+/**
  * List all files in the PubMed baseline FTP directory
  */
 export const listPubmedAnnualIndexViaFtp = async (): Promise<FileInfo[]> => {
@@ -72,6 +84,22 @@ export const listPubmedAnnualIndexViaFtp = async (): Promise<FileInfo[]> => {
         await connectToFtpBaseline(ftpClient);
         const files = await ftpClient.list();
         console.log(`Found ${files.length} files`);
+        return files;
+    } finally {
+        ftpClient.close();
+    }
+};
+
+/**
+ * List all files in the PubMed updatefiles FTP directory
+ */
+export const listPubmedUpdateFilesViaFtp = async (): Promise<FileInfo[]> => {
+    const ftpClient = createFtpClient();
+
+    try {
+        await connectToFtpUpdatefiles(ftpClient);
+        const files = await ftpClient.list();
+        console.log(`Found ${files.length} update files`);
         return files;
     } finally {
         ftpClient.close();
@@ -90,10 +118,11 @@ const sleep = (ms: number): Promise<void> => {
 };
 
 /**
- * Download a file from FTP and upload it to OSS with retry logic
+ * Download a file from FTP and save it to local storage with retry logic
  */
 const downloadAndUploadFile = async (
     ftpClient: Client,
+    fileType: FileType,
     filename: string,
     year: string,
     attempt: number = 1,
@@ -109,15 +138,15 @@ const downloadAndUploadFile = async (
         // Read the file into a buffer
         const buffer = fs.readFileSync(tempFilePath);
 
-        // Upload to OSS with year prefix
-        await uploadToOSS(filename, buffer, year);
+        // Save to local storage
+        await uploadToLocal(fileType, filename, buffer, year);
     } catch (error) {
         if (attempt < maxAttempts) {
             // Exponential backoff: 2^attempt seconds
             const backoffTime = Math.pow(2, attempt) * 1000;
             console.warn(
                 `Attempt ${attempt}/${maxAttempts} failed for ${filename}. ` +
-                `Retrying in ${backoffTime}ms... Error: ${error}`
+                `Retrying in ${backoffTime}ms... Error: ${error}`,
             );
             await sleep(backoffTime);
 
@@ -126,7 +155,14 @@ const downloadAndUploadFile = async (
                 fs.unlinkSync(tempFilePath);
             }
 
-            return downloadAndUploadFile(ftpClient, filename, year, attempt + 1, maxAttempts);
+            return downloadAndUploadFile(
+                ftpClient,
+                fileType,
+                filename,
+                year,
+                attempt + 1,
+                maxAttempts,
+            );
         }
         throw error;
     } finally {
@@ -143,12 +179,11 @@ interface FileSyncTask {
 }
 
 /**
- * Sync all pending annual PubMed baseline files from FTP to OSS
- * @param year - The year to sync files for (defaults to current year)
- * @param maxRetries - Maximum number of retry attempts per file (default: 3)
- * @returns Sync result with total, success, and error counts
+ * Generic sync function for both baseline and updatefiles
  */
-export const syncAnnualPubmedIndexFiles = async (
+const syncPubmedFiles = async (
+    fileType: FileType,
+    connectFn: (client: Client) => Promise<void>,
     year?: string,
     maxRetries: number = 3,
 ): Promise<SyncResult> => {
@@ -157,14 +192,16 @@ export const syncAnnualPubmedIndexFiles = async (
 
     try {
         // Connect to FTP server
-        await connectToFtpBaseline(ftpClient);
+        await connectFn(ftpClient);
 
         // Get list of files
         const files = await ftpClient.list();
-        console.log(`Found ${files.length} files in baseline directory`);
+        console.log(
+            `Found ${files.length} files in ${fileType} directory`,
+        );
 
-        // Get list of already synced files from OSS for the specific year
-        const syncedFiles = await listSyncedBaselineFiles(targetYear);
+        // Get list of already synced files from local storage
+        const syncedFiles = await listLocalFiles(fileType, targetYear);
         const syncedFileNames = new Set(syncedFiles);
 
         // Filter files that need to be synced
@@ -202,14 +239,15 @@ export const syncAnnualPubmedIndexFiles = async (
                 limiter.schedule(async () => {
                     const { file, retry } = task;
                     console.log(
-                        `[${retry + 1}/${maxRetries}] Downloading and uploading ${file.name}...`,
+                        `[${retry + 1}/${maxRetries}] Downloading ${file.name}...`,
                     );
 
                     const client = createFtpClient();
                     try {
-                        await connectToFtpBaseline(client);
+                        await connectFn(client);
                         await downloadAndUploadFile(
                             client,
+                            fileType,
                             file.name,
                             targetYear,
                             retry + 1,
@@ -270,27 +308,27 @@ export const syncAnnualPubmedIndexFiles = async (
 // ============================================================================
 
 /**
- * PubMed Mirror API for syncing baseline files from FTP to OSS
+ * PubMed Mirror API for syncing files from FTP to local storage
  */
 export const PubmedMirror = {
+    // --- Baseline ---
+
     /**
-     * List all annual baseline files from FTP
+     * List all baseline files from FTP
      */
     async listFiles(): Promise<FileInfo[]> {
         return listPubmedAnnualIndexViaFtp();
     },
 
     /**
-     * List all synced files from OSS for a specific year
-     * @param year - The year to list synced files for (defaults to current year)
+     * List all synced baseline files from local storage for a specific year
      */
     async listSyncedBaselineFiles(year?: string): Promise<string[]> {
-        return listSyncedBaselineFiles(year || getCurrentYear());
+        return listLocalFiles('baseline', year || getCurrentYear());
     },
 
     /**
-     * Check sync status - compare FTP files with OSS files for a specific year
-     * @param year - The year to check sync status for (defaults to current year)
+     * Check baseline sync status - compare FTP files with local files
      */
     async checkSyncStatus(year?: string): Promise<{
         total: number;
@@ -299,7 +337,7 @@ export const PubmedMirror = {
     }> {
         const targetYear = year || getCurrentYear();
         const ftpFiles = await listPubmedAnnualIndexViaFtp();
-        const syncedFiles = await listSyncedBaselineFiles(targetYear);
+        const syncedFiles = await listLocalFiles('baseline', targetYear);
         const syncedFileSet = new Set(syncedFiles);
 
         const gzFiles = ftpFiles.filter((f) => f.name.endsWith('.gz'));
@@ -313,19 +351,14 @@ export const PubmedMirror = {
     },
 
     /**
-     * Sync all pending files from FTP to OSS for a specific year
-     * @param year - The year to sync files for (defaults to current year)
-     * @param maxRetries - Maximum number of retry attempts per file (default: 3)
+     * Sync all pending baseline files from FTP to local storage
      */
     async sync(year?: string, maxRetries: number = 3): Promise<SyncResult> {
-        return syncAnnualPubmedIndexFiles(year, maxRetries);
+        return syncPubmedFiles('baseline', connectToFtpBaseline, year, maxRetries);
     },
 
     /**
-     * Sync a specific file from FTP to OSS for a specific year
-     * @param filename - The filename to sync
-     * @param year - The year to sync the file for (defaults to current year)
-     * @param maxRetries - Maximum number of retry attempts (default: 3)
+     * Sync a specific baseline file from FTP to local storage
      */
     async syncFile(
         filename: string,
@@ -339,6 +372,7 @@ export const PubmedMirror = {
             await connectToFtpBaseline(ftpClient);
             await downloadAndUploadFile(
                 ftpClient,
+                'baseline',
                 filename,
                 targetYear,
                 1,
@@ -349,6 +383,93 @@ export const PubmedMirror = {
             ftpClient.close();
         }
     },
+
+    // --- Updatefiles ---
+
+    /**
+     * List all updatefiles from FTP
+     */
+    async listUpdateFiles(): Promise<FileInfo[]> {
+        return listPubmedUpdateFilesViaFtp();
+    },
+
+    /**
+     * List all synced updatefiles from local storage for a specific year
+     */
+    async listSyncedUpdateFiles(year?: string): Promise<string[]> {
+        return listLocalFiles('updatefiles', year || getCurrentYear());
+    },
+
+    /**
+     * Check updatefiles sync status - compare FTP files with local files
+     */
+    async checkUpdateSyncStatus(year?: string): Promise<{
+        total: number;
+        synced: number;
+        pending: number;
+    }> {
+        const targetYear = year || getCurrentYear();
+        const ftpFiles = await listPubmedUpdateFilesViaFtp();
+        const syncedFiles = await listLocalFiles('updatefiles', targetYear);
+        const syncedFileSet = new Set(syncedFiles);
+
+        const gzFiles = ftpFiles.filter((f) => f.name.endsWith('.gz'));
+        const syncedCount = gzFiles.filter((f) => syncedFileSet.has(f.name)).length;
+
+        return {
+            total: gzFiles.length,
+            synced: syncedCount,
+            pending: gzFiles.length - syncedCount,
+        };
+    },
+
+    /**
+     * Sync all pending updatefiles from FTP to local storage
+     */
+    async syncUpdate(year?: string, maxRetries: number = 3): Promise<SyncResult> {
+        return syncPubmedFiles(
+            'updatefiles',
+            connectToFtpUpdatefiles,
+            year,
+            maxRetries,
+        );
+    },
+
+    /**
+     * Sync a specific updatefile from FTP to local storage
+     */
+    async syncUpdateFile(
+        filename: string,
+        year?: string,
+        maxRetries: number = 3,
+    ): Promise<void> {
+        const targetYear = year || getCurrentYear();
+        const ftpClient = createFtpClient();
+
+        try {
+            await connectToFtpUpdatefiles(ftpClient);
+            await downloadAndUploadFile(
+                ftpClient,
+                'updatefiles',
+                filename,
+                targetYear,
+                1,
+                maxRetries,
+            );
+            console.log(`Successfully synced updatefile ${filename}`);
+        } finally {
+            ftpClient.close();
+        }
+    },
+
+    // --- General ---
+
+    /**
+     * Get the local storage root directory path
+     */
+    getLocalRoot(): string {
+        return getLocalRoot();
+    },
 };
 
 // Export for backward compatibility (deprecated - use PubmedMirror instead)
@@ -356,6 +477,3 @@ export const PubmedMirror = {
  * @deprecated Use PubmedMirror instead
  */
 export const PubmedMirrorDeprecated = PubmedMirror;
-
-// Export S3 client for advanced use cases
-export const ossClient = getS3Client();

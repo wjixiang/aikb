@@ -1,4 +1,4 @@
-import { listSyncedBaselineFiles, downloadBaselineFile } from "./oss-storage.js"
+import { listLocalFiles, downloadLocalFile } from "./local-storage.js"
 import zlib from 'zlib';
 import { promisify } from 'util';
 import { XMLParser } from 'fast-xml-parser';
@@ -53,8 +53,8 @@ export interface SyncDependencies {
  */
 export const defaultDependencies: SyncDependencies = {
     oss: {
-        downloadFile: downloadBaselineFile,
-        listFiles: listSyncedBaselineFiles,
+        downloadFile: (fileName: string, year: string) => downloadLocalFile('baseline', fileName, year),
+        listFiles: (year: string) => listLocalFiles('baseline', year),
     },
     xml: {
         decompress: gunzip as GunzipFunction,
