@@ -2,12 +2,7 @@ import yauzl from 'yauzl';
 import * as fs from 'fs';
 import * as path from 'path';
 
-class SimpleLogger {
-  constructor(private prefix: string) {}
-  log(...args: any[]) { console.log(`[${this.prefix}]`, ...args); }
-  error(...args: any[]) { console.error(`[${this.prefix}]`, ...args); }
-  warn(...args: any[]) { console.warn(`[${this.prefix}]`, ...args); }
-}
+import { createLogger } from '../utils';
 
 /**
  * Options for zip processing operations
@@ -45,7 +40,7 @@ export interface ZipProcessResult {
  * Provides unified processing for different zip extraction needs
  */
 export class ZipProcessor {
-  private logger = new SimpleLogger('pdf2md-service-ZipProcessor');
+  private logger = createLogger({ component: 'ZipProcessor' });
 
   /**
    * Process zip buffer with configurable options

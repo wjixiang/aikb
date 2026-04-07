@@ -1,4 +1,4 @@
-import { MinerUClient } from '../mineru-client';
+import { MinerUClient } from '../../client';
 
 
 const TEST_PDF_S3_KEY = 'test/pdf/acei.pdf';
