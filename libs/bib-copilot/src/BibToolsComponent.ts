@@ -12,6 +12,7 @@ import {
   ListTagsParamsSchema,
   CreateTagParamsSchema,
   GetItemAttachmentsParamsSchema,
+  ReadMarkdownParamsSchema,
 } from './schemas.js';
 
 // ============ Dependency Injection Types ============
@@ -25,6 +26,8 @@ export interface BibToolsDeps {
   listTags: (query: Record<string, unknown>) => Promise<unknown>;
   createTag: (data: Record<string, unknown>) => Promise<unknown>;
   listAttachments: (itemId: string) => Promise<unknown>;
+  getAttachmentRecord: (itemId: string, attachmentId: string) => Promise<{ id: string; fileName: string; fileType: string; s3Key: string } | null>;
+  readAttachmentContent: (s3Key: string) => Promise<string>;
 }
 
 // ============ State Types ============
@@ -69,13 +72,23 @@ You have access to tools for managing a bibliography knowledge base.
 ## Available Tools
 
 - **search_items**: Search and list items by keyword, type, tags, favorites. Use reasonable page sizes (5-10).
-- **get_item**: Get full details of a single item by UUID.
+- **get_item**: Get metadata of a single item by UUID. NOTE: this only returns metadata (title, authors, abstract, DOI, etc.), NOT the full text.
 - **create_item**: Create a new item (article or book).
 - **update_item**: Update an existing item. Only provided fields are changed.
 - **delete_item**: Delete an item permanently (with all attachments).
 - **list_tags**: List all tags. Search by name if needed.
 - **create_tag**: Create a new tag.
-- **get_item_attachments**: Get all attachments for an item.
+- **get_item_attachments**: List all attachments for an item (metadata only: file name, type, size, category).
+- **read_markdown**: Read a markdown attachment's FULL TEXT with pagination (~4000 chars per page). Use page parameter to navigate through the entire document.
+
+## Full-Text Reading Strategy
+
+Your ability to answer questions accurately depends heavily on reading the actual paper content, not just the abstract. Follow this strategy:
+
+1. **Always read the full paper** when the user asks about specific findings, methodology, results, conclusions, or detailed content of a paper. The abstract alone is often insufficient.
+2. **Start from page 1** of read_markdown and continue reading ALL pages until you reach the end (totalPages). Do NOT stop after reading just one or two pages — the key information may appear anywhere in the paper.
+3. **After reading the full text**, synthesize what you've learned to provide a thorough, well-reasoned answer. Reference specific sections, data points, or conclusions from the paper.
+4. **If a paper has no markdown attachment**, rely on the abstract and metadata, but explicitly tell the user that the full text is not available.
 
 ## Best Practices
 
@@ -129,6 +142,10 @@ You have access to tools for managing a bibliography knowledge base.
       get_item_attachments: {
         desc: 'Get all attachments for a specific item.',
         paramsSchema: GetItemAttachmentsParamsSchema,
+      },
+      read_markdown: {
+        desc: 'Read a markdown attachment with pagination. Returns ~4000 characters per page. Use the page parameter to navigate through the document.',
+        paramsSchema: ReadMarkdownParamsSchema,
       },
     };
   }
@@ -225,6 +242,77 @@ You have access to tools for managing a bibliography knowledge base.
     } catch (error) {
       return { success: false, data: { error: String(error) }, summary: `[BibTools] Get attachments failed` };
     }
+  }
+
+  async onRead_markdown(params: z.infer<typeof ReadMarkdownParamsSchema>): Promise<ToolCallResult> {
+    try {
+      const { itemId, attachmentId, page = 1 } = params;
+
+      // 1. Get attachment record (with s3Key)
+      const record = await this.deps.getAttachmentRecord(itemId, attachmentId);
+      if (!record) {
+        return { success: false, data: { error: `Attachment ${attachmentId} not found` }, summary: `[BibTools] Attachment not found` };
+      }
+
+      // 2. Verify it's a markdown/text file
+      if (!record.fileType.includes('markdown') && !record.fileType.includes('text')) {
+        return { success: false, data: { error: `Attachment is not a markdown file (type: ${record.fileType})` }, summary: `[BibTools] Not a markdown file` };
+      }
+
+      // 3. Download content from S3
+      const content = await this.deps.readAttachmentContent(record.s3Key);
+
+      // 4. Paginate
+      const pageSize = 4000;
+      const pages = this.paginateText(content, pageSize);
+      const totalPages = pages.length;
+      const pageIndex = Math.min(page, totalPages);
+      const pageContent = pages[pageIndex - 1];
+
+      return {
+        success: true,
+        data: {
+          fileName: record.fileName,
+          page: pageIndex,
+          totalPages,
+          totalChars: content.length,
+          content: pageContent,
+        },
+        summary: `[BibTools] Reading "${record.fileName}" page ${pageIndex}/${totalPages}`,
+      };
+    } catch (error) {
+      return { success: false, data: { error: String(error) }, summary: `[BibTools] Read markdown failed` };
+    }
+  }
+
+  // ============ Helpers ============
+
+  /**
+   * Split text into pages at paragraph boundaries (~pageSize chars each).
+   */
+  private paginateText(content: string, pageSize: number): string[] {
+    if (content.length <= pageSize) return [content];
+
+    const paragraphs = content.split(/\n\n+/);
+    const pages: string[] = [];
+    let current: string[] = [];
+    let currentLen = 0;
+
+    for (const para of paragraphs) {
+      if (currentLen > 0 && currentLen + para.length + 2 > pageSize) {
+        pages.push(current.join('\n\n'));
+        current = [];
+        currentLen = 0;
+      }
+      current.push(para);
+      currentLen += para.length + (current.length > 1 ? 2 : 0);
+    }
+
+    if (current.length > 0) {
+      pages.push(current.join('\n\n'));
+    }
+
+    return pages;
   }
 
   // ============ Rendering ============

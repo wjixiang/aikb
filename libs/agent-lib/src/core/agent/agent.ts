@@ -673,6 +673,17 @@ export class Agent {
     this.persistInstanceStatus();
     void this.endSession();
 
+    // Resolve any pending A2A task completions so that
+    // waitForA2ATaskCompletion() doesn't hang the query handler.
+    for (const [conversationId, completion] of this._a2aTaskCompletions) {
+      completion.resolve({ output: null, status: 'completed' });
+      this._a2aTaskCompletions.delete(conversationId);
+      this.logger.debug(
+        { conversationId },
+        '[Agent] A2A task completed via agent.complete()',
+      );
+    }
+
     // Trigger agent:completed hook
     void this.hookModule.executeHooks(HookType.AGENT_COMPLETED, {
       type: HookType.AGENT_COMPLETED,
@@ -1162,18 +1173,18 @@ export class Agent {
           // Push error for LLM to see in context
           const errorMsg = `Multiple tool calls detected (${response.toolCalls.length}). Only one tool per response is allowed. Please retry with a single tool call.`;
           this.memoryModule.pushErrors([new Error(errorMsg)]);
-          // Create error tool result and add to memory
+          // Create error tool results for ALL tool calls so every tool_use
+          // has a matching tool_result (Anthropic API requirement).
+          const errorBlocks = response.toolCalls.map((tc) => ({
+            type: 'tool_result' as const,
+            tool_use_id: tc.id,
+            toolName: tc.name,
+            content: `Error: ${errorMsg}`,
+            is_error: true,
+          }));
           const errorResult: ApiMessage = {
             role: 'user',
-            content: [
-              {
-                type: 'tool_result' as const,
-                tool_use_id: response.toolCalls[0].id,
-                toolName: response.toolCalls[0].name,
-                content: `Error: ${errorMsg}`,
-                is_error: true,
-              },
-            ],
+            content: errorBlocks,
             ts: Date.now(),
           };
           await this.addMessageToMemory(errorResult);

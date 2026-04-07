@@ -122,6 +122,13 @@ export class AttachmentService {
     );
   }
 
+  async getAttachment(
+    itemId: string,
+    id: string,
+  ): Promise<AttachmentRecord | null> {
+    return this.repository.findByIdAndItemId(id, itemId);
+  }
+
   async removeAttachment(itemId: string, id: string): Promise<void> {
     const attachment = await this.repository.findByIdAndItemId(id, itemId);
     if (!attachment) {

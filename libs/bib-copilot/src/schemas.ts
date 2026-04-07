@@ -70,3 +70,11 @@ export const CreateTagParamsSchema = z.object({
 export const GetItemAttachmentsParamsSchema = z.object({
   itemId: z.string().describe('Item UUID'),
 });
+
+// ============ Read Markdown ============
+
+export const ReadMarkdownParamsSchema = z.object({
+  itemId: z.string().describe('Item UUID'),
+  attachmentId: z.string().describe('Attachment UUID (must be a markdown file)'),
+  page: z.number().int().min(1).optional().describe('Page number (default 1, each page ~4000 chars)'),
+});
