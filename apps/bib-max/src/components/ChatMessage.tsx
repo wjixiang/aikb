@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { ChatMessage } from '@/lib/api/chat';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import { ChevronRight, ChevronDown, Wrench, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
@@ -139,10 +141,8 @@ export function ChatMessage({ message, pendingToolCalls }: Props) {
   if (message.role === 'user') {
     const text = extractText(message.content);
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-xl rounded-br-sm bg-primary text-primary-foreground px-3 py-2 text-sm">
-          {text}
-        </div>
+      <div className="w-full rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground">
+        {text}
       </div>
     );
   }
@@ -215,8 +215,10 @@ export function ChatMessage({ message, pendingToolCalls }: Props) {
 
       {/* Text response */}
       {text && (
-        <div className="max-w-[85%] rounded-xl rounded-bl-sm bg-muted px-3 py-2 text-sm whitespace-pre-wrap">
-          {text}
+        <div className="w-full rounded-lg bg-muted/50 px-3 py-2">
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
+          </div>
         </div>
       )}
     </div>

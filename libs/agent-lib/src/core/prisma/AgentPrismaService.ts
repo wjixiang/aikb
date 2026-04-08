@@ -18,7 +18,9 @@ export class AgentPrismaService extends PrismaClient {
       throw new Error('AGENT_DATABASE_URL environment variable is not set');
     }
     const pool = new Pool({ connectionString });
-    const adapter = new PrismaPg(pool);
+    // Type assertion needed: @prisma/adapter-pg bundles @types/pg@8.11.11
+    // which conflicts with the newer @types/pg@8.20.0 used here
+    const adapter = new PrismaPg(pool as never);
     super({ adapter });
   }
 

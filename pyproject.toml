@@ -3,13 +3,16 @@ name = "monorepo"
 version = "0.1.0"
 requires-python = ">=3.12"
 
-[tool.uv.sources]
-mr-lib = { workspace = true }
+
+[tool.uv.sources.mr-lib]
+workspace = true
+
 
 [tool.uv.workspace]
-members = [
-    "python-libs/*",
-    "python-apps/*",
-    "apps/swarm-fs",
-]
-exclude = ["packages/seeds"]
+members = [ "python-libs/*", "python-apps/*", "apps/swarm-fs", "apps/file-renderer" ]
+exclude = [ "packages/seeds" ]
+
+
+[[index]]
+url = "https://mirrors.cloud.tencent.com/pypi/simple/"
+default = true

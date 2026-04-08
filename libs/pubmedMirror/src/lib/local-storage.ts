@@ -73,6 +73,28 @@ export const listLocalFiles = async (
 };
 
 /**
+ * Get file names mapped to their sizes in local storage
+ */
+export const getLocalFileSizes = (
+    fileType: FileType,
+    year: string,
+): Map<string, number> => {
+    const dirPath = getDirPath(fileType, year);
+    const sizeMap = new Map<string, number>();
+    if (!fs.existsSync(dirPath)) {
+        return sizeMap;
+    }
+    for (const name of fs.readdirSync(dirPath)) {
+        const filePath = path.join(dirPath, name);
+        const stat = fs.statSync(filePath);
+        if (stat.isFile()) {
+            sizeMap.set(name, stat.size);
+        }
+    }
+    return sizeMap;
+};
+
+/**
  * Check if a file exists in local storage
  */
 export const localFileExists = async (

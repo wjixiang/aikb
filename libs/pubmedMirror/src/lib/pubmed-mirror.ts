@@ -4,9 +4,7 @@ import * as path from 'path';
 import { tmpdir } from 'os';
 import { SyncResult } from './types.js';
 import {
-    uploadToLocal,
     listLocalFiles,
-    localFileExists,
     getLocalRoot,
     type FileType,
 } from './local-storage.js';
@@ -118,7 +116,9 @@ const sleep = (ms: number): Promise<void> => {
 };
 
 /**
- * Download a file from FTP and save it to local storage with retry logic
+ * Download a file from FTP and save it to local storage with retry logic.
+ * Downloads to a temp file first, then copies to final location on success.
+ * On failure, rolls back by deleting the temp file.
  */
 const downloadAndUploadFile = async (
     ftpClient: Client,
@@ -130,30 +130,44 @@ const downloadAndUploadFile = async (
 ): Promise<void> => {
     const tempDir = tmpdir();
     const tempFilePath = path.join(tempDir, filename);
+    const targetDir = path.join(getLocalRoot(), fileType, year);
+    const targetPath = path.join(targetDir, filename);
 
     try {
-        // Download file to temporary location
+        // Download to temp file
         await ftpClient.downloadTo(tempFilePath, filename);
 
-        // Read the file into a buffer
-        const buffer = fs.readFileSync(tempFilePath);
+        // Verify the downloaded file is non-empty
+        const stat = fs.statSync(tempFilePath);
+        if (stat.size === 0) {
+            throw new Error('Downloaded file is empty');
+        }
 
-        // Save to local storage
-        await uploadToLocal(fileType, filename, buffer, year);
+        // Ensure target directory exists
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }
+
+        // Move to final location (copy+unlink to handle cross-device moves)
+        fs.copyFileSync(tempFilePath, targetPath);
+        fs.unlinkSync(tempFilePath);
     } catch (error) {
+        // Rollback: delete temp file
+        if (fs.existsSync(tempFilePath)) {
+            fs.unlinkSync(tempFilePath);
+        }
+        // Rollback: delete incomplete target file if it exists
+        if (fs.existsSync(targetPath)) {
+            fs.unlinkSync(targetPath);
+        }
+
         if (attempt < maxAttempts) {
-            // Exponential backoff: 2^attempt seconds
             const backoffTime = Math.pow(2, attempt) * 1000;
             console.warn(
                 `Attempt ${attempt}/${maxAttempts} failed for ${filename}. ` +
                 `Retrying in ${backoffTime}ms... Error: ${error}`,
             );
             await sleep(backoffTime);
-
-            // Clean up temp file before retry
-            if (fs.existsSync(tempFilePath)) {
-                fs.unlinkSync(tempFilePath);
-            }
 
             return downloadAndUploadFile(
                 ftpClient,
@@ -165,11 +179,6 @@ const downloadAndUploadFile = async (
             );
         }
         throw error;
-    } finally {
-        // Clean up temporary file
-        if (fs.existsSync(tempFilePath)) {
-            fs.unlinkSync(tempFilePath);
-        }
     }
 };
 
@@ -194,24 +203,28 @@ const syncPubmedFiles = async (
         // Connect to FTP server
         await connectFn(ftpClient);
 
+        // Navigate into the year subdirectory
+        await ftpClient.cd(targetYear);
+
         // Get list of files
         const files = await ftpClient.list();
         console.log(
-            `Found ${files.length} files in ${fileType} directory`,
+            `Found ${files.length} files in ${fileType}/${targetYear} directory`,
         );
 
         // Get list of already synced files from local storage
         const syncedFiles = await listLocalFiles(fileType, targetYear);
         const syncedFileNames = new Set(syncedFiles);
 
-        // Filter files that need to be synced
-        const initialFilesToSync = files.filter((file) => {
-            if (!file.name.endsWith('.gz')) return false;
+        // Filter files that need to be synced (only check existence)
+        const gzFiles = files.filter((f) => f.name.endsWith('.gz'));
+        const initialFilesToSync = gzFiles.filter((file) => {
             return !syncedFileNames.has(file.name);
         });
 
+        const skippedCount = gzFiles.length - initialFilesToSync.length;
         console.log(
-            `Need to sync ${initialFilesToSync.length} files (${files.length - initialFilesToSync.length} already synced)`,
+            `Need to sync ${initialFilesToSync.length} files (${skippedCount} already synced)`,
         );
 
         // Sync files with retry mechanism
@@ -226,8 +239,8 @@ const syncPubmedFiles = async (
         }));
 
         const limiter = new Bottleneck({
-            minTime: 333,
-            maxConcurrent: 5,
+            minTime: parseInt(process.env['PUBMED_SYNC_MIN_TIME'] || '333', 10),
+            maxConcurrent: parseInt(process.env['PUBMED_SYNC_MAX_CONCURRENT'] || '5', 10),
         });
 
         // Process files until queue is empty
@@ -245,6 +258,7 @@ const syncPubmedFiles = async (
                     const client = createFtpClient();
                     try {
                         await connectFn(client);
+                        await client.cd(targetYear);
                         await downloadAndUploadFile(
                             client,
                             fileType,
