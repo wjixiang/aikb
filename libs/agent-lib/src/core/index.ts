@@ -50,8 +50,6 @@ export * from './di/index.js';
 // Expert System (removed)
 
 // Memory
-export { ContextMemoryStore } from './memory/index.js';
-export type { ContextSnapshot, MemorySummary } from './memory/index.js';
 export { MemoryModule, defaultMemoryConfig } from './memory/index.js';
 export type { IMemoryModule, MemoryModuleConfig } from './memory/index.js';
 export type {

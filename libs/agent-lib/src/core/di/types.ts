@@ -99,12 +99,6 @@ export const TYPES = {
    */
   ReflectiveThinkingProcessor: Symbol('ReflectiveThinkingProcessor'),
 
-  /**
-   * ContextMemoryStore for context memory
-   * @scope Request - Shared within an agent creation request
-   */
-  ContextMemoryStore: Symbol('ContextMemoryStore'),
-
   // ==================== Configuration ====================
 
   /**
@@ -126,7 +120,7 @@ export const TYPES = {
 
   /**
    * MemoryModuleConfig - Configuration for MemoryModule
-   * Contains enableRecall, maxRecallContexts, etc.
+   * Controls compression thresholds and retention policy
    */
   MemoryModuleConfig: Symbol('MemoryModuleConfig'),
 

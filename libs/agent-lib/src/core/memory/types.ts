@@ -112,24 +112,14 @@ export type MessageAddedCallback = (
  * Configuration for the memory module
  */
 export interface MemoryModuleConfig {
-  /** Enable context recall */
-  enableRecall: boolean;
-  /** Maximum contexts to recall per request */
-  maxRecallContexts: number;
-  /** Maximum recalled conversation messages to inject (default: 20) */
-  maxRecalledMessages: number;
   /** Maximum tokens in context before compression (default: 100000) */
-  maxContextTokens?: number;
+  maxContextTokens: number;
   /** Compress when at this percentage of maxContextTokens (default: 0.8) */
-  contextCompressionRatio?: number;
-  /** Target token count after compression (default: 60% of maxContextTokens) */
-  compressionTargetTokens?: number;
-  /** Use LLM for summarization (default: true) */
-  enableLLMSummarization?: boolean;
-  /** Max tokens to send for LLM summarization (default: 15000) */
-  maxTokensForSummary?: number;
-  /** Model to use for summarization */
-  summaryModel?: string;
+  contextCompressionRatio: number;
+  /** Target token count after compression (default: 60000) */
+  compressionTargetTokens: number;
+  /** Minimum number of recent messages to retain during compression (default: 20) */
+  minRetainedMessages: number;
 }
 
 /**
@@ -152,9 +142,14 @@ export interface IMemoryModule {
   // ==================== Message Management ====================
 
   /**
-   * Add message to storage
+   * Add message to storage (triggers compression if needed)
    */
   addMessage(message: ApiMessage): Promise<ApiMessage>;
+
+  /**
+   * Add message without triggering compression
+   */
+  addMessageSync(message: ApiMessage): Promise<ApiMessage>;
 
   /**
    * Get all historical messages
@@ -162,15 +157,19 @@ export interface IMemoryModule {
   getAllMessages(): ApiMessage[];
 
   /**
-   * Get history for prompt injection
-   * @param interleaveWorkspaces - If true, interleaves workspace contexts with messages
+   * Get total token count for all messages
    */
-  getHistoryForPrompt(interleaveWorkspaces?: boolean): ApiMessage[];
+  getTotalTokens(): Promise<number>;
+
+  /**
+   * Get history for prompt injection
+   */
+  getHistoryForPrompt(): ApiMessage[];
 
   // ==================== Workspace Context Management ====================
 
   /**
-   * Record a workspace context snapshot (async for LLM diff/summarization)
+   * Record a workspace context snapshot (only stores when context changes)
    */
   recordWorkspaceContext(context: string, iteration: number): Promise<void>;
 
@@ -178,11 +177,6 @@ export interface IMemoryModule {
    * Get all workspace context entries
    */
   getWorkspaceContexts(): WorkspaceContextEntry[];
-
-  /**
-   * Get workspace contexts formatted for prompt injection
-   */
-  getWorkspaceContextsForPrompt(): ApiMessage[];
 
   /**
    * Clear workspace contexts

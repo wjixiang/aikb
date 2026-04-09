@@ -1,5 +1,10 @@
 import { ClientPool } from '../client/pool.js';
-import { QuotaExceededError } from '../errors/errors.js';
+import {
+  QuotaExceededError,
+  RateLimitError,
+  ValidationError,
+  ContentPolicyError,
+} from '../errors/errors.js';
 import type { ApiClient, ApiResponse } from '../types/api-client.js';
 
 const mockResponse: ApiResponse = {
@@ -435,5 +440,427 @@ describe('ClientPool - Quota', () => {
       await client.makeRequest('sys', 'ctx', []);
     }
     expect(pool.getStats('no-quota')!.totalRequests).toBe(10);
+  });
+});
+
+describe('ClientPool - Round Robin', () => {
+  beforeEach(() => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    pool._clientFactory = createMockFactory();
+  });
+
+  afterEach(() => {
+    ClientPool.resetInstance();
+  });
+
+  it('should return clients in round-robin order', async () => {
+    const pool = ClientPool.getInstance();
+    pool.register({
+      name: 'a',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.register({
+      name: 'b',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.register({
+      name: 'c',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+
+    // The first call returns 'a', then 'b', then 'c', then cycles back
+    const results: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const client = pool.getNext()!;
+      // We can't directly read the name from the proxy, so verify via stats
+      await client.makeRequest('sys', 'ctx', []);
+    }
+
+    const stats = pool.getPoolStats();
+    // Each client should have been called exactly 2 times
+    expect(stats.entries.a!.totalRequests).toBe(2);
+    expect(stats.entries.b!.totalRequests).toBe(2);
+    expect(stats.entries.c!.totalRequests).toBe(2);
+  });
+
+  it('should skip disabled clients', async () => {
+    const pool = ClientPool.getInstance();
+    pool.register({
+      name: 'a',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.register({
+      name: 'b',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.register({
+      name: 'c',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.disable('b');
+
+    for (let i = 0; i < 4; i++) {
+      const client = pool.getNext()!;
+      await client.makeRequest('sys', 'ctx', []);
+    }
+
+    const stats = pool.getPoolStats();
+    expect(stats.entries.a!.totalRequests).toBe(2);
+    expect(stats.entries.b!.totalRequests).toBe(0);
+    expect(stats.entries.c!.totalRequests).toBe(2);
+  });
+
+  it('should return undefined when no clients are enabled', () => {
+    const pool = ClientPool.getInstance();
+    pool.register({
+      name: 'off',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.disable('off');
+    expect(pool.getNext()).toBeUndefined();
+  });
+
+  it('should return undefined when pool is empty', () => {
+    const pool = ClientPool.getInstance();
+    expect(pool.getNext()).toBeUndefined();
+  });
+
+  it('should handle client disabled between calls', async () => {
+    const pool = ClientPool.getInstance();
+    pool.register({
+      name: 'a',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.register({
+      name: 'b',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.register({
+      name: 'c',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+
+    // First call gets 'a' (index 0), index advances to 1
+    const first = pool.getNext()!;
+    await first.makeRequest('sys', 'ctx', []);
+
+    // Disable 'b' — enabled list becomes ['a', 'c']
+    // index=1 % 2 = 1, so gets 'c', index advances to 0
+    pool.disable('b');
+    const second = pool.getNext()!;
+    await second.makeRequest('sys', 'ctx', []);
+    // index=0 % 2 = 0, so gets 'a', index advances to 1
+    const third = pool.getNext()!;
+    await third.makeRequest('sys', 'ctx', []);
+
+    const stats = pool.getPoolStats();
+    expect(stats.entries.a!.totalRequests).toBe(2);
+    expect(stats.entries.b!.totalRequests).toBe(0);
+    expect(stats.entries.c!.totalRequests).toBe(1);
+  });
+
+  it('should reset round-robin index', async () => {
+    const pool = ClientPool.getInstance();
+    pool.register({
+      name: 'a',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+    pool.register({
+      name: 'b',
+      settings: { apiProvider: 'openai', apiKey: 'k', apiModelId: 'm' },
+    });
+
+    // index=0 → gets 'a', index→1
+    await pool.getNext()!.makeRequest('sys', 'ctx', []);
+    // index=1 → gets 'b', index→0
+    await pool.getNext()!.makeRequest('sys', 'ctx', []);
+    // reset → index=0
+    pool.resetRoundRobin();
+    // index=0 → gets 'a', index→1
+    await pool.getNext()!.makeRequest('sys', 'ctx', []);
+
+    const stats = pool.getPoolStats();
+    // 'a' was called 2 times (before reset + after reset)
+    // 'b' was called 1 time
+    expect(stats.entries.a!.totalRequests).toBe(2);
+    expect(stats.entries.b!.totalRequests).toBe(1);
+  });
+});
+
+describe('ClientPool - Fallback', () => {
+  const baseSettings = {
+    apiProvider: 'openai' as const,
+    apiKey: 'k',
+    apiModelId: 'm',
+  };
+
+  function createRetryableFactory(): (settings: any) => ApiClient {
+    return () => ({
+      makeRequest: async () => {
+        throw new RateLimitError('Rate limited', 429);
+      },
+    } as ApiClient);
+  }
+
+  function createNonRetryableFactory(): (settings: any) => ApiClient {
+    return () => ({
+      makeRequest: async () => {
+        throw new ValidationError('Bad input', 400);
+      },
+    } as ApiClient);
+  }
+
+  function createContentPolicyFactory(): (settings: any) => ApiClient {
+    return () => ({
+      makeRequest: async () => {
+        throw new ContentPolicyError('Policy violation', 400);
+      },
+    } as ApiClient);
+  }
+
+  beforeEach(() => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    pool._clientFactory = createMockFactory();
+  });
+
+  afterEach(() => {
+    ClientPool.resetInstance();
+  });
+
+  it('should succeed on first client without fallback', async () => {
+    const pool = ClientPool.getInstance();
+    pool.register({ name: 'a', settings: baseSettings });
+    pool.register({ name: 'b', settings: baseSettings });
+
+    const result = await pool.makeRequestWithFallback('sys', 'ctx', []);
+    expect(result.textResponse).toBe('ok');
+    // Only first client should have been called
+    expect(pool.getStats('a')!.totalRequests).toBe(1);
+    expect(pool.getStats('b')!.totalRequests).toBe(0);
+  });
+
+  it('should fall back to next client on retryable error', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    // Override factory to make 'a' fail and 'b' succeed
+    const callLog: string[] = [];
+    pool._clientFactory = (settings: any) => {
+      const name = settings._name;
+      return {
+        makeRequest: async () => {
+          callLog.push(name);
+          if (name === 'a') {
+            throw new RateLimitError('Rate limited', 429);
+          }
+          return { ...mockResponse };
+        },
+      } as ApiClient;
+    };
+
+    pool.register({ name: 'a', settings: { ...baseSettings, _name: 'a' } as any });
+    pool.register({ name: 'b', settings: { ...baseSettings, _name: 'b' } as any });
+
+    const result = await pool.makeRequestWithFallback('sys', 'ctx', []);
+    expect(result.textResponse).toBe('ok');
+    expect(callLog).toEqual(['a', 'b']);
+    expect(pool.getStats('a')!.failedRequests).toBe(1);
+    expect(pool.getStats('b')!.successRequests).toBe(1);
+  });
+
+  it('should try all clients until one succeeds', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    const callLog: string[] = [];
+    pool._clientFactory = (settings: any) => {
+      const name = settings._name;
+      return {
+        makeRequest: async () => {
+          callLog.push(name);
+          if (name === 'c') return { ...mockResponse };
+          throw new RateLimitError('Rate limited', 429);
+        },
+      } as ApiClient;
+    };
+
+    pool.register({ name: 'a', settings: { ...baseSettings, _name: 'a' } as any });
+    pool.register({ name: 'b', settings: { ...baseSettings, _name: 'b' } as any });
+    pool.register({ name: 'c', settings: { ...baseSettings, _name: 'c' } as any });
+
+    const result = await pool.makeRequestWithFallback('sys', 'ctx', []);
+    expect(result.textResponse).toBe('ok');
+    expect(callLog).toEqual(['a', 'b', 'c']);
+  });
+
+  it('should throw last error when all clients fail with retryable errors', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    pool._clientFactory = createRetryableFactory();
+
+    pool.register({ name: 'a', settings: baseSettings });
+    pool.register({ name: 'b', settings: baseSettings });
+
+    await expect(
+      pool.makeRequestWithFallback('sys', 'ctx', []),
+    ).rejects.toThrow('Rate limited');
+  });
+
+  it('should NOT fall back on non-retryable error', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    pool._clientFactory = createNonRetryableFactory();
+
+    pool.register({ name: 'a', settings: baseSettings });
+    pool.register({ name: 'b', settings: baseSettings });
+
+    await expect(
+      pool.makeRequestWithFallback('sys', 'ctx', []),
+    ).rejects.toThrow('Bad input');
+
+    // Only 'a' should have been called
+    expect(pool.getStats('a')!.totalRequests).toBe(1);
+    expect(pool.getStats('b')!.totalRequests).toBe(0);
+  });
+
+  it('should NOT fall back on ContentPolicyError', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    pool._clientFactory = createContentPolicyFactory();
+
+    pool.register({ name: 'a', settings: baseSettings });
+    pool.register({ name: 'b', settings: baseSettings });
+
+    await expect(
+      pool.makeRequestWithFallback('sys', 'ctx', []),
+    ).rejects.toThrow('Policy violation');
+
+    expect(pool.getStats('a')!.totalRequests).toBe(1);
+    expect(pool.getStats('b')!.totalRequests).toBe(0);
+  });
+
+  it('should respect maxAttempts option', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    const callLog: string[] = [];
+    pool._clientFactory = (settings: any) => {
+      const name = settings._name;
+      return {
+        makeRequest: async () => {
+          callLog.push(name);
+          throw new RateLimitError('Rate limited', 429);
+        },
+      } as ApiClient;
+    };
+
+    pool.register({ name: 'a', settings: { ...baseSettings, _name: 'a' } as any });
+    pool.register({ name: 'b', settings: { ...baseSettings, _name: 'b' } as any });
+    pool.register({ name: 'c', settings: { ...baseSettings, _name: 'c' } as any });
+
+    await expect(
+      pool.makeRequestWithFallback('sys', 'ctx', [], undefined, undefined, {
+        maxAttempts: 2,
+      }),
+    ).rejects.toThrow('Rate limited');
+
+    expect(callLog).toEqual(['a', 'b']);
+  });
+
+  it('should respect skipClients option', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    const callLog: string[] = [];
+    pool._clientFactory = (settings: any) => {
+      const name = settings._name;
+      return {
+        makeRequest: async () => {
+          callLog.push(name);
+          return { ...mockResponse };
+        },
+      } as ApiClient;
+    };
+
+    pool.register({ name: 'a', settings: { ...baseSettings, _name: 'a' } as any });
+    pool.register({ name: 'b', settings: { ...baseSettings, _name: 'b' } as any });
+
+    await pool.makeRequestWithFallback('sys', 'ctx', [], undefined, undefined, {
+      skipClients: ['a'],
+    });
+
+    // Should skip 'a' and start from 'b'
+    expect(callLog).toEqual(['b']);
+  });
+
+  it('should throw when no enabled clients', async () => {
+    const pool = ClientPool.getInstance();
+
+    await expect(
+      pool.makeRequestWithFallback('sys', 'ctx', []),
+    ).rejects.toThrow('No enabled LLM clients available');
+  });
+
+  it('should track fallback stats', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    const callLog: string[] = [];
+    pool._clientFactory = (settings: any) => {
+      const name = settings._name;
+      return {
+        makeRequest: async () => {
+          callLog.push(name);
+          if (name === 'a') throw new RateLimitError('Rate limited', 429);
+          return { ...mockResponse };
+        },
+      } as ApiClient;
+    };
+
+    pool.register({ name: 'a', settings: { ...baseSettings, _name: 'a' } as any });
+    pool.register({ name: 'b', settings: { ...baseSettings, _name: 'b' } as any });
+
+    await pool.makeRequestWithFallback('sys', 'ctx', []);
+
+    const stats = pool.getPoolStats();
+    expect(stats.totalFallbackRequests).toBe(1);
+    expect(stats.successfulFallbackRequests).toBe(1);
+  });
+
+  it('should fall back on QuotaExceededError', async () => {
+    ClientPool.resetInstance();
+    const pool = ClientPool.getInstance();
+    const callLog: string[] = [];
+    pool._clientFactory = (settings: any) => {
+      const name = settings._name;
+      return {
+        makeRequest: async () => {
+          callLog.push(name);
+          if (name === 'a') {
+            throw new QuotaExceededError('Quota exceeded', 'tokens');
+          }
+          return { ...mockResponse };
+        },
+      } as ApiClient;
+    };
+
+    pool.register({ name: 'a', settings: { ...baseSettings, _name: 'a' } as any });
+    pool.register({ name: 'b', settings: { ...baseSettings, _name: 'b' } as any });
+
+    const result = await pool.makeRequestWithFallback('sys', 'ctx', []);
+    expect(result.textResponse).toBe('ok');
+    expect(callLog).toEqual(['a', 'b']);
+    expect(pool.getStats('a')!.failedRequests).toBe(1);
+    expect(pool.getStats('b')!.successRequests).toBe(1);
+  });
+
+  it('should reset fallback stats on clear', async () => {
+    const pool = ClientPool.getInstance();
+    pool.register({ name: 'a', settings: baseSettings });
+
+    await pool.makeRequestWithFallback('sys', 'ctx', []);
+    expect(pool.getPoolStats().totalFallbackRequests).toBe(1);
+
+    pool.clear();
+    // After clear, need to re-register. Factory is already set by beforeEach.
+    pool.register({ name: 'a', settings: baseSettings });
+    expect(pool.getPoolStats().totalFallbackRequests).toBe(0);
   });
 });

@@ -6,13 +6,32 @@ import {
   TaskCompletedCallback,
   TaskAbortedCallback,
 } from '../common/types.js';
-import {
-  TurnStatus,
-  ThinkingRound,
-  ToolCallResult,
-  Turn,
-} from '../memory/Turn.js';
 import { ApiMessage, MessageAddedCallback } from '../memory/types.js';
+
+/**
+ * Turn status enum (for observer callbacks)
+ */
+enum TurnStatus {
+  PENDING = 'pending',
+  THINKING = 'thinking',
+  ACTING = 'acting',
+  EXECUTING = 'executing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+}
+
+/**
+ * Thinking round in a turn (for observer callbacks)
+ */
+interface ThinkingRound {
+  roundNumber: number;
+  content: string;
+  continueThinking: boolean;
+  recalledContexts: any[];
+  tokens: number;
+  thoughtNumber: number;
+  totalThoughts: number;
+}
 
 /**
  * Observer callbacks for ObservableAgent

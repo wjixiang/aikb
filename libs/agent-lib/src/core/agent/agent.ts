@@ -1040,9 +1040,8 @@ export class Agent {
         iterations,
       );
 
-      // Get conversation history with workspace contexts interleaved
-      // This ensures workspace context appears after each assistant response in history
-      const historyContext = this.memoryModule.getHistoryForPrompt(true);
+      // Get conversation history
+      const historyContext = this.memoryModule.getHistoryForPrompt();
       const memoryContext: MemoryContextItem[] = historyContext.map((m) => {
         // Skip legacy string entries (from old formatMessage output or DB migration artifacts)
         if (typeof m === 'string') return { role: 'user' as const, content: m };
@@ -1159,12 +1158,6 @@ export class Agent {
         };
         await this.addMessageToMemory(assistantMsg);
       }
-
-      // Record current workspace context for future iterations (for next turn's historical record)
-      await this.memoryModule.recordWorkspaceContext(
-        currentWorkspaceContext,
-        iterations,
-      );
 
       // Execute tool calls
       if (response.toolCalls && response.toolCalls.length > 0) {

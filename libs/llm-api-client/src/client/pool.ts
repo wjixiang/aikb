@@ -1,4 +1,10 @@
 import type { ApiClient } from '../types/api-client.js';
+import type {
+  ApiResponse,
+  ApiTimeoutConfig,
+  ChatCompletionTool,
+  MemoryContextItem,
+} from '../types/api-client.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import {
   QuotaExceededError,
@@ -8,6 +14,7 @@ import { ApiClientFactory } from './factory.js';
 import { createLogger } from './logger.js';
 import { checkClientHealth } from './pool.health.js';
 import type {
+  FallbackOptions,
   PoolEntryConfig,
   PoolEntry,
   ClientPoolEntryStats,
@@ -158,6 +165,11 @@ export class ClientPool {
   private entries: Map<string, PoolEntry> = new Map();
   private logger: ReturnType<typeof createLogger>;
   private idCounter = 0;
+  private roundRobinIndex = 0;
+  private fallbackStats = {
+    totalFallbackRequests: 0,
+    successfulFallbackRequests: 0,
+  };
 
   /**
    * Optional factory override for testing. When set, register() uses
@@ -304,7 +316,134 @@ export class ClientPool {
   clear(): void {
     const count = this.entries.size;
     this.entries.clear();
+    this.roundRobinIndex = 0;
+    this.fallbackStats = {
+      totalFallbackRequests: 0,
+      successfulFallbackRequests: 0,
+    };
     this.logger.info({ count }, 'Cleared all clients');
+  }
+
+  // --- Round Robin ---
+
+  /**
+   * Return names of all currently enabled clients.
+   */
+  private listEnabledNames(): string[] {
+    return Array.from(this.entries.entries())
+      .filter(([, entry]) => entry.enabled)
+      .map(([name]) => name);
+  }
+
+  /**
+   * Get the next enabled client in round-robin order.
+   *
+   * Cycles through all enabled clients sequentially. If no enabled
+   * clients exist, returns undefined.
+   */
+  getNext(): ApiClient | undefined {
+    const enabled = this.listEnabledNames();
+    if (enabled.length === 0) return undefined;
+
+    this.roundRobinIndex = this.roundRobinIndex % enabled.length;
+    const name = enabled[this.roundRobinIndex]!;
+    this.roundRobinIndex = (this.roundRobinIndex + 1) % enabled.length;
+
+    return this.get(name);
+  }
+
+  /**
+   * Reset the round-robin index to the beginning.
+   */
+  resetRoundRobin(): void {
+    this.roundRobinIndex = 0;
+  }
+
+  // --- Fallback ---
+
+  /**
+   * Execute an API request with automatic fallback to other enabled clients
+   * on retryable failure.
+   *
+   * Tries each enabled client in order. If a client fails with a retryable
+   * error (after its internal retries), the next enabled client is tried.
+   * Non-retryable errors (ValidationError, ContentPolicyError, etc.) stop
+   * fallback immediately since the same request would fail on any client.
+   * QuotaExceededError is treated as fallback-eligible since quota is per-client.
+   */
+  async makeRequestWithFallback(
+    systemPrompt: string,
+    workspaceContext: string,
+    memoryContext: MemoryContextItem[],
+    timeoutConfig?: ApiTimeoutConfig,
+    tools?: ChatCompletionTool[],
+    options?: FallbackOptions,
+  ): Promise<ApiResponse> {
+    const enabled = this.listEnabledNames();
+    const skipSet = new Set(options?.skipClients ?? []);
+    const candidates = enabled.filter((n) => !skipSet.has(n));
+
+    const maxAttempts = options?.maxAttempts ?? candidates.length;
+
+    if (candidates.length === 0) {
+      throw new Error('No enabled LLM clients available for fallback');
+    }
+
+    this.fallbackStats.totalFallbackRequests++;
+    let lastError: unknown;
+
+    const tryCount = Math.min(maxAttempts, candidates.length);
+
+    for (let i = 0; i < tryCount; i++) {
+      const name = candidates[i]!;
+      const client = this.get(name);
+
+      if (!client) continue; // client was disabled between iterations
+
+      try {
+        this.logger.info(
+          { name, attempt: i + 1, total: tryCount },
+          'Fallback attempt',
+        );
+        const result = await client.makeRequest(
+          systemPrompt,
+          workspaceContext,
+          memoryContext,
+          timeoutConfig,
+          tools,
+        );
+        if (i > 0) {
+          this.fallbackStats.successfulFallbackRequests++;
+          this.logger.info(
+            { name, attempts: i + 1 },
+            'Fallback succeeded',
+          );
+        }
+        return result;
+      } catch (error) {
+        lastError = error;
+        const parsed = parseError(error);
+        // QuotaExceededError is per-client, so fallback to another client
+        const isQuotaError = error instanceof QuotaExceededError;
+        if (!parsed.retryable && !isQuotaError) {
+          this.logger.warn(
+            { name, errorCode: parsed.code },
+            'Fallback stopped: non-retryable error',
+          );
+          throw error;
+        }
+        this.logger.warn(
+          {
+            name,
+            errorCode: parsed.code,
+            nextClient: candidates[i + 1] ?? 'none',
+          },
+          'Fallback: retryable error, trying next client',
+        );
+      }
+    }
+
+    throw lastError ?? new Error('All fallback clients failed');
   }
 
   // --- Enable / Disable ---
@@ -402,6 +541,9 @@ export class ClientPool {
       totalRequests,
       totalPromptTokens,
       totalCompletionTokens,
+      totalFallbackRequests: this.fallbackStats.totalFallbackRequests,
+      successfulFallbackRequests: this.fallbackStats
+        .successfulFallbackRequests,
       entries,
     };
   }

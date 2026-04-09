@@ -74,6 +74,10 @@ export interface ClientPoolStats {
   totalRequests: number;
   totalPromptTokens: number;
   totalCompletionTokens: number;
+  /** Total number of requests handled via fallback */
+  totalFallbackRequests: number;
+  /** Successful fallback requests (first client failed, subsequent succeeded) */
+  successfulFallbackRequests: number;
   entries: Record<string, ClientPoolEntryStats>;
 }
 
@@ -84,4 +88,21 @@ export interface HealthCheckResult {
   healthy: boolean;
   latencyMs: number;
   error?: string;
+}
+
+/**
+ * Options for makeRequestWithFallback.
+ */
+export interface FallbackOptions {
+  /**
+   * Maximum number of clients to try before giving up.
+   * Defaults to all enabled clients.
+   */
+  maxAttempts?: number;
+
+  /**
+   * Names of clients to skip (e.g., the one that was already tried
+   * by the caller before deciding to use fallback).
+   */
+  skipClients?: string[];
 }

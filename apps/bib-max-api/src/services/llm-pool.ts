@@ -77,7 +77,7 @@ export function initLlmPool(): ClientPool {
 /**
  * Get a client from the global LLM pool by name.
  *
- * If `name` is omitted, returns the first available client.
+ * If `name` is omitted, returns the next client in round-robin order.
  *
  * @returns The ApiClient instance
  * @throws Error if no client is found
@@ -89,10 +89,7 @@ export function getLlmClient(name?: string): ApiClient {
   if (name) {
     client = pool.get(name);
   } else {
-    const names = pool.list();
-    if (names.length > 0) {
-      client = pool.get(names[0]!);
-    }
+    client = pool.getNext();
   }
 
   if (!client) {

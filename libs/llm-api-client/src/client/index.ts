@@ -19,4 +19,5 @@ export type {
   QuotaUsage,
   ClientPoolStats,
   HealthCheckResult,
+  FallbackOptions,
 } from './pool.types.js';
