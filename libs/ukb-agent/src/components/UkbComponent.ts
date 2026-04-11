@@ -72,9 +72,15 @@ export class UkbComponent extends ToolComponent<UkbState> {
 字段格式为 "entity.field_name"，例如 "participant.eid"（参与者ID）、"participant.p31"（性别）。
 在查询前，建议先用 list_fields 或 query_field_dict 了解可用的字段。`;
 
-  constructor(baseUrl?: string) {
+  constructor(baseUrlOrClient?: string | UkbMcpClient) {
     super();
-    this.client = new UkbMcpClient(baseUrl);
+    if (typeof baseUrlOrClient === 'string') {
+      this.client = new UkbMcpClient(baseUrlOrClient);
+    } else if (baseUrlOrClient instanceof UkbMcpClient) {
+      this.client = baseUrlOrClient;
+    } else {
+      this.client = new UkbMcpClient();
+    }
   }
 
   protected initialState(): UkbState {
