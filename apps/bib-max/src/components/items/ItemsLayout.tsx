@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ArrowUp, ArrowDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, PanelLeftClose, PanelLeftOpen, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ItemDialog } from "@/components/ItemDialog";
 import { ItemsList } from "./ItemsList";
 import { WorkspaceBreadcrumb } from "./WorkspaceBreadcrumb";
@@ -45,6 +46,7 @@ export function ItemsLayout() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [listCollapsed, setListCollapsed] = useState(false);
+  const isMobile = useIsMobile();
 
   // Reset collapse when navigating away from a selected item
   useEffect(() => {
@@ -119,6 +121,21 @@ export function ItemsLayout() {
       <WorkspaceBreadcrumb items={items} />
 
       <div className="flex min-h-0 flex-1">
+        {/* Mobile: show detail full-width with back button, or list full-width */}
+        {isMobile && selectedItemId ? (
+          <div className="min-w-0 flex-1 flex flex-col overflow-auto">
+            <div className="flex items-center gap-2 border-b px-3 py-2 shrink-0">
+              <Button variant="ghost" size="icon-sm" onClick={() => navigate("/items")} title="Back to list">
+                <ArrowLeft className="size-4" />
+              </Button>
+              <span className="text-sm font-medium truncate">Back to list</span>
+            </div>
+            <div className="min-w-0 flex-1 overflow-auto">
+              <Outlet context={outletContext} />
+            </div>
+          </div>
+        ) : (
+        <>
         <div
           className={cn(
             "flex shrink-0 flex-col overflow-hidden transition-[width] duration-200",
@@ -259,6 +276,8 @@ export function ItemsLayout() {
           <div className="min-w-0 flex-1 overflow-auto">
             <Outlet context={outletContext} />
           </div>
+        )}
+        </>
         )}
       </div>
 

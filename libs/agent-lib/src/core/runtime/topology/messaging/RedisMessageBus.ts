@@ -519,6 +519,13 @@ export class RedisMessageBus implements IMessageBus {
   }
 
   /**
+   * Get all conversations
+   */
+  getAllConversations(): Conversation[] {
+    return this.conversationManager.getAll();
+  }
+
+  /**
    * Set configuration
    */
   setConfig(config: TopologyConfig): void {

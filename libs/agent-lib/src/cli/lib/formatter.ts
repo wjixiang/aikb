@@ -5,7 +5,7 @@
  */
 
 import chalk from 'chalk';
-import * as Table from 'cli-table3';
+import CliTable3 from 'cli-table3';
 
 export type OutputFormat = 'table' | 'json' | 'compact';
 
@@ -60,7 +60,7 @@ function createObjectTable(data: any[]): string {
   }
 
   const keys = Object.keys(data[0]);
-  const table = Table.default({
+  const table = new CliTable3({
     head: keys.map((k) => chalk.cyan(k)),
     style: {
       head: [],
@@ -80,7 +80,7 @@ function createObjectTable(data: any[]): string {
  * Create key-value table from object
  */
 function createKeyValueTable(data: Record<string, unknown>): string {
-  const table = Table.default({
+  const table = new CliTable3({
     style: {
       head: [],
       border: ['gray'],

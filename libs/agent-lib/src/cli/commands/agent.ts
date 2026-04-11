@@ -10,13 +10,22 @@ import { readFileSync, existsSync, unlinkSync } from 'fs';
 import { resolve } from 'path';
 import type { AgentMetadata, AgentFilter } from '../../core/runtime/types.js';
 import {
-  createEpidemiologyAgentSoul,
-  createPathophysiologyAgentSoul,
-  createDiagnosisAgentSoul,
-  createManagementAgentSoul,
-  createQualityOfLifeAgentSoul,
-  createEmergingTreatmentsAgentSoul,
-} from '../../core/agent-soul/index.js';
+  createEpidemiologyAgentSoul as _createEpidemiologyAgentSoul,
+  createPathophysiologyAgentSoul as _createPathophysiologyAgentSoul,
+  createDiagnosisAgentSoul as _createDiagnosisAgentSoul,
+  createManagementAgentSoul as _createManagementAgentSoul,
+  createQualityOfLifeAgentSoul as _createQualityOfLifeAgentSoul,
+  createEmergingTreatmentsAgentSoul as _createEmergingTreatmentsAgentSoul,
+} from 'agent-soul-hub';
+
+// Re-wrap with local AgentBlueprint type to avoid duplicate type declarations
+// between source and dist
+const createEpidemiologyAgentSoul = () => _createEpidemiologyAgentSoul();
+const createPathophysiologyAgentSoul = () => _createPathophysiologyAgentSoul();
+const createDiagnosisAgentSoul = () => _createDiagnosisAgentSoul();
+const createManagementAgentSoul = () => _createManagementAgentSoul();
+const createQualityOfLifeAgentSoul = () => _createQualityOfLifeAgentSoul();
+const createEmergingTreatmentsAgentSoul = () => _createEmergingTreatmentsAgentSoul();
 import { log } from '../lib/logger.js';
 import {
   formatOutput,

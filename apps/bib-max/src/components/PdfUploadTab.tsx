@@ -227,7 +227,7 @@ export function PdfUploadTab({ allTags, onSaved, onClose }: Props) {
         }}
         className="space-y-3"
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="col-span-2 space-y-1">
             <Label htmlFor="pdf-title">Title *</Label>
             <Input id="pdf-title" value={form.title} onChange={(e) => setField("title", e.target.value)} autoFocus />

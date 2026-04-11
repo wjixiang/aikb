@@ -47,12 +47,12 @@ export function WorkspaceBreadcrumb({ items }: Props) {
             <BreadcrumbItem>
               {isPreview ? (
                 <BreadcrumbLink asChild>
-                  <Link to={`/items/${itemId}`} className="truncate max-w-md">
+                  <Link to={`/items/${itemId}`} className="truncate max-w-[120px] sm:max-w-md">
                     {itemTitle}
                   </Link>
                 </BreadcrumbLink>
               ) : (
-                <BreadcrumbPage className="truncate max-w-md">{itemTitle}</BreadcrumbPage>
+                <BreadcrumbPage className="truncate max-w-[120px] sm:max-w-md">{itemTitle}</BreadcrumbPage>
               )}
             </BreadcrumbItem>
           </>

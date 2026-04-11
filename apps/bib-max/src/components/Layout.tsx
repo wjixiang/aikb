@@ -4,6 +4,7 @@ import { AppSidebar } from "./AppSidebar";
 import { ChatPanel } from "./ChatPanel";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const FULLSCREEN_ROUTES = ["/items/", "/tags/"];
 
@@ -14,6 +15,7 @@ function isFullscreenRoute(pathname: string) {
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const fullscreen = isFullscreenRoute(location.pathname);
+  const isMobile = useIsMobile();
 
   return (
     <TooltipProvider>
@@ -22,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <SidebarInset>
           <div className="flex h-svh">
             <div className="flex flex-1 overflow-hidden">
-              <main className={cn("flex-1", fullscreen ? "overflow-hidden" : "overflow-auto p-6")}>
+              <main className={cn("flex-1", fullscreen ? "overflow-hidden" : "overflow-auto p-4 md:p-6")}>
                 {!fullscreen && (
                   <header className="mb-4 flex items-center gap-2">
                     <SidebarTrigger />
@@ -30,9 +32,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 )}
                 {children}
               </main>
-              <ChatPanel />
+              {/* Desktop: inline ChatPanel in flex flow */}
+              {!isMobile && <ChatPanel />}
             </div>
           </div>
+          {/* Mobile: ChatPanel renders its own FAB + Sheet */}
+          {isMobile && <ChatPanel />}
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

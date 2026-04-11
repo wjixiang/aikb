@@ -10,10 +10,18 @@ import ora, { Ora } from 'ora';
 import { createAgentRuntime } from '../../core/runtime/index.js';
 import type { AgentRuntimeConfig } from '../../core/runtime/types.js';
 import {
-  createEpidemiologyAgentSoul,
-  createPathophysiologyAgentSoul,
-  createDiagnosisAgentSoul,
-} from '../../core/agent-soul/index.js';
+  createEpidemiologyAgentSoul as _createEpidemiologyAgentSoul,
+  createPathophysiologyAgentSoul as _createPathophysiologyAgentSoul,
+  createDiagnosisAgentSoul as _createDiagnosisAgentSoul,
+} from 'agent-soul-hub';
+import type { AgentBlueprint } from '../../core/agent/AgentFactory.js';
+
+const createEpidemiologyAgentSoul = (): AgentBlueprint =>
+  _createEpidemiologyAgentSoul() as unknown as AgentBlueprint;
+const createPathophysiologyAgentSoul = (): AgentBlueprint =>
+  _createPathophysiologyAgentSoul() as unknown as AgentBlueprint;
+const createDiagnosisAgentSoul = (): AgentBlueprint =>
+  _createDiagnosisAgentSoul() as unknown as AgentBlueprint;
 import { getEnv } from '../lib/config.js';
 import { log } from '../lib/logger.js';
 import {
@@ -284,7 +292,7 @@ async function testA2A(options: {
       const taskId = `test-task-${i + 1}`;
       try {
         await sender
-          .getRuntimeClient()
+          .getRuntimeClient()!
           .sendA2AQuery(
             receiverId,
             `Test task ${i + 1}: Search for literature`,
@@ -421,7 +429,7 @@ async function testRedis(options: {
       if (agent1) {
         try {
           await agent1
-            .getRuntimeClient()
+            .getRuntimeClient()!
             .sendA2AQuery(
               agent2Id,
               'Cross-runtime test task',

@@ -203,8 +203,8 @@ export function PdfViewer({ url, fileName }: PdfViewerProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
-      <div className="flex shrink-0 items-center gap-1 border-b bg-muted/50 px-2 py-1">
-        <span className="min-w-[72px] text-center text-xs text-muted-foreground">
+      <div className="flex shrink-0 items-center gap-1 border-b bg-muted/50 px-2 py-1 overflow-x-auto">
+        <span className="min-w-[72px] shrink-0 text-center text-xs text-muted-foreground">
           Page {visiblePage} / {totalPages}
         </span>
 
@@ -217,7 +217,7 @@ export function PdfViewer({ url, fileName }: PdfViewerProps) {
         >
           <ZoomIn className="size-4" />
         </Button>
-        <span className="min-w-[40px] text-center text-xs text-muted-foreground">
+        <span className="min-w-[40px] shrink-0 text-center text-xs text-muted-foreground">
           {Math.round(scale * 100)}%
         </span>
         <Button

@@ -35,6 +35,7 @@ function formatSize(bytes: number | null | undefined) {
 
 function getRows(item: Item): { label: string; value: React.ReactNode }[] {
   const rows: { label: string; value: React.ReactNode }[] = [];
+  if (item.type) rows.push({ label: "Type", value: item.type === "article" ? "Article" : "Book" });
   if (item.authors.length > 0) rows.push({ label: "Authors", value: item.authors.join(", ") });
   if (item.year) rows.push({ label: "Year", value: String(item.year) });
   if (item.source) rows.push({ label: "Source", value: item.source });
@@ -154,7 +155,7 @@ export function ItemDetail({ item }: Props) {
         ) : (
           <div className="space-y-1">
             {attachments.map((att) => (
-              <div key={att.id} className="flex min-w-0 items-center gap-2 rounded border bg-background px-2 py-1.5">
+              <div key={att.id} className="flex min-w-0 items-center gap-2 rounded border bg-background px-2 py-1.5 overflow-x-auto">
                 <FileText className="size-4 shrink-0 text-muted-foreground" />
                 <span
                   className={cn(
@@ -175,7 +176,7 @@ export function ItemDetail({ item }: Props) {
                   <span className="min-w-0 flex-1 truncate text-xs">{att.fileName}</span>
                 )}
                 {att.fileSize != null && (
-                  <span className="text-xs text-muted-foreground">{formatSize(att.fileSize)}</span>
+                  <span className="text-xs text-muted-foreground hidden sm:inline">{formatSize(att.fileSize)}</span>
                 )}
                 {PREVIEWABLE.has(att.category) && (
                   <button onClick={() => navigate(`/items/${item.id}/preview/${att.id}`)} className="p-0.5" title="Preview">

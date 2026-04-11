@@ -50,7 +50,7 @@ export interface AgentFactoryOptions extends AgentBlueprint {
     restBaseUrl?: string;
     apiKey?: string;
   };
-  clientPool: ClientPool;
+  clientPool?: ClientPool;
 }
 
 /**

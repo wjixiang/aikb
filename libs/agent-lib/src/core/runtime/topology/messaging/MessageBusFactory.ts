@@ -78,19 +78,19 @@ export function createMessageBus(config: MessageBusFactoryConfig): IMessageBus {
 export function createMessageBusFromEnv(
   topologyConfig?: TopologyConfig,
 ): IMessageBus {
-  const mode = (process.env.A2A_MESSAGE_BUS_MODE as MessageBusMode) || 'memory';
+  const mode = (process.env['A2A_MESSAGE_BUS_MODE'] as MessageBusMode) || 'memory';
 
   if (mode === 'redis') {
     const redisConfig: RedisMessageBusConfig = {
-      url: process.env.A2A_REDIS_URL,
-      keyPrefix: process.env.A2A_REDIS_KEY_PREFIX,
-      password: process.env.A2A_REDIS_PASSWORD,
-      host: process.env.A2A_REDIS_HOST,
-      port: process.env.A2A_REDIS_PORT
-        ? parseInt(process.env.A2A_REDIS_PORT, 10)
+      url: process.env['A2A_REDIS_URL'],
+      keyPrefix: process.env['A2A_REDIS_KEY_PREFIX'],
+      password: process.env['A2A_REDIS_PASSWORD'],
+      host: process.env['A2A_REDIS_HOST'],
+      port: process.env['A2A_REDIS_PORT']
+        ? parseInt(process.env['A2A_REDIS_PORT'], 10)
         : undefined,
-      db: process.env.A2A_REDIS_DB
-        ? parseInt(process.env.A2A_REDIS_DB, 10)
+      db: process.env['A2A_REDIS_DB']
+        ? parseInt(process.env['A2A_REDIS_DB'], 10)
         : undefined,
     };
 

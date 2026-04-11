@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, X, SendHorizontal, Loader2, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ChatMessage as ChatMessageItem } from "./ChatMessage";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function ChatPanel() {
   const location = useLocation();
@@ -18,6 +20,7 @@ export function ChatPanel() {
   const [status, setStatus] = useState<'idle' | 'running'>('idle');
   const [error, setError] = useState("");
   const [pendingToolCalls, setPendingToolCalls] = useState<Set<string>>(new Set());
+  const isMobile = useIsMobile();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cancelRef = useRef<(() => void) | null>(null);
@@ -169,6 +172,96 @@ export function ChatPanel() {
 
   const isRunning = status === 'running';
 
+  const chatContent = (
+    <>
+      {/* Messages */}
+      <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0">
+        <div className="px-4 py-3 space-y-3">
+          {messages.length === 0 && !isRunning && (
+            <p className="text-center text-xs text-muted-foreground py-8">
+              Ask me anything about your knowledge base.
+            </p>
+          )}
+          {messages.map((msg, i) => (
+            <ChatMessageItem key={i} message={msg} pendingToolCalls={pendingToolCalls} />
+          ))}
+          {isRunning && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" />
+              Thinking...
+            </div>
+          )}
+          {error && (
+            <p className="text-xs text-destructive">{error}</p>
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Input */}
+      <div className="border-t p-3 shrink-0">
+        <div className="flex items-end gap-2">
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message... (Enter to send)"
+            className="min-h-[40px] max-h-[120px] resize-none text-sm"
+            rows={1}
+            disabled={isRunning}
+          />
+          <Button
+            size="icon-sm"
+            onClick={sendMessage}
+            disabled={!input.trim() || isRunning}
+          >
+            <SendHorizontal className="size-4" />
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+
+  // Mobile: FAB + Sheet overlay
+  if (isMobile) {
+    return (
+      <>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-5 right-5 z-50 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
+          aria-label="Open AI Assistant"
+        >
+          <MessageSquare className="size-6" />
+        </button>
+
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-md p-0 flex flex-col gap-0">
+            <SheetTitle className="sr-only">AI Assistant</SheetTitle>
+            <SheetDescription className="sr-only">Chat with your knowledge base.</SheetDescription>
+
+            {/* Header */}
+            <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
+              <h2 className="text-sm font-semibold">AI Assistant</h2>
+              <div className="flex items-center gap-1">
+                {isRunning && (
+                  <Button variant="ghost" size="icon-sm" onClick={handleCancel} title="Cancel">
+                    <Square className="size-3" />
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon-sm" onClick={() => setIsOpen(false)}>
+                  <X className="size-4" />
+                </Button>
+              </div>
+            </div>
+
+            {chatContent}
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  // Desktop: inline panel (original behavior)
   return (
     <>
       {/* Collapsed toggle button */}
@@ -208,51 +301,7 @@ export function ChatPanel() {
           </div>
         </div>
 
-        {/* Messages */}
-        <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0">
-          <div className="px-4 py-3 space-y-3">
-            {messages.length === 0 && !isRunning && (
-              <p className="text-center text-xs text-muted-foreground py-8">
-                Ask me anything about your knowledge base.
-              </p>
-            )}
-            {messages.map((msg, i) => (
-              <ChatMessageItem key={i} message={msg} pendingToolCalls={pendingToolCalls} />
-            ))}
-            {isRunning && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="size-3 animate-spin" />
-                Thinking...
-              </div>
-            )}
-            {error && (
-              <p className="text-xs text-destructive">{error}</p>
-            )}
-          </div>
-        </ScrollArea>
-
-        {/* Input */}
-        <div className="border-t p-3 shrink-0">
-          <div className="flex items-end gap-2">
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a message... (Enter to send)"
-              className="min-h-[40px] max-h-[120px] resize-none text-sm"
-              rows={1}
-              disabled={isRunning}
-            />
-            <Button
-              size="icon-sm"
-              onClick={sendMessage}
-              disabled={!input.trim() || isRunning}
-            >
-              <SendHorizontal className="size-4" />
-            </Button>
-          </div>
-        </div>
+        {chatContent}
       </div>
     </>
   );

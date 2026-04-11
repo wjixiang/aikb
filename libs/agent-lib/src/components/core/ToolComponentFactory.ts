@@ -36,6 +36,6 @@ export class ToolComponentFactory {
    * @returns A new instance with dependencies injected
    */
   create<T extends ToolComponent>(componentClass: new (...args: any[]) => T): T {
-    return this.container.resolve(componentClass);
+    return this.container.get(componentClass);
   }
 }

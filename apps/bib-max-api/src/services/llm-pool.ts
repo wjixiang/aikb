@@ -75,30 +75,19 @@ export function initLlmPool(): ClientPool {
 }
 
 /**
- * Get a client from the global LLM pool by name.
+ * Get the global LLM pool as an ApiClient.
  *
- * If `name` is omitted, returns the next client in round-robin order.
+ * The pool implements round-robin selection and cross-client fallback,
+ * so callers automatically benefit from load balancing and failover.
  *
- * @returns The ApiClient instance
- * @throws Error if no client is found
+ * @returns The ClientPool instance (which implements ApiClient)
  */
-export function getLlmClient(name?: string): ApiClient {
+export function getLlmClient(): ApiClient {
   const pool = ClientPool.getInstance();
-  let client: ApiClient | undefined;
-
-  if (name) {
-    client = pool.get(name);
-  } else {
-    client = pool.getNext();
-  }
-
-  if (!client) {
+  if (pool.list().length === 0) {
     throw new Error(
-      name
-        ? `LLM client "${name}" not found in pool`
-        : 'No LLM client available. Configure LLM_CLIENTS or LLM_API_KEY.',
+      'No LLM client available. Configure LLM_CLIENTS or LLM_API_KEY.',
     );
   }
-
-  return client;
+  return pool;
 }

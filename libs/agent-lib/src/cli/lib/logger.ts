@@ -4,7 +4,7 @@
  * Provides structured logging with different levels and formats.
  */
 
-import * as pino from 'pino';
+import pino from 'pino';
 
 let logger: pino.Logger;
 

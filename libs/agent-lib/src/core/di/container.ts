@@ -286,16 +286,22 @@ export class AgentContainer {
       })
       .inSingletonScope();
 
-    // API Client — always obtained from ClientPool
+    // API Client — use ClientPool directly as a unified ApiClient
+    // The pool implements round-robin selection and cross-client fallback,
+    // so agents automatically benefit from load balancing and failover.
+    if (!this.config.clientPool) {
+      throw new Error(
+        'ClientPool is required to create agents. Provide clientPool in AgentRuntimeConfig.',
+      );
+    }
     this.container
       .bind<ApiClient>(TYPES.ApiClient)
-      .toDynamicValue(() => this.config.clientPool!.getOrCreate(this.config.api))
-      .inSingletonScope();
+      .toConstantValue(this.config.clientPool);
 
     // ClientPool
     this.container
       .bind<ClientPool>(TYPES.ClientPool)
-      .toConstantValue(this.config.clientPool!);
+      .toConstantValue(this.config.clientPool);
 
     // // Persistence Service (if enabled)
     // if (this.config.persistence?.enabled !== false) {

@@ -137,7 +137,7 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="col-span-2 space-y-2">
           <Label htmlFor="title">Title *</Label>
           <Input id="title" value={form.title} onChange={(e) => setField("title", e.target.value)} autoFocus />

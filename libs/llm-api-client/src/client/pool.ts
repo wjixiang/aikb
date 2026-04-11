@@ -160,7 +160,7 @@ function enforceQuota(entry: PoolEntry): void {
  * console.log(pool.getPoolStats());
  * ```
  */
-export class ClientPool {
+export class ClientPool implements ApiClient {
   private static instance: ClientPool | null = null;
   private entries: Map<string, PoolEntry> = new Map();
   private logger: ReturnType<typeof createLogger>;
@@ -444,6 +444,29 @@ export class ClientPool {
     }
 
     throw lastError ?? new Error('All fallback clients failed');
+  }
+
+  /**
+   * Implements ApiClient interface.
+   *
+   * Delegates to makeRequestWithFallback, providing automatic round-robin
+   * and cross-client failover. This allows ClientPool to be used as a
+   * drop-in replacement for any ApiClient.
+   */
+  async makeRequest(
+    systemPrompt: string,
+    workspaceContext: string,
+    memoryContext: MemoryContextItem[],
+    timeoutConfig?: ApiTimeoutConfig,
+    tools?: ChatCompletionTool[],
+  ): Promise<ApiResponse> {
+    return this.makeRequestWithFallback(
+      systemPrompt,
+      workspaceContext,
+      memoryContext,
+      timeoutConfig,
+      tools,
+    );
   }
 
   // --- Enable / Disable ---

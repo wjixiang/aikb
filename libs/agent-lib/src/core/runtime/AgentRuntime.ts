@@ -494,7 +494,7 @@ export class AgentRuntime implements IAgentRuntime {
   private defaultApiConfig: Partial<RuntimeControlProviderSettings> | undefined;
 
   /** ClientPool for shared LLM client management */
-  private clientPool: ClientPool;
+  private clientPool: ClientPool | undefined;
 
   /**
    * Map of agent instance IDs to their DI containers.

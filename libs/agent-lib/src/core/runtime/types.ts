@@ -324,7 +324,7 @@ export interface AgentRuntimeConfig {
    * ClientPool for shared LLM client management.
    * All agents created by this runtime will obtain their ApiClient from the pool.
    */
-  clientPool: import('llm-api-client').ClientPool;
+  clientPool?: import('llm-api-client').ClientPool;
   persistence?: PersistenceConfig;
   /** MessageBus configuration - defaults to in-memory */
   messageBus?: MessageBusConfig;

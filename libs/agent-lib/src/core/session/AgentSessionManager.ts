@@ -139,7 +139,7 @@ export class AgentSessionManager implements ISessionManager {
           ? {
               reason: data.abortReason,
               timestamp: Date.now(),
-              source: (data.abortSource as SessionState['abortInfo']['source']) || 'manual',
+              source: (data.abortSource as 'user' | 'system' | 'error' | 'timeout' | 'manual') || 'manual',
             }
           : null,
       };

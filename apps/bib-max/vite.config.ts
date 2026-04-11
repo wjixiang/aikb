@@ -15,9 +15,10 @@ export default defineConfig({
     include: ["pdfjs-dist"],
   },
   server: {
+    host: '0.0.0.0',
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000",
+        target: "http://192.168.123.98:5000",
         changeOrigin: true,
       },
     },
