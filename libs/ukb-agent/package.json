@@ -1,23 +1,33 @@
 {
-  "name": "agent-soul-hub",
+  "name": "ukb-agent",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "type-check": "tsc --noEmit"
   },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "default": "./dist/components/index.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
     }
   },
   "dependencies": {
     "agent-lib": "workspace:*",
     "component-hub": "workspace:*",
-    "ukb-agent": "workspace:*"
+    "inversify": "^7.11.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "typescript": "^5.7.3",

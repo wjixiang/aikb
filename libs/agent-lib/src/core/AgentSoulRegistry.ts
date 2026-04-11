@@ -21,7 +21,8 @@ export type AgentSoulType =
   | 'quality-of-life'
   | 'emerging-treatments'
   | 'bib-retrieve'
-  | 'web-search';
+  | 'web-search'
+  | 'ukb-data';
 
 export interface AgentSoulEntry {
   type: AgentSoulType;

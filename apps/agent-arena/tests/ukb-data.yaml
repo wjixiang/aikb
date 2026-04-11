@@ -1,0 +1,34 @@
+name: "UKB Data Explorer Tests"
+agent:
+  soul: "ukb-data"
+
+cases:
+  - name: "List databases"
+    prompt: "列出所有可用的数据库"
+    mock:
+      toolCalls:
+        - name: "list_databases"
+    expect:
+      toolCalls:
+        - name: "list_databases"
+      maxRounds: 2
+
+  - name: "Query field dictionary"
+    prompt: "搜索与血压相关的字段"
+    mock:
+      toolCalls:
+        - name: "query_field_dict"
+          arguments:
+            condition: "blood pressure"
+    expect:
+      toolCalls:
+        - name: "query_field_dict"
+          arguments:
+            condition: "blood pressure"
+      maxRounds: 2
+
+  - name: "Agent completes successfully"
+    prompt: "你好，请介绍一下你的功能"
+    expect:
+      status: "completed"
+      maxRounds: 2

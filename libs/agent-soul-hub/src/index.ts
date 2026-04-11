@@ -19,6 +19,7 @@ export { createManagementAgentSoul } from './management/index.js';
 export { createQualityOfLifeAgentSoul } from './quality-of-life/index.js';
 export { createEmergingTreatmentsAgentSoul } from './emerging-treatments/index.js';
 export { createWebSearchAgentSoul } from './web-search/index.js';
+export { createUkbAgentSoul } from 'ukb-agent';
 
 // Registry and token-based factory (legacy support)
 export {

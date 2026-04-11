@@ -1,0 +1,33 @@
+{
+  "name": "agent-arena",
+  "version": "0.1.0",
+  "description": "CLI tool for testing agents with mock and live LLM support",
+  "type": "module",
+  "bin": {
+    "agent-arena": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "agent-lib": "workspace:*",
+    "agent-soul-hub": "workspace:*",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0",
+    "dotenv": "^17.4.1",
+    "llm-api-client": "workspace:*",
+    "ora": "^8.0.0",
+    "yaml": "^2.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@10.33.0"
+}

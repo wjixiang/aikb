@@ -48,6 +48,7 @@ import { createArticleRetrieveRouterAgentSoul } from './article-retrieve-router/
 import { createChiefRouterAgentSoul } from './chief-router/index.js';
 import { createBibRetrieveAgentSoul } from './article-retrieve/index.js';
 import { createWebSearchAgentSoul } from './web-search/index.js';
+import { createUkbAgentSoul } from 'ukb-agent';
 
 registerAgentSoul({
   token: 'epidemiology',
@@ -140,4 +141,13 @@ registerAgentSoul({
   type: 'router',
   description: '路由Agent，负责协调多个Agent之间的工作',
   factory: createArticleRetrieveRouterAgentSoul,
+});
+
+registerAgentSoul({
+  token: 'ukb-data',
+  name: 'UKB Data Explorer',
+  type: 'ukb-data',
+  description:
+    'UK Biobank 数据库探索Agent，支持数据库浏览、字段查询、队列管理、数据提取和关联分析',
+  factory: createUkbAgentSoul,
 });
