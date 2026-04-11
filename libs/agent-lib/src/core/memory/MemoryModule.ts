@@ -353,10 +353,12 @@ export class MemoryModule implements IMemoryModule {
       '',
       [
         {
+          kind: 'text' as const,
           role: 'system' as const,
           content: `<System>\n${SUMMARIZATION_PROMPT}\n</System>`,
         },
         {
+          kind: 'text' as const,
           role: 'user' as const,
           content: `Please summarize the following conversation:\n\n${textToSummarize}`,
         },

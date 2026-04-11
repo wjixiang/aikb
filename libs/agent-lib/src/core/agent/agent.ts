@@ -1044,10 +1044,10 @@ export class Agent {
       const historyContext = this.memoryModule.getHistoryForPrompt();
       const memoryContext: MemoryContextItem[] = historyContext.map((m) => {
         // Skip legacy string entries (from old formatMessage output or DB migration artifacts)
-        if (typeof m === 'string') return { role: 'user' as const, content: m };
-        if (!m || !m.role) return { role: 'user' as const, content: String(m) };
+        if (typeof m === 'string') return { kind: 'text' as const, role: 'user' as const, content: m };
+        if (!m || !m.role) return { kind: 'text' as const, role: 'user' as const, content: String(m) };
         if (!Array.isArray(m.content)) {
-          return { role: m.role, content: String(m.content) };
+          return { kind: 'text' as const, role: m.role, content: String(m.content) };
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1064,6 +1064,7 @@ export class Agent {
         // Assistant message with tool_use: emit as structured tool_calls
         if (m.role === 'assistant' && hasToolUse) {
           return {
+            kind: 'tool_calls' as const,
             role: 'assistant' as const,
             content: textParts || undefined,
             tool_calls: toolUseBlocks.map((b: any) => ({
@@ -1082,6 +1083,7 @@ export class Agent {
           if (toolResultBlocks.length === 1) {
             const tr = toolResultBlocks[0];
             return {
+              kind: 'tool_result' as const,
               role: 'tool' as const,
               tool_call_id: String(tr.tool_use_id),
               content: typeof tr.content === 'string' ? tr.content : JSON.stringify(tr.content),
@@ -1089,6 +1091,7 @@ export class Agent {
           }
           // Multiple tool results: emit as structured content blocks
           return {
+            kind: 'content_blocks' as const,
             role: 'user' as const,
             contentBlocks: toolResultBlocks.map((tr: any) => ({
               type: 'tool_result',
@@ -1101,11 +1104,11 @@ export class Agent {
 
         // System message: emit as user (both OpenAI and Anthropic handle system via system prompt)
         if (m.role === 'system') {
-          return { role: 'user' as const, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
+          return { kind: 'text' as const, role: 'user' as const, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
         }
 
         // Default: plain text message
-        return { role: m.role, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
+        return { kind: 'text' as const, role: m.role, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
       });
 
       // Call LLM

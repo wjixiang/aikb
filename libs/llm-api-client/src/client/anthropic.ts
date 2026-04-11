@@ -122,7 +122,7 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
     ];
 
     for (const item of memoryContext) {
-      if ('tool_calls' in item && item.tool_calls) {
+      if (item.kind === 'tool_calls') {
         // Assistant message with tool_calls (OpenAI format) → convert to Anthropic tool_use blocks
         const content: Anthropic.ContentBlockParam[] = [];
         if (item.content) {
@@ -137,7 +137,7 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
           });
         }
         messages.push({ role: 'assistant', content });
-      } else if ('tool_call_id' in item && item.role === 'tool') {
+      } else if (item.kind === 'tool_result') {
         // Tool result → Anthropic requires role:user with tool_result content block
         messages.push({
           role: 'user',
@@ -149,13 +149,13 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
             },
           ],
         });
-      } else if ('contentBlocks' in item && item.contentBlocks) {
+      } else if (item.kind === 'content_blocks') {
         // Structured content blocks — pass through directly
         messages.push({ role: item.role, content: item.contentBlocks as unknown as Anthropic.ContentBlockParam[] });
       } else if (item.role === 'system') {
-        systemParts.push(item.content!);
+        systemParts.push(item.content);
       } else {
-        messages.push({ role: item.role, content: item.content! });
+        messages.push({ role: item.role, content: item.content });
       }
     }
 

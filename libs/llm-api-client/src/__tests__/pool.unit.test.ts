@@ -606,7 +606,7 @@ describe('ClientPool - Fallback', () => {
   function createNonRetryableFactory(): (settings: any) => ApiClient {
     return () => ({
       makeRequest: async () => {
-        throw new ValidationError('Bad input', 400);
+        throw new ValidationError('Bad input', 'field');
       },
     } as ApiClient);
   }

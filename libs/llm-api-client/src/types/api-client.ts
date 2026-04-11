@@ -111,47 +111,27 @@ export interface ApiResponse {
     tokenUsage: TokenUsage;
 }
 
+/** OpenAI-format tool call entry in assistant messages */
+export interface ToolCallEntry {
+  id: string;
+  type: 'function';
+  function: { name: string; arguments: string };
+}
+
 /**
  * A single item in the memory context array.
- * Supports multiple formats for different conversation structures:
- * - { role, content }: plain text message with explicit role
- * - { role: 'assistant', tool_calls }: assistant message with structured tool calls (OpenAI format)
- * - { role: 'tool', tool_call_id, content }: tool result message (OpenAI format)
- * - { role, contentBlocks }: message with structured content blocks (Anthropic format)
+ *
+ * Discriminated by a `kind` tag for unambiguous narrowing:
+ * - `text`: plain text message
+ * - `tool_calls`: assistant message with tool calls (OpenAI format)
+ * - `tool_result`: tool result message (OpenAI format)
+ * - `content_blocks`: structured content blocks (Anthropic format)
  */
 export type MemoryContextItem =
-  | {
-      role: 'user' | 'assistant' | 'system';
-      content: string;
-      tool_calls?: undefined;
-      tool_call_id?: undefined;
-      contentBlocks?: undefined;
-    }
-  | {
-      role: 'assistant';
-      content?: string;
-      tool_calls: Array<{
-        id: string;
-        type: 'function';
-        function: { name: string; arguments: string };
-      }>;
-      tool_call_id?: undefined;
-      contentBlocks?: undefined;
-    }
-  | {
-      role: 'tool';
-      tool_call_id: string;
-      content: string;
-      tool_calls?: undefined;
-      contentBlocks?: undefined;
-    }
-  | {
-      role: 'user' | 'assistant';
-      contentBlocks: Array<Record<string, unknown>>;
-      content?: undefined;
-      tool_calls?: undefined;
-      tool_call_id?: undefined;
-    };
+  | { kind: 'text'; role: 'user' | 'assistant' | 'system'; content: string }
+  | { kind: 'tool_calls'; role: 'assistant'; content?: string; tool_calls: ToolCallEntry[] }
+  | { kind: 'tool_result'; role: 'tool'; tool_call_id: string; content: string }
+  | { kind: 'content_blocks'; role: 'user' | 'assistant'; contentBlocks: Record<string, unknown>[] };
 
 /**
  * Configuration for API request timeout

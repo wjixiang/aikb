@@ -131,21 +131,21 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
     ];
 
     for (const item of memoryContext) {
-      if ('tool_calls' in item && item.tool_calls) {
+      if (item.kind === 'tool_calls') {
         // Assistant message with structured tool_calls
         messages.push({
           role: 'assistant',
           content: item.content ?? null,
           tool_calls: item.tool_calls,
         });
-      } else if ('tool_call_id' in item && item.role === 'tool') {
+      } else if (item.kind === 'tool_result') {
         // Tool result message
         messages.push({
           role: 'tool',
           tool_call_id: item.tool_call_id,
           content: item.content,
         });
-      } else if ('contentBlocks' in item && item.contentBlocks) {
+      } else if (item.kind === 'content_blocks') {
         // Structured content blocks — flatten tool_results to individual tool messages
         for (const block of item.contentBlocks) {
           if (block.type === 'tool_result') {
@@ -160,7 +160,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
         }
       } else {
         const role = item.role === 'system' ? 'user' : item.role;
-        messages.push({ role, content: item.content! });
+        messages.push({ role, content: item.content });
       }
     }
 

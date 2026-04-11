@@ -90,3 +90,6 @@ storybook-static
 /playwright/.auth/
 
 *storybook.log
+
+# Link projects
+/python
