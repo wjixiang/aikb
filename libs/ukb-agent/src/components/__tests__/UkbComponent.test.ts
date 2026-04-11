@@ -37,11 +37,13 @@ describe('UkbComponent', () => {
     expect(result.success).toBe(false);
   });
 
-  it('onList_databases should return databases', async () => {
+  it('onList_databases should return markdown table', async () => {
     mockClient.mock('listDatabases').resolve([fixtures.database.create()]);
     const result = await component.onList_databases({});
     expect(result.success).toBe(true);
-    expect(result.data).toHaveLength(1);
+    expect(typeof result.data).toBe('string');
+    expect(result.data).toContain('| ID | Name | State |');
+    expect(result.data).toContain('olink_hypertension');
   });
 
   it('onQuery_field_dict should return field dict', async () => {
