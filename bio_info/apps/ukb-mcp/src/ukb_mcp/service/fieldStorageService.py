@@ -71,12 +71,52 @@ class FieldStorageService:
 
 
 def _parse_condition(condition: str):
-    """解析查询条件：裸词自动转为 LIKE 查询，支持安全 SQL 表达式。"""
+    """解析查询条件：裸词自动转为 LIKE 查询，支持安全 SQL 表达式。
+
+    空格或 +/- 分隔的多词会转为 AND 查询（每个词都必须在某列匹配）。
+    """
     condition = condition.strip()
 
-    # 将 + 和 - 替换为空格（多词分隔符，如 olink+data → olink data）
+    # 将 + 和 - 替换为空格，分隔多词（如 olink+data → olink data）
     condition = re.sub(r"[+-]+", " ", condition)
     condition = re.sub(r"\s+", " ", condition).strip()
+
+    # 多词检测：全部由安全字符组成但含空格
+    if re.fullmatch(r"[\w\s\u0080-\U0010ffff]+", condition):
+        words = condition.split()
+        if len(words) == 1:
+            condition = words[0]
+        else:
+            # 每个词都必须匹配（AND），每个词在任意列匹配即可（OR）
+            text_cols = [
+                "entity", "name", "type", "title", "description",
+                "coding_name", "concept", "folder_path", "units",
+            ]
+
+            def _word_conditions(word: str):
+                escaped = (
+                    word.replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_")
+                )
+                pattern = f"%{escaped}%"
+                col_conds = [
+                    sqlglot.and_(
+                        sqlglot.cast(sqlglot.column(col), "VARCHAR").is_(exp.Null()).not_(),
+                        sqlglot.cast(sqlglot.column(col), "VARCHAR").like(exp.Literal.string(pattern)),
+                    )
+                    for col in text_cols
+                ]
+                combined = col_conds[0]
+                for c in col_conds[1:]:
+                    combined = sqlglot.or_(combined, c)
+                return combined
+
+            word_conds = [_word_conditions(w) for w in words]
+            combined = word_conds[0]
+            for wc in word_conds[1:]:
+                combined = sqlglot.and_(combined, wc)
+            return combined
 
     # 裸词：仅包含安全的字母数字下划线和非ASCII字符，整体作为 LIKE 关键词搜索
     if re.fullmatch(r"[\w\u0080-\U0010ffff]+", condition):
