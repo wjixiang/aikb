@@ -3,12 +3,12 @@ import type { ToolDef, ToolCallResult } from 'agent-lib/components';
 import type { UkbMcpClient } from '../../client/UkbMcpClient.js';
 
 export const QueryFieldDictToolDef: ToolDef = {
-  desc: '在字段字典中搜索字段（按条件搜索，支持名称、描述、概念等）',
+  desc: '在字段字典中搜索字段（必须提供完整SQL谓词，如 coding_name LIKE \'%olink%\'）',
   paramsSchema: z.object({
     condition: z
       .string()
       .describe(
-        '搜索条件，如 "blood pressure"、"diabetes"、"ICD10"。 查询语法为SQL的condition部分的语法，支持`%`、`_`等通配符',
+        '完整SQL WHERE谓词，如 coding_name LIKE \'%olink%\' 或 (entity = \'participant\' AND type = \'Continuous\')',
       ),
     page: z.number().optional().describe('页码，默认 1'),
     page_size: z

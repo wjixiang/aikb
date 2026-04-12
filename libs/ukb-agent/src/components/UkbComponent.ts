@@ -102,7 +102,11 @@ export class UkbComponent extends ToolComponent<UkbState> {
 - 导出数据为 CSV 或 Parquet 格式
 
 字段格式为 "entity.field_name"，例如 "participant.eid"（参与者ID）、"participant.p31"（性别）。
-在查询前，建议先用 list_fields 或 query_field_dict 了解可用的字段。`;
+在查询前，建议先用 list_fields 或 list_field_dict 了解可用的字段。
+
+重要：query_field_dict 的 condition 必须是完整的 SQL WHERE 谓词，
+例如：coding_name LIKE '%olink%' 或 (entity = 'participant' AND type = 'Continuous')。
+不要只传关键词如 "olink"，否则会报错。`;
 
   constructor(baseUrlOrClient?: string | UkbMcpClient) {
     super();
