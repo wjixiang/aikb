@@ -89,11 +89,11 @@ def _parse_condition(condition: str):
             "coding_name", "concept", "folder_path", "units",
         ]
 
-        # 构造: (col IS NOT NULL) AND (col LIKE 'pattern')
+        # CAST 每个列为 VARCHAR，再做 LIKE（避免 DOUBLE 等类型不支持 LIKE 的问题）
         col_conditions = [
             sqlglot.and_(
-                sqlglot.column(col).is_(exp.Null()).not_(),
-                sqlglot.column(col).like(exp.Literal.string(pattern)),
+                sqlglot.cast(sqlglot.column(col), "VARCHAR").is_(exp.Null()).not_(),
+                sqlglot.cast(sqlglot.column(col), "VARCHAR").like(exp.Literal.string(pattern)),
             )
             for col in text_cols
         ]
