@@ -6,7 +6,7 @@ import {
   TaskCompletedCallback,
   TaskAbortedCallback,
 } from '../common/types.js';
-import { ApiMessage, MessageAddedCallback } from '../memory/types.js';
+import type { Message, MessageAddedCallback } from '../memory/types.js';
 
 /**
  * Turn status enum (for observer callbacks)
@@ -87,7 +87,7 @@ export interface ObservableAgentCallbacks {
    * @param turnId - The turn ID
    * @param message - The message that was added
    */
-  onTurnMessageAdded?: (turnId: string, message: ApiMessage) => void;
+  onTurnMessageAdded?: (turnId: string, message: Message) => void;
 
   /**
    * Called when the thinking phase completes for a turn

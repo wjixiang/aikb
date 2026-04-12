@@ -3,8 +3,9 @@
  */
 
 import type { AgentConfig } from '../agent/agent.js';
+import type { Message } from '../memory/types.js';
 import { AgentStatus } from '../common/types.js';
-import type { ApiMessage, WorkspaceContextEntry } from '../memory/types.js';
+import type { WorkspaceContextEntry } from '../memory/types.js';
 
 export { AgentStatus };
 
@@ -106,7 +107,7 @@ export interface IPersistenceService {
   saveMemory(
     instanceId: string,
     memory: {
-      messages: ApiMessage[];
+      messages: Message[];
       workspaceContexts: WorkspaceContextEntry[];
       config: unknown;
     },
@@ -116,7 +117,7 @@ export interface IPersistenceService {
    * 加载 Memory 快照
    */
   loadMemory(instanceId: string): Promise<{
-    messages: ApiMessage[];
+    messages: Message[];
     workspaceContexts: WorkspaceContextEntry[];
     config: unknown;
   } | null>;

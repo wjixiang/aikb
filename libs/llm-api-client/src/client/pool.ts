@@ -3,8 +3,8 @@ import type {
   ApiResponse,
   ApiTimeoutConfig,
   ChatCompletionTool,
-  MemoryContextItem,
 } from '../types/api-client.js';
+import type { Message } from '../types/message.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import {
   QuotaExceededError,
@@ -374,7 +374,7 @@ export class ClientPool implements ApiClient {
   async makeRequestWithFallback(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: MemoryContextItem[],
+    memoryContext: Message[],
     timeoutConfig?: ApiTimeoutConfig,
     tools?: ChatCompletionTool[],
     options?: FallbackOptions,
@@ -456,7 +456,7 @@ export class ClientPool implements ApiClient {
   async makeRequest(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: MemoryContextItem[],
+    memoryContext: Message[],
     timeoutConfig?: ApiTimeoutConfig,
     tools?: ChatCompletionTool[],
   ): Promise<ApiResponse> {

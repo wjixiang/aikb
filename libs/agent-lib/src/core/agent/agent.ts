@@ -1,6 +1,7 @@
 import { injectable, inject, optional } from 'inversify';
 
-import { ApiMessage } from '../memory/types.js';
+import type { Message, ContentBlock, ToolUseBlock, ToolResultBlock } from '../memory/types.js';
+import { MessageBuilder } from 'llm-api-client';
 import { AgentStatus } from '../common/types.js';
 import { MessageTokenUsage, ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
@@ -12,7 +13,6 @@ import type { MemoryModuleConfig } from '../memory/types.js';
 import type {
   ApiClient,
   ChatCompletionTool,
-  MemoryContextItem,
   ToolCall,
 } from 'llm-api-client';
 import type { IToolManager } from '../tools/index.js';
@@ -420,7 +420,7 @@ export class Agent {
       const inputText = payload.input
         ? `\n\nInput:\n${this.safeStringify(payload.input, null, 2)}`
         : '';
-      const userMessage: ApiMessage = {
+      const userMessage: Message = {
         role: 'user',
         content: [
           {
@@ -484,7 +484,7 @@ export class Agent {
    * Add a message to memory and emit MESSAGE_ADDED hook.
    * Centralizes all memoryModule.addMessage calls so events are never missed.
    */
-  private async addMessageToMemory(msg: ApiMessage): Promise<void> {
+  private async addMessageToMemory(msg: Message): Promise<void> {
     await this.memoryModule.addMessage(msg);
     await this.hookModule.executeHooks(HookType.MESSAGE_ADDED, {
       type: HookType.MESSAGE_ADDED,
@@ -527,7 +527,7 @@ export class Agent {
   /**
    * Getter for conversation history (delegated to MemoryModule)
    */
-  public get conversationHistory(): ApiMessage[] {
+  public get conversationHistory(): Message[] {
     return this.memoryModule.getAllMessages();
   }
 
@@ -938,7 +938,7 @@ export class Agent {
 
           // Add error to memory for the LLM to see
           this.memoryModule.pushErrors([error]);
-          const errorApiMessage: ApiMessage = {
+          const errorApiMessage: Message = {
             role: 'system',
             content: [
               { type: 'text' as const, text: `[Error: ${error.message}]` },
@@ -959,7 +959,7 @@ export class Agent {
           // Handle other errors (tool execution errors, API errors, etc.)
           if (error instanceof Error) {
             this.memoryModule.pushErrors([error]);
-            const errorApiMessage: ApiMessage = {
+            const errorApiMessage: Message = {
               role: 'system',
               content: [
                 { type: 'text' as const, text: `[Error: ${error.message}]` },
@@ -1040,81 +1040,13 @@ export class Agent {
         iterations,
       );
 
-      // Get conversation history
-      const historyContext = this.memoryModule.getHistoryForPrompt();
-      const memoryContext: MemoryContextItem[] = historyContext.map((m) => {
-        // Skip legacy string entries (from old formatMessage output or DB migration artifacts)
-        if (typeof m === 'string') return { kind: 'text' as const, role: 'user' as const, content: m };
-        if (!m || !m.role) return { kind: 'text' as const, role: 'user' as const, content: String(m) };
-        if (!Array.isArray(m.content)) {
-          return { kind: 'text' as const, role: m.role, content: String(m.content) };
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const blocks = m.content as any[];
-        const hasToolUse = blocks.some((b: any) => b.type === 'tool_use');
-        const hasToolResult = blocks.some((b: any) => b.type === 'tool_result');
-        const textParts = blocks
-          .filter((b: any) => b.type === 'text')
-          .map((b: any) => String(b.text))
-          .join('\n');
-        const toolUseBlocks = blocks.filter((b: any) => b.type === 'tool_use');
-        const toolResultBlocks = blocks.filter((b: any) => b.type === 'tool_result');
-
-        // Assistant message with tool_use: emit as structured tool_calls
-        if (m.role === 'assistant' && hasToolUse) {
-          return {
-            kind: 'tool_calls' as const,
-            role: 'assistant' as const,
-            content: textParts || undefined,
-            tool_calls: toolUseBlocks.map((b: any) => ({
-              id: String(b.id),
-              type: 'function' as const,
-              function: {
-                name: String(b.name),
-                arguments: typeof b.input === 'string' ? b.input : JSON.stringify(b.input ?? {}),
-              },
-            })),
-          };
-        }
-
-        // User message with tool_result: emit as structured tool result
-        if (m.role === 'user' && hasToolResult && !hasToolUse) {
-          if (toolResultBlocks.length === 1) {
-            const tr = toolResultBlocks[0];
-            return {
-              kind: 'tool_result' as const,
-              role: 'tool' as const,
-              tool_call_id: String(tr.tool_use_id),
-              content: typeof tr.content === 'string' ? tr.content : JSON.stringify(tr.content),
-            };
-          }
-          // Multiple tool results: emit as structured content blocks
-          return {
-            kind: 'content_blocks' as const,
-            role: 'user' as const,
-            contentBlocks: toolResultBlocks.map((tr: any) => ({
-              type: 'tool_result',
-              tool_use_id: String(tr.tool_use_id),
-              content: typeof tr.content === 'string' ? tr.content : JSON.stringify(tr.content),
-              ...(tr.is_error ? { is_error: true } : {}),
-            })),
-          };
-        }
-
-        // System message: emit as user (both OpenAI and Anthropic handle system via system prompt)
-        if (m.role === 'system') {
-          return { kind: 'text' as const, role: 'user' as const, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
-        }
-
-        // Default: plain text message
-        return { kind: 'text' as const, role: m.role, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
-      });
+      // Get conversation history — now directly usable as Message[] (no conversion needed)
+      const memoryContext = this.memoryModule.getHistoryForPrompt();
 
       // Call LLM
       const response = await this.apiClient.makeRequest(
         systemPrompt,
-        currentWorkspaceContext, // Empty workspaceContext since it's now part of combinedMemoryContext
+        currentWorkspaceContext,
         memoryContext,
         { timeout: this.config.apiRequestTimeout },
         tools,
@@ -1137,16 +1069,16 @@ export class Agent {
       });
 
       // Add assistant message to memory (including tool_use blocks for multi-turn context)
-      const assistantContent: Array<Record<string, unknown>> = [];
+      const assistantContent: ContentBlock[] = [];
       if (response.textResponse) {
-        assistantContent.push({ type: 'text' as const, text: response.textResponse });
+        assistantContent.push({ type: 'text', text: response.textResponse });
       }
       if (response.toolCalls && response.toolCalls.length > 0) {
         for (const tc of response.toolCalls) {
-          let parsedArgs: unknown = {};
-          try { parsedArgs = JSON.parse(tc.arguments); } catch { parsedArgs = tc.arguments; }
+          let parsedArgs: Record<string, unknown> = {};
+          try { parsedArgs = JSON.parse(tc.arguments); } catch { /* keep empty */ }
           assistantContent.push({
-            type: 'tool_use' as const,
+            type: 'tool_use',
             id: tc.id,
             name: tc.name,
             input: parsedArgs,
@@ -1154,9 +1086,9 @@ export class Agent {
         }
       }
       if (assistantContent.length > 0) {
-        const assistantMsg: ApiMessage = {
+        const assistantMsg: Message = {
           role: 'assistant',
-          content: assistantContent as any,
+          content: assistantContent,
           ts: Date.now(),
         };
         await this.addMessageToMemory(assistantMsg);
@@ -1171,14 +1103,14 @@ export class Agent {
           this.memoryModule.pushErrors([new Error(errorMsg)]);
           // Create error tool results for ALL tool calls so every tool_use
           // has a matching tool_result (Anthropic API requirement).
-          const errorBlocks = response.toolCalls.map((tc) => ({
-            type: 'tool_result' as const,
+          const errorBlocks: ToolResultBlock[] = response.toolCalls.map((tc) => ({
+            type: 'tool_result',
             tool_use_id: tc.id,
             toolName: tc.name,
             content: `Error: ${errorMsg}`,
             is_error: true,
           }));
-          const errorResult: ApiMessage = {
+          const errorResult: Message = {
             role: 'user',
             content: errorBlocks,
             ts: Date.now(),
@@ -1274,11 +1206,11 @@ export class Agent {
         results.push(toolResult);
 
         // Add tool result message to memory
-        const toolResultMsg: ApiMessage = {
+        const toolResultMsg: Message = {
           role: 'user',
           content: [
             {
-              type: 'tool_result' as const,
+              type: 'tool_result',
               tool_use_id: toolCall.id,
               toolName: toolCall.name,
               content: resultContent,
@@ -1321,11 +1253,11 @@ export class Agent {
         ]);
 
         // Record failure in memory as tool_result message
-        const errorToolResultMsg: ApiMessage = {
+        const errorToolResultMsg: Message = {
           role: 'user',
           content: [
             {
-              type: 'tool_result' as const,
+              type: 'tool_result',
               tool_use_id: toolCall.id,
               toolName: toolCall.name,
               content: `Error: ${errorMessage}`,
@@ -1484,7 +1416,7 @@ ${desc}${examplesStr}`;
   /**
    * Format a message for memory context
    */
-  private formatMessage(message: ApiMessage): string {
+  private formatMessage(message: Message): string {
     if (typeof message === 'string') {
       return message;
     }

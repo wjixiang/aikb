@@ -53,12 +53,19 @@ export * from './di/index.js';
 export { MemoryModule, defaultMemoryConfig } from './memory/index.js';
 export type { IMemoryModule, MemoryModuleConfig } from './memory/index.js';
 export type {
+  Message,
   ApiMessage,
-  MessageBuilder,
-  MessageAddedCallback,
+  MessageRole,
+  ContentBlock,
   ExtendedContentBlock,
+  TextContentBlock,
+  ToolUseBlock,
+  ToolResultBlock,
+  ImageContentBlock,
   ThinkingBlock,
+  MessageAddedCallback,
 } from './memory/index.js';
+export { MessageBuilder } from './memory/index.js';
 
 // Prompts
 export * from './prompts/index.js';

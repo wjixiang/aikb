@@ -1,112 +1,29 @@
 /**
  * Type definitions for memory module
+ *
+ * All message types are now defined in llm-api-client and re-exported here
+ * for backward compatibility.
  */
 
-import type Anthropic from '@anthropic-ai/sdk';
+// Re-export unified types from llm-api-client
+export type {
+  Message,
+  MessageRole,
+  ContentBlock,
+  TextContentBlock,
+  ToolUseBlock,
+  ToolResultBlock,
+  ImageContentBlock,
+  ThinkingBlock,
+  MessageAddedCallback,
+} from 'llm-api-client';
+export { MessageBuilder } from 'llm-api-client';
 
-// =============================================================================
-// Message Types (migrated from task/task.type.ts)
-// =============================================================================
-
-/**
- * Thinking block for assistant messages
- */
-export interface ThinkingBlock {
-  type: 'thinking';
-  thinking: string;
-}
-
-/**
- * Extended tool result block with toolName
- * Extends Anthropic's tool_result with additional metadata
- */
-export interface ToolResultBlock {
-  type: 'tool_result';
-  tool_use_id: string;
-  /** Name of the tool that was executed */
-  toolName?: string;
-  content: string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam>;
-  is_error?: boolean;
-}
-
-/**
- * Extended content block type for conversation messages.
- * Includes Anthropic.ContentBlockParam and custom block types like ThinkingBlock and ToolResultBlock.
- */
-export type ExtendedContentBlock =
-  | Anthropic.ContentBlockParam
-  | ThinkingBlock
-  | ToolResultBlock;
-
-/**
- * Unified message type for conversation history
- * Content is always an array of content blocks for consistency
- */
-export interface ApiMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: ExtendedContentBlock[];
-  ts?: number;
-}
-
-/**
- * Helper class for building ApiMessage objects
- * Provides convenient factory methods for common message types
- */
-export class MessageBuilder {
-  /**
-   * Create a text message
-   */
-  static text(role: 'user' | 'assistant' | 'system', text: string): ApiMessage {
-    return {
-      role,
-      content: [{ type: 'text', text }],
-      ts: Date.now(),
-    };
-  }
-
-  /**
-   * Create a system message
-   */
-  static system(context: string): ApiMessage {
-    return this.text('system', context);
-  }
-
-  /**
-   * Create a user message
-   */
-  static user(text: string): ApiMessage {
-    return this.text('user', text);
-  }
-
-  /**
-   * Create an assistant message
-   */
-  static assistant(text: string): ApiMessage {
-    return this.text('assistant', text);
-  }
-
-  /**
-   * Create a message with custom content blocks
-   */
-  static custom(
-    role: 'user' | 'assistant' | 'system',
-    content: ExtendedContentBlock[],
-  ): ApiMessage {
-    return {
-      role,
-      content,
-      ts: Date.now(),
-    };
-  }
-}
-
-/**
- * Callback type for message added events
- */
-export type MessageAddedCallback = (
-  taskId: string,
-  message: ApiMessage,
-) => void;
+// Backward-compatible aliases (deprecated)
+/** @deprecated Use Message from 'llm-api-client' instead */
+export type ApiMessage = import('llm-api-client').Message;
+/** @deprecated Use ContentBlock from 'llm-api-client' instead */
+export type ExtendedContentBlock = import('llm-api-client').ContentBlock;
 
 /**
  * Configuration for the memory module
@@ -144,17 +61,17 @@ export interface IMemoryModule {
   /**
    * Add message to storage (triggers compression if needed)
    */
-  addMessage(message: ApiMessage): Promise<ApiMessage>;
+  addMessage(message: import('llm-api-client').Message): Promise<import('llm-api-client').Message>;
 
   /**
    * Add message without triggering compression
    */
-  addMessageSync(message: ApiMessage): Promise<ApiMessage>;
+  addMessageSync(message: import('llm-api-client').Message): Promise<import('llm-api-client').Message>;
 
   /**
    * Get all historical messages
    */
-  getAllMessages(): ApiMessage[];
+  getAllMessages(): import('llm-api-client').Message[];
 
   /**
    * Get total token count for all messages
@@ -164,7 +81,7 @@ export interface IMemoryModule {
   /**
    * Get history for prompt injection
    */
-  getHistoryForPrompt(): ApiMessage[];
+  getHistoryForPrompt(): import('llm-api-client').Message[];
 
   // ==================== Workspace Context Management ====================
 
@@ -201,7 +118,7 @@ export interface IMemoryModule {
   getErrors(): Error[];
 
   /**
-   * Clear all saved errors
+   * Clear all errors
    */
   clearErrors(): void;
 

@@ -4,10 +4,10 @@ import { BaseApiClient, BaseClientConfig } from './base.js';
 import {
   ApiResponse,
   ChatCompletionTool,
-  MemoryContextItem,
   ToolCall,
   TokenUsage,
 } from '../types/api-client.js';
+import type { Message, ContentBlock, ToolUseBlock, ToolResultBlock, TextContentBlock, ThinkingBlock } from '../types/message.js';
 import {
   ApiClientError,
   AuthenticationError,
@@ -57,7 +57,7 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
     requestId: string,
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: MemoryContextItem[],
+    memoryContext: Message[],
     tools: ChatCompletionTool[] | undefined,
   ): Promise<ApiResponse> {
     const { systemContext, messages } = this.buildMessages(systemPrompt, workspaceContext, memoryContext);
@@ -111,7 +111,7 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
   private buildMessages(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: MemoryContextItem[],
+    memoryContext: Message[],
   ): { systemContext: string; messages: Anthropic.MessageParam[] } {
     const systemParts: string[] = [systemPrompt];
     const messages: Anthropic.MessageParam[] = [
@@ -121,45 +121,40 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
       },
     ];
 
-    for (const item of memoryContext) {
-      if (item.kind === 'tool_calls') {
-        // Assistant message with tool_calls (OpenAI format) → convert to Anthropic tool_use blocks
-        const content: Anthropic.ContentBlockParam[] = [];
-        if (item.content) {
-          content.push({ type: 'text', text: item.content });
-        }
-        for (const tc of item.tool_calls) {
-          content.push({
-            type: 'tool_use',
-            id: tc.id,
-            name: tc.function.name,
-            input: JSON.parse(tc.function.arguments),
-          });
-        }
-        messages.push({ role: 'assistant', content });
-      } else if (item.kind === 'tool_result') {
-        // Tool result → Anthropic requires role:user with tool_result content block
-        messages.push({
-          role: 'user',
-          content: [
-            {
-              type: 'tool_result',
-              tool_use_id: item.tool_call_id,
-              content: item.content,
-            },
-          ],
-        });
-      } else if (item.kind === 'content_blocks') {
-        // Structured content blocks — pass through directly
-        messages.push({ role: item.role, content: item.contentBlocks as unknown as Anthropic.ContentBlockParam[] });
-      } else if (item.role === 'system') {
-        systemParts.push(item.content);
-      } else {
-        messages.push({ role: item.role, content: item.content });
+    for (const msg of memoryContext) {
+      if (msg.role === 'system') {
+        systemParts.push(
+          msg.content
+            .filter((b): b is TextContentBlock => b.type === 'text')
+            .map(b => b.text)
+            .join('\n'),
+        );
+        continue;
       }
+
+      const content: Anthropic.ContentBlockParam[] = msg.content
+        .filter((b): b is ContentBlock => b.type !== 'thinking')
+        .map(block => this.toAnthropicBlock(block));
+      messages.push({ role: msg.role, content });
     }
 
     return { systemContext: systemParts.join('\n\n'), messages };
+  }
+
+  private toAnthropicBlock(block: ContentBlock): Anthropic.ContentBlockParam {
+    switch (block.type) {
+      case 'text':
+        return { type: 'text', text: block.text };
+      case 'tool_use':
+        return { type: 'tool_use', id: block.id, name: block.name, input: block.input };
+      case 'tool_result':
+        return { type: 'tool_result', tool_use_id: block.tool_use_id, content: block.content };
+      case 'image':
+        return { type: 'image', source: block.source };
+      default:
+        // ThinkingBlock — skipped by filter above, but handle gracefully
+        return { type: 'text', text: JSON.stringify(block) };
+    }
   }
 
   private convertToolsToAnthropicFormat(

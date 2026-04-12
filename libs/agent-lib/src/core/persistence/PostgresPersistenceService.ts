@@ -10,7 +10,7 @@ import type {
   PersistenceConfig,
   InstanceMetadata,
 } from './types.js';
-import type { ApiMessage, WorkspaceContextEntry } from '../memory/types.js';
+import type { Message, WorkspaceContextEntry } from '../memory/types.js';
 import { TYPES } from '../di/types.js';
 import { AgentStatus } from '../common/types.js';
 import pino from 'pino';
@@ -188,7 +188,7 @@ export class PostgresPersistenceService implements IPersistenceService {
   async saveMemory(
     instanceId: string,
     memory: {
-      messages: ApiMessage[];
+      messages: Message[];
       workspaceContexts: WorkspaceContextEntry[];
       config: unknown;
     },
@@ -221,7 +221,7 @@ export class PostgresPersistenceService implements IPersistenceService {
   }
 
   async loadMemory(instanceId: string): Promise<{
-    messages: ApiMessage[];
+    messages: Message[];
     workspaceContexts: WorkspaceContextEntry[];
     config: unknown;
   } | null> {
@@ -234,7 +234,7 @@ export class PostgresPersistenceService implements IPersistenceService {
     }
 
     return {
-      messages: memory.messages as unknown as ApiMessage[],
+      messages: memory.messages as unknown as Message[],
       workspaceContexts:
         memory.workspaceContexts as unknown as WorkspaceContextEntry[],
       config: memory.config,

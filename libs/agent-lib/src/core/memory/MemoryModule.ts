@@ -9,11 +9,13 @@
  */
 
 import { injectable, inject, optional } from 'inversify';
-import { ApiMessage, WorkspaceContextEntry } from './types.js';
+import type { Message } from './types.js';
+import { WorkspaceContextEntry } from './types.js';
 import type { IMemoryModule, MemoryModuleConfig } from './types.js';
 import { TYPES } from '../di/types.js';
 import { tiktoken } from '../utils/tiktoken.js';
 import type { ApiClient } from 'llm-api-client';
+import { MessageBuilder } from 'llm-api-client';
 import type { IPersistenceService } from '../persistence/types.js';
 import { diffChars } from 'diff';
 
@@ -48,7 +50,7 @@ const MAX_TOKENS_FOR_SUMMARY = 15000;
 export class MemoryModule implements IMemoryModule {
   private config: MemoryModuleConfig;
 
-  private messages: ApiMessage[] = [];
+  private messages: Message[] = [];
   private workspaceContexts: WorkspaceContextEntry[] = [];
   private _previousFullContext: string | null = null;
   private savedErrors: Error[] = [];
@@ -108,7 +110,7 @@ export class MemoryModule implements IMemoryModule {
 
   // ==================== Message Management ====================
 
-  async addMessage(message: ApiMessage): Promise<ApiMessage> {
+  async addMessage(message: Message): Promise<Message> {
     this.messages.push(message);
     this._cachedTokenCount = null;
 
@@ -120,14 +122,14 @@ export class MemoryModule implements IMemoryModule {
     return message;
   }
 
-  async addMessageSync(message: ApiMessage): Promise<ApiMessage> {
+  async addMessageSync(message: Message): Promise<Message> {
     this.messages.push(message);
     this._cachedTokenCount = null;
     await this._persistMemory();
     return message;
   }
 
-  getAllMessages(): ApiMessage[] {
+  getAllMessages(): Message[] {
     return [...this.messages];
   }
 
@@ -149,8 +151,8 @@ export class MemoryModule implements IMemoryModule {
     return this._cachedTokenCount;
   }
 
-  getHistoryForPrompt(): ApiMessage[] {
-    const result: ApiMessage[] = [];
+  getHistoryForPrompt(): Message[] {
+    const result: Message[] = [];
 
     // Prepend errors as system messages (consumed once)
     const errors = this.popErrors();
@@ -306,7 +308,7 @@ export class MemoryModule implements IMemoryModule {
   /**
    * Generate summary using LLM, with statistical fallback
    */
-  private async summarize(messages: ApiMessage[]): Promise<string> {
+  private async summarize(messages: Message[]): Promise<string> {
     if (!this.apiClient) {
       return this.statisticalSummary(messages);
     }
@@ -321,7 +323,7 @@ export class MemoryModule implements IMemoryModule {
     }
   }
 
-  private async summarizeWithLLM(messages: ApiMessage[]): Promise<string> {
+  private async summarizeWithLLM(messages: Message[]): Promise<string> {
     if (!this.apiClient) {
       throw new Error('ApiClient not available');
     }
@@ -352,16 +354,8 @@ export class MemoryModule implements IMemoryModule {
       SUMMARIZATION_PROMPT,
       '',
       [
-        {
-          kind: 'text' as const,
-          role: 'system' as const,
-          content: `<System>\n${SUMMARIZATION_PROMPT}\n</System>`,
-        },
-        {
-          kind: 'text' as const,
-          role: 'user' as const,
-          content: `Please summarize the following conversation:\n\n${textToSummarize}`,
-        },
+        MessageBuilder.system(`<System>\n${SUMMARIZATION_PROMPT}\n</System>`),
+        MessageBuilder.user(`Please summarize the following conversation:\n\n${textToSummarize}`),
       ],
       { timeout: 60000 },
       [],
@@ -375,7 +369,7 @@ export class MemoryModule implements IMemoryModule {
   /**
    * Statistical summary fallback when LLM is unavailable
    */
-  private statisticalSummary(messages: ApiMessage[]): string {
+  private statisticalSummary(messages: Message[]): string {
     const userMsgs = messages.filter((m) => m.role === 'user').length;
     const assistantMsgs = messages.filter((m) => m.role === 'assistant').length;
     const toolResults = messages.filter((m) =>
@@ -401,7 +395,7 @@ export class MemoryModule implements IMemoryModule {
 
   // ==================== Helpers ====================
 
-  private extractContentBlocks(content: ApiMessage['content']) {
+  private extractContentBlocks(content: Message['content']) {
     if (typeof content === 'string') {
       return [{ type: 'text' as const, text: content }];
     }
@@ -422,7 +416,7 @@ export class MemoryModule implements IMemoryModule {
     return [{ type: 'text' as const, text: String(content) }];
   }
 
-  private extractText(content: ApiMessage['content']): string {
+  private extractText(content: Message['content']): string {
     if (typeof content === 'string') {
       return content;
     }

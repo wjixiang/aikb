@@ -3,9 +3,9 @@ import type {
   ApiResponse,
   ApiTimeoutConfig,
   ChatCompletionTool,
-  MemoryContextItem,
   ToolCall,
 } from 'llm-api-client';
+import type { Message } from 'llm-api-client';
 import type { MockResponseDef } from '../types.js';
 
 let globalCallCounter = 0;
@@ -32,7 +32,7 @@ export class MockApiClient implements ApiClient {
   public lastRequest: {
     systemPrompt: string;
     workspaceContext: string;
-    memoryContext: MemoryContextItem[];
+    memoryContext: Message[];
     tools?: ChatCompletionTool[];
   } = {
     systemPrompt: '',
@@ -51,7 +51,7 @@ export class MockApiClient implements ApiClient {
   async makeRequest(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: MemoryContextItem[],
+    memoryContext: Message[],
     timeoutConfig?: ApiTimeoutConfig,
     tools?: ChatCompletionTool[],
   ): Promise<ApiResponse> {
