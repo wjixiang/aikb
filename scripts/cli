@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+start_ukb_mcp() {
+    echo "Starting ukb-mcp server..."
+    cd bio_info
+    source .venv/bin/activate
+    cd apps/ukb-mcp
+    exec uv run fastapi dev
+}
+
+case "$1" in
+    ukb-mcp)
+        start_ukb_mcp
+        ;;
+    *)
+        echo "Usage: $0 <task>"
+        echo ""
+        echo "Available tasks:"
+        echo "  ukb-mcp    Start UK Biobank MCP server"
+        exit 1
+        ;;
+esac
