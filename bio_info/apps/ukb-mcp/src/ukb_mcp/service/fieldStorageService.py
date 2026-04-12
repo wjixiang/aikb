@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import re
+
 import duckdb
 from fastapi import Depends
+import sqlglot
+from sqlglot import exp
 
 from dx_client import IDXClient
 from ukb_mcp.api.deps import get_dx_client
 from ukb_mcp.config import get_settings
-import sqlglot
 
 
 def get_field_storage(
@@ -36,9 +39,9 @@ class FieldStorageService:
 
     def count_query_fields(self, condition: str) -> int:
         """返回满足条件的记录总数。"""
-        parsed = sqlglot.parse_one(condition, dialect="duckdb")
+        parsed = _parse_condition(condition)
         query = (
-            sqlglot.select(sqlglot.count())
+            sqlglot.select(exp.Count(this=exp.Star()))
             .from_("field_dict")
             .where(parsed)
         )
@@ -54,7 +57,7 @@ class FieldStorageService:
 
     def query_fields(self, condition: str, page: int = 1, page_size: int = 100):
         offset = (page - 1) * page_size
-        parsed = sqlglot.parse_one(condition, dialect="duckdb")
+        parsed = _parse_condition(condition)
 
         query = (
             sqlglot.select("*")
@@ -65,3 +68,43 @@ class FieldStorageService:
         )
 
         return self._con.execute(query.sql(dialect="duckdb")).df()
+
+
+def _parse_condition(condition: str):
+    """解析查询条件：裸词自动转为 LIKE 查询，支持安全 SQL 表达式。"""
+    condition = condition.strip()
+
+    # 裸词：仅包含安全的字母数字下划线和非ASCII字符，整体作为 LIKE 关键词搜索
+    if re.fullmatch(r"[\w\u0080-\U0010ffff]+", condition):
+        # 转义 LIKE special chars，防止 pattern 注入
+        escaped = (
+            condition.replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+        )
+        pattern = f"%{escaped}%"
+
+        text_cols = [
+            "entity", "name", "type", "title", "description",
+            "coding_name", "concept", "folder_path", "units",
+        ]
+
+        # 构造: (col IS NOT NULL) AND (col LIKE 'pattern')
+        col_conditions = [
+            sqlglot.and_(
+                sqlglot.column(col).is_(exp.Null()).not_(),
+                sqlglot.column(col).like(exp.Literal.string(pattern)),
+            )
+            for col in text_cols
+        ]
+
+        combined = col_conditions[0]
+        for c in col_conditions[1:]:
+            combined = sqlglot.or_(combined, c)
+        return combined
+
+    # 解析为完整 SQL 表达式
+    parsed = sqlglot.parse_one(condition, dialect="duckdb")
+    if not isinstance(parsed, exp.Boolean):
+        raise ValueError(f"Condition must be a boolean expression, got: {type(parsed).__name__}")
+    return parsed
