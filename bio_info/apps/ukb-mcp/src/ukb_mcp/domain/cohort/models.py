@@ -62,3 +62,14 @@ class ExtractFieldsRequest(BaseModel):
 
     entity_fields: list[str] = Field(description='要提取的字段列表（"entity.field_name" 格式）。')
     refresh: bool = Field(default=False, description="是否跳过缓存。")
+    limit: int = Field(default=1000, ge=1, le=50000, description="返回条数上限。")
+    offset: int = Field(default=0, ge=0, description="偏移量。")
+
+
+class ExtractFieldsResponse(BaseModel):
+    """提取字段响应。"""
+
+    data: list[dict] = Field(description="提取的数据行列表。")
+    total: int = Field(description="总记录数。")
+    limit: int = Field(description="每页条数。")
+    offset: int = Field(description="偏移量。")

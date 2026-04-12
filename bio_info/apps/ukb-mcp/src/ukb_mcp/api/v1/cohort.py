@@ -11,6 +11,7 @@ from ukb_mcp.domain.cohort.models import (
     CohortInfo,
     CohortListItem,
     ExtractFieldsRequest,
+    ExtractFieldsResponse,
 )
 from ukb_mcp.domain.cohort.service import CohortService
 from dx_client import IDXClient
@@ -119,11 +120,23 @@ def delete_cohort(
     service.delete_cohort(cohort_id)
 
 
-@router.post("/{cohort_id}/extract")
+@router.post("/{cohort_id}/extract", response_model=ExtractFieldsResponse)
 def extract_cohort_fields(
     cohort_id: str,
     req: ExtractFieldsRequest,
     service: CohortService = Depends(get_cohort_service),
-) -> list[dict]:
+) -> ExtractFieldsResponse:
     """提取队列内参与者的指定字段数据。"""
-    return service.extract_fields(cohort_id, req.entity_fields, refresh=req.refresh)
+    records, total = service.extract_fields(
+        cohort_id,
+        req.entity_fields,
+        refresh=req.refresh,
+        limit=req.limit,
+        offset=req.offset,
+    )
+    return ExtractFieldsResponse(
+        data=records,
+        total=total,
+        limit=req.limit,
+        offset=req.offset,
+    )

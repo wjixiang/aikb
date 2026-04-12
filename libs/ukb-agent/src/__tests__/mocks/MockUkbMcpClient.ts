@@ -149,19 +149,19 @@ export class MockUkbMcpClient extends UkbMcpClient {
     return this.getMockResult('describeDatabase') as Promise<unknown>;
   }
 
-  listTables(databaseId: string, _params?: { refresh?: boolean }): Promise<DatabaseTableInfo[]> {
-    return this.getMockResult('listTables') as Promise<DatabaseTableInfo[]>;
+  listTables(databaseId: string, _params?: { refresh?: boolean; limit?: number; offset?: number }): Promise<{ data: DatabaseTableInfo[]; total: number; limit: number; offset: number }> {
+    return this.getMockResult('listTables') as Promise<{ data: DatabaseTableInfo[]; total: number; limit: number; offset: number }>;
   }
 
   listFields(
     databaseId: string,
-    _params?: { entity?: string; name?: string; refresh?: boolean },
-  ): Promise<DatabaseFieldInfo[]> {
-    return this.getMockResult('listFields') as Promise<DatabaseFieldInfo[]>;
+    _params?: { entity?: string; name?: string; refresh?: boolean; limit?: number; offset?: number },
+  ): Promise<{ data: DatabaseFieldInfo[]; total: number; limit: number; offset: number }> {
+    return this.getMockResult('listFields') as Promise<{ data: DatabaseFieldInfo[]; total: number; limit: number; offset: number }>;
   }
 
-  queryDatabase(databaseId: string, body: DatabaseQueryRequest): Promise<unknown> {
-    return this.getMockResult('queryDatabase') as Promise<unknown>;
+  queryDatabase(databaseId: string, body: DatabaseQueryRequest): Promise<{ data: unknown[]; total: number; limit: number; offset: number }> {
+    return this.getMockResult('queryDatabase') as Promise<{ data: unknown[]; total: number; limit: number; offset: number }>;
   }
 
   exportDatabase(databaseId: string, body: ExportRequest): Promise<unknown> {
@@ -188,8 +188,8 @@ export class MockUkbMcpClient extends UkbMcpClient {
     return this.getMockResult('deleteCohort') as Promise<unknown>;
   }
 
-  extractCohortFields(cohortId: string, body: ExtractFieldsRequest): Promise<unknown> {
-    return this.getMockResult('extractCohortFields') as Promise<unknown>;
+  extractCohortFields(cohortId: string, body: ExtractFieldsRequest): Promise<{ data: unknown[]; total: number; limit: number; offset: number }> {
+    return this.getMockResult('extractCohortFields') as Promise<{ data: unknown[]; total: number; limit: number; offset: number }>;
   }
 
   listFieldsDict(_params?: { page?: number; page_size?: number }): Promise<FieldDictResponse> {

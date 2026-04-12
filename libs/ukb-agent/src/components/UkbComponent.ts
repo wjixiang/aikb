@@ -17,8 +17,6 @@ import {
   DescribeDatabaseToolDef,
   handleDescribeDatabase,
   ListTablesToolDef,
-  handleListTables,
-  type TableInfo,
   renderTablesAsMarkdown,
   ListFieldsToolDef,
   type FieldInfo,
@@ -38,9 +36,7 @@ import {
   CreateCohortToolDef,
   handleCreateCohort,
   ExtractCohortDataToolDef,
-  handleExtractCohortData,
   QueryDatabaseToolDef,
-  handleQueryDatabase,
   QueryAssociationToolDef,
   handleQueryAssociation,
   ExportDataToolDef,
@@ -183,12 +179,18 @@ export class UkbComponent extends ToolComponent<UkbState> {
   async onList_tables(params: {
     database_id: string;
     refresh?: boolean;
+    limit?: number;
+    offset?: number;
   }): Promise<ToolCallResult<string>> {
-    const result = await handleListTables(this.client, params);
+    const result = await this.client.listTables(params.database_id, {
+      ...(params.refresh && { refresh: params.refresh }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.offset && { offset: params.offset }),
+    });
     return {
       success: true,
       data: renderTablesAsMarkdown(result.data),
-      summary: result.summary ?? '',
+      summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
     };
   }
 
@@ -197,19 +199,17 @@ export class UkbComponent extends ToolComponent<UkbState> {
     entity?: string;
     name?: string;
     refresh?: boolean;
+    limit?: number;
+    offset?: number;
   }): Promise<ToolCallResult<string>> {
-    const fields = await this.client.listFields(params.database_id, {
+    const result = await this.client.listFields(params.database_id, {
       ...(params.entity && { entity: params.entity }),
       ...(params.name && { name: params.name }),
       ...(params.refresh && { refresh: params.refresh }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.offset && { offset: params.offset }),
     });
-    this.reactive.currentFields = fields.map((f) => ({
-      entity: f.entity,
-      name: f.name,
-      type: f.type,
-      title: f.title,
-    }));
-    const fieldInfos: FieldInfo[] = fields.map((f) => ({
+    this.reactive.currentFields = result.data.map((f) => ({
       entity: f.entity,
       name: f.name,
       type: f.type,
@@ -217,8 +217,8 @@ export class UkbComponent extends ToolComponent<UkbState> {
     }));
     return {
       success: true,
-      data: renderFieldsAsMarkdown(fieldInfos),
-      summary: `找到 ${fields.length} 个字段`,
+      data: renderFieldsAsMarkdown(result.data),
+      summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
     };
   }
 
@@ -304,17 +304,36 @@ export class UkbComponent extends ToolComponent<UkbState> {
   async onExtract_cohort_data(
     params: ExtractFieldsRequest & { cohort_id: string },
   ): Promise<ToolCallResult<unknown>> {
-    const result = await handleExtractCohortData(this.client, params);
-    this.reactive.lastQueryResult = result.data as Record<string, unknown>;
-    return result;
+    const result = await this.client.extractCohortFields(params.cohort_id, {
+      entity_fields: params.entity_fields,
+      ...(params.refresh && { refresh: params.refresh }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.offset && { offset: params.offset }),
+    });
+    this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
+    return {
+      success: true,
+      data: result.data,
+      summary: `提取到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
+    };
   }
 
   async onQuery_database(
     params: DatabaseQueryRequest & { database_id: string },
   ): Promise<ToolCallResult<unknown>> {
-    const result = await handleQueryDatabase(this.client, params);
-    this.reactive.lastQueryResult = result.data as Record<string, unknown>;
-    return result;
+    const result = await this.client.queryDatabase(params.database_id, {
+      ...(params.entity_fields && { entity_fields: params.entity_fields }),
+      ...(params.dataset_ref && { dataset_ref: params.dataset_ref }),
+      ...(params.refresh && { refresh: params.refresh }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.offset && { offset: params.offset }),
+    });
+    this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
+    return {
+      success: true,
+      data: result.data,
+      summary: `查询到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
+    };
   }
 
   async onQuery_association(

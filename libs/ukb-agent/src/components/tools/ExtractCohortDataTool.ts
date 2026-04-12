@@ -5,7 +5,7 @@ import type { UkbState } from '../UkbComponent.js';
 import type { UkbMcpClient } from '../../client/UkbMcpClient.js';
 
 export const ExtractCohortDataToolDef: ToolDef = {
-  desc: '从队列中提取指定字段的数据',
+  desc: '从队列中提取指定字段的数据（支持分页）',
   paramsSchema: z.object({
     cohort_id: z.string().describe('队列 ID'),
     entity_fields: z
@@ -17,6 +17,14 @@ export const ExtractCohortDataToolDef: ToolDef = {
       .boolean()
       .optional()
       .describe('是否跳过缓存'),
+    limit: z
+      .number()
+      .optional()
+      .describe('每页条数，默认 1000'),
+    offset: z
+      .number()
+      .optional()
+      .describe('偏移量，默认 0'),
   }),
 };
 

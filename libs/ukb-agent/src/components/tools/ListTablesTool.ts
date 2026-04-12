@@ -3,13 +3,21 @@ import type { ToolDef, ToolCallResult } from 'agent-lib/components';
 import type { UkbMcpClient } from '../../client/UkbMcpClient.js';
 
 export const ListTablesToolDef: ToolDef = {
-  desc: '列出数据库中的所有数据表',
+  desc: '列出数据库中的所有数据表（支持分页）',
   paramsSchema: z.object({
     database_id: z.string().describe('数据库 ID'),
     refresh: z
       .boolean()
       .optional()
       .describe('是否强制刷新缓存'),
+    limit: z
+      .number()
+      .optional()
+      .describe('每页条数，默认 1000'),
+    offset: z
+      .number()
+      .optional()
+      .describe('偏移量，默认 0'),
   }),
 };
 
@@ -34,14 +42,19 @@ export async function handleListTables(
   params: {
     database_id: string;
     refresh?: boolean;
+    limit?: number;
+    offset?: number;
   },
 ): Promise<ToolCallResult<TableInfo[]>> {
-  const opts = params.refresh ? { refresh: params.refresh } : {};
-  const tables = await client.listTables(params.database_id, opts);
-  const data: TableInfo[] = tables.map((t) => ({ name: t.name }));
+  const result = await client.listTables(params.database_id, {
+    ...(params.refresh && { refresh: params.refresh }),
+    ...(params.limit && { limit: params.limit }),
+    ...(params.offset && { offset: params.offset }),
+  });
+  const data: TableInfo[] = result.data.map((t) => ({ name: t.name }));
   return {
     success: true,
     data,
-    summary: `数据库 ${params.database_id} 包含 ${tables.length} 个表`,
+    summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
   };
 }

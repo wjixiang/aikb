@@ -65,9 +65,13 @@ class CohortService:
         cohort_id: str,
         entity_fields: list[str],
         refresh: bool = False,
-    ) -> list[dict]:
-        """提取 cohort 内参与者的指定字段数据。"""
+        limit: int = 1000,
+        offset: int = 0,
+    ) -> tuple[list[dict], int]:
+        """提取 cohort 内参与者的指定字段数据（支持分页）。"""
         df = self._dx.extract_cohort_fields(
             cohort_id, entity_fields, refresh=refresh,
         )
-        return df.to_dict(orient="records")
+        total = len(df)
+        records = df.iloc[offset : offset + limit].to_dict(orient="records")
+        return records, total

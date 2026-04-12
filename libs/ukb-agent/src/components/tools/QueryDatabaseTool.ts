@@ -5,7 +5,7 @@ import type { UkbState } from '../UkbComponent.js';
 import type { UkbMcpClient } from '../../client/UkbMcpClient.js';
 
 export const QueryDatabaseToolDef: ToolDef = {
-  desc: '直接查询数据库中的指定字段数据',
+  desc: '直接查询数据库中的指定字段数据（支持分页）',
   paramsSchema: z.object({
     database_id: z.string().describe('数据库 ID'),
     entity_fields: z
@@ -21,6 +21,14 @@ export const QueryDatabaseToolDef: ToolDef = {
       .boolean()
       .optional()
       .describe('是否强制刷新缓存'),
+    limit: z
+      .number()
+      .optional()
+      .describe('每页条数，默认 1000'),
+    offset: z
+      .number()
+      .optional()
+      .describe('偏移量，默认 0'),
   }),
 };
 

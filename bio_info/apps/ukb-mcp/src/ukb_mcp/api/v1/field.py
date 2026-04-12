@@ -20,8 +20,9 @@ def list_fields(
     storage: FieldStorageService = Depends(get_field_storage),
 ):
     df = storage.list_fields(page, page_size)
+    total = storage.count_fields()
     return FieldDictResponse(
-        total=len(df),
+        total=total,
         page=page,
         page_size=page_size,
         data=_field_adapter.validate_python(df.to_dict(orient="records")),
@@ -36,8 +37,9 @@ def query_fields(
     storage: FieldStorageService = Depends(get_field_storage),
 ):
     df = storage.query_fields(condition, page, page_size)
+    total = storage.count_query_fields(condition)
     return FieldDictResponse(
-        total=len(df),
+        total=total,
         page=page,
         page_size=page_size,
         data=_field_adapter.validate_python(df.to_dict(orient="records")),

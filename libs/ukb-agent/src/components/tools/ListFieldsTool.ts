@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { ToolDef } from 'agent-lib/components';
 
 export const ListFieldsToolDef: ToolDef = {
-  desc: '列出数据库中的字段（可按 entity 或名称过滤）',
+  desc: '列出数据库中的字段（可按 entity 或名称过滤，支持分页）',
   paramsSchema: z.object({
     database_id: z.string().describe('数据库 ID'),
     entity: z
@@ -17,6 +17,14 @@ export const ListFieldsToolDef: ToolDef = {
       .boolean()
       .optional()
       .describe('是否强制刷新缓存'),
+    limit: z
+      .number()
+      .optional()
+      .describe('每页条数，默认 1000'),
+    offset: z
+      .number()
+      .optional()
+      .describe('偏移量，默认 0'),
   }),
 };
 

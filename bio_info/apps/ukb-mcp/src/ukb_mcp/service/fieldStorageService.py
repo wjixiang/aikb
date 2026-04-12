@@ -29,6 +29,22 @@ class FieldStorageService:
         self._con.unregister("tmp")
         return True
 
+    def count_fields(self) -> int:
+        """返回字段字典总记录数。"""
+        result = self._con.execute("SELECT COUNT(*) FROM field_dict").fetchone()
+        return result[0] if result else 0
+
+    def count_query_fields(self, condition: str) -> int:
+        """返回满足条件的记录总数。"""
+        parsed = sqlglot.parse_one(condition, dialect="duckdb")
+        query = (
+            sqlglot.select(sqlglot.count())
+            .from_("field_dict")
+            .where(parsed)
+        )
+        result = self._con.execute(query.sql(dialect="duckdb")).fetchone()
+        return result[0] if result else 0
+
     def list_fields(self, page: int = 1, page_size: int = 100):
         offset = (page - 1) * page_size
         return self._con.execute(

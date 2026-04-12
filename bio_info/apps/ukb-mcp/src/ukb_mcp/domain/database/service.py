@@ -57,9 +57,18 @@ class DatabaseService:
     def describe_database(self, database_id: str, *, refresh: bool = False) -> dict:
         return self._dx.describe_database_cluster(database_id, refresh=refresh).model_dump()
 
-    def list_tables(self, database_id: str, *, refresh: bool = False) -> list[dict]:
-        tables = self._dx.get_database_schema(database_id, refresh=refresh)
-        return [{"name": t.name} for t in tables]
+    def list_tables(
+        self,
+        database_id: str,
+        *,
+        limit: int = 1000,
+        offset: int = 0,
+        refresh: bool = False,
+    ) -> tuple[list[dict], int]:
+        all_tables = self._dx.get_database_schema(database_id, refresh=refresh)
+        total = len(all_tables)
+        tables = [{"name": t.name} for t in all_tables]
+        return tables[offset : offset + limit], total
 
     def list_fields(
         self,
@@ -67,12 +76,16 @@ class DatabaseService:
         entity: str | None = None,
         name_pattern: str | None = None,
         *,
+        limit: int = 1000,
+        offset: int = 0,
         refresh: bool = False,
-    ) -> list[dict]:
+    ) -> tuple[list[dict], int]:
         df = self._dx.list_fields(
             entity=entity, name_pattern=name_pattern, refresh=refresh,
         )
-        return df.to_dict(orient="records")
+        total = len(df)
+        records = df.iloc[offset : offset + limit].to_dict(orient="records")
+        return records, total
 
     def query(
         self,
@@ -80,8 +93,13 @@ class DatabaseService:
         entity_fields: list[str],
         dataset_ref: str | None = None,
         *,
+        limit: int = 1000,
+        offset: int = 0,
         refresh: bool = False,
-    ) -> pd.DataFrame:
-        return self._dx.query_database(
+    ) -> tuple[list[dict], int]:
+        df = self._dx.query_database(
             database_id, entity_fields, dataset_ref, refresh=refresh,
         )
+        total = len(df)
+        records = df.iloc[offset : offset + limit].to_dict(orient="records")
+        return records, total

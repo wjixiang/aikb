@@ -12,7 +12,10 @@ from ukb_mcp.domain.database.models import (
     DatabaseFieldInfo,
     DatabaseInfo,
     DatabaseQueryRequest,
+    DatabaseQueryResponse,
     DatabaseTableInfo,
+    PaginatedFieldsResponse,
+    PaginatedTablesResponse,
 )
 from ukb_mcp.domain.database.service import DatabaseService
 from dx_client import IDXClient
@@ -70,48 +73,76 @@ def describe_database(
 # ── 数据表与字段 ─────────────────────────────────────────────────────────
 
 
-@router.get("/{database_id}/tables", response_model=list[DatabaseTableInfo])
+@router.get("/{database_id}/tables", response_model=PaginatedTablesResponse)
 def list_tables(
     database_id: str,
+    limit: int = Query(default=1000, ge=1, description="每页条数。"),
+    offset: int = Query(default=0, ge=0, description="偏移量。"),
     refresh: bool = Query(default=False, description="强制刷新缓存。"),
     service: DatabaseService = Depends(get_database_service),
-) -> list[DatabaseTableInfo]:
+) -> PaginatedTablesResponse:
     """列出数据库中的数据表（目录结构）。"""
-    return service.list_tables(database_id, refresh=refresh)  # type: ignore[return-value]
+    tables, total = service.list_tables(database_id, limit=limit, offset=offset, refresh=refresh)
+    return PaginatedTablesResponse(
+        data=[DatabaseTableInfo(name=t["name"]) for t in tables],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
-@router.get("/{database_id}/fields", response_model=list[DatabaseFieldInfo])
+@router.get("/{database_id}/fields", response_model=PaginatedFieldsResponse)
 def list_fields(
     database_id: str,
     entity: str | None = Query(default=None, description="按实体过滤。"),
     name: str | None = Query(default=None, description="按字段名模糊匹配。"),
+    limit: int = Query(default=1000, ge=1, description="每页条数。"),
+    offset: int = Query(default=0, ge=0, description="偏移量。"),
     refresh: bool = Query(default=False, description="强制刷新缓存。"),
     service: DatabaseService = Depends(get_database_service),
-) -> list[DatabaseFieldInfo]:
+) -> PaginatedFieldsResponse:
     """列出数据集中的可用字段（精简视图）。
 
     返回 entity / name / type / title 四列，支持按实体和字段名过滤。
     """
-    return service.list_fields(database_id, entity=entity, name_pattern=name, refresh=refresh)  # type: ignore[return-value]
+    fields, total = service.list_fields(
+        database_id, entity=entity, name_pattern=name, limit=limit, offset=offset, refresh=refresh,
+    )
+    return PaginatedFieldsResponse(
+        data=[DatabaseFieldInfo(**f) for f in fields],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 # ── 查询与导出 ──────────────────────────────────────────────────────────
 
 
-@router.post("/{database_id}/query")
+@router.post("/{database_id}/query", response_model=DatabaseQueryResponse)
 def query_database(
     database_id: str,
-    body: DatabaseQueryRequest,
+    body: DatabaseQueryRequest = ...,
     service: DatabaseService = Depends(get_database_service),
-) -> list[dict]:
+) -> DatabaseQueryResponse:
     """从数据库关联的数据集中提取指定字段。
 
     返回行字典列表，第一列为 eid，其余列为请求的字段。
     """
-    df = service.query(database_id, body.entity_fields, body.dataset_ref, refresh=body.refresh)
-    if df.empty:
-        return []
-    return df.to_dict(orient="records")
+    records, total = service.query(
+        database_id,
+        body.entity_fields,
+        body.dataset_ref,
+        limit=body.limit,
+        offset=body.offset,
+        refresh=body.refresh,
+    )
+    return DatabaseQueryResponse(
+        data=records,
+        total=total,
+        limit=body.limit,
+        offset=body.offset,
+    )
 
 
 @router.post("/{database_id}/export")
@@ -121,9 +152,17 @@ def export_database_csv(
     service: DatabaseService = Depends(get_database_service),
 ) -> StreamingResponse:
     """提取字段并流式返回 CSV 文件。"""
-    df = service.query(database_id, body.entity_fields, body.dataset_ref, refresh=body.refresh)
+    records, _ = service.query(
+        database_id,
+        body.entity_fields,
+        body.dataset_ref,
+        limit=body.limit,
+        offset=body.offset,
+        refresh=body.refresh,
+    )
+    import pandas as pd
     buf = io.StringIO()
-    df.to_csv(buf, index=False)
+    pd.DataFrame(records).to_csv(buf, index=False)
     buf.seek(0)
     return StreamingResponse(
         buf,
