@@ -3,13 +3,11 @@ import type { ToolDef, ToolCallResult } from 'agent-lib/components';
 import type { UkbMcpClient } from '../../client/UkbMcpClient.js';
 
 export const QueryFieldDictToolDef: ToolDef = {
-  desc: '在字段字典中搜索字段（必须提供完整SQL谓词，如 coding_name LIKE \'%olink%\'）',
+  desc: '在字段字典中搜索字段（支持关键词搜索，自动匹配所有文本列）',
   paramsSchema: z.object({
     condition: z
       .string()
-      .describe(
-        '完整SQL WHERE谓词，如 coding_name LIKE \'%olink%\' 或 (entity = \'participant\' AND type = \'Continuous\')',
-      ),
+      .describe('搜索关键词，如 "olink"、"blood pressure"、"diabetes"'),
     page: z.number().optional().describe('页码，默认 1'),
     page_size: z
       .number()
