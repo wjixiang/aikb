@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-import re
-
 import duckdb
 from fastapi import Depends
-import sqlglot
-from sqlglot import exp
 
 from dx_client import IDXClient
 from ukb_mcp.api.deps import get_dx_client
@@ -39,13 +35,9 @@ class FieldStorageService:
 
     def count_query_fields(self, condition: str) -> int:
         """返回满足条件的记录总数。"""
-        parsed = _parse_condition(condition)
-        query = (
-            sqlglot.select(exp.Count(this=exp.Star()))
-            .from_("field_dict")
-            .where(parsed)
-        )
-        result = self._con.execute(query.sql(dialect="duckdb")).fetchone()
+        result = self._con.execute(
+            f"SELECT COUNT(*) FROM field_dict WHERE {condition}"
+        ).fetchone()
         return result[0] if result else 0
 
     def list_fields(self, page: int = 1, page_size: int = 100):
@@ -57,98 +49,6 @@ class FieldStorageService:
 
     def query_fields(self, condition: str, page: int = 1, page_size: int = 100):
         offset = (page - 1) * page_size
-        parsed = _parse_condition(condition)
-
-        query = (
-            sqlglot.select("*")
-            .from_("field_dict")
-            .where(parsed)
-            .limit(page_size)
-            .offset(offset)
-        )
-
-        return self._con.execute(query.sql(dialect="duckdb")).df()
-
-
-def _parse_condition(condition: str):
-    """解析查询条件：裸词自动转为 LIKE 查询，支持安全 SQL 表达式。
-
-    空格或 +/- 分隔的多词会转为 AND 查询（每个词都必须在某列匹配）。
-    """
-    condition = condition.strip()
-
-    # 将 + 和 - 替换为空格，分隔多词（如 olink+data → olink data）
-    condition = re.sub(r"[+-]+", " ", condition)
-    condition = re.sub(r"\s+", " ", condition).strip()
-
-    # 多词检测：全部由安全字符组成但含空格
-    if re.fullmatch(r"[\w\s\u0080-\U0010ffff]+", condition):
-        words = condition.split()
-        if len(words) == 1:
-            condition = words[0]
-        else:
-            # 每个词都必须匹配（AND），每个词在任意列匹配即可（OR）
-            text_cols = [
-                "entity", "name", "type", "title", "description",
-                "coding_name", "concept", "folder_path", "units",
-            ]
-
-            def _word_conditions(word: str):
-                escaped = (
-                    word.replace("\\", "\\\\")
-                    .replace("%", "\\%")
-                    .replace("_", "\\_")
-                )
-                pattern = f"%{escaped}%"
-                col_conds = [
-                    sqlglot.and_(
-                        sqlglot.cast(sqlglot.column(col), "VARCHAR").is_(exp.Null()).not_(),
-                        sqlglot.cast(sqlglot.column(col), "VARCHAR").like(exp.Literal.string(pattern)),
-                    )
-                    for col in text_cols
-                ]
-                combined = col_conds[0]
-                for c in col_conds[1:]:
-                    combined = sqlglot.or_(combined, c)
-                return combined
-
-            word_conds = [_word_conditions(w) for w in words]
-            combined = word_conds[0]
-            for wc in word_conds[1:]:
-                combined = sqlglot.and_(combined, wc)
-            return combined
-
-    # 裸词：仅包含安全的字母数字下划线和非ASCII字符，整体作为 LIKE 关键词搜索
-    if re.fullmatch(r"[\w\u0080-\U0010ffff]+", condition):
-        # 转义 LIKE special chars，防止 pattern 注入
-        escaped = (
-            condition.replace("\\", "\\\\")
-            .replace("%", "\\%")
-            .replace("_", "\\_")
-        )
-        pattern = f"%{escaped}%"
-
-        text_cols = [
-            "entity", "name", "type", "title", "description",
-            "coding_name", "concept", "folder_path", "units",
-        ]
-
-        # CAST 每个列为 VARCHAR，再做 LIKE（避免 DOUBLE 等类型不支持 LIKE 的问题）
-        col_conditions = [
-            sqlglot.and_(
-                sqlglot.cast(sqlglot.column(col), "VARCHAR").is_(exp.Null()).not_(),
-                sqlglot.cast(sqlglot.column(col), "VARCHAR").like(exp.Literal.string(pattern)),
-            )
-            for col in text_cols
-        ]
-
-        combined = col_conditions[0]
-        for c in col_conditions[1:]:
-            combined = sqlglot.or_(combined, c)
-        return combined
-
-    # 解析为完整 SQL 表达式
-    parsed = sqlglot.parse_one(condition, dialect="duckdb")
-    if not isinstance(parsed, exp.Boolean):
-        raise ValueError(f"Condition must be a boolean expression, got: {type(parsed).__name__}")
-    return parsed
+        return self._con.execute(
+            f"SELECT * FROM field_dict WHERE {condition} LIMIT {page_size} OFFSET {offset}"
+        ).df()
