@@ -35,19 +35,27 @@ export interface FieldInfo {
   title: string;
 }
 
+export interface FieldPage {
+  data: FieldInfo[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 /**
- * Render fields as a markdown table
+ * Render fields as a markdown table with pagination metadata
  */
-export function renderFieldsAsMarkdown(fields: FieldInfo[]): string {
-  if (fields.length === 0) {
-    return '| Entity | Name | Type | Title |\n|---|---|---|---|\n| (无数据) | | | |';
+export function renderFieldsAsMarkdown(page: FieldPage): string {
+  const meta = `**共 ${page.total} 条，当前 ${page.offset + 1}-${Math.min(page.offset + page.limit, page.total)} 条**\n`;
+  if (page.data.length === 0) {
+    return meta + '| Entity | Name | Type | Title |\n|---|---|---|---|\n| (无数据) | | | |';
   }
 
   const header = '| Entity | Name | Type | Title |';
   const separator = '|---|---|---|---|';
-  const rows = fields.map((f) =>
+  const rows = page.data.map((f) =>
     `| ${f.entity} | ${f.name} | ${f.type} | ${f.title || ''} |`,
   );
 
-  return [header, separator, ...rows].join('\n');
+  return meta + [header, separator, ...rows].join('\n');
 }

@@ -189,7 +189,7 @@ export class UkbComponent extends ToolComponent<UkbState> {
     });
     return {
       success: true,
-      data: renderTablesAsMarkdown(result.data),
+      data: renderTablesAsMarkdown(result as any),
       summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
     };
   }
@@ -217,7 +217,7 @@ export class UkbComponent extends ToolComponent<UkbState> {
     }));
     return {
       success: true,
-      data: renderFieldsAsMarkdown(result.data),
+      data: renderFieldsAsMarkdown(result),
       summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
     };
   }
