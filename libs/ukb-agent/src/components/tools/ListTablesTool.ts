@@ -13,7 +13,7 @@ export const ListTablesToolDef: ToolDef = {
     limit: z
       .number()
       .optional()
-      .describe('每页条数，默认 1000'),
+      .describe('每页条数，默认 100，最大 100'),
     offset: z
       .number()
       .optional()

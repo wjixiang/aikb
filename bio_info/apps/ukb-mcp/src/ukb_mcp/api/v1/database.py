@@ -76,7 +76,7 @@ def describe_database(
 @router.get("/{database_id}/tables", response_model=PaginatedTablesResponse)
 def list_tables(
     database_id: str,
-    limit: int = Query(default=1000, ge=1, description="每页条数。"),
+    limit: int = Query(default=100, ge=1, le=100, description="每页条数。"),
     offset: int = Query(default=0, ge=0, description="偏移量。"),
     refresh: bool = Query(default=False, description="强制刷新缓存。"),
     service: DatabaseService = Depends(get_database_service),
@@ -96,7 +96,7 @@ def list_fields(
     database_id: str,
     entity: str | None = Query(default=None, description="按实体过滤。"),
     name: str | None = Query(default=None, description="按字段名模糊匹配。"),
-    limit: int = Query(default=1000, ge=1, description="每页条数。"),
+    limit: int = Query(default=100, ge=1, le=100, description="每页条数。"),
     offset: int = Query(default=0, ge=0, description="偏移量。"),
     refresh: bool = Query(default=False, description="强制刷新缓存。"),
     service: DatabaseService = Depends(get_database_service),
