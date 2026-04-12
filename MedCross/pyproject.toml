@@ -1,0 +1,18 @@
+[project]
+name = "medcross"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.12.5",
+]
+
+[tool.uv.workspace]
+members = ["libs/*", "apps/*", "replication/*"]
+
+[tool.uv.sources]
+"gwas-client" = { workspace = true}
+"pymr" = { workspace = true}
+"pride-client" = { workspace = true}
+"dx-client" = { workspace = true }

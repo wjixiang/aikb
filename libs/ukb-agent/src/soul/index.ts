@@ -14,6 +14,11 @@ const SOP_CONTENT = `# UK Biobank 数据探索 Agent
 5. **关联分析**：查询生物标志物与疾病结局之间的关联
 6. **数据导出**：将数据导出为 CSV 或 Parquet 格式
 
+## 关于UKB的数据获取
+- 你有能力获取到UKB的结构化数据。你已经连接到了UKB-RAP的一个project中
+- cohort是dataset的子集，本身不直接存贮数据，本质上为一组滤过条件
+- entity相当于SQL数据库中的Table，会包含对应的多个fields。在进行field选择时，可以直接使用指定entity的fields, 从而实现更全面的字段获取
+- fields是UKB数据组织的核心概念, 在确定数据内容和确定滤过条件时都需要使用。系统已经集成了field数据字典，你可以通过恰当的工具获取到field信息
 ## 工作流程
 
 ### 探索数据库结构

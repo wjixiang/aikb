@@ -1,0 +1,18 @@
+[project]
+name = "pride-cli"
+version = "0.1.0"
+description = "CLI for PRIDE Archive — search and retrieve proteomics project metadata"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pride-client",
+    "typer>=0.24.1",
+    "rich>=13.0.0",
+    "python-dotenv>=1.2.2",
+    "pydantic>=2.12.5",
+    "httpx>=0.28.1",
+    "socksio>=1.0.0",
+]
+
+[project.scripts]
+pride = "main:app"

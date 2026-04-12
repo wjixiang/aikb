@@ -95,7 +95,8 @@
       "Bash(curl -s http://127.0.0.1:5000/api/items?page=1)",
       "Bash(curl -s -X POST http://127.0.0.1:5000/api/items -H 'Content-Type: application/json' -d '{\"title\":\"Test Paper\",\"authors\":[\"Alice\"],\"year\":2024,\"pmid\":\"12345678\"}')",
       "Bash(curl -s -X POST http://127.0.0.1:5000/api/items/76a8e0e1-7e3e-4fdf-89ea-50fd1beadffe/attachments/upload-url -H 'Content-Type: application/json' -d '{\"fileName\":\"test.pdf\",\"contentType\":\"application/pdf\"}')",
-      "Bash(curl -s -o /dev/null -w 'HTTP Status: %{http_code}\\\\n' -X PUT 'http://192.168.123.98:9000/bib-max/attachments/76a8e0e1-7e3e-4fdf-89ea-50fd1beadffe/74166030-b7d0-4816-b96a-6fd4ddfbf252.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=CJlLrzPfRzytgyi0iktJ%2F20260404%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260404T103932Z&X-Amz-Expires=3600&X-Amz-Signature=0320d3e9b1fa6d81c83c3eb5b23efcd55344a72ed38fbb032f21728a03ac9f29&X-Amz-SignedHeaders=host&x-amz-checksum-crc32=AAAAAA%3D%3D&x-amz-sdk-checksum-algorithm=CRC32&x-id=PutObject' -H 'Content-Type: application/pdf' -d 'This is a test PDF content.')"
+      "Bash(curl -s -o /dev/null -w 'HTTP Status: %{http_code}\\\\n' -X PUT 'http://192.168.123.98:9000/bib-max/attachments/76a8e0e1-7e3e-4fdf-89ea-50fd1beadffe/74166030-b7d0-4816-b96a-6fd4ddfbf252.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=CJlLrzPfRzytgyi0iktJ%2F20260404%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260404T103932Z&X-Amz-Expires=3600&X-Amz-Signature=0320d3e9b1fa6d81c83c3eb5b23efcd55344a72ed38fbb032f21728a03ac9f29&X-Amz-SignedHeaders=host&x-amz-checksum-crc32=AAAAAA%3D%3D&x-amz-sdk-checksum-algorithm=CRC32&x-id=PutObject' -H 'Content-Type: application/pdf' -d 'This is a test PDF content.')",
+      "Bash(npx eslint:*)"
     ]
   }
 }

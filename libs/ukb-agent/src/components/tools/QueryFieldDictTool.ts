@@ -8,7 +8,7 @@ export const QueryFieldDictToolDef: ToolDef = {
     condition: z
       .string()
       .describe(
-        '搜索条件，如 "blood pressure"、"diabetes"、"ICD10"',
+        '搜索条件，如 "blood pressure"、"diabetes"、"ICD10"。 查询语法为SQL的condition部分的语法，支持`%`、`_`等通配符',
       ),
     page: z.number().optional().describe('页码，默认 1'),
     page_size: z
