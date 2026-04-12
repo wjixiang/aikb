@@ -15,8 +15,10 @@ export const ListFieldDictToolDef: ToolDef = {
 };
 
 export function renderFieldDictPageAsMarkdown(page: FieldDictPage): string {
+  const totalPages = Math.ceil(page.total / page.pageSize) || 1;
+  const meta = `**共 ${page.total} 条，第 ${page.page}/${totalPages} 页，每页 ${page.pageSize} 条**\n`;
   if (page.data.length === 0) {
-    return '| Entity | Name | Type | Title | Description |\n|---|---|---|---|---|\n| (无数据) | | | | |';
+    return meta + '| Entity | Name | Type | Title | Description |\n|---|---|---|---|---|\n| (无数据) | | | | |';
   }
 
   const header = '| Entity | Name | Type | Title | Description |';
@@ -28,7 +30,7 @@ export function renderFieldDictPageAsMarkdown(page: FieldDictPage): string {
     return `| ${d.entity} | ${d.name} | ${d.type} | ${title} | ${truncatedDesc} |`;
   });
 
-  return [header, separator, ...rows].join('\n');
+  return meta + [header, separator, ...rows].join('\n');
 }
 
 export async function handleListFieldDict(

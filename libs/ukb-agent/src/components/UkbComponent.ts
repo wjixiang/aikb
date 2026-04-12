@@ -234,10 +234,12 @@ export class UkbComponent extends ToolComponent<UkbState> {
       pageSize: result.data.pageSize,
       data: result.data.data,
     };
+    const page = result.data;
+    const totalPages = Math.ceil(page.total / page.pageSize) || 1;
     return {
       success: true,
-      data: renderFieldDictAsMarkdown(result.data),
-      summary: result.summary ?? '',
+      data: renderFieldDictAsMarkdown(page),
+      summary: `搜索 "${params.condition}" 共 ${page.total} 条，第 ${page.page}/${totalPages} 页`,
     };
   }
 
@@ -246,16 +248,17 @@ export class UkbComponent extends ToolComponent<UkbState> {
     page_size?: number;
   }): Promise<ToolCallResult<string>> {
     const result = await handleListFieldDict(this.client, params);
-    this.reactive.currentFieldDictPage = {
+    const page: { total: number; page: number; pageSize: number; data: unknown[] } = {
       total: result.data.total,
       page: result.data.page,
       pageSize: result.data.pageSize,
       data: result.data.data,
     };
+    const totalPages = Math.ceil(page.total / page.pageSize) || 1;
     return {
       success: true,
-      data: renderFieldDictAsMarkdown(result.data),
-      summary: result.summary ?? '',
+      data: renderFieldDictAsMarkdown(page as any),
+      summary: `字段字典共 ${page.total} 条，第 ${page.page}/${totalPages} 页`,
     };
   }
 
