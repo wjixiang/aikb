@@ -74,6 +74,10 @@ def _parse_condition(condition: str):
     """解析查询条件：裸词自动转为 LIKE 查询，支持安全 SQL 表达式。"""
     condition = condition.strip()
 
+    # 将 + 和 - 替换为空格（多词分隔符，如 olink+data → olink data）
+    condition = re.sub(r"[+-]+", " ", condition)
+    condition = re.sub(r"\s+", " ", condition).strip()
+
     # 裸词：仅包含安全的字母数字下划线和非ASCII字符，整体作为 LIKE 关键词搜索
     if re.fullmatch(r"[\w\u0080-\U0010ffff]+", condition):
         # 转义 LIKE special chars，防止 pattern 注入
