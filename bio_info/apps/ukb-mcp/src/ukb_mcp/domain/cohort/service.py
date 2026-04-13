@@ -60,6 +60,10 @@ class CohortService:
         """删除 cohort record。"""
         self._dx.delete_cohort(cohort_id)
 
+    def close_cohort(self, cohort_id: str) -> DXRecordInfo:
+        """锁定 cohort record，使其变为只读状态。"""
+        return self._dx.close_cohort(cohort_id)
+
     def extract_fields(
         self,
         cohort_id: str,

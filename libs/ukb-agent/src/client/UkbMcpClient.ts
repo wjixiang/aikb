@@ -202,6 +202,10 @@ export class UkbMcpClient {
     return this.request('DELETE', `/api/v1/cohort/${cohortId}`);
   }
 
+  async closeCohort(cohortId: string): Promise<CohortDetail> {
+    return this.request('POST', `/api/v1/cohort/${cohortId}/close`);
+  }
+
   async extractCohortFields(
     cohortId: string,
     body: ExtractFieldsRequest,

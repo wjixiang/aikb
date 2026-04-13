@@ -7,6 +7,7 @@ export * from './ListFieldDictTool.js';
 export * from './ListCohortsTool.js';
 export * from './GetCohortTool.js';
 export * from './CreateCohortTool.js';
+export * from './CloseCohortTool.js';
 export * from './ExtractCohortDataTool.js';
 export * from './QueryDatabaseTool.js';
 export * from './QueryAssociationTool.js';

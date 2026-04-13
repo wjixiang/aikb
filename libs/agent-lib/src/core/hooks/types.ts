@@ -241,10 +241,7 @@ export interface MessageAddedContext extends HookContextBase {
 export interface LlmCallCompletedContext extends HookContextBase {
   type: HookType.LLM_CALL_COMPLETED;
   /** Token usage from the LLM response */
-  tokenUsage: {
-    promptTokens: number;
-    completionTokens: number;
-  };
+  tokenUsage: import('llm-api-client').TokenUsage;
 }
 
 /**

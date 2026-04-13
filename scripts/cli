@@ -8,12 +8,19 @@ start_ukb_mcp() {
     cd bio_info
     source .venv/bin/activate
     cd apps/ukb-mcp
-    exec uv run fastapi dev
+    exec uv run --active fastapi dev
+}
+
+activate_venv(){
+    cd bio_info
+    source .venv/bin/activate
 }
 
 case "$1" in
     ukb-mcp)
         start_ukb_mcp
+        ;;
+    venv)
         ;;
     *)
         echo "Usage: $0 <task>"

@@ -214,20 +214,10 @@ export const clineMessageSchema = z.object({
 export type ClineMessage = z.infer<typeof clineMessageSchema>;
 
 /**
- * MessageTokenUsage
- * Detailed token usage tracking for messages including cost and cache information
+ * Token usage tracking for messages
+ * @deprecated Import TokenUsage from 'llm-api-client' instead
  */
-
-export const tokenUsageSchema = z.object({
-  totalTokensIn: z.number(),
-  totalTokensOut: z.number(),
-  totalCacheWrites: z.number().optional(),
-  totalCacheReads: z.number().optional(),
-  totalCost: z.number(),
-  contextTokens: z.number(),
-});
-
-export type MessageTokenUsage = z.infer<typeof tokenUsageSchema>;
+export type MessageTokenUsage = import('llm-api-client').TokenUsage;
 
 /**
  * QueuedMessage

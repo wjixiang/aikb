@@ -1,10 +1,27 @@
 /**
- * Unified message types for conversation history.
+ * Unified message and token types for conversation history and API responses.
  *
  * This module defines the canonical Message type used for storing conversation
  * history and passing it to LLM providers. Each provider implementation converts
  * from this format to its native wire format.
  */
+
+// =============================================================================
+// Token Usage
+// =============================================================================
+
+/**
+ * Token usage from a single LLM API request.
+ *
+ * Used in ApiResponse and for per-request tracking. For accumulated
+ * totals across multiple requests, consumers should sum externally.
+ */
+export interface TokenUsage {
+  /** Input tokens (system prompt + workspace context + conversation history) */
+  promptTokens: number;
+  /** Output tokens (LLM completion) */
+  completionTokens: number;
+}
 
 // =============================================================================
 // Content Block Types (discriminated union on `type`)

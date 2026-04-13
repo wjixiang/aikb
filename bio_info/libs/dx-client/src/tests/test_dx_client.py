@@ -18,8 +18,8 @@ from dotenv import load_dotenv
 # 加载项目根目录的 .env
 load_dotenv(Path(__file__).resolve().parents[4] / ".env")
 
-from dx_client import DXClient, DXCohortInfo, DXCohortError, default_dx_client_config
-from dx_client.dx_exceptions import DXDatabaseNotFoundError
+from dx_client import DXClient, DXCohortInfo, DXCohortError, default_dx_client_config  # noqa: E402
+from dx_client.dx_exceptions import DXDatabaseNotFoundError  # noqa: E402
 
 PASS = "\033[92mPASS\033[0m"
 FAIL = "\033[91mFAIL\033[0m"
@@ -188,9 +188,10 @@ def test_describe_database_cluster(client: DXClient) -> None:
             report("describe_database_cluster()", "skip", "no databases")
             return
         desc = client.describe_database_cluster(dbs[0].id)
-        keys = list(desc.keys())
+        data = desc.model_dump()
+        keys = list(data.keys())
         report("describe_database_cluster()", "pass", f"keys={keys}")
-        for k, v in desc.items():
+        for k, v in data.items():
             print(f"         {k}: {v}")
     except Exception as e:
         report("describe_database_cluster()", "fail", str(e))
@@ -331,11 +332,7 @@ def test_create_cohort(client: DXClient) -> None:
     # 清理
     if created_id:
         try:
-            import dxpy
-            dxpy.DXHTTPRequest(
-                "/%s/remove" % created_id,
-                {"project": client.current_project_id},
-            )
+            client.delete_cohort(created_id)
             report("create_cohort() cleanup", "pass", f"removed {created_id}")
         except Exception as e:
             report("create_cohort() cleanup", "skip", f"{created_id}: {e}")

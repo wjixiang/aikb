@@ -6,9 +6,9 @@ import {
   ApiResponse,
   ChatCompletionTool,
   ToolCall,
-  TokenUsage,
 } from '../types/api-client.js';
-import type { Message, ToolUseBlock, ToolResultBlock, TextContentBlock } from '../types/message.js';
+import type { TokenUsage } from '../types/message.js';
+import type { Message, ContentBlock, ToolUseBlock, ToolResultBlock, TextContentBlock } from '../types/message.js';
 import {
   ApiClientError,
   ResponseParsingError,
@@ -130,9 +130,17 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
       },
     ];
 
+    // Track tool_use IDs to detect orphaned tool_results
+    const seenToolUseIds = new Set<string>();
+
     for (const msg of memoryContext) {
+      // Normalize content: handle legacy string content at runtime
+      const blocks: ContentBlock[] = Array.isArray(msg.content)
+        ? msg.content
+        : [{ type: 'text' as const, text: String(msg.content) }];
+
       if (msg.role === 'system') {
-        const text = msg.content
+        const text = blocks
           .filter((b): b is TextContentBlock => b.type === 'text')
           .map(b => b.text)
           .join('\n');
@@ -140,12 +148,16 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
         continue;
       }
 
-      const toolUseBlocks = msg.content.filter((b): b is ToolUseBlock => b.type === 'tool_use');
-      const toolResultBlocks = msg.content.filter((b): b is ToolResultBlock => b.type === 'tool_result');
-      const textParts = msg.content
+      const toolUseBlocks = blocks.filter((b): b is ToolUseBlock => b.type === 'tool_use');
+      const toolResultBlocks = blocks.filter((b): b is ToolResultBlock => b.type === 'tool_result')
+        .filter((b) => seenToolUseIds.has(b.tool_use_id));
+      const textParts = blocks
         .filter((b): b is TextContentBlock => b.type === 'text')
         .map(b => b.text)
         .join('\n');
+
+      // Register tool_use IDs for subsequent tool_result matching
+      for (const tu of toolUseBlocks) seenToolUseIds.add(tu.id);
 
       if (msg.role === 'assistant' && toolUseBlocks.length > 0) {
         messages.push({
@@ -165,7 +177,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
             content: tr.content,
           });
         }
-      } else {
+      } else if (textParts) {
         messages.push({ role: msg.role, content: textParts });
       }
     }
@@ -304,13 +316,11 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
       const tokenUsage: TokenUsage = {
         promptTokens: usage?.prompt_tokens ?? 0,
         completionTokens: usage?.completion_tokens ?? 0,
-        totalTokens: usage?.total_tokens ?? 0,
       };
 
       if (
         tokenUsage.promptTokens < 0 ||
-        tokenUsage.completionTokens < 0 ||
-        tokenUsage.totalTokens < 0
+        tokenUsage.completionTokens < 0
       ) {
         throw new ResponseParsingError(
           'Token counts cannot be negative',

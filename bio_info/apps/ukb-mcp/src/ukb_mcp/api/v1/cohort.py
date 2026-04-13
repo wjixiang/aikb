@@ -120,6 +120,24 @@ def delete_cohort(
     service.delete_cohort(cohort_id)
 
 
+@router.post("/{cohort_id}/close", response_model=CohortDetail)
+def close_cohort(
+    cohort_id: str,
+    service: CohortService = Depends(get_cohort_service),
+) -> CohortDetail:
+    """锁定队列（将其关闭），使其变为只读状态。"""
+    record = service.close_cohort(cohort_id)
+    return CohortDetail(
+        id=record.id,
+        name=record.name,
+        project=record.project,
+        state=record.state,
+        created=record.created,
+        modified=record.modified,
+        details=record.details,
+    )
+
+
 @router.post("/{cohort_id}/extract", response_model=ExtractFieldsResponse)
 def extract_cohort_fields(
     cohort_id: str,

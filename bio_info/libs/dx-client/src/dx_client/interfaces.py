@@ -373,6 +373,22 @@ class IDXClient(ABC):
         """
 
     @abstractmethod
+    def close_cohort(self, cohort_id: str) -> DXRecordInfo:
+        """锁定（关闭）cohort record，使其变为只读状态。
+
+        调用 DNAnexus ``record_close`` API，将 open 状态的 record 转为 closed。
+
+        Args:
+            cohort_id: Cohort record ID (record-xxxx)。
+
+        Returns:
+            更新后的 DXRecordInfo（state 应为 "closed"）。
+
+        Raises:
+            DXFileNotFoundError: record 不存在或无权限。
+        """
+
+    @abstractmethod
     def extract_cohort_fields(
         self,
         cohort_id: str,

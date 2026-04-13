@@ -23,6 +23,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, List
 
+from duckdb import project
 import dxpy
 import pandas as pd
 from dxpy import DXRecord
@@ -707,14 +708,13 @@ class DXClient(IDXClient):
 
         # 调用 vizserver 生成 SQL
         resource = (
-            viz_info["url"]
-            + "/viz-query/3.0/"
-            + viz_info["dataset"]
-            + "/raw-query"
+            viz_info["url"] + "/viz-query/3.0/" + viz_info["dataset"] + "/raw-query"
         )
         try:
             resp = dxpy.DXHTTPRequest(
-                resource=resource, data=payload, prepend_srv=False,
+                resource=resource,
+                data=payload,
+                prepend_srv=False,
             )
         except Exception as e:
             raise DXAPIError(
@@ -776,7 +776,8 @@ class DXClient(IDXClient):
         # 获取 vizserver 信息
         try:
             viz_info = cohort_mod.get_visualize_info(
-                dataset_record_id, dataset_project,
+                dataset_record_id,
+                dataset_project,
             )
         except Exception as e:
             raise DXAPIError(
@@ -802,12 +803,12 @@ class DXClient(IDXClient):
         if base_sql is not None:
             payload["base_sql"] = base_sql
 
-        resource = (
-            viz_info["url"] + "/data/3.0/" + viz_info["dataset"] + "/raw"
-        )
+        resource = viz_info["url"] + "/data/3.0/" + viz_info["dataset"] + "/raw"
         try:
             resp = dxpy.DXHTTPRequest(
-                resource=resource, data=payload, prepend_srv=False,
+                resource=resource,
+                data=payload,
+                prepend_srv=False,
             )
         except Exception as e:
             raise DXAPIError(
@@ -859,7 +860,8 @@ class DXClient(IDXClient):
         viz_info = cohort_mod.get_visualize_info(dataset_record_id, dataset_project)
         base_sql = viz_info.get("baseSql") or viz_info.get("base_sql")
 
-        # 3. 构建 filter payload
+        # 3. 规范化 filters 并构建 payload
+        filters = cohort_mod.normalize_cohort_filters(filters)
         filter_payload: dict[str, Any] = {
             "filters": filters,
             "project_context": dataset_project,
@@ -1009,6 +1011,22 @@ class DXClient(IDXClient):
             self._handle_dx_error(e, f"Failed to delete cohort '{cohort_id}'")
             raise
 
+    def close_cohort(self, cohort_id: str) -> DXRecordInfo:
+        """锁定（关闭）cohort record，使其变为只读状态。
+
+        调用 DNAnexus ``record_close`` API，将 open 状态的 record 转为 closed。
+        """
+        self._ensure_connected()
+        project_id = self._require_project()
+        try:
+            dxpy.api.record_close(cohort_id, {"project": project_id})  # type: ignore[attr-defined]
+            logger.info("Closed cohort '%s' in project '%s'", cohort_id, project_id)
+        except DxPyDXError as e:
+            self._handle_dx_error(e, f"Failed to close cohort '{cohort_id}'")
+            raise
+        # Return updated cohort info
+        return self.get_cohort(cohort_id, refresh=True)
+
     def extract_cohort_fields(
         self,
         cohort_id: str,
@@ -1016,7 +1034,7 @@ class DXClient(IDXClient):
         *,
         refresh: bool = False,
     ) -> pd.DataFrame:
-        """提取 cohort 内参与者的指定字段数据。
+        """提取 cohort 内参与者的指定字段数据的数据。
 
         通过 ``dx extract_dataset <cohort_ref> --fields ...`` 实现。
         """
@@ -1126,12 +1144,12 @@ class DXClient(IDXClient):
         if viz_info.get("filters"):
             payload["filters"] = viz_info["filters"]
 
-        resource = (
-            viz_info["url"] + "/data/3.0/" + viz_info["dataset"] + "/raw"
-        )
+        resource = viz_info["url"] + "/data/3.0/" + viz_info["dataset"] + "/raw"
         try:
             resp = dxpy.DXHTTPRequest(
-                resource=resource, data=payload, prepend_srv=False,
+                resource=resource,
+                data=payload,
+                prepend_srv=False,
             )
         except Exception as e:
             raise DXCohortError(
@@ -1174,7 +1192,9 @@ class DXClient(IDXClient):
 
         try:
             viz_info = cohort_mod.get_visualize_info(
-                cohort_id, project, cohort_browser=True,
+                cohort_id,
+                project,
+                cohort_browser=True,
             )
         except Exception as e:
             raise DXCohortError(
@@ -1229,7 +1249,9 @@ class DXClient(IDXClient):
         )
         try:
             resp = dxpy.DXHTTPRequest(
-                resource=resource, data=filter_payload, prepend_srv=False,
+                resource=resource,
+                data=filter_payload,
+                prepend_srv=False,
             )
         except Exception as e:
             raise DXCohortError(
@@ -1286,12 +1308,12 @@ class DXClient(IDXClient):
         if viz_info.get("filters"):
             payload["filters"] = viz_info["filters"]
 
-        resource = (
-            viz_info["url"] + "/data/3.0/" + viz_info["dataset"] + "/raw"
-        )
+        resource = viz_info["url"] + "/data/3.0/" + viz_info["dataset"] + "/raw"
         try:
             resp = dxpy.DXHTTPRequest(
-                resource=resource, data=payload, prepend_srv=False,
+                resource=resource,
+                data=payload,
+                prepend_srv=False,
             )
         except Exception as e:
             raise DXCohortError(
@@ -1312,6 +1334,10 @@ class DXClient(IDXClient):
             cohort_id,
         )
         return df
+
+    def extract_cohort(self, cohort_id: str):
+
+        pass
 
     # ═══════════════════════════════════════════════════════════════════════
     #  Job 操作
@@ -1454,3 +1480,16 @@ def convert_fields(fields: List[str]) -> List[str]:
     # Convert to lowercase
     r3 = [i.lower() for i in r2]
     return r3
+
+
+def upload_sql_file(sqlstr: str, fileName: str):
+    dxfile = dxpy.upload_string(sqlstr, media_type="text/plain", name=fileName + ".sql")
+    return dxfile
+
+
+def run_spark_sql(sql_file_id: str):
+    result = subprocess.run(
+        ["dx", "run", "spark-sql-runner", "-i", f"sqlfile={sql_file_id}"]
+    )
+    return result
+    pass

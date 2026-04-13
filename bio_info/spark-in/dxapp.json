@@ -1,23 +1,10 @@
 {
-  "name": "pwas",
-  "title": "pwas",
-  "summary": "pwas app use spark",
+  "name": "spark-in",
+  "title": "spark-in",
+  "summary": "spark-in",
   "dxapi": "1.0.0",
   "version": "0.0.1",
-  "inputSpec": [
-    {
-      "name": "dataset_record",
-      "class": "applet",
-      "optional": true,
-      "help": ""
-    },
-    {
-      "name": "entity_name",
-      "class": "string",
-      "optional": true,
-      "help": ""
-    }
-  ],
+  "inputSpec": [],
   "outputSpec": [],
   "runSpec": {
     "timeoutPolicy": {
@@ -26,7 +13,7 @@
       }
     },
     "interpreter": "python3",
-    "file": "src/pwas.py",
+    "file": "src/spark-in.py",
     "distribution": "Ubuntu",
     "release": "24.04",
     "version": "0"
@@ -38,14 +25,14 @@
     "project": "CONTRIBUTE"
   },
   "regionalOptions": {
-    "aws:us-east-1": {
+    "aws:eu-west-2": {
       "systemRequirements": {
         "*": {
-          "instanceType": "mem1_ssd1_v2_x2",
+          "instanceType": "mem1_ssd1_v2_x4",
           "clusterSpec": {
             "type": "dxspark",
             "version": "3.5.2",
-            "initialInstanceCount": "1",
+            "initialInstanceCount": 2,
             "ports": "9500, 9700-9750"
           }
         }
@@ -53,3 +40,4 @@
     }
   }
 }
+

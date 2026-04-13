@@ -31,7 +31,7 @@ def list_fields(
 
 @router.get("/query", response_model=FieldDictResponse)
 def query_fields(
-    condition: str = Query(description="查询条件，如: entity = 'participant' AND type = 'string'"),
+    condition: str = Query(description="搜索关键词，如 'olink'、'blood pressure'。支持多词（空格分隔，自动 AND 搜索）"),
     page: int = Query(default=1, ge=1, description="页码。"),
     page_size: int = Query(default=100, ge=1, le=1000, description="每页条数。"),
     storage: FieldStorageService = Depends(get_field_storage),

@@ -35,6 +35,8 @@ import {
   handleGetCohort,
   CreateCohortToolDef,
   handleCreateCohort,
+  CloseCohortToolDef,
+  handleCloseCohort,
   ExtractCohortDataToolDef,
   QueryDatabaseToolDef,
   QueryAssociationToolDef,
@@ -102,6 +104,15 @@ export class UkbComponent extends ToolComponent<UkbState> {
 - 导出数据为 CSV 或 Parquet 格式
 
 字段格式为 "entity.field_name"，例如 "participant.eid"（参与者ID）、"participant.p31"（性别）。
+
+【重要】字段字典搜索（query_field_dict）请发送原始关键词，不要写 SQL！
+- 正确示例：condition: "olink"
+- 正确示例：condition: "blood pressure"
+- 正确示例：condition: "diabetes protein"
+- 错误示例：condition: "name LIKE '%olink%'"（不要这样写！）
+
+【重要】每次操作数据库前，必须先调用 list_databases 获取当前有效的 database_id！
+旧的 database_id 已失效，必须使用 list_databases 返回的最新 ID。
 在查询前，建议先用 list_fields 或 list_field_dict 了解可用的字段。`;
 
   constructor(baseUrlOrClient?: string | UkbMcpClient) {
@@ -143,6 +154,7 @@ export class UkbComponent extends ToolComponent<UkbState> {
       list_cohorts: ListCohortsToolDef,
       get_cohort: GetCohortToolDef,
       create_cohort: CreateCohortToolDef,
+      close_cohort: CloseCohortToolDef,
       extract_cohort_data: ExtractCohortDataToolDef,
       query_database: QueryDatabaseToolDef,
       query_association: QueryAssociationToolDef,
@@ -302,6 +314,12 @@ export class UkbComponent extends ToolComponent<UkbState> {
     params: CohortCreateRequest,
   ): Promise<ToolCallResult<unknown>> {
     return handleCreateCohort(this.client, params);
+  }
+
+  async onClose_cohort(params: {
+    cohort_id: string;
+  }): Promise<ToolCallResult<unknown>> {
+    return handleCloseCohort(this.client, params);
   }
 
   async onExtract_cohort_data(

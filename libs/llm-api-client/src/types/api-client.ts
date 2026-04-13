@@ -1,3 +1,5 @@
+import type { TokenUsage } from './message.js';
+
 /**
  * Unified ToolCall interface compatible with OpenAI format
  * Supports both single and multiple tool calls in one response
@@ -83,18 +85,6 @@ export interface ChatCompletionCustomTool {
  * Includes both function tools and custom tools
  */
 export type ChatCompletionTool = ChatCompletionFunctionTool | ChatCompletionCustomTool;
-
-/**
- * Token usage information for API requests
- */
-export interface TokenUsage {
-    /** Number of tokens used in the prompt */
-    promptTokens: number;
-    /** Number of tokens used in the completion */
-    completionTokens: number;
-    /** Total number of tokens used */
-    totalTokens: number;
-}
 
 /**
  * Response type from API client

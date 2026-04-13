@@ -73,10 +73,7 @@ export interface ToolCompletedEventData {
   componentId?: string;
 }
 
-export interface LlmCompletedEventData {
-  promptTokens: number;
-  completionTokens: number;
-}
+export type LlmCompletedEventData = import('llm-api-client').TokenUsage;
 
 export interface ErrorEventData {
   message: string;

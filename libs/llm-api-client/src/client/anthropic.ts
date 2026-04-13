@@ -5,8 +5,8 @@ import {
   ApiResponse,
   ChatCompletionTool,
   ToolCall,
-  TokenUsage,
 } from '../types/api-client.js';
+import type { TokenUsage } from '../types/message.js';
 import type { Message, ContentBlock, ToolUseBlock, ToolResultBlock, TextContentBlock, ThinkingBlock } from '../types/message.js';
 import {
   ApiClientError,
@@ -121,10 +121,18 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
       },
     ];
 
+    // Track tool_use IDs to detect orphaned tool_results
+    const seenToolUseIds = new Set<string>();
+
     for (const msg of memoryContext) {
+      // Normalize content: handle legacy string content at runtime
+      const blocks: ContentBlock[] = Array.isArray(msg.content)
+        ? msg.content
+        : [{ type: 'text' as const, text: String(msg.content) }];
+
       if (msg.role === 'system') {
         systemParts.push(
-          msg.content
+          blocks
             .filter((b): b is TextContentBlock => b.type === 'text')
             .map(b => b.text)
             .join('\n'),
@@ -132,9 +140,24 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
         continue;
       }
 
-      const content: Anthropic.ContentBlockParam[] = msg.content
+      const content: Anthropic.ContentBlockParam[] = blocks
         .filter((b): b is ContentBlock => b.type !== 'thinking')
+        .filter((b) => {
+          if (b.type === 'tool_use') {
+            if (b.id) seenToolUseIds.add(b.id);
+            return !!b.id; // drop tool_use blocks with missing ID
+          }
+          if (b.type === 'tool_result') {
+            // Drop orphaned tool_results (no matching tool_use in history)
+            return !!b.tool_use_id && seenToolUseIds.has(b.tool_use_id);
+          }
+          return true;
+        })
         .map(block => this.toAnthropicBlock(block));
+
+      // Skip empty messages (all content was filtered out)
+      if (content.length === 0) continue;
+
       messages.push({ role: msg.role, content });
     }
 
@@ -237,15 +260,11 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
       const tokenUsage: TokenUsage = {
         promptTokens: message.usage?.input_tokens ?? 0,
         completionTokens: message.usage?.output_tokens ?? 0,
-        totalTokens:
-          (message.usage?.input_tokens ?? 0) +
-          (message.usage?.output_tokens ?? 0),
       };
 
       if (
         tokenUsage.promptTokens < 0 ||
-        tokenUsage.completionTokens < 0 ||
-        tokenUsage.totalTokens < 0
+        tokenUsage.completionTokens < 0
       ) {
         throw new ResponseParsingError(
           'Token counts cannot be negative',

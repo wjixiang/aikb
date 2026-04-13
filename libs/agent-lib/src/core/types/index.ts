@@ -14,8 +14,11 @@ export type { ToolProtocol } from './tool.js'
 export { getEffectiveProtocol } from './tool.js'
 export { isNativeProtocol } from './tool.js'
 
-// Re-export MessageTokenUsage and ClineMessage from message.type.ts
+// Re-export MessageTokenUsage (deprecated alias) and ClineMessage from message.type.ts
 export type { MessageTokenUsage, ClineMessage } from './message.type.js'
+
+// Re-export TokenUsage from llm-api-client
+export type { TokenUsage } from 'llm-api-client'
 
 /**
  * Default consecutive mistake limit for agent error handling

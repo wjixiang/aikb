@@ -18,6 +18,135 @@ from .dx_exceptions import DXCohortError
 
 logger = logging.getLogger(__name__)
 
+# ── Operator → vizserver condition 映射 ──────────────────────────────────
+
+_OP_TO_CONDITION: dict[str, str] = {
+    "is_not_null": "exists",
+    "is_null": "not-exists",
+    "eq": "is",
+    "equals": "is",
+    "is": "is",
+    "neq": "is-not",
+    "not_equals": "is-not",
+    "is_not": "is-not",
+    "in": "in",
+    "not_in": "not-in",
+    "contains": "contains",
+    "gt": "greater-than",
+    "gte": "greater-than-eq",
+    "lt": "less-than",
+    "lte": "less-than-eq",
+    "between": "between",
+    "any": "any",
+    "not_any": "not-any",
+    "all": "all",
+    "not_empty": "not-empty",
+}
+
+
+def _rule_to_vizserver_filter(rule: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """将单条 rule 转为 vizserver filters dict。
+
+    ``{"field": "participant.p131286", "operator": "is_not_null"}``
+    → ``{"participant$p131286": [{"condition": "exists", "values": []}]}``
+
+    兼容 ``operator`` / ``type`` 两种键名。
+    """
+    field = rule["field"].replace(".", "$")
+    operator = rule.get("operator") or rule.get("type") or "is"
+    condition = _OP_TO_CONDITION.get(operator, operator)
+    values = rule.get("value") or rule.get("values") or []
+
+    return {field: [{"condition": condition, "values": values}]}
+
+
+def _is_rules_format(filters: dict[str, Any]) -> bool:
+    """检测是否为 rules-based 格式（含 ``rules`` 列表）。
+
+    兼容 ``logical`` / ``logic`` 两种键名。
+    """
+    return "rules" in filters and isinstance(filters["rules"], list)
+
+
+def _build_vizserver_pheno_filters(
+    logic: str,
+    merged_filters: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    """将 logic + 合并后的 filters 包装为完整 vizserver 格式。"""
+    return {
+        "logic": logic,
+        "pheno_filters": {
+            "logic": logic,
+            "compound": [
+                {
+                    "name": "phenotype",
+                    "logic": logic,
+                    "filters": merged_filters,
+                }
+            ],
+        },
+    }
+
+
+def _merge_rules(rules: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """将 rules 列表合并为 vizserver filters dict。"""
+    merged: dict[str, list[dict[str, Any]]] = {}
+    for rule in rules:
+        if "rules" in rule:
+            # 嵌套 group：递归合并
+            nested = normalize_cohort_filters(rule)
+            for item in nested.get("pheno_filters", {}).get("compound", []):
+                for fk, fv in item.get("filters", {}).items():
+                    merged.setdefault(fk, []).extend(fv)
+        else:
+            for k, v in _rule_to_vizserver_filter(rule).items():
+                merged.setdefault(k, []).extend(v)
+    return merged
+
+
+def normalize_cohort_filters(filters: dict[str, Any]) -> dict[str, Any]:
+    """将常见筛选条件格式规范化为 vizserver pheno_filters 格式。
+
+    如果输入已经是合法的 vizserver 格式（包含 ``logic`` + ``pheno_filters``），
+    直接原样返回。否则尝试将 ``logical``/``rules`` / ``logic``/``rules`` 等常见格式转换。
+
+    Args:
+        filters: 原始筛选条件 dict。
+
+    Returns:
+        符合 vizserver 要求的 pheno_filters dict。
+    """
+    # 已经是 vizserver 格式
+    if "pheno_filters" in filters:
+        return filters
+
+    # rules 格式（LLM 常见输出，兼容 logical / logic 两种键名）
+    if _is_rules_format(filters):
+        logic = (filters.get("logical") or filters.get("logic") or "and").lower()
+        merged = _merge_rules(filters["rules"])
+        return _build_vizserver_pheno_filters(logic, merged)
+
+    # 单条 rule dict（无 logical/rules 包装）
+    if "field" in filters:
+        field_filters = _rule_to_vizserver_filter(filters)
+        return {
+            "logic": "and",
+            "pheno_filters": {
+                "logic": "and",
+                "compound": [
+                    {
+                        "name": "phenotype",
+                        "logic": "and",
+                        "filters": field_filters,
+                    }
+                ],
+            },
+        }
+
+    # 无法识别的格式，原样返回（让 vizserver 报错）
+    logger.warning("Unknown filter format, passing through as-is: %s", filters)
+    return filters
+
 
 # ── Vizserver 交互 ──────────────────────────────────────────────────────
 

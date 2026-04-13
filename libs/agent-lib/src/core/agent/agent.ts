@@ -1,9 +1,9 @@
 import { injectable, inject, optional } from 'inversify';
 
 import type { Message, ContentBlock, ToolUseBlock, ToolResultBlock } from '../memory/types.js';
-import { MessageBuilder } from 'llm-api-client';
+import { MessageBuilder, TokenUsage } from 'llm-api-client';
 import { AgentStatus } from '../common/types.js';
-import { MessageTokenUsage, ToolUsage } from '../types/index.js';
+import { ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { DefaultToolCallConverter } from 'llm-api-client';
@@ -120,11 +120,9 @@ export class Agent {
   workspace: VirtualWorkspace;
   private _status: AgentStatus = AgentStatus.Sleeping;
   private _taskId: string;
-  private _tokenUsage: MessageTokenUsage = {
-    totalTokensIn: 0,
-    totalTokensOut: 0,
-    totalCost: 0,
-    contextTokens: 0,
+  private _tokenUsage: TokenUsage = {
+    promptTokens: 0,
+    completionTokens: 0,
   };
   private _toolUsage: ToolUsage = {};
   private _consecutiveMistakeCount = 0;
@@ -513,7 +511,7 @@ export class Agent {
   /**
    * Getter for token usage
    */
-  public get tokenUsage(): MessageTokenUsage {
+  public get tokenUsage(): TokenUsage {
     return this._tokenUsage;
   }
 
@@ -1053,19 +1051,15 @@ export class Agent {
       );
 
       // Track token usage
-      this._tokenUsage.totalTokensIn += response.tokenUsage.promptTokens;
-      this._tokenUsage.totalTokensOut += response.tokenUsage.completionTokens;
-      this._tokenUsage.contextTokens += response.tokenUsage.promptTokens;
+      this._tokenUsage.promptTokens += response.tokenUsage.promptTokens;
+      this._tokenUsage.completionTokens += response.tokenUsage.completionTokens;
 
       // Emit LLM call completed hook
       await this.hookModule.executeHooks(HookType.LLM_CALL_COMPLETED, {
         type: HookType.LLM_CALL_COMPLETED,
         timestamp: new Date(),
         instanceId: this.instanceId,
-        tokenUsage: {
-          promptTokens: response.tokenUsage.promptTokens,
-          completionTokens: response.tokenUsage.completionTokens,
-        },
+        tokenUsage: response.tokenUsage,
       });
 
       // Add assistant message to memory (including tool_use blocks for multi-turn context)
@@ -1293,7 +1287,11 @@ export class Agent {
     // 0. Workspace guidelines with explicit tool calling format
     parts.push(`# Responsive Agent Guideline
 
-You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
+You are an autonomous AI agent. You MUST take actions to accomplish tasks — never stop to ask the user for instructions or wait for input. Your only ways to respond are:
+1. Call a tool to gather information or perform an action
+2. Call attempt_completion when the task is fully done
+
+You MUST call a tool in EVERY response. Never respond with plain text alone — that will be treated as an error.
 
 **Tool Call Loop:**
 1. Analyze the current context and task
@@ -1301,12 +1299,14 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
 3. Receive the tool result
 4. Analyze the result and decide next step
 5. Repeat until task is complete
-6. Output your summary as plain text, then call attempt_completion to finish
+6. Call attempt_completion (no parameters) to finish
 
-**Important Rules:**
+**Critical Rules:**
 - Call ONLY ONE tool per response
-- After receiving the tool result, analyze it and decide if more tool calls are needed
-- When all tasks are done, output your summary as plain text, then call attempt_completion (no parameters)
+- NEVER respond with text only — always call a tool
+- When all tasks are done, call attempt_completion (no parameters) as your final action
+- If a tool fails, analyze the error and try a different tool or approach
+- Do NOT ask the user what to do — figure it out yourself using available tools
 
 ## A2A Task Acknowledgment
 When you receive a task from another agent (identified by "[A2A Task from ...]" in the user message):
@@ -1333,10 +1333,10 @@ When you receive a task from another agent (identified by "[A2A Task from ...]" 
 
     // 2. Tool usage principles
     parts.push(`# Tool Usage
-- Call only ONE tool per response
-- After receiving the result, analyze it and call another tool if needed
-- When all tasks are complete, output your summary as plain text, then call attempt_completion (no parameters)
-- If a tool fails, analyze the error and try an alternative approach`);
+- You MUST call exactly ONE tool in every response — never respond with text only
+- After receiving a tool result, analyze it and call the next tool
+- When the task is fully complete, call attempt_completion (no parameters) to finish
+- If a tool fails, try a different tool or different parameters — do not give up`);
 
     // 3. Component prompts (from registered components)
     const allComponents = this.workspace
