@@ -12,19 +12,21 @@ from ukb_mcp.domain.database.models import (
     DatabaseFieldInfo,
     DatabaseInfo,
     DatabaseQueryRequest,
-    DatabaseQueryResponse,
     DatabaseTableInfo,
-    PaginatedFieldsResponse,
-    PaginatedTablesResponse,
+    EntityInfo,
 )
 from ukb_mcp.domain.database.service import DatabaseService
+from ukb_mcp.service.fieldStorageService import FieldStorageService, get_field_storage
 from dx_client import IDXClient
 
 router = APIRouter(prefix="/databases", tags=["databases"])
 
 
-def get_database_service(dx_client: IDXClient = Depends(get_dx_client)) -> DatabaseService:
-    return DatabaseService(dx_client)
+def get_database_service(
+    dx_client: IDXClient = Depends(get_dx_client),
+    field_storage: FieldStorageService = Depends(get_field_storage),
+) -> DatabaseService:
+    return DatabaseService(dx_client, field_storage)
 
 
 # ── 数据库 CRUD ──────────────────────────────────────────────────────────
@@ -73,76 +75,62 @@ def describe_database(
 # ── 数据表与字段 ─────────────────────────────────────────────────────────
 
 
-@router.get("/{database_id}/tables", response_model=PaginatedTablesResponse)
+@router.get("/{database_id}/tables", response_model=list[DatabaseTableInfo])
 def list_tables(
     database_id: str,
-    limit: int = Query(default=100, ge=1, le=100, description="每页条数。"),
-    offset: int = Query(default=0, ge=0, description="偏移量。"),
     refresh: bool = Query(default=False, description="强制刷新缓存。"),
     service: DatabaseService = Depends(get_database_service),
-) -> PaginatedTablesResponse:
+) -> list[DatabaseTableInfo]:
     """列出数据库中的数据表（目录结构）。"""
-    tables, total = service.list_tables(database_id, limit=limit, offset=offset, refresh=refresh)
-    return PaginatedTablesResponse(
-        data=[DatabaseTableInfo(name=t["name"]) for t in tables],
-        total=total,
-        limit=limit,
-        offset=offset,
-    )
+    return service.list_tables(database_id, refresh=refresh)  # type: ignore[return-value]
 
 
-@router.get("/{database_id}/fields", response_model=PaginatedFieldsResponse)
+@router.get("/{database_id}/entities", response_model=list[EntityInfo])
+def list_entities(
+    database_id: str,
+    refresh: bool = Query(default=False, description="强制刷新缓存。"),
+    service: DatabaseService = Depends(get_database_service),
+) -> list[EntityInfo]:
+    """列出数据集中的所有实体及其字段数量。"""
+    return service.list_entities(refresh=refresh)  # type: ignore[return-value]
+
+
+@router.get("/{database_id}/fields", response_model=list[DatabaseFieldInfo])
 def list_fields(
     database_id: str,
     entity: str | None = Query(default=None, description="按实体过滤。"),
     name: str | None = Query(default=None, description="按字段名模糊匹配。"),
-    limit: int = Query(default=100, ge=1, le=100, description="每页条数。"),
-    offset: int = Query(default=0, ge=0, description="偏移量。"),
     refresh: bool = Query(default=False, description="强制刷新缓存。"),
     service: DatabaseService = Depends(get_database_service),
-) -> PaginatedFieldsResponse:
+) -> list[DatabaseFieldInfo]:
     """列出数据集中的可用字段（精简视图）。
 
     返回 entity / name / type / title 四列，支持按实体和字段名过滤。
     """
-    fields, total = service.list_fields(
-        database_id, entity=entity, name_pattern=name, limit=limit, offset=offset, refresh=refresh,
-    )
-    return PaginatedFieldsResponse(
-        data=[DatabaseFieldInfo(**f) for f in fields],
-        total=total,
-        limit=limit,
-        offset=offset,
-    )
+    return service.list_fields(
+        database_id, entity=entity, name_pattern=name, refresh=refresh
+    )  # type: ignore[return-value]
 
 
 # ── 查询与导出 ──────────────────────────────────────────────────────────
 
 
-@router.post("/{database_id}/query", response_model=DatabaseQueryResponse)
+@router.post("/{database_id}/query")
 def query_database(
     database_id: str,
-    body: DatabaseQueryRequest = ...,
+    body: DatabaseQueryRequest,
     service: DatabaseService = Depends(get_database_service),
-) -> DatabaseQueryResponse:
+) -> list[dict]:
     """从数据库关联的数据集中提取指定字段。
 
     返回行字典列表，第一列为 eid，其余列为请求的字段。
     """
-    records, total = service.query(
-        database_id,
-        body.entity_fields,
-        body.dataset_ref,
-        limit=body.limit,
-        offset=body.offset,
-        refresh=body.refresh,
+    df = service.query(
+        database_id, body.entity_fields, body.dataset_ref, refresh=body.refresh
     )
-    return DatabaseQueryResponse(
-        data=records,
-        total=total,
-        limit=body.limit,
-        offset=body.offset,
-    )
+    if df.empty:
+        return []
+    return df.to_dict(orient="records")
 
 
 @router.post("/{database_id}/export")
@@ -152,17 +140,11 @@ def export_database_csv(
     service: DatabaseService = Depends(get_database_service),
 ) -> StreamingResponse:
     """提取字段并流式返回 CSV 文件。"""
-    records, _ = service.query(
-        database_id,
-        body.entity_fields,
-        body.dataset_ref,
-        limit=body.limit,
-        offset=body.offset,
-        refresh=body.refresh,
+    df = service.query(
+        database_id, body.entity_fields, body.dataset_ref, refresh=body.refresh
     )
-    import pandas as pd
     buf = io.StringIO()
-    pd.DataFrame(records).to_csv(buf, index=False)
+    df.to_csv(buf, index=False)
     buf.seek(0)
     return StreamingResponse(
         buf,

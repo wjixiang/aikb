@@ -10,9 +10,9 @@ export const CreateCohortToolDef: ToolDef = {
     filters: z
       .record(z.unknown())
       .describe(
-        '筛选条件，使用 vizserver pheno_filters 格式。' +
-        '示例：{"logic":"and","pheno_filters":{"logic":"and","compound":[{"name":"phenotype","logic":"and","filters":{"participant$p131286":[{"condition":"exists","values":[]}]}}]}}。' +
-        '也支持简化格式：{"logical":"AND","rules":[{"field":"participant.p131286","operator":"is_not_null"}]}，系统会自动转换。',
+        '筛选条件，扁平格式：key 为 "entity$field"（如 "participant$p131286"），value 为条件数组。'
+        + '条件对象包含 condition（"in"/"not-in"/"exists"等）和 values 字段。'
+        + '示例: {"participant$p131286": [{"condition": "exists", "values": []}], "participant$sex": [{"condition": "in", "values": [0, 1]}]}',
       ),
     description: z
       .string()

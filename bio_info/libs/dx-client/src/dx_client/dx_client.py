@@ -22,6 +22,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, List
+
 import dxpy
 import pandas as pd
 from dxpy import DXRecord
@@ -39,7 +40,6 @@ from .dx_exceptions import (
     DXJobError,
 )
 from .dx_models import (
-    CohortFilters,
     DXClientConfig,
     DXCohortInfo,
     DXDatabaseClusterInfo,
@@ -831,10 +831,42 @@ class DXClient(IDXClient):
     #  Cohort 操作
     # ═══════════════════════════════════════════════════════════════════════
 
+    @staticmethod
+    def _wrap_cohort_filters(filters: dict[str, Any]) -> dict[str, Any]:
+        """将扁平的 entity$field 筛选条件包裹为 vizserver 要求的 pheno_filters 结构。
+
+        vizserver ``raw-cohort-query`` 端点要求 filters 格式::
+
+            {"pheno_filters": {"compound": [...], "logic": "and"}}
+
+        LLM / 调用方通常提供扁平格式::
+
+            {"participant$p131286": [{"condition": "exists", "values": []}]}
+
+        本方法自动检测并转换：若已包含 ``pheno_filters`` 键则原样返回，
+        否则包裹为 ``compound`` 结构。
+        """
+        if not filters:
+            return filters
+        if "pheno_filters" in filters:
+            return filters
+        return {
+            "pheno_filters": {
+                "compound": [
+                    {
+                        "name": "phenotype",
+                        "logic": "and",
+                        "filters": filters,
+                    }
+                ],
+                "logic": "and",
+            }
+        }
+
     def create_cohort(
         self,
         name: str,
-        filters: CohortFilters | dict[str, Any],
+        filters: dict[str, Any],
         *,
         dataset_ref: str | None = None,
         folder: str = "/",
@@ -847,7 +879,6 @@ class DXClient(IDXClient):
         self._ensure_connected()
         project_id = self._require_project()
 
-        # 1. 解析 dataset 引用
         if dataset_ref is None:
             _, dataset_ref = self.find_dataset()
 
@@ -855,30 +886,26 @@ class DXClient(IDXClient):
         dataset_record_id = parts[-1]
         dataset_project = parts[0] if len(parts) > 1 else project_id
 
-        # 2. 获取 vizserver 信息
         viz_info = cohort_mod.get_visualize_info(dataset_record_id, dataset_project)
         base_sql = viz_info.get("baseSql") or viz_info.get("base_sql")
 
-        # 3. 规范化 filters 并构建 payload
-        normalized = cohort_mod.normalize_cohort_filters(filters)
-        filters_dict = normalized.model_dump()
+        wrapped_filters = self._wrap_cohort_filters(filters)
+
         filter_payload: dict[str, Any] = {
-            "filters": filters_dict,
+            "filters": wrapped_filters,
             "project_context": dataset_project,
         }
         if base_sql is not None:
             filter_payload["base_sql"] = base_sql
 
-        # 4. 生成 SQL
         sql = cohort_mod.generate_cohort_sql(viz_info, filter_payload)
 
-        # 5. 创建 cohort record
         record_payload = cohort_mod.build_cohort_record_payload(
             name=name,
             folder=folder,
             project=project_id,
             viz_info=viz_info,
-            filters=filters_dict,
+            filters=wrapped_filters,
             sql=sql,
             description=description,
             entity_fields=entity_fields,
@@ -1011,22 +1038,6 @@ class DXClient(IDXClient):
             self._handle_dx_error(e, f"Failed to delete cohort '{cohort_id}'")
             raise
 
-    def close_cohort(self, cohort_id: str) -> DXRecordInfo:
-        """锁定（关闭）cohort record，使其变为只读状态。
-
-        调用 DNAnexus ``record_close`` API，将 open 状态的 record 转为 closed。
-        """
-        self._ensure_connected()
-        project_id = self._require_project()
-        try:
-            dxpy.api.record_close(cohort_id, {"project": project_id})  # type: ignore[attr-defined]
-            logger.info("Closed cohort '%s' in project '%s'", cohort_id, project_id)
-        except DxPyDXError as e:
-            self._handle_dx_error(e, f"Failed to close cohort '{cohort_id}'")
-            raise
-        # Return updated cohort info
-        return self.get_cohort(cohort_id, refresh=True)
-
     def extract_cohort_fields(
         self,
         cohort_id: str,
@@ -1034,7 +1045,7 @@ class DXClient(IDXClient):
         *,
         refresh: bool = False,
     ) -> pd.DataFrame:
-        """提取 cohort 内参与者的指定字段数据的数据。
+        """提取 cohort 内参与者的指定字段数据。
 
         通过 ``dx extract_dataset <cohort_ref> --fields ...`` 实现。
         """
@@ -1335,10 +1346,6 @@ class DXClient(IDXClient):
         )
         return df
 
-    def extract_cohort(self, cohort_id: str):
-
-        pass
-
     # ═══════════════════════════════════════════════════════════════════════
     #  Job 操作
     # ═══════════════════════════════════════════════════════════════════════
@@ -1480,16 +1487,3 @@ def convert_fields(fields: List[str]) -> List[str]:
     # Convert to lowercase
     r3 = [i.lower() for i in r2]
     return r3
-
-
-def upload_sql_file(sqlstr: str, fileName: str):
-    dxfile = dxpy.upload_string(sqlstr, media_type="text/plain", name=fileName + ".sql")
-    return dxfile
-
-
-def run_spark_sql(sql_file_id: str):
-    result = subprocess.run(
-        ["dx", "run", "spark-sql-runner", "-i", f"sqlfile={sql_file_id}"]
-    )
-    return result
-    pass

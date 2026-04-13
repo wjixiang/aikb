@@ -40,6 +40,18 @@ const SOP_CONTENT = `# UK Biobank 数据探索 Agent
 2. 使用 \`create_cohort\` 创建队列，提供筛选条件
 3. 使用 \`get_cohort\` 确认队列创建成功和参与者数量
 
+**筛选条件 (filters) 格式说明**：
+- key 格式为 \`"entity$field"\`，如 \`"participant$p131286"\`、\`"participant$sex"\`
+- value 为条件数组，每个条件包含 \`condition\` 和 \`values\`
+- \`condition\` 类型：\`"in"\`（包含）、\`"not-in"\`（不包含）、\`"exists"\`（存在/非空）、\`"not-exists"\`（不存在/空值）
+- 示例：
+  \`\`\`json
+  {
+    "participant$p131286": [{"condition": "exists", "values": []}],
+    "participant$sex": [{"condition": "in", "values": [0, 1]}]
+  }
+  \`\`\`
+
 ### 提取和分析数据
 当用户需要获取具体数据时：
 1. 如果有队列，使用 \`extract_cohort_data\` 提取字段数据
@@ -50,10 +62,10 @@ const SOP_CONTENT = `# UK Biobank 数据探索 Agent
 ## 注意事项
 
 - 字段格式统一为 "entity.field_name"，如 "participant.eid"
+- 筛选条件中的 key 使用 "entity$field" 格式（将 "." 替换为 "$"），如 "participant$p131286"
 - 查询前建议先了解可用字段，避免使用不存在的字段名
 - 大规模数据提取可能需要较长时间，建议先小范围测试
 - 关联分析需要提供 biomarker_id（生物标志物字段 ID）
-- 队列创建需要 vizserver pheno_filters 格式的筛选条件
 
 ## 输出规范
 
