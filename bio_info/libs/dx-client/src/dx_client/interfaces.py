@@ -312,23 +312,24 @@ class IDXClient(ABC):
     def create_cohort(
         self,
         name: str,
-        filters: CohortFilters | dict[str, Any],
+        filters: CohortFilters,
+        entity_fields: list[str],
         *,
         dataset_ref: str | None = None,
         folder: str = "/",
         description: str = "",
-        entity_fields: list[str] | None = None,
     ) -> DXCohortInfo:
         """基于筛选条件在当前项目中创建 cohort。
 
         Args:
             name: Cohort 名称。
             filters: 筛选条件，支持 VizPhenoFilters / RulesFilter / FilterRule。
+            entity_fields: 关联的字段列表（``"entity.field_name"`` 格式），
+                用于 UKB RAP Web UI 的 Data Preview 展示。
             dataset_ref: 源数据集引用 (``"project-xxx:record-yyy"``)。
                 为 None 时自动调用 ``find_dataset()`` 查找。
             folder: 目标文件夹路径。
             description: Cohort 描述。
-            entity_fields: 关联的字段列表（``"entity.field_name"`` 格式）。
 
         Returns:
             DXCohortInfo，包含新创建的 cohort 信息。

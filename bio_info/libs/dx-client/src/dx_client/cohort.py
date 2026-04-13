@@ -311,8 +311,8 @@ def build_cohort_record_payload(
     viz_info: dict[str, Any],
     filters: dict[str, Any],
     sql: str,
+    entity_fields: list[str],
     description: str = "",
-    entity_fields: list[str] | None = None,
 ) -> dict[str, Any]:
     """组装 DXRecord 创建 payload。
 
@@ -324,7 +324,8 @@ def build_cohort_record_payload(
         filters: pheno_filters dict。
         sql: 生成的 SQL。
         description: 可选描述。
-        entity_fields: 关联的字段列表（``"entity.field_name"`` 格式）。
+        entity_fields: 关联的字段列表（``"entity.field_name"`` 格式），
+            用于 UKB RAP Web UI 的 Data Preview 展示。
 
     Returns:
         传给 ``create_cohort_record()`` 的完整 payload。
@@ -340,9 +341,8 @@ def build_cohort_record_payload(
         "schema": viz_info["schema"],
         "sql": sql,
         "version": "3.0",
+        "fields": entity_fields,
     }
-    if entity_fields:
-        details["fields"] = entity_fields
     if base_sql:
         details["baseSql"] = base_sql
     if combined:

@@ -834,12 +834,12 @@ class DXClient(IDXClient):
     def create_cohort(
         self,
         name: str,
-        filters: CohortFilters | dict[str, Any],
+        filters: CohortFilters,
+        entity_fields: list[str],
         *,
         dataset_ref: str | None = None,
         folder: str = "/",
         description: str = "",
-        entity_fields: list[str] | None = None,
     ) -> DXCohortInfo:
         """基于筛选条件在当前项目中创建 cohort。"""
         from . import cohort as cohort_mod
@@ -898,7 +898,7 @@ class DXClient(IDXClient):
             project=project_id,
             folder=folder,
             description=description,
-            entity_fields=entity_fields or [],
+            entity_fields=entity_fields,
         )
 
     def list_cohorts(
