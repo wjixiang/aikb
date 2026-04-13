@@ -1,4 +1,4 @@
-import pino from 'pino';
+import type { Logger } from '@shared/logger';
 import {
   ApiClient,
   ApiResponse,
@@ -14,7 +14,7 @@ import {
   UnknownApiError,
   ValidationError,
 } from '../errors/errors.js';
-import { createLogger } from './logger.js';
+import { getLogger } from '@shared/logger';
 
 export interface BaseClientConfig {
   apiKey: string;
@@ -25,7 +25,6 @@ export interface BaseClientConfig {
   maxRetries?: number;
   retryDelay?: number;
   enableLogging?: boolean;
-  logger?: pino.Logger;
 }
 
 /**
@@ -40,9 +39,9 @@ export abstract class BaseApiClient implements ApiClient {
   protected config: BaseClientConfig & Record<string, unknown>;
   protected requestCount = 0;
   protected lastError: ApiClientError | null = null;
-  protected logger: pino.Logger;
+  private _logger: Logger | undefined;
 
-  constructor(config: BaseClientConfig, componentName: string) {
+  constructor(config: BaseClientConfig) {
     this.validateConfig(config);
     this.config = {
       maxRetries: 3,
@@ -50,14 +49,19 @@ export abstract class BaseApiClient implements ApiClient {
       enableLogging: true,
       ...config,
     };
-    this.logger = createLogger({
-      enableLogging: this.config.enableLogging as boolean,
-      logger: this.config.logger as pino.Logger | undefined,
-      component: componentName,
-    });
+  }
+
+  protected get logger(): Logger {
+    if (!this._logger) {
+      this._logger = getLogger(this.loggerName);
+    }
+    return this._logger;
   }
 
   // --- Subclass hooks ---
+
+  /** Logger name for this client */
+  protected abstract get loggerName(): string;
 
   /** Maximum valid temperature value (e.g., 2 for OpenAI, 1 for Anthropic) */
   protected abstract get maxTemperature(): number;

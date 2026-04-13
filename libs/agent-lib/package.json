@@ -81,6 +81,7 @@
     "@nestjs/common": "^10.0.0",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
+    "@shared/logger": "workspace:*",
     "agent-soul-hub": "workspace:*",
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",

@@ -11,7 +11,7 @@ import {
   parseError,
 } from '../errors/errors.js';
 import { ApiClientFactory } from './factory.js';
-import { createLogger } from './logger.js';
+import { getLogger } from '@shared/logger';
 import { checkClientHealth } from './pool.health.js';
 import type {
   FallbackOptions,
@@ -163,7 +163,7 @@ function enforceQuota(entry: PoolEntry): void {
 export class ClientPool implements ApiClient {
   private static instance: ClientPool | null = null;
   private entries: Map<string, PoolEntry> = new Map();
-  private logger: ReturnType<typeof createLogger>;
+  private logger = getLogger('ClientPool');
   private idCounter = 0;
   private roundRobinIndex = 0;
   private fallbackStats = {
@@ -183,9 +183,7 @@ export class ClientPool implements ApiClient {
     return `client-${this.idCounter}`;
   }
 
-  private constructor() {
-    this.logger = createLogger({ component: 'ClientPool' });
-  }
+  private constructor() {}
 
   // --- Singleton ---
 

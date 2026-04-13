@@ -1,5 +1,5 @@
 import { injectable, inject, optional, postConstruct } from 'inversify';
-import pino from 'pino';
+import { getLogger } from '@shared/logger';
 import {
   type VirtualWorkspaceConfig,
   type Tool,
@@ -41,10 +41,7 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     new Map();
   private globalToolProvider: GlobalToolProvider;
   private _a2aHandler?: A2AHandler;
-  private logger = pino({
-    level: process.env['LOG_LEVEL'] || 'debug',
-    timestamp: pino.stdTimeFunctions.isoTime,
-  });
+  private logger = getLogger('VirtualWorkspace');
 
   constructor(
     @inject(TYPES.IToolManager) toolManager: IToolManager,

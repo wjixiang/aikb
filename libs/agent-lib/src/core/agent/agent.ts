@@ -34,9 +34,9 @@ import { HookType } from '../hooks/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import type { ISessionManager } from '../session/ISessionManager.js';
 import type { SessionState } from '../session/types.js';
-import pino from 'pino';
 import type { IRuntimeControlClient } from '../runtime/types.js';
 import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
+import { getLogger } from '@shared/logger';
 
 export interface AgentConfig {
   apiRequestTimeout: number;
@@ -178,7 +178,7 @@ export class Agent {
   private hookModule: HookModule;
 
   private agentSop: SOP;
-  private logger: pino.Logger;
+  private logger = getLogger('Agent');
   public instanceId: string;
 
   // Runtime control client (set by AgentRuntime)
@@ -206,7 +206,6 @@ export class Agent {
     runtimeControlState?: RuntimeControlState,
   ) {
     this.instanceId = instanceId;
-    this.logger = pino({ level: process.env['LOG_LEVEL'] || 'debug' });
     this.workspace = workspace as unknown as VirtualWorkspace;
     this._taskId = taskId || crypto.randomUUID();
     this.agentSop = agentSop;

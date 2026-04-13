@@ -21,7 +21,8 @@ import type { IPersistenceService } from '../persistence/types.js';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
-import pino from 'pino';
+import { getLogger } from '@shared/logger';
+import type { Logger } from '@shared/logger';
 import {
   type UnifiedAgentConfig,
   type AgentCreationOptions,
@@ -36,9 +37,6 @@ import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
 import type { IA2AClient } from '../a2a/index.js';
 import { getGlobalAgentRegistry } from '../a2a/index.js';
 import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
-
-
-type Logger = ReturnType<typeof pino>;
 
 /**
  * AgentContainer - 1:1 relationship with Agent
@@ -137,8 +135,7 @@ export class AgentContainer {
         await this.persistInstanceMetadata();
       }
     } catch (error) {
-      const logger = pino({ level: 'warn' });
-      logger.warn(
+      getLogger('AgentContainer').warn(
         {
           error:
             error instanceof Error
@@ -169,8 +166,7 @@ export class AgentContainer {
         agentType: this.config.agent.type,
       });
     } catch (error) {
-      const logger = pino({ level: 'warn' });
-      logger.warn(
+      getLogger('AgentContainer').warn(
         {
           error:
             error instanceof Error
@@ -184,9 +180,9 @@ export class AgentContainer {
     }
   }
 
-  private get logger(): pino.Logger | undefined {
+  private get logger(): Logger | undefined {
     try {
-      return this.container.get<pino.Logger>(TYPES.Logger);
+      return this.container.get<Logger>(TYPES.Logger);
     } catch {
       return undefined;
     }
@@ -195,15 +191,9 @@ export class AgentContainer {
   private setupBindings(): void {
     this.container.bind(TYPES.AgentInstanceId).toConstantValue(this.instanceId);
 
-    // Logger
+    // Logger - use shared logger singleton
     this.container.bind<Logger>(TYPES.Logger).toDynamicValue(() =>
-      pino({
-        level: process.env['LOG_LEVEL'] || 'debug',
-        formatters: {
-          level: (label) => ({ level: label }),
-        },
-        timestamp: pino.stdTimeFunctions.isoTime,
-      }),
+      getLogger('AgentContainer'),
     );
 
     // Agent configuration
@@ -394,8 +384,8 @@ export class AgentContainer {
         reg.componentInstance
           ? reg.componentInstance
           : (this.container.get(
-              reg.componentClass!,
-            ) as unknown as ToolComponent),
+            reg.componentClass!,
+          ) as unknown as ToolComponent),
       );
     };
 

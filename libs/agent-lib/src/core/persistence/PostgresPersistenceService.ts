@@ -13,19 +13,18 @@ import type {
 import type { Message, WorkspaceContextEntry } from '../memory/types.js';
 import { TYPES } from '../di/types.js';
 import { AgentStatus } from '../common/types.js';
-import pino from 'pino';
+import { getLogger } from '@shared/logger';
 
 @injectable()
 export class PostgresPersistenceService implements IPersistenceService {
   private config: PersistenceConfig;
-  private logger: pino.Logger;
+  private logger = getLogger('PostgresPersistenceService');
 
   constructor(
     @inject(TYPES.PrismaClient) private prisma: PrismaClient,
     @inject(TYPES.PersistenceConfig) @optional() config?: PersistenceConfig,
   ) {
     this.config = { autoCommit: true, ...config };
-    this.logger = pino({ level: process.env['LOG_LEVEL'] || 'info' });
     this.logger.info('[PersistenceService] Initialized');
   }
 

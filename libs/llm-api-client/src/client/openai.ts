@@ -28,11 +28,15 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
   private client: OpenAI;
 
   constructor(config: OpenAICompatibleConfig) {
-    super(config, 'OpenaiCompatibleApiClient');
+    super(config);
     this.client = new OpenAI({
       apiKey: this.config.apiKey as string,
       baseURL: this.config.baseURL as string | undefined,
     });
+  }
+
+  protected get loggerName(): string {
+    return 'OpenaiCompatibleApiClient';
   }
 
   protected get maxTemperature(): number {

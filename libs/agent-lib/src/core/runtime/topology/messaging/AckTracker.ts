@@ -5,13 +5,10 @@
  * enabling retry logic for lost acknowledgments.
  */
 
-import pino from 'pino';
+import { getLogger } from '@shared/logger';
 import type { TopologyMessage } from '../types.js';
 
-const logger = pino({
-  level: 'debug',
-  timestamp: pino.stdTimeFunctions.isoTime,
-});
+const logger = getLogger('AckTracker');
 
 export interface AckCallback {
   onTimeout: () => void;

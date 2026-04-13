@@ -1,12 +1,11 @@
-import pino from 'pino';
 import { ApiClient } from '../types/api-client.js';
 import { OpenaiCompatibleApiClient } from './openai.js';
 import { AnthropicCompatibleApiClient } from './anthropic.js';
 import { ProviderSettings } from '../types/provider-settings.js';
 import { ConfigurationError } from '../errors/errors.js';
-import { createLogger } from './logger.js';
+import { getLogger } from '@shared/logger';
 
-const logger = createLogger({ component: 'ApiClientFactory' });
+const logger = getLogger('ApiClientFactory');
 
 /**
  * Factory class for creating ApiClient instances

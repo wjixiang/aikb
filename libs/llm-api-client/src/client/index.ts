@@ -1,5 +1,6 @@
 export { BaseApiClient } from './base.js';
 export type { BaseClientConfig } from './base.js';
+export type { Logger } from '@shared/logger';
 
 export { OpenaiCompatibleApiClient } from './openai.js';
 export type { OpenAICompatibleConfig } from './openai.js';

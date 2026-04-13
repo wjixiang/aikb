@@ -4,7 +4,7 @@
  * Processes incoming A2A messages and routes them to appropriate handlers.
  */
 
-import pino from 'pino';
+import { getLogger } from '@shared/logger';
 import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import { createMessage } from '../runtime/topology/types.js';
 import type {
@@ -59,7 +59,7 @@ export interface IA2AHandler {
  * Sends responses back via the MessageBus.
  */
 export class A2AHandler implements IA2AHandler {
-  private readonly logger: pino.Logger;
+  private readonly logger = getLogger('A2AHandler');
   private readonly instanceId: string;
   private readonly supportedTypes: A2AMessageType[];
   private readonly messageBus: IMessageBus;
@@ -90,10 +90,6 @@ export class A2AHandler implements IA2AHandler {
   ) => void;
 
   constructor(messageBus: IMessageBus, config: A2AHandlerConfig) {
-    this.logger = pino({
-      level: 'debug',
-      timestamp: pino.stdTimeFunctions.isoTime,
-    });
     this.instanceId = config.instanceId;
     this.supportedTypes = config.supportedTypes;
     this.messageBus = messageBus;

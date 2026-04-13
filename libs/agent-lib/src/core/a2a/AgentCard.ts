@@ -4,7 +4,7 @@
  * Manages Agent Cards for agent discovery and capability lookup.
  */
 
-import pino from 'pino';
+import { getLogger } from '@shared/logger';
 import type {
   AgentCard,
   AgentCardSummary,
@@ -37,7 +37,7 @@ export interface IAgentCardRegistry {
  * can query the registry to find agents by capability.
  */
 export class AgentCardRegistry implements IAgentCardRegistry {
-  private readonly logger: pino.Logger;
+  private readonly logger = getLogger('AgentCardRegistry');
   private readonly agents: Map<string, AgentCard> = new Map();
   private readonly aliasIndex: Map<string, string> = new Map();
   private readonly capabilityIndex: Map<string, Set<string>> = new Map();
@@ -45,10 +45,6 @@ export class AgentCardRegistry implements IAgentCardRegistry {
   private readonly config: Required<A2ARegistryConfig>;
 
   constructor(config: A2ARegistryConfig = {}) {
-    this.logger = pino({
-      level: 'debug',
-      timestamp: pino.stdTimeFunctions.isoTime,
-    });
     this.config = {
       enableCache: config.enableCache ?? false,
       cacheTtl: config.cacheTtl ?? 60000,

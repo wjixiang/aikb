@@ -9,7 +9,7 @@
  */
 
 import { injectable, inject, optional } from 'inversify';
-import pino from 'pino';
+import { getLogger } from '@shared/logger';
 
 import { TYPES } from '../di/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
@@ -26,10 +26,9 @@ export class AgentSessionManager implements ISessionManager {
     private persistenceService?: IPersistenceService,
     @inject(TYPES.Logger)
     @optional()
-    private logger?: pino.Logger,
+    private logger?: ReturnType<typeof getLogger>,
   ) {
-    this.logger =
-      logger ?? pino({ level: process.env['LOG_LEVEL'] || 'debug' });
+    this.logger = logger ?? getLogger('AgentSessionManager');
   }
 
   async createSession(state: SessionState): Promise<void> {

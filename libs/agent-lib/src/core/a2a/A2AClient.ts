@@ -4,7 +4,7 @@
  * Wraps the Topology MessageBus to provide high-level A2A communication.
  */
 
-import pino from 'pino';
+import { getLogger } from '@shared/logger';
 import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import { createMessage } from '../runtime/topology/types.js';
 import type {
@@ -84,7 +84,7 @@ export interface IA2AClient {
  * Handles message serialization, correlation, and response tracking.
  */
 export class A2AClient implements IA2AClient {
-  private readonly logger: pino.Logger;
+  private readonly logger = getLogger('A2AClient');
   private readonly instanceId: string;
   private readonly messageBus: IMessageBus;
   private readonly agentRegistry: IAgentCardRegistry;
@@ -94,10 +94,6 @@ export class A2AClient implements IA2AClient {
     agentRegistry: IAgentCardRegistry,
     config: A2AClientConfig,
   ) {
-    this.logger = pino({
-      level: 'debug',
-      timestamp: pino.stdTimeFunctions.isoTime,
-    });
     this.instanceId = config.instanceId;
     this.messageBus = messageBus;
     this.agentRegistry = agentRegistry;

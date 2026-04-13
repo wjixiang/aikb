@@ -35,11 +35,15 @@ export class AnthropicCompatibleApiClient extends BaseApiClient {
   private client: Anthropic;
 
   constructor(config: AnthropicCompatibleConfig) {
-    super(config, 'AnthropicCompatibleApiClient');
+    super(config);
     this.client = new Anthropic({
       apiKey: this.config.apiKey as string,
       baseURL: this.config.baseURL as string | undefined,
     });
+  }
+
+  protected get loggerName(): string {
+    return 'AnthropicCompatibleApiClient';
   }
 
   protected get maxTemperature(): number {
