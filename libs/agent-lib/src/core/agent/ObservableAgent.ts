@@ -6,7 +6,7 @@ import {
   TaskCompletedCallback,
   TaskAbortedCallback,
 } from '../common/types.js';
-import { Message, MessageAddedCallback } from '../memory/types.js';
+import type { Message, MessageAddedCallback } from '../memory/types.js';
 
 /**
  * Turn status enum (for observer callbacks)

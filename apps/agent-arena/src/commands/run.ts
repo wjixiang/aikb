@@ -18,7 +18,7 @@ export async function runCommand(
     json: boolean;
   },
 ): Promise<void> {
-  const spinner = ora('Resolving agent blueprint...').start();
+  const spinner = ora('Resolving agent blueprint...');
   const mode = options.live ? 'live' : 'mock';
 
   try {

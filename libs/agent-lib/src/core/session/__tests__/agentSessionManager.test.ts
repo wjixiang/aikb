@@ -33,9 +33,8 @@ describe('AgentSessionManager', () => {
       instanceId: 'test-instance-123',
       status: AgentStatus.Running,
       tokenUsage: {
-        totalTokensIn: 1000,
-        totalTokensOut: 500,
-        totalCost: 0.05,
+        promptTokens: 1000,
+        completionTokens: 500,
       },
       toolUsage: {},
       consecutiveMistakeCount: 0,
@@ -86,9 +85,9 @@ describe('AgentSessionManager', () => {
       expect(mockPersistenceService.createSession).toHaveBeenCalledWith({
         instanceId: state.instanceId,
         status: state.status,
-        totalTokensIn: state.tokenUsage.totalTokensIn,
-        totalTokensOut: state.tokenUsage.totalTokensOut,
-        totalCost: state.tokenUsage.totalCost,
+        totalTokensIn: state.tokenUsage.promptTokens,
+        totalTokensOut: state.tokenUsage.completionTokens,
+        totalCost: 0,
         consecutiveMistakeCount: state.consecutiveMistakeCount,
         collectedErrors: state.collectedErrors,
       });
@@ -144,9 +143,8 @@ describe('AgentSessionManager', () => {
       const state = createMockSessionState({
         status: AgentStatus.Running,
         tokenUsage: {
-          totalTokensIn: 2000,
-          totalTokensOut: 1000,
-          totalCost: 0.1,
+          promptTokens: 2000,
+          completionTokens: 1000,
         },
         toolUsage: {
           'search-tool': { attempts: 5, failures: 1 },
@@ -164,7 +162,7 @@ describe('AgentSessionManager', () => {
           status: AgentStatus.Running,
           totalTokensIn: 2000,
           totalTokensOut: 1000,
-          totalCost: 0.1,
+          totalCost: 0,
           toolUsage: { 'search-tool': { attempts: 5, failures: 1 } },
           consecutiveMistakeCount: 2,
           collectedErrors: ['some-error'],
@@ -286,9 +284,8 @@ describe('AgentSessionManager', () => {
       const state = createMockSessionState({
         status: AgentStatus.Running,
         tokenUsage: {
-          totalTokensIn: 5000,
-          totalTokensOut: 2500,
-          totalCost: 0.25,
+          promptTokens: 5000,
+          completionTokens: 2500,
         },
         toolUsage: {
           'browse-tool': { attempts: 10, failures: 2 },
@@ -304,7 +301,7 @@ describe('AgentSessionManager', () => {
         expect.objectContaining({
           totalTokensIn: 5000,
           totalTokensOut: 2500,
-          totalCost: 0.25,
+          totalCost: 0,
           toolUsage: { 'browse-tool': { attempts: 10, failures: 2 } },
           consecutiveMistakeCount: 1,
           collectedErrors: [],
@@ -375,9 +372,8 @@ describe('ISessionManager Interface', () => {
       instanceId: 'test-instance-456',
       status: AgentStatus.Running,
       tokenUsage: {
-        totalTokensIn: 500,
-        totalTokensOut: 250,
-        totalCost: 0.02,
+        promptTokens: 500,
+        completionTokens: 250,
       },
       toolUsage: {},
       consecutiveMistakeCount: 0,

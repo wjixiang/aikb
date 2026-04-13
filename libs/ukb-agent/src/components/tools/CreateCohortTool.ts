@@ -9,7 +9,11 @@ export const CreateCohortToolDef: ToolDef = {
     name: z.string().describe('队列名称'),
     filters: z
       .record(z.unknown())
-      .describe('筛选条件（vizserver pheno_filters 格式）'),
+      .describe(
+        '筛选条件，使用 vizserver pheno_filters 格式。' +
+        '示例：{"logic":"and","pheno_filters":{"logic":"and","compound":[{"name":"phenotype","logic":"and","filters":{"participant$p131286":[{"condition":"exists","values":[]}]}}]}}。' +
+        '也支持简化格式：{"logical":"AND","rules":[{"field":"participant.p131286","operator":"is_not_null"}]}，系统会自动转换。',
+      ),
     description: z
       .string()
       .optional()

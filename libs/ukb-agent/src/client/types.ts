@@ -12,6 +12,8 @@ export interface CohortCreateRequest {
 export interface ExtractFieldsRequest {
   entity_fields: string[];
   refresh?: boolean;
+  limit?: number;
+  offset?: number;
 }
 
 export interface AssociationQuery {
@@ -24,6 +26,8 @@ export interface DatabaseQueryRequest {
   entity_fields?: string[];
   dataset_ref?: string | null;
   refresh?: boolean;
+  limit?: number;
+  offset?: number;
 }
 
 export interface ExportRequest {

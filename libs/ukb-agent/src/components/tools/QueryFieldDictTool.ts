@@ -3,13 +3,11 @@ import type { ToolDef, ToolCallResult } from 'agent-lib/components';
 import type { UkbMcpClient } from '../../client/UkbMcpClient.js';
 
 export const QueryFieldDictToolDef: ToolDef = {
-  desc: '在字段字典中搜索字段（按条件搜索，支持名称、描述、概念等）',
+  desc: '在字段字典中搜索字段（支持关键词搜索，自动匹配所有文本列）',
   paramsSchema: z.object({
     condition: z
       .string()
-      .describe(
-        '搜索条件，如 "blood pressure"、"diabetes"、"ICD10"。 查询语法为SQL的condition部分的语法，支持`%`、`_`等通配符',
-      ),
+      .describe('搜索关键词，如 "olink"、"blood pressure"、"diabetes"'),
     page: z.number().optional().describe('页码，默认 1'),
     page_size: z
       .number()
@@ -37,8 +35,10 @@ export interface FieldDictPage {
 }
 
 export function renderFieldDictAsMarkdown(page: FieldDictPage): string {
+  const totalPages = Math.ceil(page.total / page.pageSize) || 1;
+  const meta = `**共 ${page.total} 条，第 ${page.page}/${totalPages} 页，每页 ${page.pageSize} 条**\n`;
   if (page.data.length === 0) {
-    return '| Entity | Name | Type | Title | Description |\n|---|---|---|---|---|\n| (无数据) | | | | |';
+    return meta + '| Entity | Name | Type | Title | Description |\n|---|---|---|---|---|\n| (无数据) | | | | |';
   }
 
   const header = '| Entity | Name | Type | Title | Description |';
@@ -51,7 +51,7 @@ export function renderFieldDictAsMarkdown(page: FieldDictPage): string {
     return `| ${d.entity} | ${d.name} | ${d.type} | ${title} | ${truncatedDesc} |`;
   });
 
-  return [header, separator, ...rows].join('\n');
+  return meta + [header, separator, ...rows].join('\n');
 }
 
 export async function handleQueryFieldDict(

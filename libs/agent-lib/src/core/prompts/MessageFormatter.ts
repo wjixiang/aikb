@@ -1,49 +1,28 @@
-import Anthropic from '@anthropic-ai/sdk';
-import { Message } from '../memory/types.js';
+import type { Message } from '../memory/types.js';
 import { PromptTemplates } from './PromptTemplates.js';
 
 /**
  * Formats conversation history messages into XML strings for prompt building.
- * 
+ *
  * This class extracts the complex conversation history formatting logic from agent.ts,
  * providing a clean, reusable interface for converting Message objects to XML format.
- * 
+ *
  * The formatting follows these rules:
  * - System messages with string content: wrapped with `<workspace_context_update>` tags
- * - Messages with string content: used as-is
  * - Messages with content blocks:
  *   - Text blocks: return block.text
  *   - Tool use blocks: formatted as `<tool_use name="${name}" id="${id}">${input}</tool_use>`
  *   - Tool result blocks: formatted as `<tool_result tool_use_id="${id}">${content}</tool_result>`
+ * - Thinking blocks: skipped
  * - Final result wrapped with `<role>...</role>` tags
  */
 export class MessageFormatter {
-    /**
-     * Formats a single Message to an XML string.
-     *
-     * This method handles different message content types and formats them appropriately:
-     * - System messages are wrapped in workspace context tags
-     * - Messages with content blocks are processed block by block
-     *
-     * @param msg - The Message to format
-     * @returns The formatted message as an XML string
-     *
-     * @example
-     * ```ts
-     * const msg: Message = {
-     *   role: 'system',
-     *   content: [{ type: 'text', text: 'Some context' }]
-     * };
-     * const formatted = MessageFormatter.formatToXml(msg);
-     * // Returns: '<system>\n<workspace_context_update>\nSome context\n</workspace_context_update>\n</system>'
-     * ```
-     */
     static formatToXml(msg: Message): string {
         const role = msg.role;
 
         // Handle content blocks
         const content = msg.content
-            .map((block: any) => {
+            .map((block) => {
                 if (block.type === 'text') {
                     return block.text;
                 } else if (block.type === 'tool_use') {
@@ -53,12 +32,9 @@ export class MessageFormatter {
                         block.input,
                     );
                 } else if (block.type === 'tool_result') {
-                    const content = typeof block.content === 'string'
-                        ? block.content
-                        : JSON.stringify(block.content);
                     return PromptTemplates.wrapToolResult(
                         block.tool_use_id,
-                        content,
+                        block.content,
                     );
                 } else if (block.type === 'thinking') {
                     // Skip thinking blocks in XML output
@@ -76,28 +52,6 @@ export class MessageFormatter {
         return PromptTemplates.wrapMessage(role, wrappedContent);
     }
 
-    /**
-     * Formats an entire conversation history into an array of XML strings.
-     * 
-     * This method processes each message in the conversation history and converts
-     * it to an XML-formatted string using the formatToXml method.
-     * 
-     * @param history - Array of Message objects representing the conversation history
-     * @returns Array of formatted XML strings, one for each message
-     * 
-     * @example
-     * ```ts
-     * const history: Message[] = [
-     *   { role: 'user', content: 'Hello' },
-     *   { role: 'assistant', content: 'Hi there!' }
-     * ];
-     * const formatted = MessageFormatter.formatConversationHistory(history);
-     * // Returns: [
-     * //   '<user>\nHello\n</user>',
-     * //   '<assistant>\nHi there!\n</assistant>'
-     * // ]
-     * ```
-     */
     static formatConversationHistory(history: Message[]): string[] {
         return history.map((msg) => this.formatToXml(msg));
     }

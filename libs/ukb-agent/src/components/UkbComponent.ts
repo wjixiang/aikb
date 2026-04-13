@@ -17,8 +17,6 @@ import {
   DescribeDatabaseToolDef,
   handleDescribeDatabase,
   ListTablesToolDef,
-  handleListTables,
-  type TableInfo,
   renderTablesAsMarkdown,
   ListFieldsToolDef,
   type FieldInfo,
@@ -37,10 +35,10 @@ import {
   handleGetCohort,
   CreateCohortToolDef,
   handleCreateCohort,
+  CloseCohortToolDef,
+  handleCloseCohort,
   ExtractCohortDataToolDef,
-  handleExtractCohortData,
   QueryDatabaseToolDef,
-  handleQueryDatabase,
   QueryAssociationToolDef,
   handleQueryAssociation,
   ExportDataToolDef,
@@ -106,7 +104,16 @@ export class UkbComponent extends ToolComponent<UkbState> {
 - 导出数据为 CSV 或 Parquet 格式
 
 字段格式为 "entity.field_name"，例如 "participant.eid"（参与者ID）、"participant.p31"（性别）。
-在查询前，建议先用 list_fields 或 query_field_dict 了解可用的字段。`;
+
+【重要】字段字典搜索（query_field_dict）请发送原始关键词，不要写 SQL！
+- 正确示例：condition: "olink"
+- 正确示例：condition: "blood pressure"
+- 正确示例：condition: "diabetes protein"
+- 错误示例：condition: "name LIKE '%olink%'"（不要这样写！）
+
+【重要】每次操作数据库前，必须先调用 list_databases 获取当前有效的 database_id！
+旧的 database_id 已失效，必须使用 list_databases 返回的最新 ID。
+在查询前，建议先用 list_fields 或 list_field_dict 了解可用的字段。`;
 
   constructor(baseUrlOrClient?: string | UkbMcpClient) {
     super();
@@ -147,6 +154,7 @@ export class UkbComponent extends ToolComponent<UkbState> {
       list_cohorts: ListCohortsToolDef,
       get_cohort: GetCohortToolDef,
       create_cohort: CreateCohortToolDef,
+      close_cohort: CloseCohortToolDef,
       extract_cohort_data: ExtractCohortDataToolDef,
       query_database: QueryDatabaseToolDef,
       query_association: QueryAssociationToolDef,
@@ -183,12 +191,18 @@ export class UkbComponent extends ToolComponent<UkbState> {
   async onList_tables(params: {
     database_id: string;
     refresh?: boolean;
+    limit?: number;
+    offset?: number;
   }): Promise<ToolCallResult<string>> {
-    const result = await handleListTables(this.client, params);
+    const result = await this.client.listTables(params.database_id, {
+      ...(params.refresh && { refresh: params.refresh }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.offset && { offset: params.offset }),
+    });
     return {
       success: true,
-      data: renderTablesAsMarkdown(result.data),
-      summary: result.summary ?? '',
+      data: renderTablesAsMarkdown(result as any),
+      summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
     };
   }
 
@@ -197,19 +211,17 @@ export class UkbComponent extends ToolComponent<UkbState> {
     entity?: string;
     name?: string;
     refresh?: boolean;
+    limit?: number;
+    offset?: number;
   }): Promise<ToolCallResult<string>> {
-    const fields = await this.client.listFields(params.database_id, {
+    const result = await this.client.listFields(params.database_id, {
       ...(params.entity && { entity: params.entity }),
       ...(params.name && { name: params.name }),
       ...(params.refresh && { refresh: params.refresh }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.offset && { offset: params.offset }),
     });
-    this.reactive.currentFields = fields.map((f) => ({
-      entity: f.entity,
-      name: f.name,
-      type: f.type,
-      title: f.title,
-    }));
-    const fieldInfos: FieldInfo[] = fields.map((f) => ({
+    this.reactive.currentFields = result.data.map((f) => ({
       entity: f.entity,
       name: f.name,
       type: f.type,
@@ -217,8 +229,8 @@ export class UkbComponent extends ToolComponent<UkbState> {
     }));
     return {
       success: true,
-      data: renderFieldsAsMarkdown(fieldInfos),
-      summary: `找到 ${fields.length} 个字段`,
+      data: renderFieldsAsMarkdown(result),
+      summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
     };
   }
 
@@ -234,10 +246,12 @@ export class UkbComponent extends ToolComponent<UkbState> {
       pageSize: result.data.pageSize,
       data: result.data.data,
     };
+    const page = result.data;
+    const totalPages = Math.ceil(page.total / page.pageSize) || 1;
     return {
       success: true,
-      data: renderFieldDictAsMarkdown(result.data),
-      summary: result.summary ?? '',
+      data: renderFieldDictAsMarkdown(page),
+      summary: `搜索 "${params.condition}" 共 ${page.total} 条，第 ${page.page}/${totalPages} 页`,
     };
   }
 
@@ -246,16 +260,17 @@ export class UkbComponent extends ToolComponent<UkbState> {
     page_size?: number;
   }): Promise<ToolCallResult<string>> {
     const result = await handleListFieldDict(this.client, params);
-    this.reactive.currentFieldDictPage = {
+    const page: { total: number; page: number; pageSize: number; data: unknown[] } = {
       total: result.data.total,
       page: result.data.page,
       pageSize: result.data.pageSize,
       data: result.data.data,
     };
+    const totalPages = Math.ceil(page.total / page.pageSize) || 1;
     return {
       success: true,
-      data: renderFieldDictAsMarkdown(result.data),
-      summary: result.summary ?? '',
+      data: renderFieldDictAsMarkdown(page as any),
+      summary: `字段字典共 ${page.total} 条，第 ${page.page}/${totalPages} 页`,
     };
   }
 
@@ -301,20 +316,45 @@ export class UkbComponent extends ToolComponent<UkbState> {
     return handleCreateCohort(this.client, params);
   }
 
+  async onClose_cohort(params: {
+    cohort_id: string;
+  }): Promise<ToolCallResult<unknown>> {
+    return handleCloseCohort(this.client, params);
+  }
+
   async onExtract_cohort_data(
     params: ExtractFieldsRequest & { cohort_id: string },
   ): Promise<ToolCallResult<unknown>> {
-    const result = await handleExtractCohortData(this.client, params);
-    this.reactive.lastQueryResult = result.data as Record<string, unknown>;
-    return result;
+    const result = await this.client.extractCohortFields(params.cohort_id, {
+      entity_fields: params.entity_fields,
+      ...(params.refresh && { refresh: params.refresh }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.offset && { offset: params.offset }),
+    });
+    this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
+    return {
+      success: true,
+      data: result.data,
+      summary: `提取到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
+    };
   }
 
   async onQuery_database(
     params: DatabaseQueryRequest & { database_id: string },
   ): Promise<ToolCallResult<unknown>> {
-    const result = await handleQueryDatabase(this.client, params);
-    this.reactive.lastQueryResult = result.data as Record<string, unknown>;
-    return result;
+    const result = await this.client.queryDatabase(params.database_id, {
+      ...(params.entity_fields && { entity_fields: params.entity_fields }),
+      ...(params.dataset_ref && { dataset_ref: params.dataset_ref }),
+      ...(params.refresh && { refresh: params.refresh }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.offset && { offset: params.offset }),
+    });
+    this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
+    return {
+      success: true,
+      data: result.data,
+      summary: `查询到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
+    };
   }
 
   async onQuery_association(

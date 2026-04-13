@@ -1,8 +1,9 @@
 import { injectable, inject, optional } from 'inversify';
 
-import { Message } from '../memory/types.js';
+import type { Message, ContentBlock, ToolUseBlock, ToolResultBlock } from '../memory/types.js';
+import { MessageBuilder, TokenUsage } from 'llm-api-client';
 import { AgentStatus } from '../common/types.js';
-import { MessageTokenUsage, ToolUsage } from '../types/index.js';
+import { ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { DefaultToolCallConverter } from 'llm-api-client';
@@ -12,7 +13,6 @@ import type { MemoryModuleConfig } from '../memory/types.js';
 import type {
   ApiClient,
   ChatCompletionTool,
-  MemoryContextItem,
   ToolCall,
 } from 'llm-api-client';
 import type { IToolManager } from '../tools/index.js';
@@ -120,11 +120,9 @@ export class Agent {
   workspace: VirtualWorkspace;
   private _status: AgentStatus = AgentStatus.Sleeping;
   private _taskId: string;
-  private _tokenUsage: MessageTokenUsage = {
-    totalTokensIn: 0,
-    totalTokensOut: 0,
-    totalCost: 0,
-    contextTokens: 0,
+  private _tokenUsage: TokenUsage = {
+    promptTokens: 0,
+    completionTokens: 0,
   };
   private _toolUsage: ToolUsage = {};
   private _consecutiveMistakeCount = 0;
@@ -513,7 +511,7 @@ export class Agent {
   /**
    * Getter for token usage
    */
-  public get tokenUsage(): MessageTokenUsage {
+  public get tokenUsage(): TokenUsage {
     return this._tokenUsage;
   }
 
@@ -938,14 +936,14 @@ export class Agent {
 
           // Add error to memory for the LLM to see
           this.memoryModule.pushErrors([error]);
-          const errorMsg: Message = {
+          const errorApiMessage: Message = {
             role: 'system',
             content: [
               { type: 'text' as const, text: `[Error: ${error.message}]` },
             ],
             ts: Date.now(),
           };
-          await this.addMessageToMemory(errorMsg);
+          await this.addMessageToMemory(errorApiMessage);
 
           // Track consecutive error for abort (NoToolsUsedError counts as an error)
           this.handleConsecutiveError({ errorMessage });
@@ -959,14 +957,14 @@ export class Agent {
           // Handle other errors (tool execution errors, API errors, etc.)
           if (error instanceof Error) {
             this.memoryModule.pushErrors([error]);
-            const errorMsg: Message = {
+            const errorApiMessage: Message = {
               role: 'system',
               content: [
                 { type: 'text' as const, text: `[Error: ${error.message}]` },
               ],
               ts: Date.now(),
             };
-            await this.addMessageToMemory(errorMsg);
+            await this.addMessageToMemory(errorApiMessage);
 
             // Track consecutive error for abort
             this.handleConsecutiveError({ errorMessage });
@@ -1040,113 +1038,41 @@ export class Agent {
         iterations,
       );
 
-      // Get conversation history
-      const historyContext = this.memoryModule.getHistoryForPrompt();
-      const memoryContext: MemoryContextItem[] = historyContext.map((m) => {
-        // Skip legacy string entries (from old formatMessage output or DB migration artifacts)
-        if (typeof m === 'string') return { kind: 'text' as const, role: 'user' as const, content: m };
-        if (!m || !m.role) return { kind: 'text' as const, role: 'user' as const, content: String(m) };
-        if (!Array.isArray(m.content)) {
-          return { kind: 'text' as const, role: m.role, content: String(m.content) };
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const blocks = m.content as any[];
-        const hasToolUse = blocks.some((b: any) => b.type === 'tool_use');
-        const hasToolResult = blocks.some((b: any) => b.type === 'tool_result');
-        const textParts = blocks
-          .filter((b: any) => b.type === 'text')
-          .map((b: any) => String(b.text))
-          .join('\n');
-        const toolUseBlocks = blocks.filter((b: any) => b.type === 'tool_use');
-        const toolResultBlocks = blocks.filter((b: any) => b.type === 'tool_result');
-
-        // Assistant message with tool_use: emit as structured tool_calls
-        if (m.role === 'assistant' && hasToolUse) {
-          return {
-            kind: 'tool_calls' as const,
-            role: 'assistant' as const,
-            content: textParts || undefined,
-            tool_calls: toolUseBlocks.map((b: any) => ({
-              id: String(b.id),
-              type: 'function' as const,
-              function: {
-                name: String(b.name),
-                arguments: typeof b.input === 'string' ? b.input : JSON.stringify(b.input ?? {}),
-              },
-            })),
-          };
-        }
-
-        // User message with tool_result: emit as structured tool result
-        if (m.role === 'user' && hasToolResult && !hasToolUse) {
-          if (toolResultBlocks.length === 1) {
-            const tr = toolResultBlocks[0];
-            return {
-              kind: 'tool_result' as const,
-              role: 'tool' as const,
-              tool_call_id: String(tr.tool_use_id),
-              content: typeof tr.content === 'string' ? tr.content : JSON.stringify(tr.content),
-            };
-          }
-          // Multiple tool results: emit as structured content blocks
-          return {
-            kind: 'content_blocks' as const,
-            role: 'user' as const,
-            contentBlocks: toolResultBlocks.map((tr: any) => ({
-              type: 'tool_result',
-              tool_use_id: String(tr.tool_use_id),
-              content: typeof tr.content === 'string' ? tr.content : JSON.stringify(tr.content),
-              ...(tr.is_error ? { is_error: true } : {}),
-            })),
-          };
-        }
-
-        // System message: emit as user (both OpenAI and Anthropic handle system via system prompt)
-        if (m.role === 'system') {
-          return { kind: 'text' as const, role: 'user' as const, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
-        }
-
-        // Default: plain text message
-        return { kind: 'text' as const, role: m.role, content: textParts || blocks.map((b: any) => JSON.stringify(b)).join('\n') };
-      });
+      // Get conversation history — now directly usable as Message[] (no conversion needed)
+      const memoryContext = this.memoryModule.getHistoryForPrompt();
 
       // Call LLM
       const response = await this.apiClient.makeRequest(
         systemPrompt,
-        currentWorkspaceContext, // Empty workspaceContext since it's now part of combinedMemoryContext
+        currentWorkspaceContext,
         memoryContext,
         { timeout: this.config.apiRequestTimeout },
         tools,
       );
 
       // Track token usage
-      this._tokenUsage.totalTokensIn += response.tokenUsage.promptTokens;
-      this._tokenUsage.totalTokensOut += response.tokenUsage.completionTokens;
-      this._tokenUsage.contextTokens += response.tokenUsage.promptTokens;
+      this._tokenUsage.promptTokens += response.tokenUsage.promptTokens;
+      this._tokenUsage.completionTokens += response.tokenUsage.completionTokens;
 
       // Emit LLM call completed hook
       await this.hookModule.executeHooks(HookType.LLM_CALL_COMPLETED, {
         type: HookType.LLM_CALL_COMPLETED,
         timestamp: new Date(),
         instanceId: this.instanceId,
-        tokenUsage: {
-          promptTokens: response.tokenUsage.promptTokens,
-          completionTokens: response.tokenUsage.completionTokens,
-        },
+        tokenUsage: response.tokenUsage,
       });
 
       // Add assistant message to memory (including tool_use blocks for multi-turn context)
-      const assistantContent: Array<Record<string, unknown>> = [];
+      const assistantContent: ContentBlock[] = [];
       if (response.textResponse) {
-        assistantContent.push({ type: 'text' as const, text: response.textResponse });
+        assistantContent.push({ type: 'text', text: response.textResponse });
       }
       if (response.toolCalls && response.toolCalls.length > 0) {
         for (const tc of response.toolCalls) {
-          let parsedArgs: unknown = {};
-          try { parsedArgs = JSON.parse(tc.arguments); } catch { parsedArgs = tc.arguments; }
+          let parsedArgs: Record<string, unknown> = {};
+          try { parsedArgs = JSON.parse(tc.arguments); } catch { /* keep empty */ }
           assistantContent.push({
-            type: 'tool_use' as const,
+            type: 'tool_use',
             id: tc.id,
             name: tc.name,
             input: parsedArgs,
@@ -1156,7 +1082,7 @@ export class Agent {
       if (assistantContent.length > 0) {
         const assistantMsg: Message = {
           role: 'assistant',
-          content: assistantContent as any,
+          content: assistantContent,
           ts: Date.now(),
         };
         await this.addMessageToMemory(assistantMsg);
@@ -1171,8 +1097,8 @@ export class Agent {
           this.memoryModule.pushErrors([new Error(errorMsg)]);
           // Create error tool results for ALL tool calls so every tool_use
           // has a matching tool_result (Anthropic API requirement).
-          const errorBlocks = response.toolCalls.map((tc) => ({
-            type: 'tool_result' as const,
+          const errorBlocks: ToolResultBlock[] = response.toolCalls.map((tc) => ({
+            type: 'tool_result',
             tool_use_id: tc.id,
             toolName: tc.name,
             content: `Error: ${errorMsg}`,
@@ -1278,7 +1204,7 @@ export class Agent {
           role: 'user',
           content: [
             {
-              type: 'tool_result' as const,
+              type: 'tool_result',
               tool_use_id: toolCall.id,
               toolName: toolCall.name,
               content: resultContent,
@@ -1325,7 +1251,7 @@ export class Agent {
           role: 'user',
           content: [
             {
-              type: 'tool_result' as const,
+              type: 'tool_result',
               tool_use_id: toolCall.id,
               toolName: toolCall.name,
               content: `Error: ${errorMessage}`,
@@ -1361,7 +1287,11 @@ export class Agent {
     // 0. Workspace guidelines with explicit tool calling format
     parts.push(`# Responsive Agent Guideline
 
-You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
+You are an autonomous AI agent. You MUST take actions to accomplish tasks — never stop to ask the user for instructions or wait for input. Your only ways to respond are:
+1. Call a tool to gather information or perform an action
+2. Call attempt_completion when the task is fully done
+
+You MUST call a tool in EVERY response. Never respond with plain text alone — that will be treated as an error.
 
 **Tool Call Loop:**
 1. Analyze the current context and task
@@ -1369,12 +1299,14 @@ You are an AI agent that uses tools to accomplish tasks. Your core workflow is:
 3. Receive the tool result
 4. Analyze the result and decide next step
 5. Repeat until task is complete
-6. Output your summary as plain text, then call attempt_completion to finish
+6. Call attempt_completion (no parameters) to finish
 
-**Important Rules:**
+**Critical Rules:**
 - Call ONLY ONE tool per response
-- After receiving the tool result, analyze it and decide if more tool calls are needed
-- When all tasks are done, output your summary as plain text, then call attempt_completion (no parameters)
+- NEVER respond with text only — always call a tool
+- When all tasks are done, call attempt_completion (no parameters) as your final action
+- If a tool fails, analyze the error and try a different tool or approach
+- Do NOT ask the user what to do — figure it out yourself using available tools
 
 ## A2A Task Acknowledgment
 When you receive a task from another agent (identified by "[A2A Task from ...]" in the user message):
@@ -1401,10 +1333,10 @@ When you receive a task from another agent (identified by "[A2A Task from ...]" 
 
     // 2. Tool usage principles
     parts.push(`# Tool Usage
-- Call only ONE tool per response
-- After receiving the result, analyze it and call another tool if needed
-- When all tasks are complete, output your summary as plain text, then call attempt_completion (no parameters)
-- If a tool fails, analyze the error and try an alternative approach`);
+- You MUST call exactly ONE tool in every response — never respond with text only
+- After receiving a tool result, analyze it and call the next tool
+- When the task is fully complete, call attempt_completion (no parameters) to finish
+- If a tool fails, try a different tool or different parameters — do not give up`);
 
     // 3. Component prompts (from registered components)
     const allComponents = this.workspace

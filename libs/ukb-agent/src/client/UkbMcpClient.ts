@@ -102,10 +102,16 @@ export class UkbMcpClient {
 
   async listTables(
     databaseId: string,
-    params?: { refresh?: boolean },
-  ): Promise<DatabaseTableInfo[]> {
+    params?: {
+      refresh?: boolean;
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<{ data: DatabaseTableInfo[]; total: number; limit: number; offset: number }> {
     const sp = new URLSearchParams();
     if (params?.refresh) sp.set('refresh', 'true');
+    if (params?.limit) sp.set('limit', String(params.limit));
+    if (params?.offset) sp.set('offset', String(params.offset));
     return this.request(
       'GET',
       `/api/v1/databases/${databaseId}/tables?${sp}`,
@@ -118,12 +124,16 @@ export class UkbMcpClient {
       entity?: string;
       name?: string;
       refresh?: boolean;
+      limit?: number;
+      offset?: number;
     },
-  ): Promise<DatabaseFieldInfo[]> {
+  ): Promise<{ data: DatabaseFieldInfo[]; total: number; limit: number; offset: number }> {
     const sp = new URLSearchParams();
     if (params?.entity) sp.set('entity', params.entity);
     if (params?.name) sp.set('name', params.name);
     if (params?.refresh) sp.set('refresh', 'true');
+    if (params?.limit) sp.set('limit', String(params.limit));
+    if (params?.offset) sp.set('offset', String(params.offset));
     return this.request(
       'GET',
       `/api/v1/databases/${databaseId}/fields?${sp}`,
@@ -133,7 +143,7 @@ export class UkbMcpClient {
   async queryDatabase(
     databaseId: string,
     body: DatabaseQueryRequest,
-  ): Promise<unknown> {
+  ): Promise<{ data: unknown[]; total: number; limit: number; offset: number }> {
     return this.request('POST', `/api/v1/databases/${databaseId}/query`, body);
   }
 
@@ -192,10 +202,14 @@ export class UkbMcpClient {
     return this.request('DELETE', `/api/v1/cohort/${cohortId}`);
   }
 
+  async closeCohort(cohortId: string): Promise<CohortDetail> {
+    return this.request('POST', `/api/v1/cohort/${cohortId}/close`);
+  }
+
   async extractCohortFields(
     cohortId: string,
     body: ExtractFieldsRequest,
-  ): Promise<unknown> {
+  ): Promise<{ data: unknown[]; total: number; limit: number; offset: number }> {
     return this.request(
       'POST',
       `/api/v1/cohort/${cohortId}/extract`,

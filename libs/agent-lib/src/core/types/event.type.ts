@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
-import { clineMessageSchema, tokenUsageSchema } from './message.type.js';
+import { clineMessageSchema } from './message.type.js';
 import { toolNamesSchema, toolUsageSchema } from './tool.js';
+
+export const tokenUsageSchema = z.object({
+  promptTokens: z.number(),
+  completionTokens: z.number(),
+});
 
 /**
  * RooCodeEventName

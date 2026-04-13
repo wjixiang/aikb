@@ -9,11 +9,14 @@
  */
 
 import { injectable, inject, optional } from 'inversify';
-import { Message, WorkspaceContextEntry } from './types.js';
+<<<<<<< HEAD
+import type { Message } from './types.js';
+import { WorkspaceContextEntry } from './types.js';
 import type { IMemoryModule, MemoryModuleConfig } from './types.js';
 import { TYPES } from '../di/types.js';
 import { tiktoken } from '../utils/tiktoken.js';
 import type { ApiClient } from 'llm-api-client';
+import { MessageBuilder } from 'llm-api-client';
 import type { IPersistenceService } from '../persistence/types.js';
 import { diffChars } from 'diff';
 
@@ -352,16 +355,8 @@ export class MemoryModule implements IMemoryModule {
       SUMMARIZATION_PROMPT,
       '',
       [
-        {
-          kind: 'text' as const,
-          role: 'system' as const,
-          content: `<System>\n${SUMMARIZATION_PROMPT}\n</System>`,
-        },
-        {
-          kind: 'text' as const,
-          role: 'user' as const,
-          content: `Please summarize the following conversation:\n\n${textToSummarize}`,
-        },
+        MessageBuilder.system(`<System>\n${SUMMARIZATION_PROMPT}\n</System>`),
+        MessageBuilder.user(`Please summarize the following conversation:\n\n${textToSummarize}`),
       ],
       { timeout: 60000 },
       [],

@@ -47,7 +47,6 @@ import {
   clineSaySchema,
   toolProgressStatusSchema,
   clineMessageSchema,
-  tokenUsageSchema,
   queuedMessageSchema,
 } from '../message.type.js';
 
@@ -57,6 +56,9 @@ import {
   rooCodeEventsSchema,
   taskEventSchema,
 } from '../event.type.js';
+
+// Import tokenUsageSchema from event.type.ts (local schema for event validation)
+import { tokenUsageSchema } from '../event.type.js';
 
 import {
   // task.ts
@@ -471,36 +473,19 @@ describe('core/types', () => {
     describe('tokenUsageSchema', () => {
       it('should validate correct token usage', () => {
         const result = tokenUsageSchema.parse({
-          totalTokensIn: 1000,
-          totalTokensOut: 500,
-          totalCost: 0.25,
-          contextTokens: 800,
+          promptTokens: 1000,
+          completionTokens: 500,
         });
-        expect(result.totalTokensIn).toBe(1000);
-        expect(result.totalCost).toBe(0.25);
-      });
-
-      it('should validate with cache fields', () => {
-        const result = tokenUsageSchema.parse({
-          totalTokensIn: 1000,
-          totalTokensOut: 500,
-          totalCacheWrites: 100,
-          totalCacheReads: 50,
-          totalCost: 0.25,
-          contextTokens: 800,
-        });
-        expect(result.totalCacheWrites).toBe(100);
-        expect(result.totalCacheReads).toBe(50);
+        expect(result.promptTokens).toBe(1000);
+        expect(result.completionTokens).toBe(500);
       });
 
       it('should accept zero values', () => {
         const result = tokenUsageSchema.parse({
-          totalTokensIn: 0,
-          totalTokensOut: 0,
-          totalCost: 0,
-          contextTokens: 0,
+          promptTokens: 0,
+          completionTokens: 0,
         });
-        expect(result.totalTokensIn).toBe(0);
+        expect(result.promptTokens).toBe(0);
       });
     });
 
@@ -554,12 +539,12 @@ describe('core/types', () => {
       it('should validate TaskCompleted event', () => {
         const result = rooCodeEventsSchema.shape[RooCodeEventName.TaskCompleted].parse([
           'task-123',
-          { totalTokensIn: 100, totalTokensOut: 50, totalCost: 0.1, contextTokens: 80 },
+          { promptTokens: 100, completionTokens: 50 },
           { attempt_completion: { attempts: 5, failures: 0 } },
           { isSubtask: false },
         ]);
         expect(result[0]).toBe('task-123');
-        expect(result[1].totalCost).toBe(0.1);
+        expect(result[1].promptTokens).toBe(100);
         expect(result[3].isSubtask).toBe(false);
       });
 
@@ -592,7 +577,7 @@ describe('core/types', () => {
       it('should validate TaskTokenUsageUpdated event', () => {
         const result = rooCodeEventsSchema.shape[RooCodeEventName.TaskTokenUsageUpdated].parse([
           'task-123',
-          { totalTokensIn: 100, totalTokensOut: 50, totalCost: 0.1, contextTokens: 80 },
+          { promptTokens: 100, completionTokens: 50 },
           { attempt_completion: { attempts: 5, failures: 0 } },
         ]);
         expect(result[0]).toBe('task-123');
@@ -623,7 +608,7 @@ describe('core/types', () => {
           eventName: RooCodeEventName.TaskCompleted,
           payload: [
             'task-123',
-            { totalTokensIn: 100, totalTokensOut: 50, totalCost: 0.1, contextTokens: 80 },
+            { promptTokens: 100, completionTokens: 50 },
             { attempt_completion: { attempts: 5, failures: 0 } },
             { isSubtask: false },
           ],

@@ -5,10 +5,10 @@ import { BaseApiClient, BaseClientConfig } from './base.js';
 import {
   ApiResponse,
   ChatCompletionTool,
-  MemoryContextItem,
   ToolCall,
-  TokenUsage,
 } from '../types/api-client.js';
+import type { TokenUsage } from '../types/message.js';
+import type { Message, ContentBlock, ToolUseBlock, ToolResultBlock, TextContentBlock } from '../types/message.js';
 import {
   ApiClientError,
   ResponseParsingError,
@@ -49,7 +49,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
   protected override logDebugInputs(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: MemoryContextItem[],
+    memoryContext: Message[],
   ): void {
     if (!this.config.enableLogging) return;
     console.debug(chalk.bgCyanBright('systemPrompt\n', systemPrompt));
@@ -59,7 +59,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
     console.debug(
       chalk.bgGreen(
         'memoryContext\n',
-        memoryContext.map((e) => `[${e.role}] ${'content' in e ? e.content : JSON.stringify(e)}` + '\n'),
+        memoryContext.map((e) => `[${e.role}] ${JSON.stringify(e.content)}` + '\n'),
       ),
     );
   }
@@ -68,7 +68,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
     requestId: string,
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: MemoryContextItem[],
+    memoryContext: Message[],
     tools: ChatCompletionTool[] | undefined,
   ): Promise<ApiResponse> {
     const messages = this.buildMessages(
@@ -117,7 +117,7 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
   private buildMessages(
     systemPrompt: string,
     workspaceContext: string,
-    memoryContext: MemoryContextItem[],
+    memoryContext: Message[],
   ): OpenAI.Chat.ChatCompletionMessageParam[] {
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
@@ -130,37 +130,55 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
       },
     ];
 
-    for (const item of memoryContext) {
-      if (item.kind === 'tool_calls') {
-        // Assistant message with structured tool_calls
+    // Track tool_use IDs to detect orphaned tool_results
+    const seenToolUseIds = new Set<string>();
+
+    for (const msg of memoryContext) {
+      // Normalize content: handle legacy string content at runtime
+      const blocks: ContentBlock[] = Array.isArray(msg.content)
+        ? msg.content
+        : [{ type: 'text' as const, text: String(msg.content) }];
+
+      if (msg.role === 'system') {
+        const text = blocks
+          .filter((b): b is TextContentBlock => b.type === 'text')
+          .map(b => b.text)
+          .join('\n');
+        messages.push({ role: 'user', content: text });
+        continue;
+      }
+
+      const toolUseBlocks = blocks.filter((b): b is ToolUseBlock => b.type === 'tool_use');
+      const toolResultBlocks = blocks.filter((b): b is ToolResultBlock => b.type === 'tool_result')
+        .filter((b) => seenToolUseIds.has(b.tool_use_id));
+      const textParts = blocks
+        .filter((b): b is TextContentBlock => b.type === 'text')
+        .map(b => b.text)
+        .join('\n');
+
+      // Register tool_use IDs for subsequent tool_result matching
+      for (const tu of toolUseBlocks) seenToolUseIds.add(tu.id);
+
+      if (msg.role === 'assistant' && toolUseBlocks.length > 0) {
         messages.push({
           role: 'assistant',
-          content: item.content ?? null,
-          tool_calls: item.tool_calls,
+          content: textParts || null,
+          tool_calls: toolUseBlocks.map(b => ({
+            id: b.id,
+            type: 'function' as const,
+            function: { name: b.name, arguments: JSON.stringify(b.input) },
+          })),
         });
-      } else if (item.kind === 'tool_result') {
-        // Tool result message
-        messages.push({
-          role: 'tool',
-          tool_call_id: item.tool_call_id,
-          content: item.content,
-        });
-      } else if (item.kind === 'content_blocks') {
-        // Structured content blocks — flatten tool_results to individual tool messages
-        for (const block of item.contentBlocks) {
-          if (block.type === 'tool_result') {
-            messages.push({
-              role: 'tool',
-              tool_call_id: String(block.tool_use_id),
-              content: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
-            });
-          } else if (block.type === 'text') {
-            messages.push({ role: item.role, content: String(block.text) });
-          }
+      } else if (toolResultBlocks.length > 0) {
+        for (const tr of toolResultBlocks) {
+          messages.push({
+            role: 'tool',
+            tool_call_id: tr.tool_use_id,
+            content: tr.content,
+          });
         }
-      } else {
-        const role = item.role === 'system' ? 'user' : item.role;
-        messages.push({ role, content: item.content });
+      } else if (textParts) {
+        messages.push({ role: msg.role, content: textParts });
       }
     }
 
@@ -298,13 +316,11 @@ export class OpenaiCompatibleApiClient extends BaseApiClient {
       const tokenUsage: TokenUsage = {
         promptTokens: usage?.prompt_tokens ?? 0,
         completionTokens: usage?.completion_tokens ?? 0,
-        totalTokens: usage?.total_tokens ?? 0,
       };
 
       if (
         tokenUsage.promptTokens < 0 ||
-        tokenUsage.completionTokens < 0 ||
-        tokenUsage.totalTokens < 0
+        tokenUsage.completionTokens < 0
       ) {
         throw new ResponseParsingError(
           'Token counts cannot be negative',

@@ -3,7 +3,8 @@
  */
 
 import type { AgentStatus } from '../common/types.js';
-import type { MessageTokenUsage, ToolUsage } from '../types/index.js';
+import type { TokenUsage } from 'llm-api-client';
+import type { ToolUsage } from '../types/index.js';
 
 export interface AbortInfo {
   reason: string;
@@ -15,7 +16,7 @@ export interface AbortInfo {
 export interface SessionState {
   instanceId: string;
   status: AgentStatus;
-  tokenUsage: MessageTokenUsage;
+  tokenUsage: TokenUsage;
   toolUsage: ToolUsage;
   consecutiveMistakeCount: number;
   collectedErrors: string[];

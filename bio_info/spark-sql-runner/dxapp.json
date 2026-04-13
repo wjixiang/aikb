@@ -1,0 +1,135 @@
+{
+  "name": "spark-sql-runner",
+  "title": "Spark SQL Runner",
+  "summary": "Run SQL queries on Spark cluster and optionally export results as CSV",
+  "dxapi": "1.0.0",
+  "version": "1.0.0",
+  "inputSpec": [
+    {
+      "name": "sqlfile",
+      "class": "file",
+      "label": "SQL file",
+      "help": "File containing SQL queries separated by semicolons. Lines starting with -- are comments."
+    },
+    {
+      "name": "substitutions",
+      "class": "file",
+      "label": "Variable substitutions JSON",
+      "optional": true,
+      "help": "JSON file with variable substitutions for ${var} placeholders in SQL."
+    },
+    {
+      "name": "database_name",
+      "class": "string",
+      "label": "Default database",
+      "optional": true,
+      "help": "Default database to USE before running queries."
+    },
+    {
+      "name": "export",
+      "class": "boolean",
+      "label": "Export results as CSV",
+      "default": false,
+      "help": "If true, export query results as CSV files."
+    },
+    {
+      "name": "export_options",
+      "class": "file",
+      "label": "Export options JSON",
+      "optional": true,
+      "help": "JSON file with export configuration: {\"num_files\": 1, \"fileprefix\": \"result\", \"header\": true}"
+    },
+    {
+      "name": "collect_logs",
+      "class": "boolean",
+      "label": "Collect cluster logs",
+      "default": false,
+      "help": "If true, collect and output cluster runtime logs."
+    },
+    {
+      "name": "executor_memory",
+      "class": "string",
+      "label": "Executor memory",
+      "optional": true,
+      "default": "4g",
+      "help": "Memory per executor, e.g. '4g', '8g'."
+    },
+    {
+      "name": "executor_cores",
+      "class": "string",
+      "label": "Executor cores",
+      "optional": true,
+      "default": "2",
+      "help": "Number of cores per executor."
+    },
+    {
+      "name": "driver_memory",
+      "class": "string",
+      "label": "Driver memory",
+      "optional": true,
+      "default": "4g",
+      "help": "Memory for driver, e.g. '4g', '8g'."
+    },
+    {
+      "name": "log_level",
+      "class": "string",
+      "label": "Spark log level",
+      "optional": true,
+      "default": "WARN",
+      "help": "Spark log level: WARN, INFO, DEBUG, TRACE."
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "report",
+      "class": "file",
+      "label": "SQL execution report",
+      "help": "Debug report with query status and execution times."
+    },
+    {
+      "name": "export_output",
+      "class": "array:file",
+      "label": "Exported CSV files",
+      "optional": true,
+      "help": "Array of exported CSV result files when export=true."
+    },
+    {
+      "name": "cluster_runtime_logs_tarball",
+      "class": "file",
+      "label": "Cluster runtime logs",
+      "optional": true
+    }
+  ],
+  "runSpec": {
+    "timeoutPolicy": {
+      "*": {
+        "hours": 48
+      }
+    },
+    "interpreter": "bash",
+    "file": "src/spark_sql_runner.sh",
+    "distribution": "Ubuntu",
+    "release": "20.04",
+    "version": "0"
+  },
+  "access": {
+    "network": ["*"],
+    "project": "CONTRIBUTE",
+    "allProjects": "VIEW"
+  },
+  "regionalOptions": {
+    "aws:eu-west-2": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_v2_x4",
+          "clusterSpec": {
+            "type": "dxspark",
+            "version": "3.5.2",
+            "initialInstanceCount": 2,
+            "ports": "9500, 9700-9750"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,3 +1,5 @@
+import type { TokenUsage } from './message.js';
+
 /**
  * Unified ToolCall interface compatible with OpenAI format
  * Supports both single and multiple tool calls in one response
@@ -85,18 +87,6 @@ export interface ChatCompletionCustomTool {
 export type ChatCompletionTool = ChatCompletionFunctionTool | ChatCompletionCustomTool;
 
 /**
- * Token usage information for API requests
- */
-export interface TokenUsage {
-    /** Number of tokens used in the prompt */
-    promptTokens: number;
-    /** Number of tokens used in the completion */
-    completionTokens: number;
-    /** Total number of tokens used */
-    totalTokens: number;
-}
-
-/**
  * Response type from API client
  * Returns tool calls, text response, and metadata from the LLM
  */
@@ -111,27 +101,8 @@ export interface ApiResponse {
     tokenUsage: TokenUsage;
 }
 
-/** OpenAI-format tool call entry in assistant messages */
-export interface ToolCallEntry {
-  id: string;
-  type: 'function';
-  function: { name: string; arguments: string };
-}
-
-/**
- * A single item in the memory context array.
- *
- * Discriminated by a `kind` tag for unambiguous narrowing:
- * - `text`: plain text message
- * - `tool_calls`: assistant message with tool calls (OpenAI format)
- * - `tool_result`: tool result message (OpenAI format)
- * - `content_blocks`: structured content blocks (Anthropic format)
- */
-export type MemoryContextItem =
-  | { kind: 'text'; role: 'user' | 'assistant' | 'system'; content: string }
-  | { kind: 'tool_calls'; role: 'assistant'; content?: string; tool_calls: ToolCallEntry[] }
-  | { kind: 'tool_result'; role: 'tool'; tool_call_id: string; content: string }
-  | { kind: 'content_blocks'; role: 'user' | 'assistant'; contentBlocks: Record<string, unknown>[] };
+/** @deprecated Use Message from './message.js' instead */
+export type MemoryContextItem = import('./message.js').Message;
 
 /**
  * Configuration for API request timeout
@@ -157,7 +128,7 @@ export interface ApiClient {
      *
      * @param systemPrompt - The system prompt defining agent behavior
      * @param workspaceContext - Current workspace state and information
-     * @param memoryContext - Conversation history with role information
+     * @param memoryContext - Conversation history (Message[])
      * @param timeoutConfig - Optional timeout configuration
      * @param tools - Optional array of tool definitions in OpenAI ChatCompletionTool format
      * @returns Promise resolving to the API response (array of tool calls)
@@ -166,7 +137,7 @@ export interface ApiClient {
     makeRequest(
         systemPrompt: string,
         workspaceContext: string,
-        memoryContext: MemoryContextItem[],
+        memoryContext: import('./message.js').Message[],
         timeoutConfig?: ApiTimeoutConfig,
         tools?: ChatCompletionTool[]
     ): Promise<ApiResponse>;

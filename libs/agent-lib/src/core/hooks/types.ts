@@ -7,7 +7,8 @@
 
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { Tool } from '../../components/core/types.js';
-import type { Message } from '../memory/types.js';
+<<<<<<< HEAD
+
 
 // =============================================================================
 // Hook Categories (Enum)
@@ -242,10 +243,7 @@ export interface MessageAddedContext extends HookContextBase {
 export interface LlmCallCompletedContext extends HookContextBase {
   type: HookType.LLM_CALL_COMPLETED;
   /** Token usage from the LLM response */
-  tokenUsage: {
-    promptTokens: number;
-    completionTokens: number;
-  };
+  tokenUsage: import('llm-api-client').TokenUsage;
 }
 
 /**
