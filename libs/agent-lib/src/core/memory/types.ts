@@ -61,17 +61,17 @@ export interface IMemoryModule {
   /**
    * Add message to storage (triggers compression if needed)
    */
-  addMessage(message: import('llm-api-client').Message): Promise<import('llm-api-client').Message>;
+  addMessage(message: Message): Promise<Message>;
 
   /**
    * Add message without triggering compression
    */
-  addMessageSync(message: import('llm-api-client').Message): Promise<import('llm-api-client').Message>;
+  addMessageSync(message: Message): Promise<Message>;
 
   /**
    * Get all historical messages
    */
-  getAllMessages(): import('llm-api-client').Message[];
+  getAllMessages(): Message[];
 
   /**
    * Get total token count for all messages
@@ -81,7 +81,7 @@ export interface IMemoryModule {
   /**
    * Get history for prompt injection
    */
-  getHistoryForPrompt(): import('llm-api-client').Message[];
+  getHistoryForPrompt(): Message[];
 
   // ==================== Workspace Context Management ====================
 

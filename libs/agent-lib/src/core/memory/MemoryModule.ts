@@ -9,6 +9,7 @@
  */
 
 import { injectable, inject, optional } from 'inversify';
+<<<<<<< HEAD
 import type { Message } from './types.js';
 import { WorkspaceContextEntry } from './types.js';
 import type { IMemoryModule, MemoryModuleConfig } from './types.js';

@@ -1,5 +1,5 @@
 import { MemoryModule, defaultMemoryConfig } from '../MemoryModule';
-import { ApiMessage, MessageBuilder } from '../types';
+import { Message, MessageBuilder } from '../types';
 import { Logger } from 'pino';
 import { vi } from 'vitest';
 
@@ -14,7 +14,7 @@ const mockLogger: Logger = {
   child: vi.fn(() => mockLogger as any),
 } as any;
 
-function getText(content: ApiMessage['content']): string {
+function getText(content: Message['content']): string {
   if (typeof content === 'string') return content;
   if (Array.isArray(content)) {
     return content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('');

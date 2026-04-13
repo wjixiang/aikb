@@ -22,6 +22,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, List
+
 import dxpy
 import pandas as pd
 from dxpy import DXRecord
@@ -831,6 +832,38 @@ class DXClient(IDXClient):
     #  Cohort 操作
     # ═══════════════════════════════════════════════════════════════════════
 
+    @staticmethod
+    def _wrap_cohort_filters(filters: dict[str, Any]) -> dict[str, Any]:
+        """将扁平的 entity$field 筛选条件包裹为 vizserver 要求的 pheno_filters 结构。
+
+        vizserver ``raw-cohort-query`` 端点要求 filters 格式::
+
+            {"pheno_filters": {"compound": [...], "logic": "and"}}
+
+        LLM / 调用方通常提供扁平格式::
+
+            {"participant$p131286": [{"condition": "exists", "values": []}]}
+
+        本方法自动检测并转换：若已包含 ``pheno_filters`` 键则原样返回，
+        否则包裹为 ``compound`` 结构。
+        """
+        if not filters:
+            return filters
+        if "pheno_filters" in filters:
+            return filters
+        return {
+            "pheno_filters": {
+                "compound": [
+                    {
+                        "name": "phenotype",
+                        "logic": "and",
+                        "filters": filters,
+                    }
+                ],
+                "logic": "and",
+            }
+        }
+
     def create_cohort(
         self,
         name: str,
@@ -847,7 +880,6 @@ class DXClient(IDXClient):
         self._ensure_connected()
         project_id = self._require_project()
 
-        # 1. 解析 dataset 引用
         if dataset_ref is None:
             _, dataset_ref = self.find_dataset()
 
@@ -855,7 +887,6 @@ class DXClient(IDXClient):
         dataset_record_id = parts[-1]
         dataset_project = parts[0] if len(parts) > 1 else project_id
 
-        # 2. 获取 vizserver 信息
         viz_info = cohort_mod.get_visualize_info(dataset_record_id, dataset_project)
         base_sql = viz_info.get("baseSql") or viz_info.get("base_sql")
 
@@ -870,7 +901,6 @@ class DXClient(IDXClient):
         if base_sql is not None:
             filter_payload["base_sql"] = base_sql
 
-        # 4. 生成 SQL
         sql = cohort_mod.generate_cohort_sql(viz_info, filter_payload)
 
         # 5. 创建 cohort record（details.filters 保存完整结构供 UI 使用）
@@ -1027,6 +1057,146 @@ class DXClient(IDXClient):
             raise
         # Return updated cohort info
         return self.get_cohort(cohort_id, refresh=True)
+
+    def extract_cohort_fields(
+        self,
+        cohort_id: str,
+        entity_fields: list[str],
+        *,
+        refresh: bool = False,
+    ) -> pd.DataFrame:
+        """提取 cohort 内参与者的指定字段数据。
+
+        通过 ``dx extract_dataset <cohort_ref> --fields ...`` 实现。
+        """
+        self._ensure_connected()
+        project_id = self._require_project()
+
+        if not entity_fields:
+            return pd.DataFrame()
+
+        cohort_ref = f"{project_id}:{cohort_id}"
+        env = self._make_subprocess_env()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "cohort_extract.csv"
+            fields_arg = ",".join(entity_fields)
+            cmd = [
+                "dx",
+                "extract_dataset",
+                cohort_ref,
+                "--fields",
+                fields_arg,
+                "--delimiter",
+                ",",
+                "--output",
+                str(output_path),
+            ]
+            logger.info("Running: %s", " ".join(cmd))
+            try:
+                subprocess.run(
+                    cmd,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    env=env,
+                )
+            except subprocess.CalledProcessError as e:
+                raise DXAPIError(
+                    f"dx extract_dataset (cohort) failed: {e.stderr}",
+                    status_code=e.returncode,
+                    dx_error=e,
+                ) from e
+
+            if not output_path.exists():
+                return pd.DataFrame()
+
+            df = pd.read_csv(output_path)
+            logger.info(
+                "Extracted %d rows, %d fields from cohort '%s'",
+                len(df),
+                len(entity_fields),
+                cohort_id,
+            )
+            return df
+
+    def download_cohort(
+        self,
+        cohort_id: str,
+        *,
+        refresh: bool = False,
+    ) -> pd.DataFrame:
+        """下载 cohort 的所有关联字段数据。
+
+        从 cohort record 的 ``details.fields`` 中读取字段列表，通过 vizserver API 提取数据。
+        不使用 CLI subprocess，避免大量字段时超过 OS 参数长度限制。
+        """
+        from . import cohort as cohort_mod
+
+        self._ensure_connected()
+        project_id = self._require_project()
+
+        # 从 cohort record 读取 details.fields
+        try:
+            desc: dict[str, Any] = dxpy.describe(  # type: ignore[assignment]
+                cohort_id,
+                fields={"properties", "details"},
+                default_fields=True,
+            )
+        except Exception as e:
+            raise DXCohortError(
+                f"Failed to describe cohort '{cohort_id}': {e}",
+                dx_error=e,
+            ) from e
+
+        details: dict[str, Any] = desc.get("details") or {}
+        entity_fields: list[str] = details.get("fields", [])
+        entity_fields = convert_fields(entity_fields)
+
+        if not entity_fields:
+            raise DXCohortError(
+                f"Cohort '{cohort_id}' has no associated fields in details.fields.",
+            )
+
+        try:
+            viz_info = cohort_mod.get_visualize_info(cohort_id, project_id)
+        except Exception as e:
+            raise DXCohortError(
+                f"Failed to get visualize info for cohort '{cohort_id}': {e}",
+                dx_error=e,
+            ) from e
+
+        payload: dict[str, Any] = {
+            "project_context": project_id,
+            "fields": [{f: f.replace(".", "$", 1)} for f in entity_fields],
+        }
+        if viz_info.get("baseSql"):
+            payload["base_sql"] = viz_info["baseSql"]
+        if viz_info.get("filters"):
+            payload["filters"] = viz_info["filters"]
+
+        resource = viz_info["url"] + "/data/3.0/" + viz_info["dataset"] + "/raw"
+        try:
+            resp = dxpy.DXHTTPRequest(
+                resource=resource,
+                data=payload,
+                prepend_srv=False,
+            )
+        except Exception as e:
+            raise DXCohortError(
+                f"Failed to query cohort data: {e}",
+                dx_error=e,
+            ) from e
+
+        results = resp.get("results", [])
+        df = pd.DataFrame(results)
+        logger.info(
+            "Downloaded %d rows, %d fields from cohort '%s'",
+            len(df),
+            len(entity_fields),
+            cohort_id,
+        )
+        return df
 
     def get_cohort_viz_info(
         self,
@@ -1358,16 +1528,3 @@ def convert_fields(fields: List[str]) -> List[str]:
     # Convert to lowercase
     r3 = [i.lower() for i in r2]
     return r3
-
-
-def upload_sql_file(sqlstr: str, fileName: str):
-    dxfile = dxpy.upload_string(sqlstr, media_type="text/plain", name=fileName + ".sql")
-    return dxfile
-
-
-def run_spark_sql(sql_file_id: str):
-    result = subprocess.run(
-        ["dx", "run", "spark-sql-runner", "-i", f"sqlfile={sql_file_id}"]
-    )
-    return result
-    pass

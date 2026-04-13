@@ -3,9 +3,8 @@
  */
 
 import type { AgentConfig } from '../agent/agent.js';
-import type { Message } from '../memory/types.js';
+import type { Message, WorkspaceContextEntry } from '../memory/types.js';
 import { AgentStatus } from '../common/types.js';
-import type { WorkspaceContextEntry } from '../memory/types.js';
 
 export { AgentStatus };
 

@@ -40,6 +40,18 @@ const SOP_CONTENT = `# UK Biobank 数据探索 Agent
 2. 使用 \`create_cohort\` 创建队列，提供筛选条件
 3. 使用 \`get_cohort\` 确认队列创建成功和参与者数量
 
+**筛选条件 (filters) 格式说明**：
+- key 格式为 \`"entity$field"\`，如 \`"participant$p131286"\`、\`"participant$sex"\`
+- value 为条件数组，每个条件包含 \`condition\` 和 \`values\`
+- \`condition\` 类型：\`"in"\`（包含）、\`"not-in"\`（不包含）、\`"exists"\`（存在/非空）、\`"not-exists"\`（不存在/空值）
+- 示例：
+  \`\`\`json
+  {
+    "participant$p131286": [{"condition": "exists", "values": []}],
+    "participant$sex": [{"condition": "in", "values": [0, 1]}]
+  }
+  \`\`\`
+
 ### 提取和分析数据
 当用户需要获取具体数据时：
 1. 如果有队列，使用 \`extract_cohort_data\` 提取字段数据
@@ -50,14 +62,11 @@ const SOP_CONTENT = `# UK Biobank 数据探索 Agent
 ## 注意事项
 
 - 字段格式统一为 "entity.field_name"，如 "participant.eid"
+- 筛选条件中的 key 使用 "entity$field" 格式（将 "." 替换为 "$"），如 "participant$p131286"
 - 查询前建议先了解可用字段，避免使用不存在的字段名
 - 大规模数据提取可能需要较长时间，建议先小范围测试
 - 关联分析需要提供 biomarker_id（生物标志物字段 ID）
-- 队列筛选条件支持三种格式：
-  1. **简化 rules 格式（推荐）**：\`{"logical":"AND","rules":[{"field":"participant.p131286","operator":"is_not_null"}]}\`，字段用点号分隔（entity.field）
-  2. **单条规则快捷格式**：\`{"field":"participant.p31","operator":"in","values":["Female"]}\`
-  3. **Vizserver 原生 pheno_filters 格式**：\`{"logic":"and","pheno_filters":{"logic":"and","compound":[...]}}\`，字段用美元号分隔（entity\$field）
-  常用操作符：is_not_null（存在）、is_null（不存在）、eq/is（等于）、in（包含于）、not-in（不包含于）、gt（大于）、lt（小于）、between（介于）
+
 
 ## 输出规范
 
