@@ -1188,9 +1188,15 @@ export class Agent {
           '[Agent] Tool result content',
         );
 
+        const isResultSuccess = !(
+          result !== null &&
+          typeof result === 'object' &&
+          'error' in result
+        );
+
         const toolResult: ToolExecutionResult = {
           toolName: toolCall.name,
-          success: true,
+          success: isResultSuccess,
           result,
           timestamp: Date.now(),
           componentKey,
