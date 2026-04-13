@@ -12,8 +12,9 @@ export const CreateCohortToolDef: ToolDef = {
       .describe(
         '筛选条件，使用 vizserver pheno_filters 格式。' +
         '【重要】所有字段名必须使用 "entity.field_name" 格式（如 "participant.p31"、"olink_instance_0.p131286"），禁止使用裸字段名（如 "p31"）。' +
-        '示例：{"logic":"and","pheno_filters":{"logic":"and","compound":[{"name":"phenotype","logic":"and","filters":{"participant.p131286":[{"condition":"exists","values":[]}]}}]}}。' +
-        '也支持简化格式：{"logical":"AND","rules":[{"field":"participant.p131286","operator":"is_not_null"}]}，系统会自动转换为 vizserver 格式。',
+        '【重要】"exists"/"not-exists" 条件仅适用于稀疏字段（sparse fields，如 olink 蛋白质组数据），对普通字段（如 participant.p31）会导致 422 错误。普通字段请使用 "is"/"is-not"/"in"/"greater-than" 等条件。' +
+        '示例：{"logic":"and","pheno_filters":{"logic":"and","compound":[{"name":"phenotype","logic":"and","filters":{"participant.p31":[{"condition":"is","values":"Female"}]},{"name":"phenotype","logic":"and","filters":{"olink_instance_0.p131286":[{"condition":"exists","values":[]}]}}]}}。' +
+        '也支持简化格式：{"logical":"AND","rules":[{"field":"participant.p31","operator":"eq","value":"Female"},{"field":"olink_instance_0.p131286","operator":"is_not_null"}]}，系统会自动转换为 vizserver 格式。',
       ),
     description: z
       .string()
