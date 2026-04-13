@@ -7,8 +7,7 @@
 
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { Tool } from '../../components/core/types.js';
-<<<<<<< HEAD
-
+import type { Message } from '../memory/types.js';
 
 // =============================================================================
 // Hook Categories (Enum)

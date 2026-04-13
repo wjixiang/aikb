@@ -6,7 +6,7 @@
  */
 
 // Re-export unified types from llm-api-client
-export type {
+import type {
   Message,
   MessageRole,
   ContentBlock,
@@ -17,6 +17,18 @@ export type {
   ThinkingBlock,
   MessageAddedCallback,
 } from 'llm-api-client';
+
+export type {
+  Message,
+  MessageRole,
+  ContentBlock,
+  TextContentBlock,
+  ToolUseBlock,
+  ToolResultBlock,
+  ImageContentBlock,
+  ThinkingBlock,
+  MessageAddedCallback,
+};
 export { MessageBuilder } from 'llm-api-client';
 
 // Backward-compatible aliases (deprecated)
