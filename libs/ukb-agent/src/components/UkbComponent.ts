@@ -103,17 +103,25 @@ export class UkbComponent extends ToolComponent<UkbState> {
 - 执行生物标志物与结局的关联分析
 - 导出数据为 CSV 或 Parquet 格式
 
-字段格式为 "entity.field_name"，例如 "participant.eid"（参与者ID）、"participant.p31"（性别）。
+【字段名格式】所有字段名必须使用 "entity.field_name" 格式。
+- 正确："participant.eid"、"participant.p31"、"olink_instance_0.p131286"
+- 错误："eid"、"p31"、"p131286"（缺少 entity 前缀，会导致 422 错误）
 
-【重要】字段字典搜索（query_field_dict）请发送原始关键词，不要写 SQL！
-- 正确示例：condition: "olink"
-- 正确示例：condition: "blood pressure"
-- 正确示例：condition: "diabetes protein"
-- 错误示例：condition: "name LIKE '%olink%'"（不要这样写！）
+【筛选条件】创建队列时，必须根据字段的数据类型（type）选择正确的 condition：
+- 数值型（integer/double）：is, in, greater-than, less-than, between
+- 字符串型（string）：is, in, contains
+- 日期型（date）：is, in（不支持 greater-than/less-than/between）
+- 多选/层级型（multi/hierarchical）：any, all（不支持 is/in）
+- 稀疏型（sparse）：is, in（不支持 exists/not-exists）
+- 禁止使用 exists / not-exists 条件（在所有字段类型上均不支持）
+
+【字段字典搜索（query_field_dict）】请发送原始关键词，不要写 SQL！
+- 正确：condition: "olink"
+- 错误：condition: "name LIKE '%olink%'"
 
 【重要】每次操作数据库前，必须先调用 list_databases 获取当前有效的 database_id！
 旧的 database_id 已失效，必须使用 list_databases 返回的最新 ID。
-在查询前，建议先用 list_fields 或 list_field_dict 了解可用的字段。`;
+在查询前，建议先用 list_fields 或 list_field_dict 了解可用的字段及其数据类型。`;
 
   constructor(baseUrlOrClient?: string | UkbMcpClient) {
     super();
