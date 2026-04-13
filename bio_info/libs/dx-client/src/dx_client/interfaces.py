@@ -11,6 +11,7 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from .dx_models import (
+        CohortFilters,
         DXCohortInfo,
         DXDataObject,
         DXDatabaseClusterInfo,
@@ -284,7 +285,7 @@ class IDXClient(ABC):
     def create_cohort(
         self,
         name: str,
-        filters: dict[str, Any],
+        filters: CohortFilters | dict[str, Any],
         *,
         dataset_ref: str | None = None,
         folder: str = "/",
@@ -295,7 +296,7 @@ class IDXClient(ABC):
 
         Args:
             name: Cohort 名称。
-            filters: 原始 vizserver pheno_filters 结构，支持全部 26 种条件。
+            filters: 筛选条件，支持 VizPhenoFilters / RulesFilter / FilterRule。
             dataset_ref: 源数据集引用 (``"project-xxx:record-yyy"``)。
                 为 None 时自动调用 ``find_dataset()`` 查找。
             folder: 目标文件夹路径。

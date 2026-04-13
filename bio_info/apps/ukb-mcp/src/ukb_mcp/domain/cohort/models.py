@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from dx_client import CohortFilters
+
 
 class CohortCreateRequest(BaseModel):
     """创建队列请求。"""
 
     name: str = Field(description="队列名称。")
-    filters: dict = Field(description="原始 vizserver pheno_filters 结构。")
+    filters: CohortFilters = Field(
+        description="筛选条件，支持 VizPhenoFilters / RulesFilter / FilterRule。",
+    )
     dataset_ref: str | None = Field(default=None, description="Dataset 引用。")
     folder: str = Field(default="/", description="目标文件夹路径。")
     description: str = Field(default="", description="队列描述。")

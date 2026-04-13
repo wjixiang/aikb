@@ -14,7 +14,18 @@ from collections import OrderedDict
 from typing import Any
 
 import dxpy
+from pydantic import ValidationError
+
 from .dx_exceptions import DXCohortError
+from .dx_models import (
+    CohortFilters,
+    FilterRule,
+    RulesFilter,
+    VizCompoundFilterEntry,
+    VizFilterCondition,
+    VizPhenoFilters,
+    VizPhenoFiltersInner,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,59 +55,24 @@ _OP_TO_CONDITION: dict[str, str] = {
 }
 
 
-def _rule_to_vizserver_filter(rule: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    """将单条 rule 转为 vizserver filters dict。
-
-    ``{"field": "participant.p131286", "operator": "is_not_null"}``
-    → ``{"participant$p131286": [{"condition": "exists", "values": []}]}``
-
-    兼容 ``operator`` / ``type`` 两种键名。
-    """
-    field = rule["field"].replace(".", "$")
-    operator = rule.get("operator") or rule.get("type") or "is"
+def _rule_to_vizserver_filter(rule: FilterRule) -> dict[str, list[VizFilterCondition]]:
+    """将单条 FilterRule 转为 vizserver filters dict。"""
+    field = rule.field.replace(".", "$")
+    operator = rule.operator or rule.type or "is"
     condition = _OP_TO_CONDITION.get(operator, operator)
-    values = rule.get("value") or rule.get("values") or []
+    values = rule.value if rule.value is not None else (rule.values or [])
 
-    return {field: [{"condition": condition, "values": values}]}
-
-
-def _is_rules_format(filters: dict[str, Any]) -> bool:
-    """检测是否为 rules-based 格式（含 ``rules`` 列表）。
-
-    兼容 ``logical`` / ``logic`` 两种键名。
-    """
-    return "rules" in filters and isinstance(filters["rules"], list)
+    return {field: [VizFilterCondition(condition=condition, values=values)]}
 
 
-def _build_vizserver_pheno_filters(
-    logic: str,
-    merged_filters: dict[str, list[dict[str, Any]]],
-) -> dict[str, Any]:
-    """将 logic + 合并后的 filters 包装为完整 vizserver 格式。"""
-    return {
-        "logic": logic,
-        "pheno_filters": {
-            "logic": logic,
-            "compound": [
-                {
-                    "name": "phenotype",
-                    "logic": logic,
-                    "filters": merged_filters,
-                }
-            ],
-        },
-    }
-
-
-def _merge_rules(rules: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+def _merge_rules(rules: list[FilterRule | RulesFilter]) -> dict[str, list[VizFilterCondition]]:
     """将 rules 列表合并为 vizserver filters dict。"""
-    merged: dict[str, list[dict[str, Any]]] = {}
+    merged: dict[str, list[VizFilterCondition]] = {}
     for rule in rules:
-        if "rules" in rule:
-            # 嵌套 group：递归合并
-            nested = normalize_cohort_filters(rule)
-            for item in nested.get("pheno_filters", {}).get("compound", []):
-                for fk, fv in item.get("filters", {}).items():
+        if isinstance(rule, RulesFilter):
+            nested = _normalize_rules_filter(rule)
+            for item in nested.pheno_filters.compound:
+                for fk, fv in item.filters.items():
                     merged.setdefault(fk, []).extend(fv)
         else:
             for k, v in _rule_to_vizserver_filter(rule).items():
@@ -104,48 +80,89 @@ def _merge_rules(rules: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]
     return merged
 
 
-def normalize_cohort_filters(filters: dict[str, Any]) -> dict[str, Any]:
+def _normalize_rules_filter(filters: RulesFilter) -> VizPhenoFilters:
+    """将 RulesFilter 转换为 VizPhenoFilters。"""
+    logic = (filters.logical or filters.logic or "and").lower()
+    merged = _merge_rules(filters.rules)
+    return VizPhenoFilters(
+        logic=logic,
+        pheno_filters=VizPhenoFiltersInner(
+            logic=logic,
+            compound=[
+                VizCompoundFilterEntry(
+                    name="phenotype",
+                    logic=logic,
+                    filters=merged,
+                )
+            ],
+        ),
+    )
+
+
+def normalize_cohort_filters(filters: CohortFilters | dict[str, Any]) -> VizPhenoFilters:
     """将常见筛选条件格式规范化为 vizserver pheno_filters 格式。
 
-    如果输入已经是合法的 vizserver 格式（包含 ``logic`` + ``pheno_filters``），
-    直接原样返回。否则尝试将 ``logical``/``rules`` / ``logic``/``rules`` 等常见格式转换。
+    接受三种输入格式：
+
+    1. **VizPhenoFilters** — vizserver 原生格式，直接返回。
+    2. **RulesFilter** — LLM 常用的 logical/rules 格式，自动转换。
+    3. **FilterRule** — 单条规则快捷格式，包装为 AND 逻辑。
+
+    也接受原始 dict，会尝试自动识别格式并转换。
 
     Args:
-        filters: 原始筛选条件 dict。
+        filters: 筛选条件，支持 ``CohortFilters`` 联合类型或原始 dict。
 
     Returns:
-        符合 vizserver 要求的 pheno_filters dict。
+        ``VizPhenoFilters`` 实例。
+
+    Raises:
+        DXCohortError: 输入格式无法识别或校验失败。
     """
-    # 已经是 vizserver 格式
-    if "pheno_filters" in filters:
+    # dict 输入：先尝试解析为 typed model
+    if isinstance(filters, dict):
+        # 已经是 vizserver 格式
+        if "pheno_filters" in filters:
+            try:
+                return VizPhenoFilters.model_validate(filters)
+            except ValidationError as e:
+                raise DXCohortError(
+                    f"Invalid vizserver pheno_filters format: {e}",
+                ) from e
+
+        # 尝试解析为 RulesFilter 或 FilterRule
+        try:
+            if "rules" in filters:
+                parsed = RulesFilter.model_validate(filters)
+                return _normalize_rules_filter(parsed)
+            elif "field" in filters:
+                parsed = FilterRule.model_validate(filters)
+                return _normalize_rules_filter(
+                    RulesFilter(logic="and", rules=[parsed])
+                )
+        except ValidationError as e:
+            raise DXCohortError(
+                f"Invalid filter format: {e}",
+            ) from e
+
+        raise DXCohortError(
+            f"Unknown filter format: {filters}. "
+            "Expected VizPhenoFilters, RulesFilter, or FilterRule.",
+        )
+
+    # typed model 输入
+    if isinstance(filters, VizPhenoFilters):
         return filters
 
-    # rules 格式（LLM 常见输出，兼容 logical / logic 两种键名）
-    if _is_rules_format(filters):
-        logic = (filters.get("logical") or filters.get("logic") or "and").lower()
-        merged = _merge_rules(filters["rules"])
-        return _build_vizserver_pheno_filters(logic, merged)
+    if isinstance(filters, RulesFilter):
+        return _normalize_rules_filter(filters)
 
-    # 单条 rule dict（无 logical/rules 包装）
-    if "field" in filters:
-        field_filters = _rule_to_vizserver_filter(filters)
-        return {
-            "logic": "and",
-            "pheno_filters": {
-                "logic": "and",
-                "compound": [
-                    {
-                        "name": "phenotype",
-                        "logic": "and",
-                        "filters": field_filters,
-                    }
-                ],
-            },
-        }
+    if isinstance(filters, FilterRule):
+        return _normalize_rules_filter(
+            RulesFilter(logic="and", rules=[filters])
+        )
 
-    # 无法识别的格式，原样返回（让 vizserver 报错）
-    logger.warning("Unknown filter format, passing through as-is: %s", filters)
-    return filters
+    raise DXCohortError(f"Unsupported filter type: {type(filters).__name__}")
 
 
 # ── Vizserver 交互 ──────────────────────────────────────────────────────

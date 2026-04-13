@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dx_client import DXCohortInfo, DXRecordInfo, IDXClient
+from dx_client import CohortFilters, DXCohortInfo, DXRecordInfo, IDXClient
 
 
 class CohortService:
@@ -39,7 +39,7 @@ class CohortService:
     def create_cohort(
         self,
         name: str,
-        filters: dict,
+        filters: CohortFilters,
         *,
         dataset_ref: str | None = None,
         folder: str = "/",

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -269,22 +269,99 @@ class VizFieldMapping(BaseModel):
 
 
 class VizFilterCondition(BaseModel):
-    """Vizserver 单个过滤条件。"""
+    """Vizserver 叶级过滤条件。"""
 
-    condition: str = Field(description="条件类型：in、is、greater-than、between 等")
-    values: list[Any] = Field(default_factory=list, description="条件值列表")
+    model_config = ConfigDict(populate_by_name=True)
 
-
-class VizPhenofilterGroup(BaseModel):
-    """pheno_filters 中的单个 filter 条目。"""
-
-    model_config = ConfigDict(extra="allow")
+    condition: str = Field(
+        description="条件类型：exists, is, in, not-in, greater-than, less-than, between 等",
+    )
+    values: list[Any] | Any = Field(default_factory=list, description="条件值或值列表")
 
 
-class VizPhenofilters(BaseModel):
-    """Vizserver pheno_filters 结构（cohort 过滤）。"""
+class VizCompoundFilterEntry(BaseModel):
+    """pheno_filters.compound 中的单条条目。"""
 
-    pheno_filters: dict[str, Any] = Field(default_factory=dict)
+    name: str = Field(description="分组名称，通常为 \"phenotype\"")
+    logic: Literal["and", "or"] = Field(description="组内逻辑组合")
+    filters: dict[str, list[VizFilterCondition]] = Field(
+        description="字段过滤条件，key 为 \"entity$field\" 格式",
+    )
+
+
+class VizPhenoFiltersInner(BaseModel):
+    """pheno_filters 内层结构。"""
+
+    logic: Literal["and", "or"]
+    compound: list[VizCompoundFilterEntry]
+
+
+class VizPhenoFilters(BaseModel):
+    """Vizserver 原生 cohort filter 格式。
+
+    示例::
+
+        {
+            "logic": "and",
+            "pheno_filters": {
+                "logic": "and",
+                "compound": [{
+                    "name": "phenotype",
+                    "logic": "and",
+                    "filters": {
+                        "participant$p131286": [{"condition": "exists", "values": []}]
+                    }
+                }]
+            }
+        }
+    """
+
+    logic: Literal["and", "or"]
+    pheno_filters: VizPhenoFiltersInner
+
+
+# ── LLM-friendly filter formats ─────────────────────────────────────────────
+
+
+class FilterRule(BaseModel):
+    """单条筛选规则（LLM 常用格式）。
+
+    兼容 ``operator`` / ``type`` 两种键名表示条件操作符。
+    """
+
+    field: str = Field(description="字段名，\"entity.field_name\" 格式")
+    operator: str = Field(default="is", description="操作符：is_not_null, eq, gt, in 等")
+    type: str | None = Field(default=None, description="操作符别名（与 operator 二选一）")
+    value: Any = Field(default=None, description="条件值（单值）")
+    values: list[Any] | None = Field(default=None, description="条件值（列表）")
+
+
+class RulesFilter(BaseModel):
+    """LLM 常用的 logical/rules 格式。
+
+    支持 ``logic`` / ``logical`` 两种键名，大小写不敏感。
+    ``rules`` 支持嵌套（子 group 同样为 RulesFilter）。
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    logic: Literal["and", "or", "AND", "OR"] | None = None
+    logical: Literal["and", "or", "AND", "OR"] | None = None
+    rules: list[Union[FilterRule, "RulesFilter"]] = Field(
+        description="筛选规则列表，支持嵌套 RulesFilter",
+    )
+
+
+CohortFilters = Union[VizPhenoFilters, RulesFilter, FilterRule]
+"""Cohort 筛选条件联合类型。
+
+支持三种输入格式：
+- ``VizPhenoFilters`` — vizserver 原生格式
+- ``RulesFilter`` — LLM 常用的 logical/rules 格式
+- ``FilterRule`` — 单条规则快捷格式
+"""
+
+RulesFilter.model_rebuild()
 
 
 class VizRawDataPayload(BaseModel):
@@ -301,7 +378,7 @@ class VizRawDataPayload(BaseModel):
         None, description="排序，如 [{'column': 'asc'}]"
     )
     base_sql: str | None = Field(None, description="Dataset base SQL")
-    filters: VizPhenofilters | None = Field(None, description="pheno_filters 结构")
+    filters: VizPhenoFilters | None = Field(None, description="pheno_filters 结构")
     raw_filters: dict[str, Any] | None = Field(
         None, description="assay_filters 结构（变异/表达）"
     )
@@ -315,7 +392,7 @@ class VizQueryPayload(BaseModel):
     fields: list[VizFieldMapping] = Field(default_factory=list)
     return_query: bool = Field(True, description="固定为 True，返回 SQL")
     base_sql: str | None = Field(None)
-    filters: VizPhenofilters | None = Field(None)
+    filters: VizPhenoFilters | None = Field(None)
     raw_filters: dict[str, Any] | None = Field(None)
     order_by: list[dict[str, str]] | None = Field(None)
 
@@ -324,7 +401,7 @@ class VizCohortQueryPayload(BaseModel):
     """``/viz-query/3.0/{dataset}/raw-cohort-query`` 请求体。"""
 
     project_context: str = Field(description="项目 ID")
-    filters: VizPhenofilters | None = Field(None)
+    filters: VizPhenoFilters | None = Field(None)
     base_sql: str | None = Field(None)
     fields: list[VizFieldMapping] | None = Field(None)
 

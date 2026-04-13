@@ -16,13 +16,20 @@ from .cohort import (
     build_cohort_record_payload,
     create_cohort_record,
     generate_cohort_sql,
+    normalize_cohort_filters,
 )
 from .dx_exceptions import (
     DXAPIError,
     DXFileNotFoundError,
     translate_dx_error,
 )
-from .dx_models import DXCohortInfo, DXRecordInfo, VizFieldMapping, VizRawDataPayload
+from .dx_models import (
+    CohortFilters,
+    DXCohortInfo,
+    DXRecordInfo,
+    VizFieldMapping,
+    VizRawDataPayload,
+)
 from .vizserver import IVizserverClient
 
 logger = logging.getLogger(__name__)
@@ -81,7 +88,7 @@ class ICohortService(ABC):
         self,
         project_id: str,
         name: str,
-        filters: dict[str, Any],
+        filters: CohortFilters | dict[str, Any],
         *,
         dataset_ref: str | None = None,
         folder: str = "/",
@@ -238,7 +245,7 @@ class CohortService(ICohortService):
         self,
         project_id: str,
         name: str,
-        filters: dict[str, Any],
+        filters: CohortFilters | dict[str, Any],
         *,
         dataset_ref: str | None = None,
         folder: str = "/",
@@ -260,9 +267,11 @@ class CohortService(ICohortService):
         )
         base_sql = viz_info.get("baseSql") or viz_info.get("base_sql")
 
-        # 3. 构建 filter payload
+        # 3. 规范化 filters 并构建 payload
+        normalized = normalize_cohort_filters(filters)
+        filters_dict = normalized.model_dump()
         filter_payload: dict[str, Any] = {
-            "filters": filters,
+            "filters": filters_dict,
             "project_context": dataset_project,
         }
         if base_sql is not None:

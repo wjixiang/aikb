@@ -22,8 +22,6 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, List
-
-from duckdb import project
 import dxpy
 import pandas as pd
 from dxpy import DXRecord
@@ -41,6 +39,7 @@ from .dx_exceptions import (
     DXJobError,
 )
 from .dx_models import (
+    CohortFilters,
     DXClientConfig,
     DXCohortInfo,
     DXDatabaseClusterInfo,
@@ -835,7 +834,7 @@ class DXClient(IDXClient):
     def create_cohort(
         self,
         name: str,
-        filters: dict[str, Any],
+        filters: CohortFilters | dict[str, Any],
         *,
         dataset_ref: str | None = None,
         folder: str = "/",
@@ -861,9 +860,10 @@ class DXClient(IDXClient):
         base_sql = viz_info.get("baseSql") or viz_info.get("base_sql")
 
         # 3. 规范化 filters 并构建 payload
-        filters = cohort_mod.normalize_cohort_filters(filters)
+        normalized = cohort_mod.normalize_cohort_filters(filters)
+        filters_dict = normalized.model_dump()
         filter_payload: dict[str, Any] = {
-            "filters": filters,
+            "filters": filters_dict,
             "project_context": dataset_project,
         }
         if base_sql is not None:
@@ -878,7 +878,7 @@ class DXClient(IDXClient):
             folder=folder,
             project=project_id,
             viz_info=viz_info,
-            filters=filter_payload["filters"],
+            filters=filters_dict,
             sql=sql,
             description=description,
             entity_fields=entity_fields,
