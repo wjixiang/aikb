@@ -15,10 +15,23 @@ export interface SharedLoggerOptions {
 
 let rootLogger: pino.Logger | undefined;
 let pgPool: pg.Pool | undefined;
+let initPromise: Promise<unknown> | undefined;
 
 const { Pool } = pg;
 
-export function initLogger(options?: SharedLoggerOptions, verbose?: boolean): pino.Logger {
+async function ensureLogTable(pool: pg.Pool, tableName: string): Promise<void> {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ${tableName} (
+      time timestamp NOT NULL,
+      level varchar NOT NULL,
+      module varchar DEFAULT '',
+      msg text,
+      extra jsonb
+    )
+  `);
+}
+
+export async function initLogger(options?: SharedLoggerOptions, verbose?: boolean): Promise<pino.Logger> {
   let level: string | undefined;
   let name = 'app';
   let enablePretty = true;
@@ -38,6 +51,7 @@ export function initLogger(options?: SharedLoggerOptions, verbose?: boolean): pi
 
   if (pgConnection) {
     pgPool = new Pool({ connectionString: pgConnection });
+    await ensureLogTable(pgPool, pgTable);
   }
 
   if (enablePretty && pgConnection) {
@@ -131,14 +145,38 @@ function createPgStream(tableName: string): Writable {
   });
 }
 
+const noopLogger = pino({ name: 'noop', level: 'silent' });
+const pendingLogs: Array<{ level: string; msg: string; args: unknown[] }> = [];
+
+function flushPendingLogs(logger: pino.Logger) {
+  for (const { level, msg, args } of pendingLogs) {
+    (logger as pino.Logger & Record<string, (...args: unknown[]) => void>)[level](msg, ...args.slice(1));
+  }
+  pendingLogs.length = 0;
+}
+
 export function getLogger(name?: string): pino.Logger {
   if (!rootLogger) {
-    initLogger();
+    if (!initPromise) {
+      initPromise = initLogger().then((logger) => {
+        rootLogger = logger;
+        flushPendingLogs(logger);
+      }).finally(() => {
+        initPromise = undefined;
+      });
+    }
+    const proxy = Object.create(noopLogger);
+    proxy.info = (...args: unknown[]) => { pendingLogs.push({ level: 'info', msg: String(args[0]), args }); };
+    proxy.error = (...args: unknown[]) => { pendingLogs.push({ level: 'error', msg: String(args[0]), args }); };
+    proxy.warn = (...args: unknown[]) => { pendingLogs.push({ level: 'warn', msg: String(args[0]), args }); };
+    proxy.debug = (...args: unknown[]) => { pendingLogs.push({ level: 'debug', msg: String(args[0]), args }); };
+    proxy.trace = (...args: unknown[]) => { pendingLogs.push({ level: 'trace', msg: String(args[0]), args }); };
+    return proxy as pino.Logger;
   }
   if (name) {
-    return rootLogger!.child({ module: name });
+    return rootLogger.child({ module: name });
   }
-  return rootLogger!;
+  return rootLogger;
 }
 
 export function createChildLogger(parent: pino.Logger, bindings: Record<string, unknown>): pino.Logger {
