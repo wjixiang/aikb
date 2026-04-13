@@ -102,25 +102,21 @@ class ICohortService(ABC):
         """删除 cohort record。"""
 
     @abstractmethod
-    def extract_cohort_fields(
+    def preview_cohort_data(
         self,
         project_id: str,
         cohort_id: str,
-        entity_fields: list[str],
+        entity_fields: list[str] | None = None,
         *,
+        limit: int = 100,
         refresh: bool = False,
     ) -> pd.DataFrame:
-        """提取 cohort 内参与者的指定字段数据。"""
+        """预览 cohort 数据。
 
-    @abstractmethod
-    def download_cohort(
-        self,
-        project_id: str,
-        cohort_id: str,
-        *,
-        refresh: bool = False,
-    ) -> pd.DataFrame:
-        """下载 cohort 的所有关联字段数据。"""
+        通过 vizserver /data/3.0/raw 端点查询。
+        ``entity_fields`` 为 None 时从 cohort record ``details.fields``
+        读取全部关联字段。
+        """
 
 
 class CohortService(ICohortService):
@@ -263,7 +259,8 @@ class CohortService(ICohortService):
 
         # 2. 获取 vizserver 信息
         viz_info = self._vizserver.get_visualize_info(
-            dataset_record_id, dataset_project,
+            dataset_record_id,
+            dataset_project,
         )
         base_sql = viz_info.get("baseSql") or viz_info.get("base_sql")
 
@@ -295,7 +292,9 @@ class CohortService(ICohortService):
 
         logger.info(
             "Created cohort '%s' (%s) in project '%s'",
-            name, cohort_id, project_id,
+            name,
+            cohort_id,
+            project_id,
         )
 
         return DXCohortInfo(
@@ -327,18 +326,41 @@ class CohortService(ICohortService):
             self._handle_dx_error(e, f"Failed to delete cohort '{cohort_id}'")
             raise
 
-    def extract_cohort_fields(
+    def preview_cohort_data(
         self,
         project_id: str,
         cohort_id: str,
-        entity_fields: list[str],
+        entity_fields: list[str] | None = None,
         *,
+        limit: int = 100,
         refresh: bool = False,
     ) -> pd.DataFrame:
-        """提取 cohort 内参与者的指定字段数据（纯 SDK，无 CLI 依赖）。
+        """预览 cohort 数据（纯 SDK，无 CLI 依赖）。
 
         通过 vizserver /data/3.0/raw API 实现，附带 cohort 的 base_sql 和 filters。
+        ``entity_fields`` 为 None 时从 cohort record ``details.fields`` 读取全部字段。
         """
+        # 若未指定字段，从 record details 读取关联字段列表
+        if entity_fields is None:
+            try:
+                desc = dxpy.describe(  # type: ignore[assignment]
+                    cohort_id,
+                    fields={"details"},
+                    default_fields=True,
+                )
+            except Exception as e:
+                raise DXAPIError(
+                    f"Failed to describe cohort '{cohort_id}': {e}",
+                    dx_error=e,
+                ) from e
+
+            details = desc.get("details") or {}
+            entity_fields = details.get("fields", [])
+            if not entity_fields:
+                raise DXAPIError(
+                    f"Cohort '{cohort_id}' has no associated fields in details.fields.",
+                )
+
         if not entity_fields:
             return pd.DataFrame()
 
@@ -367,44 +389,11 @@ class CohortService(ICohortService):
             payload.filters = viz_info.filters
 
         df = self._vizserver.query_raw_data(viz_info, payload)
+        result = df.iloc[:limit] if len(df) > limit else df
         logger.info(
-            "Extracted %d rows, %d fields from cohort '%s'",
-            len(df),
+            "Previewed %d rows, %d fields from cohort '%s'",
+            len(result),
             len(entity_fields),
             cohort_id,
         )
-        return df
-
-    def download_cohort(
-        self,
-        project_id: str,
-        cohort_id: str,
-        *,
-        refresh: bool = False,
-    ) -> pd.DataFrame:
-        """下载 cohort 的所有关联字段数据。
-
-        从 cohort record 的 ``details.fields`` 中读取字段列表，然后提取对应数据。
-        """
-        try:
-            desc = dxpy.describe(  # type: ignore[assignment]
-                cohort_id,
-                fields={"details"},
-                default_fields=True,
-            )
-        except Exception as e:
-            raise DXAPIError(
-                f"Failed to describe cohort '{cohort_id}': {e}",
-                dx_error=e,
-            ) from e
-
-        details = desc.get("details") or {}
-        entity_fields = details.get("fields", [])
-        if not entity_fields:
-            raise DXAPIError(
-                f"Cohort '{cohort_id}' has no associated fields in details.fields.",
-            )
-
-        return self.extract_cohort_fields(
-            project_id, cohort_id, entity_fields, refresh=refresh,
-        )
+        return result

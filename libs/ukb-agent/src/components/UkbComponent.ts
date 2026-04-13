@@ -3,7 +3,7 @@ import { ToolComponent, type ToolDef } from 'agent-lib/components';
 import type { ToolCallResult, TUIElement } from 'agent-lib/components';
 import { UkbMcpClient } from '../client/UkbMcpClient.js';
 import type {
-  CohortCreateRequest,
+  CohortFilters,
   DatabaseQueryRequest,
   ExtractFieldsRequest,
   AssociationQuery,
@@ -310,9 +310,13 @@ export class UkbComponent extends ToolComponent<UkbState> {
     return result;
   }
 
-  async onCreate_cohort(
-    params: CohortCreateRequest,
-  ): Promise<ToolCallResult<unknown>> {
+  async onCreate_cohort(params: {
+    name: string;
+    filters: CohortFilters;
+    description?: string;
+    folder?: string;
+    entity_fields?: string[];
+  }): Promise<ToolCallResult<unknown>> {
     return handleCreateCohort(this.client, params);
   }
 

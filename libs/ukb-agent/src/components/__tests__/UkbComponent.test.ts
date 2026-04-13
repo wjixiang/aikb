@@ -55,7 +55,7 @@ describe('UkbComponent', () => {
 
   it('onCreate_cohort should return cohort info', async () => {
     mockClient.mock('createCohort').resolve(fixtures.cohortInfo.create());
-    const result = await component.onCreate_cohort({ name: 'Test', filters: {} });
+    const result = await component.onCreate_cohort({ name: 'Test', filters: { field: 'participant.eid', operator: 'is_not_null' } });
     expect(result.success).toBe(true);
     expect(result.summary).toContain('Test');
   });

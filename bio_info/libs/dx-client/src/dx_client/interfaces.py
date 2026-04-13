@@ -45,13 +45,19 @@ class IDXClient(ABC):
 
     @abstractmethod
     def list_projects(
-        self, name_pattern: str | None = None, *, refresh: bool = False,
+        self,
+        name_pattern: str | None = None,
+        *,
+        refresh: bool = False,
     ) -> list[DXProject]:
         """列出有权限访问的项目。"""
 
     @abstractmethod
     def get_project(
-        self, project_id: str, *, refresh: bool = False,
+        self,
+        project_id: str,
+        *,
+        refresh: bool = False,
     ) -> DXProject:
         """获取项目详情。"""
 
@@ -75,7 +81,10 @@ class IDXClient(ABC):
 
     @abstractmethod
     def describe_file(
-        self, file_id: str, *, refresh: bool = False,
+        self,
+        file_id: str,
+        *,
+        refresh: bool = False,
     ) -> DXFileInfo:
         """获取文件元数据。"""
 
@@ -98,7 +107,10 @@ class IDXClient(ABC):
 
     @abstractmethod
     def get_record(
-        self, record_id: str, *, refresh: bool = False,
+        self,
+        record_id: str,
+        *,
+        refresh: bool = False,
     ) -> DXRecordInfo:
         """获取记录详情（含 details 内容）。"""
 
@@ -130,13 +142,19 @@ class IDXClient(ABC):
 
     @abstractmethod
     def get_database(
-        self, database_id: str, *, refresh: bool = False,
+        self,
+        database_id: str,
+        *,
+        refresh: bool = False,
     ) -> DXDatabaseInfo:
         """获取 database 数据对象详情。"""
 
     @abstractmethod
     def find_database(
-        self, name_pattern: str | None = None, *, refresh: bool = False,
+        self,
+        name_pattern: str | None = None,
+        *,
+        refresh: bool = False,
     ) -> DXDatabaseInfo:
         """在当前项目中查找 database 数据对象。
 
@@ -153,7 +171,10 @@ class IDXClient(ABC):
 
     @abstractmethod
     def describe_database_cluster(
-        self, db_cluster_id: str, *, refresh: bool = False,
+        self,
+        db_cluster_id: str,
+        *,
+        refresh: bool = False,
     ) -> DXDatabaseClusterInfo:
         """获取数据库集群描述信息。
 
@@ -188,7 +209,10 @@ class IDXClient(ABC):
 
     @abstractmethod
     def find_dataset(
-        self, name_pattern: str = "app*.dataset", *, refresh: bool = False,
+        self,
+        name_pattern: str = "app*.dataset",
+        *,
+        refresh: bool = False,
     ) -> tuple[str, str]:
         """在当前项目中查找 UKB Dataset record.
 
@@ -202,7 +226,10 @@ class IDXClient(ABC):
 
     @abstractmethod
     def get_data_dictionary(
-        self, dataset_ref: str | None = None, *, refresh: bool = False,
+        self,
+        dataset_ref: str | None = None,
+        *,
+        refresh: bool = False,
     ) -> pd.DataFrame:
         """提取数据集的完整数据字典。
 
@@ -333,7 +360,10 @@ class IDXClient(ABC):
 
     @abstractmethod
     def get_cohort(
-        self, cohort_id: str, *, refresh: bool = False,
+        self,
+        cohort_id: str,
+        *,
+        refresh: bool = False,
     ) -> DXRecordInfo:
         """获取 cohort record 详情。
 
@@ -347,7 +377,10 @@ class IDXClient(ABC):
 
     @abstractmethod
     def find_cohort(
-        self, name_pattern: str | None = None, *, refresh: bool = False,
+        self,
+        name_pattern: str | None = None,
+        *,
+        refresh: bool = False,
     ) -> DXRecordInfo:
         """在当前项目中查找 cohort。
 
@@ -390,53 +423,11 @@ class IDXClient(ABC):
         """
 
     @abstractmethod
-    def extract_cohort_fields(
-        self,
-        cohort_id: str,
-        entity_fields: list[str],
-        *,
-        refresh: bool = False,
-    ) -> pd.DataFrame:
-        """提取 cohort 内参与者的指定字段数据。
-
-        Args:
-            cohort_id: Cohort record ID。
-            entity_fields: ``"entity.field_name"`` 格式的字段列表。
-            refresh: 为 True 时跳过缓存。
-
-        Returns:
-            包含 cohort 参与者数据的 DataFrame。
-
-        Raises:
-            DXCohortError: vizserver 请求失败。
-        """
-
-    @abstractmethod
-    def download_cohort(
-        self,
-        cohort_id: str,
-        *,
-        refresh: bool = False,
-    ) -> pd.DataFrame:
-        """下载 cohort 的所有关联字段数据。
-
-        从 cohort record 的 ``details.fields`` 中读取字段列表，
-        然后提取对应数据。
-
-        Args:
-            cohort_id: Cohort record ID。
-            refresh: 为 True 时跳过缓存。
-
-        Returns:
-            包含 cohort 参与者数据的 DataFrame。
-
-        Raises:
-            DXCohortError: cohort 无关联字段或提取失败。
-        """
-
-    @abstractmethod
     def get_cohort_viz_info(
-        self, cohort_id: str, *, refresh: bool = False,
+        self,
+        cohort_id: str,
+        *,
+        refresh: bool = False,
     ) -> dict[str, Any]:
         """获取 cohort 的 vizserver viz_info。
 
@@ -477,24 +468,29 @@ class IDXClient(ABC):
     def preview_cohort_data(
         self,
         cohort_id: str,
-        entity_fields: list[str],
+        entity_fields: list[str] | None = None,
         *,
         limit: int = 100,
         refresh: bool = False,
     ) -> pd.DataFrame:
-        """预览 cohort 数据（不创建 cohort record）。
+        """预览 cohort 数据。
 
         通过 vizserver /data/3.0/raw 端点执行查询并返回结果。
-        与 extract_cohort_fields 的区别是：本方法不需要 cohort.details.fields 非空。
+        ``entity_fields`` 为 None 时从 cohort record ``details.fields``
+        读取全部关联字段。
 
         Args:
             cohort_id: Cohort record ID。
-            entity_fields: 要查询的字段列表（如 ["eid", "participant.sex"]）。
-            limit: 返回的最大行数（前端截取，不走 API limit）。
+            entity_fields: 要查询的字段列表。为 None 时读取 cohort
+                关联的全部字段。
+            limit: 返回的最大行数。
             refresh: 为 True 时跳过缓存。
 
         Returns:
             查询结果的 DataFrame。
+
+        Raises:
+            DXCohortError: vizserver 请求失败或 cohort 无关联字段。
         """
 
     # ── Job 操作 ──────────────────────────────────────────────────────
@@ -528,7 +524,10 @@ class IDXClient(ABC):
 
     @abstractmethod
     def describe_job(
-        self, job_id: str, *, refresh: bool = False,
+        self,
+        job_id: str,
+        *,
+        refresh: bool = False,
     ) -> DXJobInfo:
         """获取 job 完整描述。
 

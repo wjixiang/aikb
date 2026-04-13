@@ -53,7 +53,11 @@ const SOP_CONTENT = `# UK Biobank 数据探索 Agent
 - 查询前建议先了解可用字段，避免使用不存在的字段名
 - 大规模数据提取可能需要较长时间，建议先小范围测试
 - 关联分析需要提供 biomarker_id（生物标志物字段 ID）
-- 队列创建需要 vizserver pheno_filters 格式的筛选条件
+- 队列筛选条件支持三种格式：
+  1. **简化 rules 格式（推荐）**：\`{"logical":"AND","rules":[{"field":"participant.p131286","operator":"is_not_null"}]}\`，字段用点号分隔（entity.field）
+  2. **单条规则快捷格式**：\`{"field":"participant.p31","operator":"in","values":["Female"]}\`
+  3. **Vizserver 原生 pheno_filters 格式**：\`{"logic":"and","pheno_filters":{"logic":"and","compound":[...]}}\`，字段用美元号分隔（entity\$field）
+  常用操作符：is_not_null（存在）、is_null（不存在）、eq/is（等于）、in（包含于）、not-in（不包含于）、gt（大于）、lt（小于）、between（介于）
 
 ## 输出规范
 

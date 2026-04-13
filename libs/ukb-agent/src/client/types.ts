@@ -1,8 +1,55 @@
+// ==================== Cohort Filter Types ====================
+// Mirrors Python dx_models.py: CohortFilters = VizPhenoFilters | RulesFilter | FilterRule
+
+/** Vizserver 叶级过滤条件。 */
+export interface VizFilterCondition {
+  condition: string;
+  values?: unknown[] | unknown;
+}
+
+/** pheno_filters.compound 中的单条。 */
+export interface VizCompoundFilterEntry {
+  name: string;
+  logic: 'and' | 'or';
+  filters: Record<string, VizFilterCondition[]>;
+}
+
+/** pheno_filters 内层结构。 */
+export interface VizPhenoFiltersInner {
+  logic: 'and' | 'or';
+  compound: VizCompoundFilterEntry[];
+}
+
+/** Vizserver 原生 cohort filter 格式。 */
+export interface VizPhenoFilters {
+  logic: 'and' | 'or';
+  pheno_filters: VizPhenoFiltersInner;
+}
+
+/** 单条筛选规则（LLM 常用格式）。 */
+export interface FilterRule {
+  field: string;
+  operator?: string;
+  type?: string | null;
+  value?: unknown;
+  values?: unknown[];
+}
+
+/** LLM 常用的 logical/rules 格式，支持嵌套。 */
+export interface RulesFilter {
+  logic?: 'and' | 'or' | 'AND' | 'OR';
+  logical?: 'and' | 'or' | 'AND' | 'OR';
+  rules: Array<FilterRule | RulesFilter>;
+}
+
+/** Cohort 筛选条件联合类型，支持三种输入格式。 */
+export type CohortFilters = VizPhenoFilters | RulesFilter | FilterRule;
+
 // ==================== Request Types ====================
 
 export interface CohortCreateRequest {
   name: string;
-  filters: Record<string, unknown>;
+  filters: CohortFilters;
   dataset_ref?: string | null;
   folder?: string;
   description?: string;

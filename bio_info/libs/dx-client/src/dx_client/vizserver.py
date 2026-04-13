@@ -438,8 +438,8 @@ class VizserverClient:
         if viz_info.base_sql:
             payload.base_sql = viz_info.base_sql
         if viz_info.filters:
-            # 直接赋值（类型为 dict 而非 VizPhenofilters），
-            # 序列化结果与 CohortService.extract_cohort_fields 行为一致。
+            # 直接赋值（类型为 dict 而非 VizPhenoFilters），
+            # 序列化结果与 CohortService.preview_cohort_data 行为一致。
             payload.filters = viz_info.filters  # type: ignore[assignment]
 
         return self.query_raw_data(viz_info, payload)

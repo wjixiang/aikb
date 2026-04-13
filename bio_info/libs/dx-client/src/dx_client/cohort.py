@@ -11,7 +11,7 @@ import io
 import json
 import logging
 from collections import OrderedDict
-from typing import Any
+from typing import Any, Literal
 
 import dxpy
 from pydantic import ValidationError
@@ -82,7 +82,7 @@ def _merge_rules(rules: list[FilterRule | RulesFilter]) -> dict[str, list[VizFil
 
 def _normalize_rules_filter(filters: RulesFilter) -> VizPhenoFilters:
     """将 RulesFilter 转换为 VizPhenoFilters。"""
-    logic = (filters.logical or filters.logic or "and").lower()
+    logic: Literal["and", "or"] = (filters.logical or filters.logic or "and").lower()  # type: ignore[assignment]
     merged = _merge_rules(filters.rules)
     return VizPhenoFilters(
         logic=logic,

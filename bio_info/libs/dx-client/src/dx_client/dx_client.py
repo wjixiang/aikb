@@ -1027,146 +1027,6 @@ class DXClient(IDXClient):
         # Return updated cohort info
         return self.get_cohort(cohort_id, refresh=True)
 
-    def extract_cohort_fields(
-        self,
-        cohort_id: str,
-        entity_fields: list[str],
-        *,
-        refresh: bool = False,
-    ) -> pd.DataFrame:
-        """提取 cohort 内参与者的指定字段数据的数据。
-
-        通过 ``dx extract_dataset <cohort_ref> --fields ...`` 实现。
-        """
-        self._ensure_connected()
-        project_id = self._require_project()
-
-        if not entity_fields:
-            return pd.DataFrame()
-
-        cohort_ref = f"{project_id}:{cohort_id}"
-        env = self._make_subprocess_env()
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output_path = Path(tmpdir) / "cohort_extract.csv"
-            fields_arg = ",".join(entity_fields)
-            cmd = [
-                "dx",
-                "extract_dataset",
-                cohort_ref,
-                "--fields",
-                fields_arg,
-                "--delimiter",
-                ",",
-                "--output",
-                str(output_path),
-            ]
-            logger.info("Running: %s", " ".join(cmd))
-            try:
-                subprocess.run(
-                    cmd,
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                    env=env,
-                )
-            except subprocess.CalledProcessError as e:
-                raise DXAPIError(
-                    f"dx extract_dataset (cohort) failed: {e.stderr}",
-                    status_code=e.returncode,
-                    dx_error=e,
-                ) from e
-
-            if not output_path.exists():
-                return pd.DataFrame()
-
-            df = pd.read_csv(output_path)
-            logger.info(
-                "Extracted %d rows, %d fields from cohort '%s'",
-                len(df),
-                len(entity_fields),
-                cohort_id,
-            )
-            return df
-
-    def download_cohort(
-        self,
-        cohort_id: str,
-        *,
-        refresh: bool = False,
-    ) -> pd.DataFrame:
-        """下载 cohort 的所有关联字段数据。
-
-        从 cohort record 的 ``details.fields`` 中读取字段列表，通过 vizserver API 提取数据。
-        不使用 CLI subprocess，避免大量字段时超过 OS 参数长度限制。
-        """
-        from . import cohort as cohort_mod
-
-        self._ensure_connected()
-        project_id = self._require_project()
-
-        # 从 cohort record 读取 details.fields
-        try:
-            desc: dict[str, Any] = dxpy.describe(  # type: ignore[assignment]
-                cohort_id,
-                fields={"properties", "details"},
-                default_fields=True,
-            )
-        except Exception as e:
-            raise DXCohortError(
-                f"Failed to describe cohort '{cohort_id}': {e}",
-                dx_error=e,
-            ) from e
-
-        details: dict[str, Any] = desc.get("details") or {}
-        entity_fields: list[str] = details.get("fields", [])
-        entity_fields = convert_fields(entity_fields)
-
-        if not entity_fields:
-            raise DXCohortError(
-                f"Cohort '{cohort_id}' has no associated fields in details.fields.",
-            )
-
-        try:
-            viz_info = cohort_mod.get_visualize_info(cohort_id, project_id)
-        except Exception as e:
-            raise DXCohortError(
-                f"Failed to get visualize info for cohort '{cohort_id}': {e}",
-                dx_error=e,
-            ) from e
-
-        payload: dict[str, Any] = {
-            "project_context": project_id,
-            "fields": [{f: f.replace(".", "$", 1)} for f in entity_fields],
-        }
-        if viz_info.get("baseSql"):
-            payload["base_sql"] = viz_info["baseSql"]
-        if viz_info.get("filters"):
-            payload["filters"] = viz_info["filters"]
-
-        resource = viz_info["url"] + "/data/3.0/" + viz_info["dataset"] + "/raw"
-        try:
-            resp = dxpy.DXHTTPRequest(
-                resource=resource,
-                data=payload,
-                prepend_srv=False,
-            )
-        except Exception as e:
-            raise DXCohortError(
-                f"Failed to query cohort data: {e}",
-                dx_error=e,
-            ) from e
-
-        results = resp.get("results", [])
-        df = pd.DataFrame(results)
-        logger.info(
-            "Downloaded %d rows, %d fields from cohort '%s'",
-            len(df),
-            len(entity_fields),
-            cohort_id,
-        )
-        return df
-
     def get_cohort_viz_info(
         self,
         cohort_id: str,
@@ -1268,23 +1128,22 @@ class DXClient(IDXClient):
     def preview_cohort_data(
         self,
         cohort_id: str,
-        entity_fields: list[str],
+        entity_fields: list[str] | None = None,
         *,
         limit: int = 100,
         refresh: bool = False,
     ) -> pd.DataFrame:
-        """预览 cohort 数据（不创建 cohort record）。
+        """预览 cohort 数据。
 
         通过 vizserver /data/3.0/raw 端点执行查询并返回结果。
-        与 extract_cohort_fields 的区别是：本方法不需要 cohort.details.fields 非空。
-
-        注意：字段格式为 ``entity$field``（如 ``participant$eid``），
-        而非 dataset 的 ``entity.field`` 格式。
+        ``entity_fields`` 为 None 时从 cohort record ``details.fields``
+        读取全部关联字段。
 
         Args:
             cohort_id: Cohort record ID。
-            entity_fields: 要查询的字段列表（如 ``["participant$eid", "participant$sex"]``）。
-            limit: 返回的最大行数（前端截取，不走 API limit）。
+            entity_fields: 要查询的字段列表。为 None 时读取 cohort
+                关联的全部字段。
+            limit: 返回的最大行数。
             refresh: 为 True 时强制从云端获取。
 
         Returns:
@@ -1293,15 +1152,36 @@ class DXClient(IDXClient):
         self._ensure_connected()
         project = self._require_project()
 
+        # 若未指定字段，从 record details 读取关联字段列表
+        if entity_fields is None:
+            try:
+                desc: dict[str, Any] = dxpy.describe(  # type: ignore[assignment]
+                    cohort_id,
+                    fields={"details"},
+                    default_fields=True,
+                )
+            except Exception as e:
+                raise DXCohortError(
+                    f"Failed to describe cohort '{cohort_id}': {e}",
+                    dx_error=e,
+                ) from e
+
+            details = desc.get("details") or {}
+            entity_fields = details.get("fields", [])
+            if not entity_fields:
+                raise DXCohortError(
+                    f"Cohort '{cohort_id}' has no associated fields in details.fields.",
+                )
+            entity_fields = convert_fields(entity_fields)
+
         if not entity_fields:
             return pd.DataFrame()
 
         viz_info = self.get_cohort_viz_info(cohort_id, refresh=refresh)
 
-        # Cohort API requires entity$field format (not entity.field like datasets)
         payload: dict[str, Any] = {
             "project_context": project,
-            "fields": [{f: f} for f in entity_fields],
+            "fields": [{f: f.replace(".", "$", 1)} for f in entity_fields],
         }
         if viz_info.get("baseSql"):
             payload["base_sql"] = viz_info["baseSql"]
@@ -1329,15 +1209,12 @@ class DXClient(IDXClient):
         results = resp.get("results", [])
         df = pd.DataFrame(results[:limit])
         logger.info(
-            "Previewed %d rows from cohort '%s'",
+            "Previewed %d rows, %d fields from cohort '%s'",
             len(df),
+            len(entity_fields),
             cohort_id,
         )
         return df
-
-    def extract_cohort(self, cohort_id: str):
-
-        pass
 
     # ═══════════════════════════════════════════════════════════════════════
     #  Job 操作
