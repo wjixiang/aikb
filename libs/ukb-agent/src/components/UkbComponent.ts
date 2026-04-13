@@ -103,7 +103,9 @@ export class UkbComponent extends ToolComponent<UkbState> {
 - 执行生物标志物与结局的关联分析
 - 导出数据为 CSV 或 Parquet 格式
 
-字段格式为 "entity.field_name"，例如 "participant.eid"（参与者ID）、"participant.p31"（性别）。
+【重要】所有字段名（包括 entity_fields 和 filters 中的字段）必须使用 "entity.field_name" 格式。
+- 正确示例："participant.eid"、"participant.p31"、"olink_instance_0.p131286"
+- 错误示例："eid"、"p31"、"p131286"（缺少 entity 前缀，会导致 422 错误）
 
 【重要】字段字典搜索（query_field_dict）请发送原始关键词，不要写 SQL！
 - 正确示例：condition: "olink"

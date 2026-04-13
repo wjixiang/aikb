@@ -11,8 +11,9 @@ export const CreateCohortToolDef: ToolDef = {
       .record(z.unknown())
       .describe(
         '筛选条件，使用 vizserver pheno_filters 格式。' +
-        '示例：{"logic":"and","pheno_filters":{"logic":"and","compound":[{"name":"phenotype","logic":"and","filters":{"participant$p131286":[{"condition":"exists","values":[]}]}}]}}。' +
-        '也支持简化格式：{"logical":"AND","rules":[{"field":"participant.p131286","operator":"is_not_null"}]}，系统会自动转换。',
+        '【重要】所有字段名必须使用 "entity.field_name" 格式（如 "participant.p31"、"olink_instance_0.p131286"），禁止使用裸字段名（如 "p31"）。' +
+        '示例：{"logic":"and","pheno_filters":{"logic":"and","compound":[{"name":"phenotype","logic":"and","filters":{"participant.p131286":[{"condition":"exists","values":[]}]}}]}}。' +
+        '也支持简化格式：{"logical":"AND","rules":[{"field":"participant.p131286","operator":"is_not_null"}]}，系统会自动转换为 vizserver 格式。',
       ),
     description: z
       .string()

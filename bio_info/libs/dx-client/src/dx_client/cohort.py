@@ -57,7 +57,7 @@ _OP_TO_CONDITION: dict[str, str] = {
 
 def _rule_to_vizserver_filter(rule: FilterRule) -> dict[str, list[VizFilterCondition]]:
     """将单条 FilterRule 转为 vizserver filters dict。"""
-    field = rule.field.replace(".", "$")
+    field = _ensure_vizserver_key(rule.field)
     operator = rule.operator or rule.type or "is"
     condition = _OP_TO_CONDITION.get(operator, operator)
     values = rule.value if rule.value is not None else (rule.values or [])
@@ -65,7 +65,9 @@ def _rule_to_vizserver_filter(rule: FilterRule) -> dict[str, list[VizFilterCondi
     return {field: [VizFilterCondition(condition=condition, values=values)]}
 
 
-def _merge_rules(rules: list[FilterRule | RulesFilter]) -> dict[str, list[VizFilterCondition]]:
+def _merge_rules(
+    rules: list[FilterRule | RulesFilter],
+) -> dict[str, list[VizFilterCondition]]:
     """将 rules 列表合并为 vizserver filters dict。"""
     merged: dict[str, list[VizFilterCondition]] = {}
     for rule in rules:
@@ -99,12 +101,57 @@ def _normalize_rules_filter(filters: RulesFilter) -> VizPhenoFilters:
     )
 
 
-def normalize_cohort_filters(filters: CohortFilters | dict[str, Any]) -> VizPhenoFilters:
+def _ensure_vizserver_key(key: str) -> str:
+    """将过滤器键规范化为 vizserver 要求的 ``entity$field`` 格式。
+
+    - 已包含 ``$`` 的键（如 ``participant$p131286``）原样返回。
+    - 包含 ``.`` 的键（如 ``participant.p131286``）替换为 ``$``。
+    - 纯字段名（如 ``p131286``）抛出 ``DXCohortError``。
+
+    Raises:
+        DXCohortError: 键不包含 entity 前缀。
+    """
+    if "$" in key:
+        return key
+    if "." in key:
+        return key.replace(".", "$", 1)
+    raise DXCohortError(
+        f"Filter key '{key}' must include an entity prefix in "
+        f"'entity.field' or 'entity$field' format (e.g. 'participant.{key}')."
+    )
+
+
+def _normalize_pheno_filter_keys(viz: VizPhenoFilters) -> VizPhenoFilters:
+    """确保 VizPhenoFilters 中所有 compound filter 的键都是 ``entity$field`` 格式。"""
+    new_compound: list[VizCompoundFilterEntry] = []
+    for entry in viz.pheno_filters.compound:
+        normalized_filters: dict[str, list[VizFilterCondition]] = {}
+        for k, v in entry.filters.items():
+            normalized_filters[_ensure_vizserver_key(k)] = v
+        new_compound.append(
+            VizCompoundFilterEntry(
+                name=entry.name,
+                logic=entry.logic,
+                filters=normalized_filters,
+            )
+        )
+    return VizPhenoFilters(
+        logic=viz.logic,
+        pheno_filters=VizPhenoFiltersInner(
+            logic=viz.pheno_filters.logic,
+            compound=new_compound,
+        ),
+    )
+
+
+def normalize_cohort_filters(
+    filters: CohortFilters | dict[str, Any],
+) -> VizPhenoFilters:
     """将常见筛选条件格式规范化为 vizserver pheno_filters 格式。
 
     接受三种输入格式：
 
-    1. **VizPhenoFilters** — vizserver 原生格式，直接返回。
+    1. **VizPhenoFilters** — vizserver 原生格式，键会自动规范化为 ``entity$field``。
     2. **RulesFilter** — LLM 常用的 logical/rules 格式，自动转换。
     3. **FilterRule** — 单条规则快捷格式，包装为 AND 逻辑。
 
@@ -114,7 +161,7 @@ def normalize_cohort_filters(filters: CohortFilters | dict[str, Any]) -> VizPhen
         filters: 筛选条件，支持 ``CohortFilters`` 联合类型或原始 dict。
 
     Returns:
-        ``VizPhenoFilters`` 实例。
+        ``VizPhenoFilters`` 实例，所有过滤器键均为 ``entity$field`` 格式。
 
     Raises:
         DXCohortError: 输入格式无法识别或校验失败。
@@ -124,7 +171,8 @@ def normalize_cohort_filters(filters: CohortFilters | dict[str, Any]) -> VizPhen
         # 已经是 vizserver 格式
         if "pheno_filters" in filters:
             try:
-                return VizPhenoFilters.model_validate(filters)
+                parsed = VizPhenoFilters.model_validate(filters)
+                return _normalize_pheno_filter_keys(parsed)
             except ValidationError as e:
                 raise DXCohortError(
                     f"Invalid vizserver pheno_filters format: {e}",
@@ -137,9 +185,7 @@ def normalize_cohort_filters(filters: CohortFilters | dict[str, Any]) -> VizPhen
                 return _normalize_rules_filter(parsed)
             elif "field" in filters:
                 parsed = FilterRule.model_validate(filters)
-                return _normalize_rules_filter(
-                    RulesFilter(logic="and", rules=[parsed])
-                )
+                return _normalize_rules_filter(RulesFilter(logic="and", rules=[parsed]))
         except ValidationError as e:
             raise DXCohortError(
                 f"Invalid filter format: {e}",
@@ -152,15 +198,13 @@ def normalize_cohort_filters(filters: CohortFilters | dict[str, Any]) -> VizPhen
 
     # typed model 输入
     if isinstance(filters, VizPhenoFilters):
-        return filters
+        return _normalize_pheno_filter_keys(filters)
 
     if isinstance(filters, RulesFilter):
         return _normalize_rules_filter(filters)
 
     if isinstance(filters, FilterRule):
-        return _normalize_rules_filter(
-            RulesFilter(logic="and", rules=[filters])
-        )
+        return _normalize_rules_filter(RulesFilter(logic="and", rules=[filters]))
 
     raise DXCohortError(f"Unsupported filter type: {type(filters).__name__}")
 
