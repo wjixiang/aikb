@@ -860,20 +860,11 @@ class DXClient(IDXClient):
         base_sql = viz_info.get("baseSql") or viz_info.get("base_sql")
 
         # 3. 规范化 filters 并构建 payload
+        # vizserver raw-cohort-query 期望 filters 为 VizPhenoFilters 格式：
+        #   {"logic": "and", "pheno_filters": {"logic": "and", "compound": [...]}}
         normalized = cohort_mod.normalize_cohort_filters(filters)
-        # vizserver raw-cohort-query 期望 filters 为扁平结构：
-        #   {"logic": "and", "filters": {"field$xxx": [{"condition": "..."}]}}
-        # 而非 VizPhenoFilters 的完整 dict 或带 compound 的嵌套结构
-        flat_filters: dict[str, Any] = {}
-        for entry in normalized.pheno_filters.compound:
-            for fk, fv in entry.filters.items():
-                flat_filters[fk] = [v.model_dump() for v in fv]
-        vizserver_filters = {
-            "logic": normalized.pheno_filters.logic,
-            "filters": flat_filters,
-        }
         filter_payload: dict[str, Any] = {
-            "filters": vizserver_filters,
+            "filters": normalized.model_dump(),
             "project_context": dataset_project,
         }
         if base_sql is not None:

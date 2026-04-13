@@ -23,7 +23,9 @@ class CohortService:
     ) -> list[DXRecordInfo]:
         """列出当前项目中的 cohort record。"""
         return self._dx.list_cohorts(
-            name_pattern=name_pattern, limit=limit, refresh=refresh,
+            name_pattern=name_pattern,
+            limit=limit,
+            refresh=refresh,
         )
 
     def get_cohort(self, cohort_id: str, refresh: bool = False) -> DXRecordInfo:
@@ -31,7 +33,9 @@ class CohortService:
         return self._dx.get_cohort(cohort_id, refresh=refresh)
 
     def find_cohort(
-        self, name_pattern: str | None = None, refresh: bool = False,
+        self,
+        name_pattern: str | None = None,
+        refresh: bool = False,
     ) -> DXRecordInfo:
         """按名称查找 cohort。"""
         return self._dx.find_cohort(name_pattern=name_pattern, refresh=refresh)
@@ -53,7 +57,7 @@ class CohortService:
             dataset_ref=dataset_ref,
             folder=folder,
             description=description,
-            entity_fields=entity_fields,
+            entity_fields=entity_fields or [],
         )
 
     def delete_cohort(self, cohort_id: str) -> None:
@@ -74,7 +78,10 @@ class CohortService:
     ) -> tuple[list[dict], int]:
         """提取 cohort 内参与者的指定字段数据（支持分页）。"""
         df = self._dx.preview_cohort_data(
-            cohort_id, entity_fields, limit=limit + offset, refresh=refresh,
+            cohort_id,
+            entity_fields,
+            limit=limit + offset,
+            refresh=refresh,
         )
         total = len(df)
         records = df.iloc[offset : offset + limit].to_dict(orient="records")

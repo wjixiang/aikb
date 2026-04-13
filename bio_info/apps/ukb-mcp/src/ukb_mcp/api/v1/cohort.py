@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from dx_client.dx_exceptions import DXCohortError
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ukb_mcp.api.deps import get_dx_client
 from ukb_mcp.domain.cohort.models import (
@@ -70,14 +71,18 @@ def create_cohort(
     service: CohortService = Depends(get_cohort_service),
 ) -> CohortInfo:
     """基于筛选条件创建队列。"""
-    info = service.create_cohort(
-        name=req.name,
-        filters=req.filters,
-        dataset_ref=req.dataset_ref,
-        folder=req.folder,
-        description=req.description,
-        entity_fields=req.entity_fields or None,
-    )
+    try:
+        info = service.create_cohort(
+            name=req.name,
+            filters=req.filters,
+            dataset_ref=req.dataset_ref,
+            folder=req.folder,
+            description=req.description,
+            entity_fields=req.entity_fields or None,
+        )
+    except DXCohortError as e:
+        raise HTTPException(422, detail=str(e))
+
     return CohortInfo(
         id=info.id,
         name=info.name,
@@ -126,16 +131,19 @@ def close_cohort(
     service: CohortService = Depends(get_cohort_service),
 ) -> CohortDetail:
     """锁定队列（将其关闭），使其变为只读状态。"""
-    record = service.close_cohort(cohort_id)
-    return CohortDetail(
-        id=record.id,
-        name=record.name,
-        project=record.project,
-        state=record.state,
-        created=record.created,
-        modified=record.modified,
-        details=record.details,
-    )
+    try:
+        record = service.close_cohort(cohort_id)
+        return CohortDetail(
+            id=record.id,
+            name=record.name,
+            project=record.project,
+            state=record.state,
+            created=record.created,
+            modified=record.modified,
+            details=record.details,
+        )
+    except DXCohortError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.post("/{cohort_id}/extract", response_model=ExtractFieldsResponse)

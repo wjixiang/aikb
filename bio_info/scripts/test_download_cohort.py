@@ -1,4 +1,4 @@
-"""测试 download_cohort 功能。"""
+"""测试 preview_cohort_data 功能。"""
 
 from dx_client import DXClient
 
@@ -11,7 +11,7 @@ def main():
     print("Connected, project:", client.current_project_id)
 
     try:
-        df = client.download_cohort(cohort_id)
+        df = client.preview_cohort_data(cohort_id)
         print(f"Shape: {df.shape}")
         print(f"Columns: {df.columns.tolist()}")
         if not df.empty:
