@@ -125,7 +125,6 @@ export const defaultUnifiedConfig: UnifiedAgentConfig = {
     id: 'default-workspace',
     name: 'Default Workspace',
     renderMode: 'tui',
-    toolCallLogCount: 10,
     expertMode: false,
     alwaysRenderAllComponents: false,
   },

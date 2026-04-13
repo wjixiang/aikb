@@ -28,25 +28,15 @@ export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
   name: 'Default Workspace',
   renderMode: 'tui',
-  toolCallLogCount: 10,
   expertMode: false,
   alwaysRenderAllComponents: false,
 };
-
-export interface ToolCallSummary {
-  toolName: string;
-  success: boolean;
-  summary: string;
-  timestamp: number;
-  componentKey?: string;
-}
 
 @injectable()
 export class VirtualWorkspace implements IVirtualWorkspace {
   private config: VirtualWorkspaceConfig;
   private components: Array<ToolComponent> = [];
   private toolManager: IToolManager;
-  private toolCallLog: ToolCallSummary[] = [];
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
     new Map();
   private globalToolProvider: GlobalToolProvider;
@@ -95,7 +85,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     const provider = new ComponentToolProvider(
       component.componentId,
       component,
-      this.notifyToolExecuted.bind(this),
     );
     this.toolManager.registerProvider(provider);
   }
@@ -120,150 +109,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   setOnToolAvailabilityChange(callback: () => void): void {
     this.onToolAvailabilityChange = callback;
-  }
-
-  private onToolExecuted?: (
-    toolName: string,
-    params: any,
-    result: any,
-    success: boolean,
-    componentKey: string,
-    customSummary?: string,
-  ) => void;
-
-  setOnToolExecuted(
-    callback: (
-      toolName: string,
-      params: any,
-      result: any,
-      success: boolean,
-      componentKey: string,
-      customSummary?: string,
-    ) => void,
-  ): void {
-    this.onToolExecuted = callback;
-  }
-
-  notifyToolExecuted(
-    toolName: string,
-    params: any,
-    result: any,
-    success: boolean,
-    componentKey: string,
-    customSummary?: string,
-  ): void {
-    const maxCount = this.config.toolCallLogCount ?? 3;
-
-    if (maxCount <= 0) {
-      return;
-    }
-
-    const summary =
-      customSummary ?? this.summarizeToolResult(toolName, result, componentKey);
-
-    this.toolCallLog.push({
-      toolName,
-      success,
-      summary,
-      timestamp: Date.now(),
-      componentKey,
-    });
-
-    if (this.toolCallLog.length > maxCount) {
-      this.toolCallLog = this.toolCallLog.slice(-maxCount);
-    }
-  }
-
-  private summarizeToolResult(
-    toolName: string,
-    result: any,
-    componentKey?: string,
-  ): string {
-    if (!result) {
-      return componentKey
-        ? `[${componentKey}][${toolName}] (no result)`
-        : '(no result)';
-    }
-
-    try {
-      let summary: string;
-
-      if (typeof result === 'string') {
-        summary =
-          result.length > 200 ? result.substring(0, 200) + '...' : result;
-      } else if (typeof result === 'object') {
-        if ('summary' in result && typeof result.summary === 'string') {
-          summary = result.summary;
-        } else if ('error' in result && typeof result.error === 'string') {
-          summary = `Error: ${result.error}`;
-        } else if ('data' in result && typeof result.data === 'object') {
-          const data = result.data as any;
-          if ('error' in data && typeof data.error === 'string') {
-            summary = `Error: ${data.error}`;
-          } else {
-            const dataStr = JSON.stringify(result.data);
-            summary =
-              dataStr.length > 200
-                ? dataStr.substring(0, 200) + '...'
-                : dataStr;
-          }
-        } else if ('result' in result && typeof result.result === 'string') {
-          summary =
-            result.result.length > 200
-              ? result.result.substring(0, 200) + '...'
-              : result.result;
-        } else if ('message' in result) {
-          const msg = String(result.message);
-          summary = msg.length > 200 ? msg.substring(0, 200) + '...' : msg;
-        } else {
-          summary = `[${Object.keys(result).join(', ')}]`;
-        }
-      } else {
-        summary = String(result);
-      }
-
-      return componentKey ? `[${componentKey}] ${summary}` : summary;
-    } catch {
-      return componentKey
-        ? `[${componentKey}] (result processing failed)`
-        : '(result processing failed)';
-    }
-  }
-
-  getToolCallLog(): ToolCallSummary[] {
-    return [...this.toolCallLog];
-  }
-
-  renderToolCallLogSectionMarkdown(): MdElement {
-    const maxCount = this.config.toolCallLogCount ?? 3;
-    const container = new MdDiv({ styles: { showBorder: false } }, [], 0);
-
-    const sliderIndicator =
-      this.toolCallLog.length > maxCount
-        ? ` (showing last ${maxCount} of ${this.toolCallLog.length})`
-        : '';
-    container.addChild(
-      new MdHeading({ content: `Recent Tool Calls${sliderIndicator}` }, [], 1),
-    );
-
-    const logEntries = this.toolCallLog.slice(-maxCount);
-    logEntries.forEach((entry, index) => {
-      const isLatest = index === logEntries.length - 1;
-      const prefix = isLatest ? '**>**' : '-';
-      const status = entry.success ? '`OK`' : '`FAIL`';
-
-      container.addChild(
-        new MdParagraph(
-          {
-            content: `${prefix} ${status} \`${entry.toolName}\`: ${entry.summary}`,
-          },
-          [],
-          2,
-        ),
-      );
-    });
-
-    return container;
   }
 
   async renderComponentToolsSection(): Promise<TUIElement | null> {
@@ -323,41 +168,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return container;
   }
 
-  renderToolCallLogSection(): TUIElement {
-    const maxCount = this.config.toolCallLogCount ?? 10;
-
-    const container = new tdiv({
-      styles: { showBorder: false },
-    });
-
-    const sliderIndicator =
-      this.toolCallLog.length > maxCount
-        ? ` (showing last ${maxCount} of ${this.toolCallLog.length})`
-        : '';
-    container.addChild(
-      new tdiv({
-        content: `**Recent Tool Calls**${sliderIndicator}`,
-        styles: { showBorder: false },
-      }),
-    );
-
-    const logEntries = this.toolCallLog.slice(-maxCount);
-    logEntries.forEach((entry, index) => {
-      const isLatest = index === logEntries.length - 1;
-      const prefix = isLatest ? '**>**' : '-';
-      const status = entry.success ? '`OK`' : '`FAIL`';
-
-      container.addChild(
-        new tdiv({
-          content: `${prefix} ${status} \`${entry.toolName}\`: ${entry.summary}`,
-          styles: { showBorder: false },
-        }),
-      );
-    });
-
-    return container;
-  }
-
   private async _render(): Promise<TUIElement | MdElement> {
     if (this.config.renderMode === 'markdown') {
       return this._renderMarkdown();
@@ -400,10 +210,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         );
       }
       container.addChild(componentContainer);
-    }
-
-    if (this.toolCallLog.length > 0) {
-      container.addChild(this.renderToolCallLogSectionMarkdown());
     }
 
     for (const [id, renderer] of this.externalRenderers) {
@@ -456,10 +262,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
         componentContainer.addChild(element),
       );
       container.addChild(componentContainer);
-    }
-
-    if (this.toolCallLog.length > 0) {
-      container.addChild(this.renderToolCallLogSection());
     }
 
     for (const [, renderer] of this.externalRenderers) {
