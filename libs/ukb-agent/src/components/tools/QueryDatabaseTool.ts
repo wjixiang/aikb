@@ -36,15 +36,25 @@ export async function handleQueryDatabase(
   client: UkbMcpClient,
   params: DatabaseQueryRequest & { database_id: string },
 ): Promise<ToolCallResult<unknown>> {
-  const req: DatabaseQueryRequest = {
-    ...(params.entity_fields && { entity_fields: params.entity_fields }),
-    ...(params.dataset_ref && { dataset_ref: params.dataset_ref }),
-    ...(params.refresh && { refresh: params.refresh }),
-  };
-  const result = await client.queryDatabase(params.database_id, req);
-  return {
-    success: true,
-    data: result,
-    summary: `已查询 ${params.entity_fields?.length ?? 0} 个字段`,
-  };
+  try {
+    const req: DatabaseQueryRequest = {
+      ...(params.entity_fields && { entity_fields: params.entity_fields }),
+      ...(params.dataset_ref && { dataset_ref: params.dataset_ref }),
+      ...(params.refresh && { refresh: params.refresh }),
+    };
+    const result = await client.queryDatabase(params.database_id, req);
+    return {
+      success: true,
+      data: result,
+      summary: `已查询 ${params.entity_fields?.length ?? 0} 个字段`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: null,
+      error: message,
+      summary: `查询数据库失败: ${message}`,
+    };
+  }
 }

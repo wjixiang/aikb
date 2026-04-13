@@ -15,10 +15,20 @@ export async function handleCloseCohort(
     cohort_id: string;
   },
 ): Promise<ToolCallResult<unknown>> {
-  const detail = await client.closeCohort(params.cohort_id);
-  return {
-    success: true,
-    data: detail,
-    summary: `已锁定队列: ${detail.name} (ID: ${detail.id}, 状态: ${detail.state})`,
-  };
+  try {
+    const detail = await client.closeCohort(params.cohort_id);
+    return {
+      success: true,
+      data: detail,
+      summary: `已锁定队列: ${detail.name} (ID: ${detail.id}, 状态: ${detail.state})`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: null,
+      error: message,
+      summary: `锁定队列失败: ${message}`,
+    };
+  }
 }

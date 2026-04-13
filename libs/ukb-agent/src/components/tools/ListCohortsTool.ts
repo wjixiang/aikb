@@ -42,19 +42,29 @@ export async function handleListCohorts(
     refresh?: boolean;
   },
 ): Promise<ToolCallResult<CohortInfo[]>> {
-  const cohorts = await client.listCohorts({
-    ...(params.name && { name: params.name }),
-    ...(params.limit && { limit: params.limit }),
-    ...(params.refresh && { refresh: params.refresh }),
-  });
-  const data: CohortInfo[] = cohorts.map((c) => ({
-    id: c.id,
-    name: c.name,
-    state: c.state,
-  }));
-  return {
-    success: true,
-    data,
-    summary: `找到 ${cohorts.length} 个队列`,
-  };
+  try {
+    const cohorts = await client.listCohorts({
+      ...(params.name && { name: params.name }),
+      ...(params.limit && { limit: params.limit }),
+      ...(params.refresh && { refresh: params.refresh }),
+    });
+    const data: CohortInfo[] = cohorts.map((c) => ({
+      id: c.id,
+      name: c.name,
+      state: c.state,
+    }));
+    return {
+      success: true,
+      data,
+      summary: `找到 ${cohorts.length} 个队列`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: [],
+      error: message,
+      summary: `列出队列失败: ${message}`,
+    };
+  }
 }

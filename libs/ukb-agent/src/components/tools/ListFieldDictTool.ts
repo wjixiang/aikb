@@ -40,28 +40,38 @@ export async function handleListFieldDict(
     page_size?: number;
   },
 ): Promise<ToolCallResult<FieldDictPage>> {
-  const result = await client.listFieldsDict({
-    ...(params.page && { page: params.page }),
-    ...(params.page_size && { page_size: params.page_size }),
-  });
-  const data: FieldDictPage = {
-    total: result.total,
-    page: result.page,
-    pageSize: result.page_size,
-    data: result.data.map((d) => ({
-      entity: d.entity,
-      name: d.name,
-      type: d.type,
-      title: d.title ?? null,
-      description: d.description ?? null,
-      units: d.units ?? null,
-      coding_name: d.coding_name ?? null,
-      concept: d.concept ?? null,
-    })),
-  };
-  return {
-    success: true,
-    data,
-    summary: `字段字典共 ${result.total} 条，当前第 ${result.page} 页（${result.data.length} 条）`,
-  };
+  try {
+    const result = await client.listFieldsDict({
+      ...(params.page && { page: params.page }),
+      ...(params.page_size && { page_size: params.page_size }),
+    });
+    const data: FieldDictPage = {
+      total: result.total,
+      page: result.page,
+      pageSize: result.page_size,
+      data: result.data.map((d) => ({
+        entity: d.entity,
+        name: d.name,
+        type: d.type,
+        title: d.title ?? null,
+        description: d.description ?? null,
+        units: d.units ?? null,
+        coding_name: d.coding_name ?? null,
+        concept: d.concept ?? null,
+      })),
+    };
+    return {
+      success: true,
+      data,
+      summary: `字段字典共 ${result.total} 条，当前第 ${result.page} 页（${result.data.length} 条）`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: { total: 0, page: 1, pageSize: 20, data: [] },
+      error: message,
+      summary: `列出字段字典失败: ${message}`,
+    };
+  }
 }

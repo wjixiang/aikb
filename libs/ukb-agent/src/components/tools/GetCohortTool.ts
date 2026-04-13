@@ -21,11 +21,21 @@ export async function handleGetCohort(
     refresh?: boolean;
   },
 ): Promise<ToolCallResult<unknown>> {
-  const opts = params.refresh ? { refresh: params.refresh } : {};
-  const detail = await client.getCohort(params.cohort_id, opts);
-  return {
-    success: true,
-    data: detail,
-    summary: `队列: ${detail.name} (ID: ${detail.id}, 状态: ${detail.state})`,
-  };
+  try {
+    const opts = params.refresh ? { refresh: params.refresh } : {};
+    const detail = await client.getCohort(params.cohort_id, opts);
+    return {
+      success: true,
+      data: detail,
+      summary: `队列: ${detail.name} (ID: ${detail.id}, 状态: ${detail.state})`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: null,
+      error: message,
+      summary: `获取队列详情失败: ${message}`,
+    };
+  }
 }

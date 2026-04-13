@@ -25,10 +25,20 @@ export async function handleQueryAssociation(
   client: UkbMcpClient,
   params: AssociationQuery,
 ): Promise<ToolCallResult<unknown>> {
-  const result = await client.queryAssociation(params);
-  return {
-    success: true,
-    data: result,
-    summary: `已查询 ${params.biomarker_id} 的关联分析${params.outcome_id ? `（结局: ${params.outcome_id}）` : ''}`,
-  };
+  try {
+    const result = await client.queryAssociation(params);
+    return {
+      success: true,
+      data: result,
+      summary: `已查询 ${params.biomarker_id} 的关联分析${params.outcome_id ? `（结局: ${params.outcome_id}）` : ''}`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: null,
+      error: message,
+      summary: `查询关联分析失败: ${message}`,
+    };
+  }
 }

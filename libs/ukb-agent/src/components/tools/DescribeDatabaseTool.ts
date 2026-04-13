@@ -22,11 +22,21 @@ export async function handleDescribeDatabase(
     refresh?: boolean;
   },
 ): Promise<ToolCallResult<unknown>> {
-  const opts = params.refresh ? { refresh: params.refresh } : {};
-  const result = await client.describeDatabase(params.database_id, opts);
-  return {
-    success: true,
-    data: result,
-    summary: `已获取数据库 ${params.database_id} 的详细描述`,
-  };
+  try {
+    const opts = params.refresh ? { refresh: params.refresh } : {};
+    const result = await client.describeDatabase(params.database_id, opts);
+    return {
+      success: true,
+      data: result,
+      summary: `已获取数据库 ${params.database_id} 的详细描述`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: null,
+      error: message,
+      summary: `获取数据库描述失败: ${message}`,
+    };
+  }
 }

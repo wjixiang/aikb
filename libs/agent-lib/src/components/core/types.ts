@@ -351,6 +351,10 @@ export interface ToolCallResult<T> {
    * If not provided, a default summary will be generated
    */
   summary?: string;
+  /**
+   * Optional error message when success is false
+   */
+  error?: string;
 }
 
 /**

@@ -91,10 +91,20 @@ export async function handleCreateCohort(
   client: UkbMcpClient,
   params: CohortCreateRequest,
 ): Promise<ToolCallResult<unknown>> {
-  const result = await client.createCohort(params);
-  return {
-    success: true,
-    data: result,
-    summary: `已创建队列 "${params.name}" (ID: ${result.id}, 参与者: ${result.participant_count})`,
-  };
+  try {
+    const result = await client.createCohort(params);
+    return {
+      success: true,
+      data: result,
+      summary: `已创建队列 "${params.name}" (ID: ${result.id}, 参与者: ${result.participant_count})`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: null,
+      error: message,
+      summary: `创建队列失败: ${message}`,
+    };
+  }
 }

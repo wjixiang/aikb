@@ -43,18 +43,28 @@ export async function handleListDatabases(
     refresh?: boolean;
   },
 ): Promise<ToolCallResult<DatabaseInfo[]>> {
-  const dbs = await client.listDatabases({
-    ...(params.name && { name: params.name }),
-    ...(params.refresh && { refresh: params.refresh }),
-  });
-  const data: DatabaseInfo[] = dbs.map((d) => ({
-    id: d.id,
-    name: d.name,
-    state: d.state,
-  }));
-  return {
-    success: true,
-    data,
-    summary: `找到 ${dbs.length} 个数据库`,
-  };
+  try {
+    const dbs = await client.listDatabases({
+      ...(params.name && { name: params.name }),
+      ...(params.refresh && { refresh: params.refresh }),
+    });
+    const data: DatabaseInfo[] = dbs.map((d) => ({
+      id: d.id,
+      name: d.name,
+      state: d.state,
+    }));
+    return {
+      success: true,
+      data,
+      summary: `找到 ${dbs.length} 个数据库`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: [],
+      error: message,
+      summary: `列出数据库失败: ${message}`,
+    };
+  }
 }

@@ -194,16 +194,26 @@ export class UkbComponent extends ToolComponent<UkbState> {
     limit?: number;
     offset?: number;
   }): Promise<ToolCallResult<string>> {
-    const result = await this.client.listTables(params.database_id, {
-      ...(params.refresh && { refresh: params.refresh }),
-      ...(params.limit && { limit: params.limit }),
-      ...(params.offset && { offset: params.offset }),
-    });
-    return {
-      success: true,
-      data: renderTablesAsMarkdown(result as any),
-      summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
-    };
+    try {
+      const result = await this.client.listTables(params.database_id, {
+        ...(params.refresh && { refresh: params.refresh }),
+        ...(params.limit && { limit: params.limit }),
+        ...(params.offset && { offset: params.offset }),
+      });
+      return {
+        success: true,
+        data: renderTablesAsMarkdown(result as any),
+        summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        success: false,
+        data: '',
+        error: message,
+        summary: `列出数据表失败: ${message}`,
+      };
+    }
   }
 
   async onList_fields(params: {
@@ -214,24 +224,34 @@ export class UkbComponent extends ToolComponent<UkbState> {
     limit?: number;
     offset?: number;
   }): Promise<ToolCallResult<string>> {
-    const result = await this.client.listFields(params.database_id, {
-      ...(params.entity && { entity: params.entity }),
-      ...(params.name && { name: params.name }),
-      ...(params.refresh && { refresh: params.refresh }),
-      ...(params.limit && { limit: params.limit }),
-      ...(params.offset && { offset: params.offset }),
-    });
-    this.reactive.currentFields = result.data.map((f) => ({
-      entity: f.entity,
-      name: f.name,
-      type: f.type,
-      title: f.title,
-    }));
-    return {
-      success: true,
-      data: renderFieldsAsMarkdown(result),
-      summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
-    };
+    try {
+      const result = await this.client.listFields(params.database_id, {
+        ...(params.entity && { entity: params.entity }),
+        ...(params.name && { name: params.name }),
+        ...(params.refresh && { refresh: params.refresh }),
+        ...(params.limit && { limit: params.limit }),
+        ...(params.offset && { offset: params.offset }),
+      });
+      this.reactive.currentFields = result.data.map((f) => ({
+        entity: f.entity,
+        name: f.name,
+        type: f.type,
+        title: f.title,
+      }));
+      return {
+        success: true,
+        data: renderFieldsAsMarkdown(result),
+        summary: `共 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        success: false,
+        data: '',
+        error: message,
+        summary: `列出字段失败: ${message}`,
+      };
+    }
   }
 
   async onQuery_field_dict(params: {
@@ -329,36 +349,56 @@ export class UkbComponent extends ToolComponent<UkbState> {
   async onExtract_cohort_data(
     params: ExtractFieldsRequest & { cohort_id: string },
   ): Promise<ToolCallResult<unknown>> {
-    const result = await this.client.extractCohortFields(params.cohort_id, {
-      entity_fields: params.entity_fields,
-      ...(params.refresh && { refresh: params.refresh }),
-      ...(params.limit && { limit: params.limit }),
-      ...(params.offset && { offset: params.offset }),
-    });
-    this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
-    return {
-      success: true,
-      data: result.data,
-      summary: `提取到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
-    };
+    try {
+      const result = await this.client.extractCohortFields(params.cohort_id, {
+        entity_fields: params.entity_fields,
+        ...(params.refresh && { refresh: params.refresh }),
+        ...(params.limit && { limit: params.limit }),
+        ...(params.offset && { offset: params.offset }),
+      });
+      this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
+      return {
+        success: true,
+        data: result.data,
+        summary: `提取到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        success: false,
+        data: null,
+        error: message,
+        summary: `提取队列数据失败: ${message}`,
+      };
+    }
   }
 
   async onQuery_database(
     params: DatabaseQueryRequest & { database_id: string },
   ): Promise<ToolCallResult<unknown>> {
-    const result = await this.client.queryDatabase(params.database_id, {
-      ...(params.entity_fields && { entity_fields: params.entity_fields }),
-      ...(params.dataset_ref && { dataset_ref: params.dataset_ref }),
-      ...(params.refresh && { refresh: params.refresh }),
-      ...(params.limit && { limit: params.limit }),
-      ...(params.offset && { offset: params.offset }),
-    });
-    this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
-    return {
-      success: true,
-      data: result.data,
-      summary: `查询到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
-    };
+    try {
+      const result = await this.client.queryDatabase(params.database_id, {
+        ...(params.entity_fields && { entity_fields: params.entity_fields }),
+        ...(params.dataset_ref && { dataset_ref: params.dataset_ref }),
+        ...(params.refresh && { refresh: params.refresh }),
+        ...(params.limit && { limit: params.limit }),
+        ...(params.offset && { offset: params.offset }),
+      });
+      this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
+      return {
+        success: true,
+        data: result.data,
+        summary: `查询到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        success: false,
+        data: null,
+        error: message,
+        summary: `查询数据库失败: ${message}`,
+      };
+    }
   }
 
   async onQuery_association(

@@ -28,14 +28,24 @@ export async function handleExportData(
   client: UkbMcpClient,
   params: ExportRequest & { format?: 'csv' | 'parquet' },
 ): Promise<ToolCallResult<unknown>> {
-  const format = params.format ?? 'csv';
-  const result =
-    format === 'csv'
-      ? await client.exportCsv(params)
-      : await client.exportParquet(params);
-  return {
-    success: true,
-    data: result,
-    summary: `已导出 ${format.toUpperCase()} 格式数据`,
-  };
+  try {
+    const format = params.format ?? 'csv';
+    const result =
+      format === 'csv'
+        ? await client.exportCsv(params)
+        : await client.exportParquet(params);
+    return {
+      success: true,
+      data: result,
+      summary: `已导出 ${format.toUpperCase()} 格式数据`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: null,
+      error: message,
+      summary: `导出数据失败: ${message}`,
+    };
+  }
 }

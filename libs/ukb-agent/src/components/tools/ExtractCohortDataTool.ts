@@ -32,14 +32,24 @@ export async function handleExtractCohortData(
   client: UkbMcpClient,
   params: ExtractFieldsRequest & { cohort_id: string },
 ): Promise<ToolCallResult<unknown>> {
-  const req: ExtractFieldsRequest = {
-    entity_fields: params.entity_fields,
-    ...(params.refresh && { refresh: params.refresh }),
-  };
-  const result = await client.extractCohortFields(params.cohort_id, req);
-  return {
-    success: true,
-    data: result,
-    summary: `已从队列 ${params.cohort_id} 提取 ${params.entity_fields.length} 个字段的数据`,
-  };
+  try {
+    const req: ExtractFieldsRequest = {
+      entity_fields: params.entity_fields,
+      ...(params.refresh && { refresh: params.refresh }),
+    };
+    const result = await client.extractCohortFields(params.cohort_id, req);
+    return {
+      success: true,
+      data: result,
+      summary: `已从队列 ${params.cohort_id} 提取 ${params.entity_fields.length} 个字段的数据`,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      data: null,
+      error: message,
+      summary: `提取队列数据失败: ${message}`,
+    };
+  }
 }
