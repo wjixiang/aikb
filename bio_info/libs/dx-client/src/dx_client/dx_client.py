@@ -861,9 +861,19 @@ class DXClient(IDXClient):
 
         # 3. 规范化 filters 并构建 payload
         normalized = cohort_mod.normalize_cohort_filters(filters)
-        filters_dict = normalized.model_dump()
+        # vizserver raw-cohort-query 期望 filters 为扁平结构：
+        #   {"logic": "and", "filters": {"field$xxx": [{"condition": "..."}]}}
+        # 而非 VizPhenoFilters 的完整 dict 或带 compound 的嵌套结构
+        flat_filters: dict[str, Any] = {}
+        for entry in normalized.pheno_filters.compound:
+            for fk, fv in entry.filters.items():
+                flat_filters[fk] = [v.model_dump() for v in fv]
+        vizserver_filters = {
+            "logic": normalized.pheno_filters.logic,
+            "filters": flat_filters,
+        }
         filter_payload: dict[str, Any] = {
-            "filters": filters_dict,
+            "filters": vizserver_filters,
             "project_context": dataset_project,
         }
         if base_sql is not None:
@@ -872,13 +882,13 @@ class DXClient(IDXClient):
         # 4. 生成 SQL
         sql = cohort_mod.generate_cohort_sql(viz_info, filter_payload)
 
-        # 5. 创建 cohort record
+        # 5. 创建 cohort record（details.filters 保存完整结构供 UI 使用）
         record_payload = cohort_mod.build_cohort_record_payload(
             name=name,
             folder=folder,
             project=project_id,
             viz_info=viz_info,
-            filters=filters_dict,
+            filters=normalized.model_dump(),
             sql=sql,
             description=description,
             entity_fields=entity_fields,
