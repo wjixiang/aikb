@@ -85,7 +85,7 @@ export function resolveBlueprint(soulOrPath: string): AgentBlueprint {
 
 /**
  * Extract tool call records from agent conversation history.
- * ApiMessage uses ExtendedContentBlock[] format with tool_use and tool_result blocks.
+ * Message uses ExtendedContentBlock[] format with tool_use and tool_result blocks.
  */
 function extractToolCallsFromHistory(
   messages: any[],

@@ -1,6 +1,6 @@
 import { injectable, inject, optional } from 'inversify';
 
-import { ApiMessage } from '../memory/types.js';
+import { Message } from '../memory/types.js';
 import { AgentStatus } from '../common/types.js';
 import { MessageTokenUsage, ToolUsage } from '../types/index.js';
 import { DEFAULT_CONSECUTIVE_MISTAKE_LIMIT } from '../types/index.js';
@@ -420,7 +420,7 @@ export class Agent {
       const inputText = payload.input
         ? `\n\nInput:\n${this.safeStringify(payload.input, null, 2)}`
         : '';
-      const userMessage: ApiMessage = {
+      const userMessage: Message = {
         role: 'user',
         content: [
           {
@@ -484,7 +484,7 @@ export class Agent {
    * Add a message to memory and emit MESSAGE_ADDED hook.
    * Centralizes all memoryModule.addMessage calls so events are never missed.
    */
-  private async addMessageToMemory(msg: ApiMessage): Promise<void> {
+  private async addMessageToMemory(msg: Message): Promise<void> {
     await this.memoryModule.addMessage(msg);
     await this.hookModule.executeHooks(HookType.MESSAGE_ADDED, {
       type: HookType.MESSAGE_ADDED,
@@ -527,7 +527,7 @@ export class Agent {
   /**
    * Getter for conversation history (delegated to MemoryModule)
    */
-  public get conversationHistory(): ApiMessage[] {
+  public get conversationHistory(): Message[] {
     return this.memoryModule.getAllMessages();
   }
 
@@ -938,14 +938,14 @@ export class Agent {
 
           // Add error to memory for the LLM to see
           this.memoryModule.pushErrors([error]);
-          const errorApiMessage: ApiMessage = {
+          const errorMsg: Message = {
             role: 'system',
             content: [
               { type: 'text' as const, text: `[Error: ${error.message}]` },
             ],
             ts: Date.now(),
           };
-          await this.addMessageToMemory(errorApiMessage);
+          await this.addMessageToMemory(errorMsg);
 
           // Track consecutive error for abort (NoToolsUsedError counts as an error)
           this.handleConsecutiveError({ errorMessage });
@@ -959,14 +959,14 @@ export class Agent {
           // Handle other errors (tool execution errors, API errors, etc.)
           if (error instanceof Error) {
             this.memoryModule.pushErrors([error]);
-            const errorApiMessage: ApiMessage = {
+            const errorMsg: Message = {
               role: 'system',
               content: [
                 { type: 'text' as const, text: `[Error: ${error.message}]` },
               ],
               ts: Date.now(),
             };
-            await this.addMessageToMemory(errorApiMessage);
+            await this.addMessageToMemory(errorMsg);
 
             // Track consecutive error for abort
             this.handleConsecutiveError({ errorMessage });
@@ -1154,7 +1154,7 @@ export class Agent {
         }
       }
       if (assistantContent.length > 0) {
-        const assistantMsg: ApiMessage = {
+        const assistantMsg: Message = {
           role: 'assistant',
           content: assistantContent as any,
           ts: Date.now(),
@@ -1178,7 +1178,7 @@ export class Agent {
             content: `Error: ${errorMsg}`,
             is_error: true,
           }));
-          const errorResult: ApiMessage = {
+          const errorResult: Message = {
             role: 'user',
             content: errorBlocks,
             ts: Date.now(),
@@ -1274,7 +1274,7 @@ export class Agent {
         results.push(toolResult);
 
         // Add tool result message to memory
-        const toolResultMsg: ApiMessage = {
+        const toolResultMsg: Message = {
           role: 'user',
           content: [
             {
@@ -1321,7 +1321,7 @@ export class Agent {
         ]);
 
         // Record failure in memory as tool_result message
-        const errorToolResultMsg: ApiMessage = {
+        const errorToolResultMsg: Message = {
           role: 'user',
           content: [
             {
@@ -1484,7 +1484,7 @@ ${desc}${examplesStr}`;
   /**
    * Format a message for memory context
    */
-  private formatMessage(message: ApiMessage): string {
+  private formatMessage(message: Message): string {
     if (typeof message === 'string') {
       return message;
     }

@@ -7,7 +7,7 @@
 
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { Tool } from '../../components/core/types.js';
-import type { ApiMessage } from '../memory/types.js';
+import type { Message } from '../memory/types.js';
 
 // =============================================================================
 // Hook Categories (Enum)
@@ -233,7 +233,7 @@ export interface ToolAfterExecuteContext extends HookContextBase {
 export interface MessageAddedContext extends HookContextBase {
   type: HookType.MESSAGE_ADDED;
   /** The message that was added */
-  message: ApiMessage;
+  message: Message;
 }
 
 /**

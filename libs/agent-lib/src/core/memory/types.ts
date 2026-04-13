@@ -42,21 +42,21 @@ export type ExtendedContentBlock =
  * Unified message type for conversation history
  * Content is always an array of content blocks for consistency
  */
-export interface ApiMessage {
+export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: ExtendedContentBlock[];
   ts?: number;
 }
 
 /**
- * Helper class for building ApiMessage objects
+ * Helper class for building Message objects
  * Provides convenient factory methods for common message types
  */
 export class MessageBuilder {
   /**
    * Create a text message
    */
-  static text(role: 'user' | 'assistant' | 'system', text: string): ApiMessage {
+  static text(role: 'user' | 'assistant' | 'system', text: string): Message {
     return {
       role,
       content: [{ type: 'text', text }],
@@ -67,21 +67,21 @@ export class MessageBuilder {
   /**
    * Create a system message
    */
-  static system(context: string): ApiMessage {
+  static system(context: string): Message {
     return this.text('system', context);
   }
 
   /**
    * Create a user message
    */
-  static user(text: string): ApiMessage {
+  static user(text: string): Message {
     return this.text('user', text);
   }
 
   /**
    * Create an assistant message
    */
-  static assistant(text: string): ApiMessage {
+  static assistant(text: string): Message {
     return this.text('assistant', text);
   }
 
@@ -91,7 +91,7 @@ export class MessageBuilder {
   static custom(
     role: 'user' | 'assistant' | 'system',
     content: ExtendedContentBlock[],
-  ): ApiMessage {
+  ): Message {
     return {
       role,
       content,
@@ -105,7 +105,7 @@ export class MessageBuilder {
  */
 export type MessageAddedCallback = (
   taskId: string,
-  message: ApiMessage,
+  message: Message,
 ) => void;
 
 /**
@@ -144,17 +144,17 @@ export interface IMemoryModule {
   /**
    * Add message to storage (triggers compression if needed)
    */
-  addMessage(message: ApiMessage): Promise<ApiMessage>;
+  addMessage(message: Message): Promise<Message>;
 
   /**
    * Add message without triggering compression
    */
-  addMessageSync(message: ApiMessage): Promise<ApiMessage>;
+  addMessageSync(message: Message): Promise<Message>;
 
   /**
    * Get all historical messages
    */
-  getAllMessages(): ApiMessage[];
+  getAllMessages(): Message[];
 
   /**
    * Get total token count for all messages
@@ -164,7 +164,7 @@ export interface IMemoryModule {
   /**
    * Get history for prompt injection
    */
-  getHistoryForPrompt(): ApiMessage[];
+  getHistoryForPrompt(): Message[];
 
   // ==================== Workspace Context Management ====================
 

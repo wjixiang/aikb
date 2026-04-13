@@ -5,7 +5,7 @@
 export { MemoryModule, defaultMemoryConfig } from './MemoryModule.js';
 export type { IMemoryModule, MemoryModuleConfig } from './types.js';
 export type {
-  ApiMessage,
+  Message,
   MessageBuilder,
   MessageAddedCallback,
   ExtendedContentBlock,

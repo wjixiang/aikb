@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { ApiMessage, ThinkingBlock } from '../memory/types.js';
+import type { Message, ThinkingBlock } from '../memory/types.js';
 import { MessageFormatter } from './MessageFormatter.js';
 
 /**
@@ -55,7 +55,7 @@ export interface FullPrompt {
 export class PromptBuilder {
     private _systemPrompt: string = '';
     private _workspaceContext: string = '';
-    private _conversationHistory: ApiMessage[] = [];
+    private _conversationHistory: Message[] = [];
 
     /**
      * Sets the system prompt for the agent.
@@ -103,7 +103,7 @@ export class PromptBuilder {
      * the user and the agent. This context is used to maintain conversation
      * state and provide relevant history to the AI.
      * 
-     * @param history - Array of ApiMessage objects representing the conversation history
+     * @param history - Array of Message objects representing the conversation history
      * @returns This builder instance for method chaining
      * 
      * @example
@@ -114,7 +114,7 @@ export class PromptBuilder {
      * ]);
      * ```
      */
-    setConversationHistory(history: ApiMessage[]): this {
+    setConversationHistory(history: Message[]): this {
         this._conversationHistory = history;
         return this;
     }
@@ -159,13 +159,13 @@ export class PromptBuilder {
      * - Removes ThinkingBlock content from messages
      *
      * @param history - The raw conversation history to clean
-     * @returns A cleaned array of ApiMessage objects
+     * @returns A cleaned array of Message objects
      *
      * @private
      */
-    private cleanConversationHistory(history: ApiMessage[]): ApiMessage[] {
+    private cleanConversationHistory(history: Message[]): Message[] {
         return history
-            .filter((msg): msg is ApiMessage & { role: 'user' | 'assistant' | 'system' } =>
+            .filter((msg): msg is Message & { role: 'user' | 'assistant' | 'system' } =>
                 msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system'
             )
             .map((msg) => {

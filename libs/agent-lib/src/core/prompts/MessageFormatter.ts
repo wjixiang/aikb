@@ -1,12 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ApiMessage } from '../memory/types.js';
+import { Message } from '../memory/types.js';
 import { PromptTemplates } from './PromptTemplates.js';
 
 /**
  * Formats conversation history messages into XML strings for prompt building.
  * 
  * This class extracts the complex conversation history formatting logic from agent.ts,
- * providing a clean, reusable interface for converting ApiMessage objects to XML format.
+ * providing a clean, reusable interface for converting Message objects to XML format.
  * 
  * The formatting follows these rules:
  * - System messages with string content: wrapped with `<workspace_context_update>` tags
@@ -19,18 +19,18 @@ import { PromptTemplates } from './PromptTemplates.js';
  */
 export class MessageFormatter {
     /**
-     * Formats a single ApiMessage to an XML string.
+     * Formats a single Message to an XML string.
      *
      * This method handles different message content types and formats them appropriately:
      * - System messages are wrapped in workspace context tags
      * - Messages with content blocks are processed block by block
      *
-     * @param msg - The ApiMessage to format
+     * @param msg - The Message to format
      * @returns The formatted message as an XML string
      *
      * @example
      * ```ts
-     * const msg: ApiMessage = {
+     * const msg: Message = {
      *   role: 'system',
      *   content: [{ type: 'text', text: 'Some context' }]
      * };
@@ -38,7 +38,7 @@ export class MessageFormatter {
      * // Returns: '<system>\n<workspace_context_update>\nSome context\n</workspace_context_update>\n</system>'
      * ```
      */
-    static formatToXml(msg: ApiMessage): string {
+    static formatToXml(msg: Message): string {
         const role = msg.role;
 
         // Handle content blocks
@@ -82,12 +82,12 @@ export class MessageFormatter {
      * This method processes each message in the conversation history and converts
      * it to an XML-formatted string using the formatToXml method.
      * 
-     * @param history - Array of ApiMessage objects representing the conversation history
+     * @param history - Array of Message objects representing the conversation history
      * @returns Array of formatted XML strings, one for each message
      * 
      * @example
      * ```ts
-     * const history: ApiMessage[] = [
+     * const history: Message[] = [
      *   { role: 'user', content: 'Hello' },
      *   { role: 'assistant', content: 'Hi there!' }
      * ];
@@ -98,7 +98,7 @@ export class MessageFormatter {
      * // ]
      * ```
      */
-    static formatConversationHistory(history: ApiMessage[]): string[] {
+    static formatConversationHistory(history: Message[]): string[] {
         return history.map((msg) => this.formatToXml(msg));
     }
 }

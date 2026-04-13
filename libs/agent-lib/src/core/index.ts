@@ -53,7 +53,7 @@ export * from './di/index.js';
 export { MemoryModule, defaultMemoryConfig } from './memory/index.js';
 export type { IMemoryModule, MemoryModuleConfig } from './memory/index.js';
 export type {
-  ApiMessage,
+  Message,
   MessageBuilder,
   MessageAddedCallback,
   ExtendedContentBlock,
