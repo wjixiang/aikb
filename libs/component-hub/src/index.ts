@@ -33,27 +33,3 @@ export type {
   RecencyFilter,
   ContentSize,
 } from './webSearch/index.js';
-
-export { RuntimeControlComponent } from './runtime-control/index.js';
-export {
-  SwarmAPIClient,
-  type RESTConfig as RuntimeControlRESTConfig,
-} from './runtime-control/index.js';
-export {
-  runtimeControlToolSchemas,
-  type RuntimeControlToolName,
-  type RuntimeControlToolReturnType,
-  type CreateAgentParams,
-  type DestroyAgentParams,
-  type StopAgentParams,
-  type ListAgentsParams,
-  type GetAgentParams,
-  type ListAgentSoulsParams,
-  type CreateAgentByTypeParams,
-  type RegisterInTopologyParams,
-  type UnregisterFromTopologyParams,
-  type ConnectAgentsParams,
-  type DisconnectAgentsParams,
-  type GetTopologyInfoParams,
-  type GetNeighborsParams,
-} from './runtime-control/schemas.js';

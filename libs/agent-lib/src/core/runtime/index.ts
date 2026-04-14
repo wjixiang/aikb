@@ -61,8 +61,6 @@ export type {
 
 export { RuntimeControlClientImpl } from './RuntimeControlClient.js';
 
-export { RuntimeControlState } from './RuntimeControlState.js';
-
 export type { IAgentSleepControl } from './AgentSleepControl.js';
 
 // Event Stream

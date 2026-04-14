@@ -221,11 +221,6 @@ export interface AgentRuntimeConfig {
   ackTimeout?: number;
   /** Max retries for failed message delivery (default: 3) */
   maxRetries?: number;
-  /** Runtime control config - when restBaseUrl is set, topology tools use REST API */
-  runtimeControl?: {
-    restBaseUrl?: string;
-    apiKey?: string;
-  };
 }
 
 export interface AgentFilter {

@@ -476,9 +476,6 @@ export class AgentRuntime implements IAgentRuntime {
       components: soul.components,
       workspace: overrides?.workspace,
       observers: overrides?.observers,
-      ...(this.config.runtimeControl
-        ? { runtimeControl: this.config.runtimeControl }
-        : {}),
       apiClient: this.apiClient,
       persistenceService: this.persistenceService,
     };
@@ -493,10 +490,6 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Wait for agent initialization
     const agent = await container.getAgent();
-
-    // Always inject RuntimeControlClient (no permission checks)
-    const controlClient = this.createControlClient(instanceId);
-    agent.setRuntimeClient(controlClient);
 
     // Store container
     this.containers.set(instanceId, container);
@@ -728,7 +721,6 @@ export class AgentRuntime implements IAgentRuntime {
       persistence: storedConfig?.persistence,
       components: storedConfig?.components,
       hooks: storedConfig?.hooks,
-      runtimeControl: storedConfig?.runtimeControl,
       apiClient: this.apiClient,
       persistenceService: this.persistenceService,
     };
@@ -744,10 +736,6 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Get the restored agent
     const agent = await container.getAgent();
-
-    // Re-inject runtime client
-    const controlClient = this.createControlClient(instanceId);
-    agent.setRuntimeClient(controlClient);
 
     // Re-wire event stream
     const hookModule = container

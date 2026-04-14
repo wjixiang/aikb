@@ -24,7 +24,6 @@ await initLogger({ name: 'swarm-runtime', level: config.server.logLevel });
 
 const runtimeConfig: AgentRuntimeConfig = {
   defaultApiConfig: config.api as any,
-  ...(config.runtimeControl ? { runtimeControl: config.runtimeControl } : {}),
 };
 
 const fastify = Fastify({

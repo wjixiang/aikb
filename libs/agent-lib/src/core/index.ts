@@ -126,7 +126,6 @@ export {
   AgentRuntime,
   createAgentRuntime,
   RuntimeControlClientImpl,
-  RuntimeControlState,
   createAgentEventStream,
   createAgentEvent,
 } from './runtime/index.js';

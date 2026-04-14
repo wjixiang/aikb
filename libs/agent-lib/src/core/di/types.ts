@@ -328,20 +328,6 @@ export const TYPES = {
    */
   RuntimeControlPermissions: Symbol('RuntimeControlPermissions'),
 
-  // ==================== Runtime Control ====================
-
-  /**
-   * RuntimeControlState - Shared state for RuntimeControlComponent
-   * @scope Singleton - Shared within agent container
-   */
-  RuntimeControlState: Symbol('RuntimeControlState'),
-
-  /**
-   * RuntimeControlRESTConfig - REST API config for RuntimeControlComponent topology ops
-   * @scope Singleton - Optional, bound at container creation when runtimeControl config is provided
-   */
-  RuntimeControlRESTConfig: Symbol('RuntimeControlRESTConfig'),
-
   /**
    * AgentSleepControl - Allows components to put agent to sleep and wake it up
    * @scope Singleton - Bound at container creation

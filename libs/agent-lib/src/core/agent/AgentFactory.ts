@@ -44,10 +44,6 @@ export interface AgentBlueprint {
 export interface AgentFactoryOptions extends AgentBlueprint {
   workspace?: Partial<VirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;
-  runtimeControl?: {
-    restBaseUrl?: string;
-    apiKey?: string;
-  };
   apiClient: ApiClient;
   persistenceService: IPersistenceService;
   sessionManager?: ISessionManager;

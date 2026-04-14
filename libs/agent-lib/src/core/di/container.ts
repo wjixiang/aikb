@@ -27,7 +27,6 @@ import {
 } from './UnifiedAgentConfig.js';
 import type { TestOverrides } from './types.js';
 import { ToolComponent } from '../../components/core/toolComponent.js';
-import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
 
 /**
  * AgentContainer - 1:1 relationship with Agent
@@ -255,18 +254,6 @@ export class AgentContainer {
     this.container
       .bind<Container>(TYPES.Container)
       .toConstantValue(this.container);
-
-    // Bind RuntimeControlState for DI (used by RuntimeControlComponent when injected)
-    this.container
-      .bind<RuntimeControlState>(TYPES.RuntimeControlState)
-      .toConstantValue(new RuntimeControlState());
-
-    // Bind RuntimeControlRESTConfig if provided (used by RuntimeControlComponent for topology ops)
-    if (this.config.runtimeControl?.restBaseUrl) {
-      this.container
-        .bind(TYPES.RuntimeControlRESTConfig)
-        .toConstantValue(this.config.runtimeControl);
-    }
 
     // Bind AgentSleepControl - lazy proxy to avoid circular dependency
     // (Agent → ToolManager → A2ATaskComponent → AgentSleepControl → Agent)

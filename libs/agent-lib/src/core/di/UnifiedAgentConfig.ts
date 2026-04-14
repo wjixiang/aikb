@@ -48,16 +48,6 @@ export interface UnifiedAgentConfig {
   hooks?: HookConfig;
 
   /**
-   * Runtime control configuration
-   * When restBaseUrl is provided, topology operations use REST API
-   * Agent lifecycle operations always use DI (in-process)
-   */
-  runtimeControl?: {
-    restBaseUrl?: string;
-    apiKey?: string;
-  };
-
-  /**
    * ApiClient instance for LLM API calls.
    * This replaces the previous clientPool pattern.
    */
@@ -106,14 +96,6 @@ export interface AgentCreationOptions {
    * Hook configuration for lifecycle events
    */
   hooks?: HookConfig;
-
-  /**
-   * Runtime control configuration
-   */
-  runtimeControl?: {
-    restBaseUrl?: string;
-    apiKey?: string;
-  };
 
   /**
    * ApiClient instance for LLM API calls.
@@ -190,8 +172,6 @@ export function mergeWithDefaults(
     components: partial.components,
     // Pass hooks from top-level options
     hooks: partial.hooks,
-    // Pass runtime control config
-    runtimeControl: partial.runtimeControl,
     // Pass ApiClient for LLM API calls
     apiClient: partial.apiClient,
     // Pass external persistence service (not merged with defaults, passed as-is)

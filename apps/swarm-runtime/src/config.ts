@@ -23,11 +23,6 @@ export interface ApiConfig {
 export interface AppConfig {
   server: ServerConfig;
   api: ApiConfig;
-  /** Runtime control REST config */
-  runtimeControl?: {
-    restBaseUrl?: string;
-    apiKey?: string;
-  };
 }
 
 /**
@@ -84,12 +79,6 @@ export function loadConfig(): AppConfig {
       openAiBaseUrl: process.env['API_BASE_URL'] || '',
       apiModelId: process.env['API_MODEL_ID'] || '',
       timeout: parseInt(process.env['API_TIMEOUT'] || '120000'),
-    },
-    runtimeControl: {
-      restBaseUrl,
-      ...(process.env['SWARM_API_KEY']
-        ? { apiKey: process.env['SWARM_API_KEY'] }
-        : {}),
     },
   };
 }

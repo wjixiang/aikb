@@ -26,8 +26,6 @@ import { HookType } from '../hooks/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
 import type { ISessionManager } from '../session/ISessionManager.js';
 import type { SessionState } from '../session/types.js';
-import type { IRuntimeControlClient } from '../runtime/types.js';
-import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
 import { getLogger } from '@shared/logger';
 
 export interface AgentConfig {
@@ -129,9 +127,6 @@ export class Agent {
   // Tool manager for executing tools
   private toolManager: IToolManager;
 
-  // RuntimeControlComponent state (set via DI)
-  private _runtimeControlState?: RuntimeControlState;
-
   // Sleep reason (for observability)
   private _sleepReason: string | null = null;
 
@@ -155,9 +150,6 @@ export class Agent {
   private logger = getLogger('Agent');
   public instanceId: string;
 
-  // Runtime control client (set by AgentRuntime)
-  private _runtimeClient?: IRuntimeControlClient;
-
   constructor(
     @inject(TYPES.AgentInstanceId) instanceId: string,
     @inject(TYPES.AgentConfig)
@@ -174,9 +166,6 @@ export class Agent {
     @optional()
     persistenceService?: IPersistenceService,
     @inject(TYPES.TaskId) @optional() taskId?: string,
-    @inject(TYPES.RuntimeControlState)
-    @optional()
-    runtimeControlState?: RuntimeControlState,
   ) {
     this.instanceId = instanceId;
     this.workspace = workspace as unknown as VirtualWorkspace;
@@ -189,7 +178,6 @@ export class Agent {
     this.hookModule = hookModule;
     this.sessionManager = sessionManager;
     this.persistenceService = persistenceService;
-    this._runtimeControlState = runtimeControlState;
 
     void this.sessionManager.createSession(this.getSessionState());
   }
@@ -553,41 +541,6 @@ export class Agent {
     });
 
     this.logger.info({ reason }, '[Agent] Entering sleep state');
-  }
-
-  /**
-   * Set the Runtime control client for this agent
-   * This is called by AgentRuntime when the agent is created
-   */
-  setRuntimeClient(client: IRuntimeControlClient): void {
-    this._runtimeClient = client;
-
-    if (this._runtimeControlState) {
-      this._runtimeControlState.setRuntimeClient(client);
-    }
-
-    this.logger.info('[Agent] Runtime control client set');
-  }
-
-  /**
-   * Set the RuntimeControlComponent state (called via DI)
-   */
-  setRuntimeControlState(state: RuntimeControlState): void {
-    this._runtimeControlState = state;
-  }
-
-  /**
-   * Get the Runtime control client
-   */
-  getRuntimeClient(): IRuntimeControlClient | undefined {
-    return this._runtimeClient;
-  }
-
-  /**
-   * Check if this agent has Runtime control capabilities
-   */
-  hasRuntimeControl(): boolean {
-    return this._runtimeClient !== undefined;
   }
 
   /**
