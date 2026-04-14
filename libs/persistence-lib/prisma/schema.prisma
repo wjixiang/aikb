@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model PersistedToolResult {
+  id         String   @id @default(uuid())
+  instanceId String
+  toolUseId  String   @unique
+  toolName   String
+  content    String
+  size       Int
+
+  createdAt DateTime @default(now())
+
+  @@index([instanceId])
+  @@index([toolUseId])
+}

@@ -93,6 +93,7 @@
     "llm-api-client": "workspace:*",
     "openai": "^5.23.2",
     "ora": "^8.0.0",
+    "persistence-lib": "workspace:*",
     "pg": "^8.16.3",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",

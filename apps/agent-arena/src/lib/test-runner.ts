@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { createAgentRuntime } from 'agent-lib/core';
 import type { AgentBlueprint } from 'agent-lib/core';
+import { PostgresPersistenceService } from 'agent-lib';
+import { PrismaClient } from 'agent-lib';
 import { ClientPool } from 'llm-api-client';
 import type { ProviderSettings } from 'llm-api-client';
 import { createAgentSoulByToken, getAllAgentSouls } from 'agent-soul-hub';
@@ -32,11 +34,17 @@ export function createArenaRuntime(
   ClientPool.resetInstance();
   resetGlobalCallCounter();
 
-  // Ensure DATABASE_URL is set for AgentContainer persistence binding
   const cfg = getConfig();
-  if (!process.env['AGENT_DATABASE_URL'] && !process.env['DATABASE_URL']) {
-    process.env['AGENT_DATABASE_URL'] = cfg.databaseUrl;
-  }
+  const databaseUrl = process.env['AGENT_DATABASE_URL'] ?? process.env['DATABASE_URL'] ?? cfg.databaseUrl;
+
+  const prisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
+  });
+  const persistenceService = new PostgresPersistenceService(prisma as any);
 
   const pool = ClientPool.getInstance();
 
@@ -66,7 +74,7 @@ export function createArenaRuntime(
     });
   }
 
-  return createAgentRuntime({ clientPool: pool });
+  return createAgentRuntime({ apiClient: pool, persistenceService });
 }
 
 /**

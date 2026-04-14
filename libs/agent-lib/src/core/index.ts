@@ -85,6 +85,9 @@ export * from './hooks/index.js';
 // Prisma
 export * from './prisma/index.js';
 
+// Persistence
+export * from './persistence/index.js';
+
 // Runtime (selective exports to avoid conflicts)
 export type {
   AgentMetadata,
