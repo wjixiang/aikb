@@ -1,11 +1,11 @@
 import type { AgentConfig, SOP } from '../agent/agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { MemoryModuleConfig } from '../memory/types.js';
-import type { ProviderSettings } from '../types/provider-settings.js';
-import type { PersistenceConfig } from '../persistence/types.js';
+import type { PersistenceConfig, IPersistenceService } from '../persistence/types.js';
 import type { ToolComponent } from '../../components/core/toolComponent.js';
-import type { ClientPool } from 'llm-api-client';
+import type { ApiClient } from 'llm-api-client';
 import type { HookConfig } from '../hooks/types.js';
+import type { ISessionManager } from '../session/ISessionManager.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
@@ -32,7 +32,6 @@ export interface UnifiedAgentConfig {
     endpoint?: string;
     metadata?: Record<string, unknown>;
   };
-  api: ProviderSettings;
   workspace: VirtualWorkspaceConfig;
   memory: MemoryModuleConfig;
   persistence?: PersistenceConfig;
@@ -59,9 +58,22 @@ export interface UnifiedAgentConfig {
   };
 
   /**
-   * ClientPool for shared LLM client management.
+   * ApiClient instance for LLM API calls.
+   * This replaces the previous clientPool pattern.
    */
-  clientPool?: ClientPool;
+  apiClient?: ApiClient;
+
+  /**
+   * External persistence service instance.
+   * If provided, the container will use this instead of creating its own.
+   */
+  persistenceService?: IPersistenceService;
+
+  /**
+   * External session manager instance.
+   * If provided, the container will use this instead of creating its own.
+   */
+  sessionManager?: ISessionManager;
 }
 
 export interface AgentCreationOptions {
@@ -79,7 +91,6 @@ export interface AgentCreationOptions {
     endpoint?: string;
     metadata?: Record<string, unknown>;
   };
-  api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
   memory?: Partial<MemoryModuleConfig>;
   persistence?: Partial<PersistenceConfig>;
@@ -105,21 +116,27 @@ export interface AgentCreationOptions {
   };
 
   /**
-   * ClientPool for shared LLM client management.
+   * ApiClient instance for LLM API calls.
    */
-  clientPool?: ClientPool;
+  apiClient?: ApiClient;
+
+  /**
+   * External persistence service instance.
+   * If provided, the container will use this instead of creating its own.
+   */
+  persistenceService?: IPersistenceService;
+
+  /**
+   * External session manager instance.
+   * If provided, the container will use this instead of creating its own.
+   */
+  sessionManager?: ISessionManager;
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {
   agent: {
     sop: 'Default SOP',
     config: defaultAgentConfig,
-  },
-  api: {
-    apiProvider: 'zai',
-    apiKey: process.env['GLM_API_KEY'] || '',
-    apiModelId: 'glm-4.5',
-    zaiApiLine: 'china_coding',
   },
   workspace: {
     id: 'default-workspace',
@@ -155,10 +172,6 @@ export function mergeWithDefaults(
       endpoint: partial.agent?.endpoint,
       metadata: partial.agent?.metadata,
     },
-    api: {
-      ...defaultUnifiedConfig.api,
-      ...partial.api,
-    },
     workspace: {
       ...defaultUnifiedConfig.workspace,
       ...partial.workspace,
@@ -177,8 +190,12 @@ export function mergeWithDefaults(
     hooks: partial.hooks,
     // Pass runtime control config
     runtimeControl: partial.runtimeControl,
-    // Pass client pool for shared LLM client management
-    clientPool: partial.clientPool,
+    // Pass ApiClient for LLM API calls
+    apiClient: partial.apiClient,
+    // Pass external persistence service (not merged with defaults, passed as-is)
+    persistenceService: partial.persistenceService,
+    // Pass external session manager (not merged with defaults, passed as-is)
+    sessionManager: partial.sessionManager,
   };
   return result;
 }

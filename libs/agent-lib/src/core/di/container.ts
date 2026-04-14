@@ -8,19 +8,15 @@ import { LazySleepControl } from '../runtime/AgentSleepControl.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import { ToolManager } from '../tools/ToolManager.js';
-import { PostgresPersistenceService } from '../persistence/PostgresPersistenceService.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
 import { AgentSessionManager } from '../session/AgentSessionManager.js';
-import type { ApiClient, ClientPool } from 'llm-api-client';
+import type { ApiClient } from 'llm-api-client';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { IToolManager } from '../tools/index.js';
 import type { IPersistenceService } from '../persistence/types.js';
-import { PrismaClient } from '../../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
 import { getLogger } from '@shared/logger';
 import type { Logger } from '@shared/logger';
 import {
@@ -52,6 +48,7 @@ export class AgentContainer {
   private container: Container;
   public instanceId: string;
   private config: UnifiedAgentConfig;
+  private persistenceService?: IPersistenceService;
   private agentInstance: Agent | null = null;
   private isRestoring = false;
   private initPromise: Promise<void> | null = null;
@@ -62,12 +59,14 @@ export class AgentContainer {
   }
 
   constructor(
-    options: AgentCreationOptions = {},
+    options: AgentCreationOptions,
     instanceId?: string,
   ) {
     this.container = new Container({
       defaultScope: 'Singleton',
     });
+
+    this.persistenceService = options.persistenceService;
 
     if (instanceId) {
       // Restore agent: setup bindings first to get persistence service
@@ -104,7 +103,6 @@ export class AgentContainer {
           const storedConfig = metadata.config as Partial<UnifiedAgentConfig>;
           this.config = {
             agent: { ...this.config.agent, ...storedConfig.agent },
-            api: { ...this.config.api, ...storedConfig.api },
             workspace: { ...this.config.workspace, ...storedConfig.workspace },
             memory: { ...this.config.memory, ...storedConfig.memory },
             persistence: storedConfig.persistence ?? this.config.persistence,
@@ -147,7 +145,7 @@ export class AgentContainer {
         TYPES.IPersistenceService,
       );
       // Exclude non-serializable fields from config
-      const { components, clientPool, ...serializableConfig } = this.config;
+      const { components, apiClient, ...serializableConfig } = this.config;
       await persistenceService.saveInstanceMetadata(this.instanceId, {
         status: AgentStatus.Sleeping,
         config: serializableConfig,
@@ -189,9 +187,6 @@ export class AgentContainer {
     this.container
       .bind(TYPES.AgentConfig)
       .toConstantValue(this.config.agent.config);
-    this.container
-      .bind(TYPES.ProviderSettings)
-      .toConstantValue(this.config.api);
     this.container
       .bind(TYPES.AgentPrompt)
       .toConstantValue(this.config.agent.sop);
@@ -235,66 +230,25 @@ export class AgentContainer {
       .toConstantValue(this.config.hooks ?? {});
     this.container.bind(TYPES.HookModule).to(HookModule).inSingletonScope();
 
-    // API Client — use ClientPool directly as a unified ApiClient
-    // The pool implements round-robin selection and cross-client fallback,
-    // so agents automatically benefit from load balancing and failover.
-    if (!this.config.clientPool) {
+    // ApiClient - injected directly via DI
+    if (!this.config.apiClient) {
       throw new Error(
-        'ClientPool is required to create agents. Provide clientPool in AgentRuntimeConfig.',
+        'apiClient is required to create agents. Provide apiClient in AgentRuntimeConfig.',
       );
     }
     this.container
       .bind<ApiClient>(TYPES.ApiClient)
-      .toConstantValue(this.config.clientPool);
+      .toConstantValue(this.config.apiClient);
 
-    // ClientPool
-    this.container
-      .bind<ClientPool>(TYPES.ClientPool)
-      .toConstantValue(this.config.clientPool);
-
-    // // Persistence Service (if enabled)
-    // if (this.config.persistence?.enabled !== false) {
-    const databaseUrl =
-      this.config.persistence?.databaseUrl || process.env['AGENT_DATABASE_URL'];
-
-    if (databaseUrl) {
-      // Prisma Client
-      this.container
-        .bind<PrismaClient>(TYPES.PrismaClient)
-        .toDynamicValue(() => {
-          const connectionString =
-            databaseUrl || process.env['AGENT_DATABASE_URL'];
-          if (!connectionString) {
-            throw new Error('Database URL not configured');
-          }
-          const pool = new pg.Pool({ connectionString });
-          const adapter = new PrismaPg({ connectionString });
-          return new PrismaClient({ adapter });
-        })
-        .inSingletonScope();
-
-      // Persistence Config
-      this.container.bind(TYPES.PersistenceConfig).toConstantValue({
-        enabled: true,
-        databaseUrl,
-        autoCommit: this.config.persistence?.autoCommit ?? true,
-      });
-
-      // Persistence Service
-      this.container
-        .bind<IPersistenceService>(TYPES.IPersistenceService)
-        .to(PostgresPersistenceService)
-        .inSingletonScope();
-
-      // Session Manager
-      this.container
-        .bind(TYPES.ISessionManager)
-        .to(AgentSessionManager)
-        .inSingletonScope();
-    } else {
-      throw new Error('binding persistenceService error: no databaseurl found');
+    // Persistence Service - external injection required
+    if (!this.persistenceService) {
+      throw new Error(
+        'persistenceService is required to create agents. Provide persistenceService in AgentRuntimeConfig.',
+      );
     }
-    // }
+    this.container
+      .bind<IPersistenceService>(TYPES.IPersistenceService)
+      .toConstantValue(this.persistenceService);
 
     // Container reference
     this.container
