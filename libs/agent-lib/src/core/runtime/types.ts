@@ -206,13 +206,15 @@ export interface MessageBusConfig {
 }
 
 export interface AgentRuntimeConfig {
-  defaultApiConfig?: Partial<RuntimeControlProviderSettings>;
   /**
-   * ClientPool for shared LLM client management.
-   * All agents created by this runtime will obtain their ApiClient from the pool.
+   * ApiClient instance for LLM API calls.
+   * All agents created by this runtime will use this client.
    */
-  clientPool?: import('llm-api-client').ClientPool;
-  persistence?: PersistenceConfig;
+  apiClient?: import('llm-api-client').ApiClient;
+  /**
+   * Persistence service instance for agent state persistence.
+   */
+  persistenceService?: import('../persistence/types.js').IPersistenceService;
   /** MessageBus configuration - defaults to in-memory */
   messageBus?: MessageBusConfig;
   /** ACK timeout in ms for message confirmation (default: 5000) */

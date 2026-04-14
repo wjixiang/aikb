@@ -303,6 +303,37 @@ class DXClient(IDXClient):
             self._handle_dx_error(e, f"Failed to download file '{file_id}'")
             raise
 
+    def upload_file(
+        self,
+        local_path: str | Path,
+        name: str | None = None,
+        folder: str = "/",
+        project_id: str | None = None,
+    ) -> DXFileInfo:
+        self._ensure_connected()
+        local_path = Path(local_path)
+        if not local_path.exists():
+            raise DXClientError(f"Local file not found: {local_path}")
+        target_project = project_id or self._require_project()
+        file_name = name or local_path.name
+        try:
+            dxfile = dxpy.upload_dxfile(
+                local_path,
+                project=target_project,
+                folder=folder,
+                name=file_name,
+            )
+            logger.info(
+                "Uploaded file '%s' to project '%s' folder '%s'",
+                local_path,
+                target_project,
+                folder,
+            )
+            return self.describe_file(dxfile.get_id(), refresh=True)
+        except DxPyDXError as e:
+            self._handle_dx_error(e, f"Failed to upload file '{local_path}'")
+            raise
+
     # ═══════════════════════════════════════════════════════════════════════
     #  记录操作
     # ═══════════════════════════════════════════════════════════════════════

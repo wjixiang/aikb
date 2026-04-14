@@ -92,6 +92,26 @@ class IDXClient(ABC):
     def download_file(self, file_id: str, local_path: str | None = None) -> Path:
         """下载文件到本地路径。"""
 
+    @abstractmethod
+    def upload_file(
+        self,
+        local_path: str | Path,
+        name: str | None = None,
+        folder: str = "/",
+        project_id: str | None = None,
+    ) -> DXFileInfo:
+        """上传本地文件到项目。
+
+        Args:
+            local_path: 本地文件路径。
+            name: 上传后的文件名。为 None 时使用本地文件名。
+            folder: 目标文件夹路径。
+            project_id: 目标项目 ID。为 None 时使用当前项目上下文。
+
+        Returns:
+            DXFileInfo，上传后的文件元数据。
+        """
+
     # ── 记录操作 ──────────────────────────────────────────────────────────
 
     @abstractmethod

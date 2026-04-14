@@ -1,22 +1,41 @@
 {
-  "name": "spark-in",
-  "title": "spark-in",
-  "summary": "spark-in",
+  "name": "spark-example-applet",
+  "title": "spark-example-applet",
+  "summary": "An example Spark applet for the UKB-RAP",
   "dxapi": "1.0.0",
   "version": "0.0.1",
-  "inputSpec": [],
-  "outputSpec": [],
+  "inputSpec": [
+    {
+      "name": "field_name",
+      "class": "string",
+      "optional": false,
+      "help": ""
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "mean",
+      "class": "string",
+      "help": ""
+    }
+  ],
   "runSpec": {
     "timeoutPolicy": {
       "*": {
-        "hours": 4
+        "hours": 48
       }
     },
-    "interpreter": "python3",
-    "file": "src/spark-in.py",
+    "interpreter": "bash",
+    "file": "src/test-spark.sh",
     "distribution": "Ubuntu",
-    "release": "24.04",
-    "version": "0"
+    "release": "20.04",
+    "version": "0",
+    "execDepends": [
+      {"name" : "pyspark",
+      "package_manager": "pip"},
+      {"name" : "pandas",
+       "package_manager": "pip"}
+    ]
   },
   "access": {
     "network": [
@@ -31,13 +50,11 @@
           "instanceType": "mem1_ssd1_v2_x4",
           "clusterSpec": {
             "type": "dxspark",
-            "version": "3.5.2",
-            "initialInstanceCount": 2,
-            "ports": "9500, 9700-9750"
+            "version": "3.2.3",
+            "initialInstanceCount": 1
           }
         }
       }
     }
   }
 }
-

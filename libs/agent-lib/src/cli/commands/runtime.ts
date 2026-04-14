@@ -6,8 +6,12 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { ClientPool } from 'llm-api-client';
 import { createAgentRuntime } from '../../core/runtime/index.js';
 import type { AgentRuntimeConfig } from '../../core/runtime/types.js';
+import { PostgresPersistenceService } from '../../core/persistence/PostgresPersistenceService.js';
+import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { getApiKey, getEnv } from '../lib/config.js';
 import { log } from '../lib/logger.js';
 import {
@@ -137,13 +141,7 @@ async function runtimeStart(options: {
   }
 
   // Build config
-  const config: AgentRuntimeConfig = {
-    defaultApiConfig: {
-      apiKey: options.apiKey,
-      apiBaseUrl: options.apiUrl,
-      apiModelId: options.apiModel,
-    },
-  };
+  const config: AgentRuntimeConfig = {};
 
   // Configure message bus
   if (options.messageBus === 'redis') {
@@ -154,8 +152,18 @@ async function runtimeStart(options: {
   };
   log.info('Using in-memory message bus');
 
-  // Create runtime
-  const runtime = createAgentRuntime(config);
+  // Create persistence service
+  const databaseUrl = getEnv('AGENT_DATABASE_URL') || 'postgresql://localhost:5432/agent_db';
+  const adapter = new PrismaPg({ connectionString: databaseUrl });
+  const prisma = new PrismaClient({ adapter });
+  const persistenceService = new PostgresPersistenceService(prisma);
+
+  // Create runtime with apiClient and persistenceService in config
+  const runtime = createAgentRuntime({
+    ...config,
+    apiClient: ClientPool.getInstance(),
+    persistenceService,
+  });
 
   // Subscribe to events
   runtime.on('agent:created', (event) => {

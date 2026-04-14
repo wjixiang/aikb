@@ -2,9 +2,10 @@ import 'reflect-metadata';
 import { Agent } from './agent.js';
 import type { AgentConfig, SOP } from './agent.js';
 import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
-import type { ProviderSettings } from '../types/provider-settings.js';
-import type { ClientPool } from 'llm-api-client';
+import type { ApiClient } from 'llm-api-client';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';
+import type { IPersistenceService } from '../persistence/types.js';
+import type { ISessionManager } from '../session/ISessionManager.js';
 import {
   AgentContainer,
   type AgentCreationOptions,
@@ -41,14 +42,15 @@ export interface AgentBlueprint {
  * Configuration options for creating an Agent
  */
 export interface AgentFactoryOptions extends AgentBlueprint {
-  api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;
   runtimeControl?: {
     restBaseUrl?: string;
     apiKey?: string;
   };
-  clientPool?: ClientPool;
+  apiClient: ApiClient;
+  persistenceService: IPersistenceService;
+  sessionManager?: ISessionManager;
 }
 
 /**

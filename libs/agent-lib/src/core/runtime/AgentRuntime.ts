@@ -48,8 +48,7 @@ import { AgentContainer } from '../di/container.js';
 import type { AgentCreationOptions, UnifiedAgentConfig } from '../di/container.js';
 import { TYPES } from '../di/types.js';
 import type { HookModule } from '../hooks/HookModule.js';
-import type { ProviderSettings } from '../types/provider-settings.js';
-import type { ClientPool } from 'llm-api-client';
+import type { ApiClient } from 'llm-api-client';
 import {
   AgentFactory,
   type AgentFactoryOptions,
@@ -345,11 +344,11 @@ export class AgentRuntime implements IAgentRuntime {
   /** Runtime configuration options */
   private config: AgentRuntimeConfig;
 
-  /** Default API configuration for all agents */
-  private defaultApiConfig: Partial<RuntimeControlProviderSettings> | undefined;
+  /** ApiClient for LLM API calls (passed to agents via DI) */
+  private apiClient: ApiClient | undefined;
 
-  /** ClientPool for shared LLM client management */
-  private clientPool: ClientPool | undefined;
+  /** Persistence service for agent state persistence */
+  private persistenceService: import('../persistence/types.js').IPersistenceService;
 
   /**
    * Map of agent instance IDs to their DI containers.
@@ -409,15 +408,15 @@ export class AgentRuntime implements IAgentRuntime {
    * @param config Runtime configuration options
    *
    * @example
-   * const runtime = new AgentRuntime({});
+   * const runtime = new AgentRuntime({ apiClient, persistenceService });
    */
   constructor(config: AgentRuntimeConfig) {
     this.config = {
       ...config,
     };
 
-    this.defaultApiConfig = config.defaultApiConfig;
-    this.clientPool = config.clientPool;
+    this.apiClient = config.apiClient;
+    this.persistenceService = config.persistenceService!;
 
     // Initialize core components that don't require DI container
     // These are shared across all agents managed by this runtime
@@ -465,22 +464,23 @@ export class AgentRuntime implements IAgentRuntime {
     soul: AgentBlueprint,
     overrides?: Partial<AgentFactoryOptions>,
   ): Promise<string> {
-    const mergedApi = {
-      ...this.defaultApiConfig,
-      ...overrides?.api,
-    } as Partial<ProviderSettings>;
+    if (!this.persistenceService) {
+      throw new Error('AgentRuntime.persistenceService is required to create agents');
+    }
+    if (!this.apiClient) {
+      throw new Error('AgentRuntime.apiClient is required to create agents');
+    }
 
-    // Build final options: soul.agent + soul.components + merged config
     const options: AgentFactoryOptions = {
       agent: soul.agent,
       components: soul.components,
-      api: mergedApi,
       workspace: overrides?.workspace,
       observers: overrides?.observers,
       ...(this.config.runtimeControl
         ? { runtimeControl: this.config.runtimeControl }
         : {}),
-      clientPool: this.clientPool,
+      apiClient: this.apiClient,
+      persistenceService: this.persistenceService,
     };
 
     const parentInstanceId = (
@@ -723,14 +723,14 @@ export class AgentRuntime implements IAgentRuntime {
         name: metadata.name,
         type: metadata.agentType,
       },
-      api: (storedConfig?.api || this.defaultApiConfig) as AgentCreationOptions['api'],
       workspace: storedConfig?.workspace,
       memory: storedConfig?.memory,
       persistence: storedConfig?.persistence,
       components: storedConfig?.components,
       hooks: storedConfig?.hooks,
       runtimeControl: storedConfig?.runtimeControl,
-      clientPool: this.config.clientPool,
+      apiClient: this.apiClient,
+      persistenceService: this.persistenceService,
     };
 
     // Create new container via restore (loads config from DB)
@@ -1252,6 +1252,8 @@ export class AgentRuntime implements IAgentRuntime {
  *   config: { agent: { name: 'worker', type: 'worker' } }
  * });
  */
-export function createAgentRuntime(config: AgentRuntimeConfig): IAgentRuntime {
+export function createAgentRuntime(
+  config: AgentRuntimeConfig,
+): IAgentRuntime {
   return new AgentRuntime(config);
 }

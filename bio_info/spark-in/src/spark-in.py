@@ -14,6 +14,7 @@
 import os
 from time import sleep
 import dxpy
+import dxdata
 
 
 @dxpy.entry_point("main")
@@ -26,8 +27,9 @@ def main():
     # the same name as your output fields.
 
     output = {}
-    print("sleep 60min")
-    sleep(60 * 60)
+
+    # Initialize dxdata engine
+    engine = dxdata.connect(dialect="hive+pyspark")
 
     return output
 

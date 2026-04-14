@@ -7,6 +7,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora, { Ora } from 'ora';
+import { ClientPool } from 'llm-api-client';
 import { createAgentRuntime } from '../../core/runtime/index.js';
 import type { AgentRuntimeConfig } from '../../core/runtime/types.js';
 import {
@@ -15,6 +16,9 @@ import {
   createDiagnosisAgentSoul as _createDiagnosisAgentSoul,
 } from 'agent-soul-hub';
 import type { AgentBlueprint } from '../../core/agent/AgentFactory.js';
+import { PostgresPersistenceService } from '../../core/persistence/PostgresPersistenceService.js';
+import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 const createEpidemiologyAgentSoul = (): AgentBlueprint =>
   _createEpidemiologyAgentSoul() as unknown as AgentBlueprint;
@@ -41,6 +45,13 @@ interface TestResult {
 }
 
 const testResults: TestResult[] = [];
+
+function createPersistenceService() {
+  const databaseUrl = getEnv('AGENT_DATABASE_URL') || 'postgresql://localhost:5432/agent_db';
+  const adapter = new PrismaPg({ connectionString: databaseUrl });
+  const prisma = new PrismaClient({ adapter });
+  return new PostgresPersistenceService(prisma);
+}
 
 /**
  * Register test commands
@@ -126,7 +137,10 @@ async function testBasic(options: {
   try {
     // Create runtime
     spinner.text = 'Creating AgentRuntime...';
-    const runtime = createAgentRuntime({});
+    const runtime = createAgentRuntime({
+      apiClient: ClientPool.getInstance(),
+      persistenceService: createPersistenceService(),
+    });
 
     await runtime.start();
     spinner.succeed('AgentRuntime created and started');
@@ -243,7 +257,10 @@ async function testA2A(options: {
 
   try {
     // Build config
-    const config: AgentRuntimeConfig = {};
+    const config: AgentRuntimeConfig = {
+      apiClient: ClientPool.getInstance(),
+      persistenceService: createPersistenceService(),
+    };
 
     if (options.messageBus === 'redis') {
       spinner.info('Redis message bus is deprecated, using in-memory message bus');
@@ -362,7 +379,10 @@ async function testRedis(options: {
 
     for (let i = 0; i < runtimeCount; i++) {
       spinner.text = `Creating Runtime ${i + 1}/${runtimeCount}...`;
-      const runtime = createAgentRuntime({});
+      const runtime = createAgentRuntime({
+        apiClient: ClientPool.getInstance(),
+        persistenceService: createPersistenceService(),
+      });
 
       await runtime.start();
       runtimes.push(runtime);
