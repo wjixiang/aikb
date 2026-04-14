@@ -17,7 +17,6 @@ import { runtimeCommands } from './commands/runtime.js';
 import { agentCommands } from './commands/agent.js';
 import { testCommands } from './commands/test.js';
 import { monitorCommands } from './commands/monitor.js';
-import { a2aCommands } from './commands/a2a.js';
 
 // Global CLI state
 interface CliState {
@@ -88,9 +87,6 @@ testCommands(program);
 
 // Monitor commands
 monitorCommands(program);
-
-// A2A commands
-a2aCommands(program);
 
 // ============================================================
 // Error Handling

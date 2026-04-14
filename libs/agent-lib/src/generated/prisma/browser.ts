@@ -42,8 +42,3 @@ export type AgentInstance = Prisma.AgentInstanceModel
  * 
  */
 export type RuntimeTask = Prisma.RuntimeTaskModel
-/**
- * Model A2AConversationLog
- * A2A conversation log — event-sourced from TopologyEvent
- */
-export type A2AConversationLog = Prisma.A2AConversationLogModel

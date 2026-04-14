@@ -246,13 +246,7 @@ async function testA2A(options: {
     const config: AgentRuntimeConfig = {};
 
     if (options.messageBus === 'redis') {
-      config.messageBus = {
-        mode: 'redis',
-        redis: {
-          url: options.redisUrl || getEnv('REDIS_URL'),
-        },
-      };
-      spinner.info(`Using Redis: ${options.redisUrl || getEnv('REDIS_URL')}`);
+      spinner.info('Redis message bus is deprecated, using in-memory message bus');
     }
 
     // Create runtime
@@ -290,24 +284,11 @@ async function testA2A(options: {
 
     for (let i = 0; i < taskCount; i++) {
       const taskId = `test-task-${i + 1}`;
-      try {
-        await sender
-          .getRuntimeClient()!
-          .sendA2AQuery(
-            receiverId,
-            `Test task ${i + 1}: Search for literature`,
-            { input: { query: `test query ${i + 1}` }, description: `Test task ${i + 1}` },
-          );
-        results.push({
-          taskId,
-          success: true,
-        });
-      } catch (error) {
-        results.push({
-          taskId,
-          success: false,
-        });
-      }
+      spinner.warn('A2A functionality is deprecated, skipping task');
+      results.push({
+        taskId,
+        success: false,
+      });
     }
 
     const successCount = results.filter((r) => r.success).length;
@@ -381,14 +362,7 @@ async function testRedis(options: {
 
     for (let i = 0; i < runtimeCount; i++) {
       spinner.text = `Creating Runtime ${i + 1}/${runtimeCount}...`;
-      const runtime = createAgentRuntime({
-        messageBus: {
-          mode: 'redis',
-          redis: {
-            url: options.redisUrl,
-          },
-        },
-      });
+      const runtime = createAgentRuntime({});
 
       await runtime.start();
       runtimes.push(runtime);
@@ -427,21 +401,7 @@ async function testRedis(options: {
       const agent2Id = allAgentIds[1][0];
 
       if (agent1) {
-        try {
-          await agent1
-            .getRuntimeClient()!
-            .sendA2AQuery(
-              agent2Id,
-              'Cross-runtime test task',
-              { input: { test: true }, description: 'cross-runtime-test' },
-            );
-
-          spinner.succeed(
-            'Cross-runtime communication successful',
-          );
-        } catch (error) {
-          spinner.warn(`Cross-runtime communication failed: ${error}`);
-        }
+        spinner.warn('A2A functionality is deprecated, skipping cross-runtime test');
       }
     }
 

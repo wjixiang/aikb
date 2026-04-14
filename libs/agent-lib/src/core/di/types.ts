@@ -243,12 +243,14 @@ export const TYPES = {
   /**
    * IMessageBus - Message routing for multi-agent communication
    * @scope Singleton - Shared across all agents
+   * @deprecated This symbol is deprecated and may be removed in a future version
    */
   IMessageBus: Symbol('IMessageBus'),
 
   /**
    * IA2AClient - A2A Client for agent-to-agent communication
    * @scope Singleton - Shared across all agents
+   * @deprecated This symbol is deprecated and may be removed in a future version
    */
   IA2AClient: Symbol('IA2AClient'),
 
@@ -326,25 +328,13 @@ export const TYPES = {
    */
   RuntimeControlPermissions: Symbol('RuntimeControlPermissions'),
 
-  // ==================== A2A Communication ====================
-
-  /**
-   * IA2AHandler - A2A Handler for agent-to-agent communication
-   * @scope Singleton - Shared within agent container
-   */
-  IA2AHandler: Symbol('IA2AHandler'),
+  // ==================== Runtime Control ====================
 
   /**
    * RuntimeControlState - Shared state for RuntimeControlComponent
    * @scope Singleton - Shared within agent container
    */
   RuntimeControlState: Symbol('RuntimeControlState'),
-
-  /**
-   * A2AHandlerConfig - Configuration for A2AHandler
-   * @scope Singleton - Bound at container creation
-   */
-  A2AHandlerConfig: Symbol('A2AHandlerConfig'),
 
   /**
    * RuntimeControlRESTConfig - REST API config for RuntimeControlComponent topology ops

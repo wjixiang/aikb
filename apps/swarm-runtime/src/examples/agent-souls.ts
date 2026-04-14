@@ -5,7 +5,6 @@
  */
 
 import type { AgentBlueprint } from 'agent-lib/core';
-import type { DIComponentRegistration } from 'agent-lib/core';
 
 /**
  * 流行病学文献检索 Agent

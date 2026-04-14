@@ -5,7 +5,6 @@ import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { ProviderSettings } from '../types/provider-settings.js';
 import type { ClientPool } from 'llm-api-client';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';
-import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
 import {
   AgentContainer,
   type AgentCreationOptions,
@@ -45,7 +44,6 @@ export interface AgentFactoryOptions extends AgentBlueprint {
   api?: Partial<ProviderSettings>;
   workspace?: Partial<VirtualWorkspaceConfig>;
   observers?: ObservableAgentCallbacks;
-  messageBus?: IMessageBus;
   runtimeControl?: {
     restBaseUrl?: string;
     apiKey?: string;
@@ -66,7 +64,7 @@ export interface AgentFactoryOptions extends AgentBlueprint {
  *   components: [
  *     { componentClass: PicosComponent }
  *   ]
- * }, messageBus);
+ * });
  * const agent = container.getAgent();
  * ```
  *
@@ -74,7 +72,7 @@ export interface AgentFactoryOptions extends AgentBlueprint {
  * ```typescript
  * const agent = await AgentFactory.createAgent({
  *   agent: { sop: 'My SOP' }
- * }, messageBus);
+ * });
  * ```
  */
 export class AgentFactory {
@@ -82,25 +80,19 @@ export class AgentFactory {
    * Create a new AgentContainer with the given options
    * Each container manages one Agent instance
    * @param options - Agent creation options
-   * @param messageBus - Required message bus for agent communication
    */
-  static create(
-    options: AgentFactoryOptions,
-    messageBus: IMessageBus,
-  ): AgentContainer {
-    return new AgentContainer(options, messageBus);
+  static create(options: AgentFactoryOptions): AgentContainer {
+    return new AgentContainer(options);
   }
 
   /**
    * Create and return an Agent instance directly
    * @param options - Agent creation options
-   * @param messageBus - Required message bus for agent communication
    */
   static async createAgent(
     options: AgentFactoryOptions,
-    messageBus: IMessageBus,
   ): Promise<Agent> {
-    const container = this.create(options, messageBus);
+    const container = this.create(options);
     return container.getAgent();
   }
 }

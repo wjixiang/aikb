@@ -6,6 +6,8 @@ import { UpstreamError } from '../errors.js';
 import { prisma } from '../db.js';
 import { streamAgentEvents } from '../services/agent-events.js';
 
+const SWARM_RUNTIME_URL = process.env['SWARM_RUNTIME_URL'] || 'http://localhost:4000';
+
 const UserContextSchema = z.object({
   route: z.string(),
   itemId: z.string().optional(),
@@ -90,18 +92,24 @@ export async function registerChatRoutes(app: FastifyInstance) {
       const { message, context } = request.body;
 
       try {
-        const runtime = getRuntime();
         const agentId = getCopilotAgentId();
-        const client = runtime.getRuntimeClient('bib-max-server');
 
         const enrichedMessage = context
           ? `${await buildContextBlock(context)}\n${message}`
           : message;
 
-        const result = await client.sendA2AQuery(agentId, enrichedMessage, {
-          timeout: 60000,
+        const response = await fetch(`${SWARM_RUNTIME_URL}/api/agents/${agentId}/inject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: enrichedMessage }),
         });
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Inject failed: ${response.status} ${errorText}`);
+        }
+
+        const result = await response.json();
         return { success: true, data: result };
       } catch (err) {
         if (err instanceof UpstreamError) throw err;

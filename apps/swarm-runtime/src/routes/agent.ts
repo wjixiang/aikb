@@ -148,6 +148,50 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
     },
   );
 
+  fastify.post(
+    '/:instanceId/inject',
+    {
+      schema: {
+        tags: ['agents'],
+        description: 'Inject a message into an agent',
+        params: {
+          type: 'object',
+          properties: {
+            instanceId: {
+              type: 'string',
+              description: 'Agent instance ID or alias',
+            },
+          },
+        },
+        body: {
+          type: 'object',
+          required: ['message'],
+          properties: {
+            message: { type: 'string', description: 'Message to inject' },
+          },
+        },
+        response: { 202: responseSchema, 404: responseSchema },
+      } as any,
+    },
+    async (request: any, reply: any) => {
+      const { instanceId } = request.params;
+      const { message } = request.body;
+      try {
+        const resolvedId = fastify.agentRuntime.resolveAgentId(instanceId);
+        await fastify.agentRuntime.injectMessage(resolvedId, message);
+        return reply.code(202).send({
+          success: true,
+          data: { instanceId: resolvedId, status: 'message_injected' },
+        });
+      } catch (error) {
+        return reply.code(404).send({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
+
   fastify.delete(
     '/:instanceId',
     {

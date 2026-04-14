@@ -13,7 +13,6 @@ import { agentRuntimePlugin } from './plugins/agent-runtime.js';
 import { prismaPlugin } from './plugins/prisma.js';
 import { runtimeRoutes } from './routes/runtime.js';
 import { agentRoutes } from './routes/agent.js';
-import { a2aRoutes } from './routes/a2a.js';
 import { taskRoutes } from './routes/tasks.js';
 import { healthRoutes } from './routes/health.js';
 import { loadConfig } from './config.js';
@@ -25,10 +24,7 @@ await initLogger({ name: 'swarm-runtime', level: config.server.logLevel });
 
 const runtimeConfig: AgentRuntimeConfig = {
   defaultApiConfig: config.api as any,
-  messageBus: config.messageBus as any,
   ...(config.runtimeControl ? { runtimeControl: config.runtimeControl } : {}),
-  ...(config.ackTimeout ? { ackTimeout: config.ackTimeout } : {}),
-  ...(config.maxRetries ? { maxRetries: config.maxRetries } : {}),
 };
 
 const fastify = Fastify({
@@ -40,13 +36,12 @@ const fastify = Fastify({
 await fastify.register(cors as any);
 
 await fastify.register(swagger as any, {
-  openapi: {
+    openapi: {
     info: {
       title: 'Swarm Agent Runtime API',
       description:
-        'HTTP API for managing AgentRuntime, agents, and Agent-to-Agent (A2A) communication. ' +
-        'Provides endpoints for creating, starting, stopping, and destroying agents, ' +
-        'as well as sending tasks, queries, and events between agents.',
+        'HTTP API for managing AgentRuntime and agents. ' +
+        'Provides endpoints for creating, starting, stopping, and destroying agents.',
       version: '1.0.0',
       contact: {
         name: 'API Support',
@@ -65,15 +60,11 @@ await fastify.register(swagger as any, {
       },
       {
         name: 'runtime',
-        description: 'Runtime management - agent lifecycle and topology',
+        description: 'Runtime management - agent lifecycle',
       },
       {
         name: 'agents',
         description: 'Individual agent operations - per-agent actions',
-      },
-      {
-        name: 'a2a',
-        description: 'Agent-to-Agent communication - tasks, queries, events',
       },
       {
         name: 'tasks',
@@ -103,7 +94,6 @@ await fastify.register(prismaPlugin);
 await fastify.register(healthRoutes, { prefix: '/health' });
 await fastify.register(runtimeRoutes, { prefix: '/api/runtime' });
 await fastify.register(agentRoutes, { prefix: '/api/agents' });
-await fastify.register(a2aRoutes, { prefix: '/api/a2a' });
 await fastify.register(taskRoutes, { prefix: '/api/tasks' });
 
 const port = config.server.port;
@@ -113,8 +103,6 @@ try {
   await fastify.listen({ port, host });
   fastify.log.info(`🚀 Swarm Server started on http://${host}:${port}`);
   fastify.log.info(`   Server ID: ${config.server.id}`);
-  fastify.log.info(`   MessageBus: ${config.messageBus?.mode || 'memory'}`);
-  fastify.log.info(`   ACK Timeout: ${config.ackTimeout ?? 5000}ms`);
   fastify.log.info(
     `   Task Persistence: ${fastify.taskService ? 'enabled' : 'disabled (set AGENT_DATABASE_URL)'}`,
   );

@@ -85,12 +85,6 @@ export * from './hooks/index.js';
 // Prisma
 export * from './prisma/index.js';
 
-// Topology Network
-export * from './runtime/topology/index.js';
-
-// A2A (Agent-to-Agent) Communication
-export * from './a2a/index.js';
-
 // Runtime (selective exports to avoid conflicts)
 export type {
   AgentMetadata,
@@ -111,9 +105,6 @@ export type {
   RuntimeControlProviderSettings,
   RuntimeControlVirtualWorkspaceConfig,
   RuntimeStats,
-  TopologyNode,
-  TopologyEdge,
-  RoutingStats,
   IAgentSleepControl,
   IAgentEventStream,
   AgentEventType,

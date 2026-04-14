@@ -57,9 +57,6 @@ export type {
   RuntimeControlProviderSettings,
   RuntimeControlVirtualWorkspaceConfig,
   RuntimeStats,
-  TopologyNode,
-  TopologyEdge,
-  RoutingStats,
 } from './types.js';
 
 export { RuntimeControlClientImpl } from './RuntimeControlClient.js';

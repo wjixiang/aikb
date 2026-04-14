@@ -147,21 +147,12 @@ async function runtimeStart(options: {
 
   // Configure message bus
   if (options.messageBus === 'redis') {
-    const redisUrl =
-      options.redisUrl || `redis://${options.redisHost}:${options.redisPort}`;
-    config.messageBus = {
-      mode: 'redis',
-      redis: {
-        url: redisUrl,
-      },
-    };
-    log.info(`Using Redis message bus: ${redisUrl}`);
-  } else {
-    config.messageBus = {
-      mode: 'memory',
-    };
-    log.info('Using in-memory message bus');
+    log.warn('Redis message bus is deprecated, using in-memory message bus');
   }
+  config.messageBus = {
+    mode: 'memory',
+  };
+  log.info('Using in-memory message bus');
 
   // Create runtime
   const runtime = createAgentRuntime(config);

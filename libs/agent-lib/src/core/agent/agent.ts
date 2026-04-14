@@ -21,14 +21,6 @@ import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
 import type { Tool } from '../../components/core/types.js';
 import { ToolComponent } from '../statefulContext/index.js';
-import type {
-  A2AHandler,
-  IA2AHandler,
-  A2AClient,
-  A2AMessage,
-  A2APayload,
-} from '../a2a/index.js';
-import { createA2AHandler } from '../a2a/index.js';
 import type { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
@@ -45,11 +37,6 @@ export interface AgentConfig {
   consecutiveMistakeLimit: number;
   // Memory module configuration (now required, with defaults)
   memory?: Partial<MemoryModuleConfig>;
-
-  /**
-   * Automatically acknowledge task after received A2A request
-   */
-  autoAck?: boolean;
 }
 
 export const defaultAgentConfig: AgentConfig = {
@@ -142,19 +129,6 @@ export class Agent {
   // Tool manager for executing tools
   private toolManager: IToolManager;
 
-  // A2A Handler for agent-to-agent communication
-  private _a2aHandler?: A2AHandler;
-  private _a2aClient?: A2AClient;
-  private _pendingA2AMessages: A2AMessage[] = [];
-
-  // A2A task completion tracking
-  private _a2aTaskCompletions: Map<
-    string,
-    {
-      resolve: (result: { output: unknown; status: string }) => void;
-    }
-  > = new Map();
-
   // RuntimeControlComponent state (set via DI)
   private _runtimeControlState?: RuntimeControlState;
 
@@ -196,7 +170,6 @@ export class Agent {
     @inject(TYPES.IToolManager) toolManager: IToolManager,
     @inject(TYPES.HookModule) hookModule: HookModule,
     @inject(TYPES.ISessionManager) sessionManager: ISessionManager,
-    @inject(TYPES.IA2AHandler) a2aHandler: A2AHandler,
     @inject(TYPES.IPersistenceService)
     @optional()
     persistenceService?: IPersistenceService,
@@ -219,14 +192,6 @@ export class Agent {
     this._runtimeControlState = runtimeControlState;
 
     void this.sessionManager.createSession(this.getSessionState());
-
-    this._a2aHandler = a2aHandler;
-    this.setupA2AHandlers();
-    this._a2aHandler.startListening();
-    this.logger.info('[Agent] A2A Handler initialized via DI');
-    console.log(
-      `[Agent] ${this.instanceId}: A2A Handler initialized and listening`,
-    );
   }
 
   private getSessionState(): SessionState {
@@ -355,126 +320,6 @@ export class Agent {
     }
   }
 
-  /**
-   * Setup A2A message handlers
-   * Called from constructor when A2AHandler is injected via DI
-   */
-  private setupA2AHandlers(): void {
-    if (!this._a2aHandler) {
-      return;
-    }
-
-    // Register callback for completeTask tool to signal A2A query completion
-    this._a2aHandler.setQueryCompletionCallback(
-      (conversationId, output, status) => {
-        this.completeA2ATask(
-          conversationId,
-          output,
-          status as 'completed' | 'failed',
-        );
-      },
-    );
-
-    // Register callback for any message received
-    // Note: With the new lifecycle, sleeping agents have unloaded containers,
-    // so this callback only fires for running agents (messages are queued).
-    this._a2aHandler.setOnMessageReceivedCallback((_conversationId, _message) => {
-      // No-op: sleeping agents are restored by the Runtime before processing
-    });
-
-    // Register unified query handler — handles all incoming A2A requests
-    this._a2aHandler.onQuery(async (payload, ctx) => {
-      this.logger.info(
-        { messageId: ctx.message.messageId, from: ctx.message.from },
-        '[Agent] Received A2A query, processing',
-      );
-
-      const queryPayload = payload as unknown as { query?: string };
-
-      // Handle special "start" query - auto respond without LLM
-      if (queryPayload.query === 'start' || payload.description === 'start') {
-        this.logger.info('[Agent] Received start query, auto-responding');
-        if (
-          this._status === AgentStatus.Sleeping
-        ) {
-          this._status = AgentStatus.Running;
-        }
-        return {
-          messageId: ctx.message.messageId,
-          content: {
-            output: { started: true, message: 'Agent started' },
-            status: 'completed',
-          },
-          success: true,
-        };
-      }
-
-      // Send acknowledgment when autoAck is enabled
-      if (this.config.autoAck) await ctx.acknowledge();
-
-      // Build user message from query text or description+input
-      const queryText = queryPayload.query || payload.description || 'Query received';
-      const inputText = payload.input
-        ? `\n\nInput:\n${this.safeStringify(payload.input, null, 2)}`
-        : '';
-      const userMessage: Message = {
-        role: 'user',
-        content: [
-          {
-            type: 'text' as const,
-            text: `[A2A Query from ${ctx.message.from}]\n\n${queryText}${inputText}`,
-          },
-        ],
-        ts: Date.now(),
-      };
-      await this.addMessageToMemory(userMessage);
-
-      // Store message for processing in requestLoop
-      this._pendingA2AMessages.push(ctx.message);
-
-      // If agent is sleeping, start requestLoop
-      if (
-        this._status === AgentStatus.Sleeping
-      ) {
-        this._status = AgentStatus.Running;
-        void this.requestLoop();
-      }
-
-      // Wait for completeTask to be called (works for both idle and sleeping agents)
-      try {
-        const result = await this.waitForA2ATaskCompletion(
-          ctx.message.conversationId,
-        );
-        return {
-          messageId: ctx.message.messageId,
-          content: {
-            output: result.output,
-            status: result.status === 'completed' ? 'completed' : 'failed',
-          },
-          success: result.status === 'completed',
-          taskId: payload.taskId,
-        };
-      } catch (error) {
-        return {
-          messageId: ctx.message.messageId,
-          content: { output: null, status: 'failed' },
-          success: false,
-          taskId: payload.taskId,
-          error:
-            error instanceof Error ? error.message : 'Query processing failed',
-        };
-      }
-    });
-
-    // Register event handler
-    this._a2aHandler.onEvent(async (payload, ctx) => {
-      this.logger.info(
-        { from: ctx.message.from },
-        '[Agent] Received A2A event',
-      );
-    });
-  }
-
   // ==================== Memory Helpers ====================
 
   /**
@@ -570,58 +415,6 @@ export class Agent {
     return this.memoryModule;
   }
 
-  /**
-   * Get A2A handler for agent-to-agent communication
-   */
-  public getA2AHandler(): A2AHandler | undefined {
-    return this._a2aHandler;
-  }
-
-  /**
-   * Get pending A2A messages
-   */
-  public getPendingA2AMessages(): A2AMessage[] {
-    return this._pendingA2AMessages;
-  }
-
-  /**
-   * Clear pending A2A messages
-   */
-  public clearPendingA2AMessages(): void {
-    this._pendingA2AMessages = [];
-  }
-
-  /**
-   * Complete an A2A task with output
-   * Called when Agent calls completeTask tool
-   */
-  public completeA2ATask(
-    conversationId: string,
-    output: unknown,
-    status: 'completed' | 'failed' = 'completed',
-  ): void {
-    const completion = this._a2aTaskCompletions.get(conversationId);
-    if (completion) {
-      completion.resolve({ output, status });
-      this._a2aTaskCompletions.delete(conversationId);
-      this.logger.debug(
-        { conversationId, status },
-        '[Agent] A2A task completed by completeTask tool',
-      );
-    }
-  }
-
-  /**
-   * Wait for an A2A task to be completed via completeTask tool
-   */
-  private waitForA2ATaskCompletion(
-    conversationId: string,
-  ): Promise<{ output: unknown; status: string }> {
-    return new Promise((resolve) => {
-      this._a2aTaskCompletions.set(conversationId, { resolve });
-    });
-  }
-
   // ==================== Lifecycle Methods ====================
   // Lifecycle status: sleeping / running / aborted
 
@@ -669,17 +462,6 @@ export class Agent {
     void this.sessionManager.persistState(this.getSessionState());
     this.persistInstanceStatus();
     void this.endSession();
-
-    // Resolve any pending A2A task completions so that
-    // waitForA2ATaskCompletion() doesn't hang the query handler.
-    for (const [conversationId, completion] of this._a2aTaskCompletions) {
-      completion.resolve({ output: null, status: 'completed' });
-      this._a2aTaskCompletions.delete(conversationId);
-      this.logger.debug(
-        { conversationId },
-        '[Agent] A2A task completed via agent.complete()',
-      );
-    }
 
     // Trigger agent:completed hook
     void this.hookModule.executeHooks(HookType.AGENT_COMPLETED, {
@@ -809,19 +591,21 @@ export class Agent {
   }
 
   /**
-   * Set the A2A client for agent-to-agent communication
-   * This is called by AgentRuntime when the agent is created
+   * Inject a message into the agent's conversation memory.
+   * If the agent is sleeping, it will be woken up and the requestLoop started.
    */
-  setA2AClient(client: A2AClient): void {
-    this._a2aClient = client;
-    this.logger.info('[Agent] A2A client set');
-  }
+  public async injectMessage(text: string): Promise<void> {
+    const userMessage: Message = {
+      role: 'user',
+      content: [{ type: 'text' as const, text }],
+      ts: Date.now(),
+    };
+    await this.addMessageToMemory(userMessage);
 
-  /**
-   * Get the A2A client
-   */
-  getA2AClient(): A2AClient | undefined {
-    return this._a2aClient;
+    if (this._status === AgentStatus.Sleeping) {
+      this._status = AgentStatus.Running;
+      void this.requestLoop();
+    }
   }
 
   /**
@@ -893,7 +677,7 @@ export class Agent {
   /**
    * Core method for making recursive API requests to the LLM
    * Simplified architecture: LLM → Tool Execution → LLM → ...
-   * @returns The workspace context after completion (for A2A result)
+   * @returns The workspace context after completion
    */
   protected async requestLoop(): Promise<string> {
     // Reset collected errors for this new operation
@@ -1312,13 +1096,6 @@ You MUST call a tool in EVERY response. Never respond with plain text alone — 
 - When all tasks are done, call attempt_completion (no parameters) as your final action
 - If a tool fails, analyze the error and try a different tool or approach
 - Do NOT ask the user what to do — figure it out yourself using available tools
-
-## A2A Task Acknowledgment
-When you receive a task from another agent (identified by "[A2A Task from ...]" in the user message):
-1. FIRST call getPendingTasks to get the list of pending tasks with their conversationId
-2. Then call acknowledgeTask with the correct conversationId from getPendingTasks result
-3. NEVER guess or make up a conversationId - it must be obtained from getPendingTasks
-4. Only after acknowledging, proceed with task execution
 
 ## Workspace Context
 - The CONTEXT section shows current component states (data, UI, pending actions)

@@ -22,7 +22,6 @@ import { TYPES } from '../di/types.js';
 import type { IToolManager } from '../tools/index.js';
 import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
-import type { A2AHandler } from '../a2a/index.js';
 
 export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
@@ -40,7 +39,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
     new Map();
   private globalToolProvider: GlobalToolProvider;
-  private _a2aHandler?: A2AHandler;
   private logger = getLogger('VirtualWorkspace');
 
   constructor(
@@ -52,9 +50,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     @inject(TYPES.ToolComponents)
     @optional()
     diComponents?: ToolComponent[],
-    @inject(TYPES.IA2AHandler)
-    @optional()
-    a2aHandler?: A2AHandler,
   ) {
     this.config = {
       ...DefaultVirtualWorkspaceConfig,
@@ -63,7 +58,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     this.toolManager = toolManager;
     this.globalToolProvider = globalToolProvider;
-    this._a2aHandler = a2aHandler;
 
     if (diComponents && diComponents.length > 0) {
       this.components.push(...diComponents);
@@ -96,10 +90,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   getComponentKeys(): string[] {
     return this.components.map((c) => c.componentId);
-  }
-
-  getA2AHandler(): A2AHandler | undefined {
-    return this._a2aHandler;
   }
 
   private onToolAvailabilityChange?: (() => void) | undefined;

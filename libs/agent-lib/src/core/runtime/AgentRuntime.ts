@@ -75,29 +75,6 @@ import type { IEventDispatcher } from './EventDispatcher.js';
 import { EventDispatcher } from './EventDispatcher.js';
 import { RuntimeControlClientImpl } from './RuntimeControlClient.js';
 
-// Topology Network
-import type { ITopologyGraph } from './topology/graph/TopologyGraph.js';
-import type { TopologyMessage, RoutingStats } from './topology/types.js';
-import { createTopologyGraph } from './topology/graph/TopologyGraph.js';
-import {
-  createMessageBusFromConfig,
-  isRedisMessageBus,
-  type MessageBusFactoryConfig,
-} from './topology/messaging/index.js';
-import { createMessageRouter } from './topology/routing/MessageRouter.js';
-import type { IMessageBus } from './topology/messaging/MessageBus.js';
-import type { IMessageRouter } from './topology/routing/MessageRouter.js';
-
-// A2A Communication
-import {
-  A2AClient,
-  createA2AClient,
-  getGlobalAgentRegistry,
-} from '../a2a/index.js';
-import type { IAgentCardRegistry } from '../a2a/index.js';
-import type { AgentCard } from '../a2a/types.js';
-import { createUserContext, type IUserContext } from './UserContext.js';
-
 // Event Stream
 import {
   AgentEventStream,
@@ -264,6 +241,14 @@ export interface IAgentRuntime {
    */
   getRuntimeClient(instanceId: string): IRuntimeControlClient;
 
+  /**
+   * Inject a message into an agent's conversation memory.
+   * If the agent is sleeping, it will be woken up.
+   * @param instanceId The agent's instance ID
+   * @param message The message text to inject
+   */
+  injectMessage(instanceId: string, message: string): Promise<void>;
+
   // ============================================
   // Event System
   // ============================================
@@ -305,129 +290,6 @@ export interface IAgentRuntime {
   getStats(): Promise<RuntimeStats>;
 
   // ============================================
-  // Topology Network (Agent Communication)
-  // ============================================
-
-  /**
-   * Register an agent in the topology network.
-   * @param instanceId The agent's unique instance identifier
-   * @param nodeType Type of node (router, worker, hybrid)
-   * @param capabilities Optional capabilities for routing decisions
-   */
-  registerInTopology(
-    instanceId: string,
-    nodeType: 'router' | 'worker' | 'hybrid',
-    capabilities?: string[],
-  ): void;
-
-  /**
-   * Unregister an agent from the topology network.
-   * @param instanceId The agent's unique instance identifier
-   */
-  unregisterFromTopology(instanceId: string): void;
-
-  /**
-   * Connect two agents in the topology network.
-   * @param from Source agent ID
-   * @param to Target agent ID
-   * @param edgeType Type of connection (parent-child, peer, route)
-   */
-  connectAgents(
-    from: string,
-    to: string,
-    edgeType?: 'parent-child' | 'peer' | 'route',
-  ): void;
-
-  /**
-   * Disconnect two agents in the topology network.
-   * @param from Source agent ID
-   * @param to Target agent ID
-   */
-  disconnectAgents(from: string, to: string): void;
-
-  /**
-   * Send a message to a specific agent via topology network.
-   * @param to Target agent ID
-   * @param content Message content
-   * @param messageType Type of message (request, event, ack, result)
-   */
-  sendToAgent(
-    to: string,
-    content: unknown,
-    messageType?: 'request' | 'event' | 'ack' | 'result' | 'error',
-  ): Promise<import('./topology/types.js').TopologyMessage>;
-
-  /**
-   * Broadcast a message to all children of an agent.
-   * @param from Source agent ID
-   * @param content Message content
-   */
-  broadcastToChildren(
-    from: string,
-    content: unknown,
-  ): Promise<import('./topology/types.js').TopologyMessage[]>;
-
-  /**
-   * Subscribe to messages for a specific agent.
-   * @param instanceId Agent ID to subscribe
-   * @param handler Message handler callback
-   */
-  subscribeToAgent(
-    instanceId: string,
-    handler: (message: import('./topology/types.js').TopologyMessage) => void,
-  ): () => void;
-
-  /**
-   * Request a response from an agent (two-phase protocol).
-   * @param to Target agent ID
-   * @param content Request content
-   * @param from Optional source ID (defaults to 'external')
-   */
-  requestFromAgent(
-    to: string,
-    content: unknown,
-    from?: string,
-  ): Promise<{
-    ack: import('./topology/types.js').TopologyMessage;
-    result: Promise<import('./topology/types.js').TopologyMessage>;
-  }>;
-
-  /**
-   * Get the topology graph.
-   */
-  getTopologyGraph(): import('./topology/graph/TopologyGraph.js').ITopologyGraph;
-
-  /**
-   * Get topology network statistics.
-   */
-  getTopologyStats(): import('./topology/types.js').RoutingStats;
-
-  // ============================================
-  // User Context (User as Agent)
-  // ============================================
-
-  /**
-   * Get the message bus for A2A communication.
-   * Used by UserContext to send messages to agents.
-   */
-  getMessageBus(): IMessageBus;
-
-  /**
-   * Get the agent registry for service discovery.
-   * Used by UserContext for A2A client.
-   */
-  getRegistry(): IAgentCardRegistry;
-
-  /**
-   * Create a user context - treats external user as an Agent.
-   * The user can manage agents and send A2A tasks/queries/events.
-   */
-  createUserContext(options?: {
-    userId?: string;
-    defaultTimeout?: number;
-  }): IUserContext;
-
-  // ============================================
   // Task Integration
   // ============================================
 
@@ -446,13 +308,6 @@ export interface IAgentRuntime {
     runtimeTaskId: string,
     taskId: string,
   ): void;
-
-  /**
-   * Get conversation info by A2A task ID.
-   */
-  getConversationByTaskId(
-    taskId: string,
-  ): { conversationId: string; runtimeTaskId?: string } | undefined;
 }
 
 /**
@@ -528,19 +383,6 @@ export class AgentRuntime implements IAgentRuntime {
   private taskCallbacks: TaskCallbacks = {};
 
   // ============================================
-  // Topology Network (Agent Communication)
-  // ============================================
-
-  /** Topology graph for agent connections */
-  private topologyGraph: ITopologyGraph;
-
-  /** Message bus for agent communication */
-  private messageBus: IMessageBus;
-
-  /** Message router for routing decisions */
-  private messageRouter: IMessageRouter;
-
-  // ============================================
   // Event Subscription Cleanup
   // ============================================
 
@@ -568,15 +410,6 @@ export class AgentRuntime implements IAgentRuntime {
    *
    * @example
    * const runtime = new AgentRuntime({});
-   *
-   * @example
-   * // Use Redis for distributed A2A communication
-   * const runtime = new AgentRuntime({
-   *   messageBus: {
-   *     mode: 'redis',
-   *     redis: { url: 'redis://localhost:6379' }
-   *   }
-   * });
    */
   constructor(config: AgentRuntimeConfig) {
     this.config = {
@@ -591,57 +424,6 @@ export class AgentRuntime implements IAgentRuntime {
     this.registry = new AgentRegistry();
     this.eventDispatcher = new EventDispatcher();
     this.eventStream = new AgentEventStream();
-
-    // Initialize topology network for agent communication
-    this.topologyGraph = createTopologyGraph();
-
-    // Create MessageBus based on configuration
-    const messageBusConfig: MessageBusFactoryConfig = {
-      mode: config.messageBus?.mode ?? 'memory',
-      redis: config.messageBus?.redis,
-      topology: {
-        defaultAckTimeout: config.ackTimeout,
-        maxRetries: config.maxRetries,
-      },
-    };
-    this.messageBus = createMessageBusFromConfig(messageBusConfig);
-
-    // Connect to Redis if using RedisMessageBus
-    if (
-      messageBusConfig.mode === 'redis' &&
-      isRedisMessageBus(this.messageBus)
-    ) {
-      // Connection happens lazily on first use, but we can connect eagerly here
-      this.messageBus.connect().catch((err) => {
-        console.error(
-          '[AgentRuntime] Failed to connect to Redis:',
-          err.message,
-        );
-      });
-    }
-
-    this.messageRouter = createMessageRouter(this.topologyGraph);
-    this.messageRouter.setMessageBus(this.messageBus);
-
-    // Route topology events through runtime event dispatcher
-    // Also handle task callbacks for conversation events
-    this.messageBus.onEvent((event) => {
-      this.eventDispatcher.emitEvent(
-        event.type as any,
-        event.payload as AgentEventPayload,
-      );
-
-      // Handle task callbacks
-      this.handleTaskCallback(event);
-    });
-
-    // Route topology messages through runtime message handler
-    this.messageBus.onMessage((message) => {
-      this.handleTopologyMessage(message);
-    });
-
-    // Setup internal event listeners
-    this.setupEventListeners();
   }
 
   // ============================================
@@ -652,7 +434,7 @@ export class AgentRuntime implements IAgentRuntime {
    * Setup internal event listeners.
    */
   private setupEventListeners(): void {
-    // Agent events are routed through topology network
+    // Agent events are routed through runtime event dispatcher
   }
 
   // ============================================
@@ -706,7 +488,7 @@ export class AgentRuntime implements IAgentRuntime {
     )?.parentInstanceId;
 
     // Create agent container using AgentFactory
-    const container = AgentFactory.create(options, this.messageBus);
+    const container = AgentFactory.create(options);
     const instanceId = container.instanceId;
 
     // Wait for agent initialization
@@ -715,18 +497,6 @@ export class AgentRuntime implements IAgentRuntime {
     // Always inject RuntimeControlClient (no permission checks)
     const controlClient = this.createControlClient(instanceId);
     agent.setRuntimeClient(controlClient);
-
-    // Create and inject A2A Client using global AgentCardRegistry
-    const a2aClient = createA2AClient(
-      this.messageBus,
-      getGlobalAgentRegistry(),
-      {
-        instanceId,
-      },
-    );
-    agent.setA2AClient(a2aClient);
-
-    // A2A Handler is now initialized via DI in Agent constructor
 
     // Store container
     this.containers.set(instanceId, container);
@@ -761,20 +531,6 @@ export class AgentRuntime implements IAgentRuntime {
     };
     this.registry.register(metadata);
 
-    // Register in AgentCardRegistry for A2A communication
-    const agentCard: AgentCard = {
-      instanceId,
-      alias,
-      name: unifiedConfig.agent.name || agentName,
-      description: unifiedConfig.agent.description || '',
-      version: unifiedConfig.agent.version || '1.0.0',
-      capabilities: unifiedConfig.agent.capabilities || [],
-      skills: unifiedConfig.agent.skills || [],
-      endpoint: unifiedConfig.agent.endpoint || instanceId,
-      metadata: unifiedConfig.agent.metadata,
-    };
-    getGlobalAgentRegistry().register(agentCard);
-
     // Update parent's child list if parent specified
     if (parentInstanceId) {
       this.registry.addChildRelation(parentInstanceId, instanceId);
@@ -795,27 +551,6 @@ export class AgentRuntime implements IAgentRuntime {
       metadata,
       parentInstanceId,
     });
-
-    // Auto-register in topology network as 'worker' by default
-    this.topologyGraph.addNode({
-      instanceId,
-      nodeType: 'worker',
-      capabilities: unifiedConfig.agent.capabilities ?? [],
-    });
-
-    // Auto-create parent-child edge if this agent has a parent
-    if (parentInstanceId) {
-      this.connectAgents(parentInstanceId, instanceId, 'parent-child');
-    }
-
-    // Subscribe to Redis channel if using RedisMessageBus
-    // This is required for the agent to receive messages from other processes
-    if (isRedisMessageBus(this.messageBus)) {
-      console.log(
-        `[AgentRuntime.createAgent] Subscribing to Redis channel for agent: ${instanceId}`,
-      );
-      this.messageBus.subscribeAgent(instanceId);
-    }
 
     return instanceId;
   }
@@ -914,9 +649,6 @@ export class AgentRuntime implements IAgentRuntime {
     // Unregister from registry
     this.registry.unregister(instanceId);
 
-    // Unregister from AgentCardRegistry for A2A communication
-    getGlobalAgentRegistry().unregister(instanceId);
-
     // Emit event
     this.eventDispatcher.emitEvent('agent:destroyed', { instanceId });
   }
@@ -1005,7 +737,6 @@ export class AgentRuntime implements IAgentRuntime {
     const container = await AgentContainer.restore(
       instanceId,
       options,
-      this.messageBus,
     );
 
     // Store the new container
@@ -1017,13 +748,6 @@ export class AgentRuntime implements IAgentRuntime {
     // Re-inject runtime client
     const controlClient = this.createControlClient(instanceId);
     agent.setRuntimeClient(controlClient);
-
-    // Re-inject A2A client
-    const agentCardRegistry = getGlobalAgentRegistry();
-    const a2aClient = createA2AClient(this.messageBus, agentCardRegistry, {
-      instanceId,
-    });
-    agent.setA2AClient(a2aClient);
 
     // Re-wire event stream
     const hookModule = container
@@ -1198,6 +922,21 @@ export class AgentRuntime implements IAgentRuntime {
     return this.createControlClient(instanceId);
   }
 
+  /**
+   * Inject a message into an agent's conversation memory.
+   * If the agent is sleeping, it will be woken up.
+   *
+   * @param instanceId The agent's instance ID
+   * @param message The message text to inject
+   */
+  async injectMessage(instanceId: string, message: string): Promise<void> {
+    const agent = await this.getAgent(instanceId);
+    if (!agent) {
+      throw new Error(`Agent not found: ${instanceId}`);
+    }
+    await agent.injectMessage(message);
+  }
+
   // ============================================
   // Public: Event System
   // ============================================
@@ -1346,21 +1085,6 @@ export class AgentRuntime implements IAgentRuntime {
   }
 
   /**
-   * Get conversation info by A2A task ID.
-   */
-  getConversationByTaskId(
-    taskId: string,
-  ): { conversationId: string; runtimeTaskId?: string } | undefined {
-    const conversation = this.messageBus.getConversationByTaskId(taskId);
-    if (!conversation) return undefined;
-    const taskInfo = this.conversationTaskMap.get(conversation.conversationId);
-    return {
-      conversationId: conversation.conversationId,
-      runtimeTaskId: taskInfo?.runtimeTaskId,
-    };
-  }
-
-  /**
    * Handle task callbacks for conversation events.
    */
   private handleTaskCallback(event: { type: string; payload: unknown }): void {
@@ -1408,178 +1132,6 @@ export class AgentRuntime implements IAgentRuntime {
         }
         break;
     }
-  }
-
-  // ============================================
-  // Topology Network Implementation
-  // ============================================
-
-  registerInTopology(
-    instanceId: string,
-    nodeType: 'router' | 'worker' | 'hybrid',
-    capabilities?: string[],
-  ): void {
-    const node = this.topologyGraph.getNode(instanceId);
-    if (node) {
-      this.topologyGraph.removeNode(instanceId);
-    }
-    this.topologyGraph.addNode({
-      instanceId,
-      nodeType,
-      capabilities,
-    });
-  }
-
-  unregisterFromTopology(instanceId: string): void {
-    this.topologyGraph.removeNode(instanceId);
-  }
-
-  connectAgents(
-    from: string,
-    to: string,
-    edgeType: 'parent-child' | 'peer' | 'route' = 'peer',
-  ): void {
-    this.topologyGraph.addEdge({
-      from,
-      to,
-      edgeType,
-      bidirectional: edgeType === 'peer',
-    });
-  }
-
-  disconnectAgents(from: string, to: string): void {
-    this.topologyGraph.removeEdge(from, to);
-  }
-
-  async sendToAgent(
-    to: string,
-    content: unknown,
-    messageType: 'request' | 'event' | 'ack' | 'result' | 'error' = 'event',
-  ): Promise<TopologyMessage> {
-    const message = {
-      messageId: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      conversationId: `conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      from: 'runtime',
-      to,
-      content,
-      messageType,
-      ttl: 10,
-      timestamp: Date.now(),
-    };
-    this.messageBus.publish(message);
-    return message;
-  }
-
-  async broadcastToChildren(
-    from: string,
-    content: unknown,
-  ): Promise<TopologyMessage[]> {
-    const children = this.topologyGraph.getChildren(from);
-    const results: TopologyMessage[] = [];
-    for (const child of children) {
-      const msg = await this.sendToAgent(child.instanceId, content, 'event');
-      results.push(msg);
-    }
-    return results;
-  }
-
-  subscribeToAgent(
-    instanceId: string,
-    handler: (message: TopologyMessage) => void,
-  ): () => void {
-    return this.messageBus.onMessage((message) => {
-      if (message.to === instanceId) {
-        handler(message);
-      }
-    });
-  }
-
-  async requestFromAgent(
-    to: string,
-    content: unknown,
-    from: string = 'external',
-  ): Promise<{
-    ack: TopologyMessage;
-    result: Promise<TopologyMessage>;
-  }> {
-    const message = {
-      messageId: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      conversationId: `conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      from,
-      to,
-      content,
-      messageType: 'request' as const,
-      ttl: 10,
-      timestamp: Date.now(),
-    };
-
-    const ack = await this.messageBus.send(message);
-
-    const resultPromise = new Promise<TopologyMessage>((resolve, reject) => {
-      const checkResult = () => {
-        const conversation = this.messageBus.getConversation(
-          message.conversationId,
-        );
-        if (conversation?.status === 'completed' && conversation.result) {
-          resolve(conversation.result);
-        } else if (
-          conversation?.status === 'failed' ||
-          conversation?.status === 'timeout'
-        ) {
-          reject(
-            new Error(
-              `Conversation ${message.conversationId} ${conversation.status}`,
-            ),
-          );
-        } else {
-          setTimeout(checkResult, 100);
-        }
-      };
-      setTimeout(checkResult, 100);
-    });
-
-    return { ack, result: resultPromise };
-  }
-
-  getTopologyGraph(): ITopologyGraph {
-    return this.topologyGraph;
-  }
-
-  getTopologyStats(): RoutingStats {
-    return {
-      totalMessages: 0,
-      totalConversations: 0,
-      activeConversations: 0,
-      completedConversations: 0,
-      failedConversations: 0,
-      timedOutConversations: 0,
-    };
-  }
-
-  // ============================================
-  // User Context (User as Agent)
-  // ============================================
-
-  getMessageBus(): IMessageBus {
-    return this.messageBus;
-  }
-
-  getRegistry(): IAgentCardRegistry {
-    // Return the global AgentCardRegistry for A2A service discovery
-    // This is different from this.registry (AgentRegistry) which tracks metadata
-    return getGlobalAgentRegistry();
-  }
-
-  createUserContext(options?: {
-    userId?: string;
-    defaultTimeout?: number;
-  }): IUserContext {
-    return createUserContext(this, options);
-  }
-
-  private handleTopologyMessage(message: TopologyMessage): void {
-    // Handle topology messages routed through the system
-    // This is called by the message bus when messages are delivered
   }
 
   // ============================================
@@ -1663,17 +1215,6 @@ export class AgentRuntime implements IAgentRuntime {
 
     // Unregister from AgentRegistry
     this.registry.unregister(instanceId);
-
-    // Unregister from AgentCardRegistry for A2A communication
-    getGlobalAgentRegistry().unregister(instanceId);
-
-    // Unsubscribe from Redis channel if using RedisMessageBus
-    if (isRedisMessageBus(this.messageBus)) {
-      console.log(
-        `[AgentRuntime._destroyAgentWithCascade] Unsubscribing from Redis channel for agent: ${instanceId}`,
-      );
-      this.messageBus.unsubscribeAgent(instanceId);
-    }
 
     // Emit event
     this.eventDispatcher.emitEvent('agent:destroyed', { instanceId });

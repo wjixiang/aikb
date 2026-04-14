@@ -198,12 +198,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
           },
           timestamp: new Date().toISOString(),
         },
-        runtime: runtime
-          ? {
-              agents: await runtime.getStats(),
-              topology: runtime.getTopologyStats(),
-            }
-          : null,
+        runtime: runtime ? { agents: await runtime.getStats() } : null,
       };
     },
   );

@@ -2,7 +2,7 @@
  * RuntimeControlClient - Implementation of IRuntimeControlClient
  *
  * This module provides the concrete implementation of the Runtime control interface
- * that is passed to Agents, enabling them to manage agents and topology.
+ * that is passed to Agents, enabling them to manage agents.
  *
  * @module RuntimeControlClient
  */
@@ -14,14 +14,8 @@ import type {
   AgentMetadata,
   RuntimeStats,
   RuntimeControlAgentOptions,
-  TopologyNodeType,
-  EdgeType,
 } from './types.js';
 import type { AgentRuntime } from './AgentRuntime.js';
-import type { ITopologyGraph } from './topology/graph/TopologyGraph.js';
-import type { RoutingStats } from './topology/types.js';
-import { createA2AClient } from '../a2a/index.js';
-import type { IA2AClient } from '../a2a/index.js';
 import { createAgentSoulByType } from '../AgentSoulRegistry.js';
 import type { AgentBlueprint } from '../agent/AgentFactory.js';
 import type { AgentFactoryOptions } from '../agent/AgentFactory.js';
@@ -165,86 +159,4 @@ export class RuntimeControlClientImpl implements IRuntimeControlClient {
     return this.runtime.getStats();
   }
 
-  // ============================================
-  // Topology Management
-  // ============================================
-
-  registerInTopology(
-    instanceIdOrAlias: string,
-    nodeType: TopologyNodeType,
-    capabilities?: string[],
-  ): void {
-    const instanceId = this.resolveAgentId(instanceIdOrAlias);
-    return this.runtime.registerInTopology(instanceId, nodeType, capabilities);
-  }
-
-  unregisterFromTopology(instanceIdOrAlias: string): void {
-    const instanceId = this.resolveAgentId(instanceIdOrAlias);
-    return this.runtime.unregisterFromTopology(instanceId);
-  }
-
-  connectAgents(
-    fromOrAlias: string,
-    toOrAlias: string,
-    edgeType?: EdgeType,
-  ): void {
-    const from = this.resolveAgentId(fromOrAlias);
-    const to = this.resolveAgentId(toOrAlias);
-    return this.runtime.connectAgents(from, to, edgeType);
-  }
-
-  disconnectAgents(fromOrAlias: string, toOrAlias: string): void {
-    const from = this.resolveAgentId(fromOrAlias);
-    const to = this.resolveAgentId(toOrAlias);
-    return this.runtime.disconnectAgents(from, to);
-  }
-
-  getTopologyGraph(): ITopologyGraph {
-    return this.runtime.getTopologyGraph();
-  }
-
-  getTopologyStats(): RoutingStats {
-    return this.runtime.getTopologyStats();
-  }
-
-  // ============================================
-  // A2A Communication
-  // ============================================
-
-  private createDirectA2AClient(): IA2AClient {
-    return createA2AClient(
-      this.runtime.getMessageBus(),
-      this.runtime.getRegistry() as any,
-      {
-        instanceId: this.callerInstanceId,
-      },
-    );
-  }
-
-  async sendA2AQuery(
-    targetAgentIdOrAlias: string,
-    query: string,
-    options?: {
-      expectedFormat?: string;
-      input?: Record<string, unknown>;
-      description?: string;
-      priority?: 'low' | 'normal' | 'high' | 'urgent';
-      ackOnly?: boolean;
-      timeout?: number;
-    },
-  ): Promise<unknown> {
-    const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const a2aClient = this.createDirectA2AClient();
-    return a2aClient.sendQuery(targetAgentId, query, options);
-  }
-
-  async sendA2AEvent(
-    targetAgentIdOrAlias: string,
-    eventType: string,
-    data: unknown,
-  ): Promise<void> {
-    const targetAgentId = this.resolveAgentId(targetAgentIdOrAlias);
-    const a2aClient = this.createDirectA2AClient();
-    return a2aClient.sendEvent(targetAgentId, eventType, data);
-  }
 }

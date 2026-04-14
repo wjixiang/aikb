@@ -4,8 +4,6 @@
  * Loads configuration from environment variables and config files.
  */
 
-import type { AgentRuntimeConfig } from 'agent-lib/core';
-
 export interface ServerConfig {
   id: string;
   host: string;
@@ -25,12 +23,7 @@ export interface ApiConfig {
 export interface AppConfig {
   server: ServerConfig;
   api: ApiConfig;
-  messageBus?: AgentRuntimeConfig['messageBus'];
-  /** ACK timeout in ms for message confirmation (default: 5000) */
-  ackTimeout?: number;
-  /** Max retries for failed message delivery (default: 3) */
-  maxRetries?: number;
-  /** Runtime control REST config for topology operations */
+  /** Runtime control REST config */
   runtimeControl?: {
     restBaseUrl?: string;
     apiKey?: string;
@@ -70,29 +63,6 @@ function resolveApiKey(provider: string): string {
 export function loadConfig(): AppConfig {
   const serverId = process.env['SERVER_ID'] || `swarm-${Date.now()}`;
 
-  // Parse Redis URL for MessageBus
-  const messageBusMode = process.env['A2A_MESSAGE_BUS_MODE'] as
-    | 'memory'
-    | 'redis'
-    | undefined;
-  let messageBus: AgentRuntimeConfig['messageBus'] | undefined;
-
-  if (messageBusMode === 'redis') {
-    const redisUrl = process.env['A2A_REDIS_URL'] || process.env['REDIS_URL'];
-    const password = process.env['A2A_REDIS_PASSWORD'];
-    messageBus = {
-      mode: 'redis',
-      redis: redisUrl
-        ? { url: redisUrl }
-        : {
-            host: process.env['A2A_REDIS_HOST'] || 'localhost',
-            port: parseInt(process.env['A2A_REDIS_PORT'] || '6379'),
-            password: password || '',
-            db: parseInt(process.env['A2A_REDIS_DB'] || '0'),
-          },
-    };
-  }
-
   const serverHost = process.env['SERVER_HOST'] || '0.0.0.0';
   const serverPort = parseInt(process.env['PORT'] || '9400');
   const restBaseUrl =
@@ -115,20 +85,12 @@ export function loadConfig(): AppConfig {
       apiModelId: process.env['API_MODEL_ID'] || '',
       timeout: parseInt(process.env['API_TIMEOUT'] || '120000'),
     },
-    messageBus,
     runtimeControl: {
       restBaseUrl,
       ...(process.env['SWARM_API_KEY']
         ? { apiKey: process.env['SWARM_API_KEY'] }
         : {}),
     },
-    // Topology timeout configuration
-    ...(process.env['A2A_ACK_TIMEOUT']
-      ? { ackTimeout: parseInt(process.env['A2A_ACK_TIMEOUT']) }
-      : {}),
-    ...(process.env['A2A_MAX_RETRIES']
-      ? { maxRetries: parseInt(process.env['A2A_MAX_RETRIES']) }
-      : {}),
   };
 }
 
@@ -148,10 +110,4 @@ export function validateConfig(config: AppConfig): void {
     '[Config] API Base URL:',
     config.api.openAiBaseUrl || '(default)',
   );
-
-  if (config.messageBus?.mode === 'redis' && !config.messageBus.redis) {
-    throw new Error(
-      'Redis configuration is required when A2A_MESSAGE_BUS_MODE=redis',
-    );
-  }
 }

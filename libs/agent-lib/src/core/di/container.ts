@@ -31,11 +31,6 @@ import {
 } from './UnifiedAgentConfig.js';
 import type { TestOverrides } from './types.js';
 import { ToolComponent } from '../../components/core/toolComponent.js';
-import type { IMessageBus } from '../runtime/topology/messaging/MessageBus.js';
-import { createA2AHandler, createA2AClient } from '../a2a/index.js';
-import type { IA2AHandler, A2AHandlerConfig } from '../a2a/index.js';
-import type { IA2AClient } from '../a2a/index.js';
-import { getGlobalAgentRegistry } from '../a2a/index.js';
 import { RuntimeControlState } from '../runtime/RuntimeControlState.js';
 
 /**
@@ -68,17 +63,11 @@ export class AgentContainer {
 
   constructor(
     options: AgentCreationOptions = {},
-    messageBus: IMessageBus,
     instanceId?: string,
   ) {
     this.container = new Container({
       defaultScope: 'Singleton',
     });
-
-    // Bind messageBus immediately as required dependency
-    this.container
-      .bind<IMessageBus>(TYPES.IMessageBus)
-      .toConstantValue(messageBus);
 
     if (instanceId) {
       // Restore agent: setup bindings first to get persistence service
@@ -245,36 +234,6 @@ export class AgentContainer {
       .bind(TYPES.HookConfig)
       .toConstantValue(this.config.hooks ?? {});
     this.container.bind(TYPES.HookModule).to(HookModule).inSingletonScope();
-
-    // A2A Handler configuration
-    const a2aHandlerConfig: A2AHandlerConfig = {
-      instanceId: this.instanceId,
-      supportedTypes: ['query', 'event'],
-      handlerTimeout: Math.max(
-        300000,
-        (this.config.agent.config.apiRequestTimeout || 120000) * 5,
-      ),
-    };
-    this.container
-      .bind<A2AHandlerConfig>(TYPES.A2AHandlerConfig)
-      .toConstantValue(a2aHandlerConfig);
-
-    // A2A Handler (singleton within container)
-    const messageBus = this.container.get<IMessageBus>(TYPES.IMessageBus);
-    this.container
-      .bind<IA2AHandler>(TYPES.IA2AHandler)
-      .toConstantValue(createA2AHandler(messageBus, a2aHandlerConfig));
-
-    // A2A Client (singleton within container)
-    this.container
-      .bind<IA2AClient>(TYPES.IA2AClient)
-      .toDynamicValue(() => {
-        const agentRegistry = getGlobalAgentRegistry();
-        return createA2AClient(messageBus, agentRegistry, {
-          instanceId: this.instanceId,
-        });
-      })
-      .inSingletonScope();
 
     // API Client — use ClientPool directly as a unified ApiClient
     // The pool implements round-robin selection and cross-client fallback,
@@ -459,22 +418,11 @@ export class AgentContainer {
    * Called when the agent enters sleeping state to free memory.
    *
    * Steps:
-   * 1. Stop A2A handler listening
-   * 2. Clear lazy sleep control
-   * 3. Unbind all DI bindings
-   * 4. Null out agent reference and init promise
+   * 1. Clear lazy sleep control
+   * 2. Unbind all DI bindings
+   * 3. Null out agent reference and init promise
    */
   unload(): void {
-    try {
-      // Stop A2A handler listening if bound
-      if (this.container.isBound(TYPES.IA2AHandler)) {
-        const handler = this.container.get<IA2AHandler>(TYPES.IA2AHandler);
-        handler.stopListening();
-      }
-    } catch {
-      // Container may already be partially disposed
-    }
-
     // Clear lazy sleep control resolver
     this.lazySleepControl = new LazySleepControl();
 
@@ -493,15 +441,13 @@ export class AgentContainer {
    *
    * @param instanceId - The instance ID of the agent to restore
    * @param options - Agent creation options (used as base, merged with stored config)
-   * @param messageBus - The shared message bus
    * @returns A fully restored AgentContainer with agent instance ready
    */
   static async restore(
     instanceId: string,
     options: AgentCreationOptions,
-    messageBus: IMessageBus,
   ): Promise<AgentContainer> {
-    const container = new AgentContainer(options, messageBus, instanceId);
+    const container = new AgentContainer(options, instanceId);
     await container.getAgent();
     return container;
   }

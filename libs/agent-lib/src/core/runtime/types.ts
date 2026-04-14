@@ -10,7 +10,6 @@
  */
 
 import type { AgentStatus } from '../common/types.js';
-import type { IMessageBus } from './topology/messaging/MessageBus.js';
 import type { DIComponentRegistration } from '../di/UnifiedAgentConfig.js';
 
 // =============================================================================
@@ -94,9 +93,7 @@ export interface TaskCallbacks {
  *
  * All agents have equal capabilities to:
  * - Create/destroy/stop agents
- * - Manage topology (register, connect agents)
  * - Query runtime state
- * - Send A2A messages to other agents
  */
 export interface IRuntimeControlClient {
   // ============================================
@@ -132,113 +129,6 @@ export interface IRuntimeControlClient {
   // ============================================
 
   getStats(): Promise<RuntimeStats>;
-
-  // ============================================
-  // Topology Management
-  // ============================================
-
-  registerInTopology(
-    instanceId: string,
-    nodeType: TopologyNodeType,
-    capabilities?: string[],
-  ): void;
-  unregisterFromTopology(instanceId: string): void;
-  connectAgents(from: string, to: string, edgeType?: EdgeType): void;
-  disconnectAgents(from: string, to: string): void;
-  getTopologyGraph(): ITopologyGraph;
-  getTopologyStats(): RoutingStats;
-
-  // ============================================
-  // A2A Communication
-  // ============================================
-
-  /**
-   * Send a query to another agent via A2A protocol.
-   * When ackOnly is true, returns conversationId immediately after ACK.
-   */
-  sendA2AQuery(
-    targetAgentId: string,
-    query: string,
-    options?: {
-      expectedFormat?: string;
-      input?: Record<string, unknown>;
-      description?: string;
-      priority?: 'low' | 'normal' | 'high' | 'urgent';
-      ackOnly?: boolean;
-      /** Timeout in ms */
-      timeout?: number;
-    },
-  ): Promise<unknown>;
-
-  /**
-   * Send an event notification to another agent via A2A protocol (fire-and-forget)
-   */
-  sendA2AEvent(
-    targetAgentId: string,
-    eventType: string,
-    data: unknown,
-  ): Promise<void>;
-}
-
-// =============================================================================
-// Topology Types
-// =============================================================================
-
-export type TopologyNodeType = 'router' | 'worker' | 'hybrid';
-
-export interface TopologyNode {
-  instanceId: string;
-  nodeType: TopologyNodeType;
-  capabilities?: string[];
-  metadata?: Record<string, unknown>;
-}
-
-export type EdgeType = 'parent-child' | 'peer' | 'route';
-
-export interface TopologyEdge {
-  from: string;
-  to: string;
-  edgeType: EdgeType;
-  weight?: number;
-  bidirectional?: boolean;
-}
-
-export interface RoutingDecision {
-  action: RoutingAction;
-  targetInstanceIds?: string[];
-  reasoning?: string;
-}
-
-export type RoutingAction = 'forward' | 'broadcast' | 'respond' | 'reject';
-
-export interface RoutingStats {
-  totalMessages: number;
-  totalConversations: number;
-  activeConversations: number;
-  completedConversations: number;
-  failedConversations: number;
-  timedOutConversations: number;
-}
-
-export interface ITopologyGraph {
-  addNode(node: TopologyNode): void;
-  removeNode(instanceId: string): void;
-  getNode(instanceId: string): TopologyNode | undefined;
-  hasNode(instanceId: string): boolean;
-  getAllNodes(): TopologyNode[];
-  addEdge(edge: TopologyEdge): void;
-  removeEdge(from: string, to: string): void;
-  hasEdge(from: string, to: string): boolean;
-  getEdge(from: string, to: string): TopologyEdge | undefined;
-  getAllEdges(): TopologyEdge[];
-  getNeighbors(instanceId: string): TopologyNode[];
-  getChildren(instanceId: string): TopologyNode[];
-  getParent(instanceId: string): TopologyNode | undefined;
-  getParents(instanceId: string): TopologyNode[];
-  findPath(from: string, to: string): string[] | null;
-  isReachable(from: string, to: string): boolean;
-  clear(): void;
-  size: { nodes: number; edges: number };
 }
 
 // =============================================================================
@@ -296,7 +186,6 @@ export interface RuntimeControlAgentOptions {
   components?: DIComponentRegistration[];
   hooks?: HookConfig;
   parentInstanceId?: string;
-  messageBus?: IMessageBus;
 }
 
 // =============================================================================
@@ -314,8 +203,6 @@ export type MessageBusMode = 'memory' | 'redis';
 export interface MessageBusConfig {
   /** Operating mode: 'memory' for local, 'redis' for distributed */
   mode: MessageBusMode;
-  /** Redis configuration (required when mode is 'redis') */
-  redis?: import('./topology/messaging/RedisConfig.js').RedisMessageBusConfig;
 }
 
 export interface AgentRuntimeConfig {
