@@ -9,6 +9,7 @@ from ukb_mcp.api.deps import get_dx_client
 from ukb_mcp.domain.cohort.models import (
     CohortCreateRequest,
     CohortDetail,
+    CohortDownloadResponse,
     CohortInfo,
     CohortListItem,
     ExtractFieldsRequest,
@@ -165,4 +166,24 @@ def extract_cohort_fields(
         total=total,
         limit=req.limit,
         offset=req.offset,
+    )
+
+
+@router.get("/{cohort_id}/download", response_model=CohortDownloadResponse)
+def download_cohort(
+    cohort_id: str,
+    refresh: bool = Query(default=False),
+    service: CohortService = Depends(get_cohort_service),
+) -> CohortDownloadResponse:
+    """
+    下载队列全部关联字段的完整数据。
+    注意：目前基于vizserver下载数据，对fields的数量存在潜在限制
+    """
+    cohort_name, cid, data = service.download(cohort_id, refresh=refresh)
+    return CohortDownloadResponse(
+        cohort_id=cid,
+        cohort_name=cohort_name,
+        row_count=len(data),
+        field_count=len(data[0]) if data else 0,
+        data=data,
     )

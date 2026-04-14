@@ -86,3 +86,15 @@ class CohortService:
         total = len(df)
         records = df.iloc[offset : offset + limit].to_dict(orient="records")
         return records, total
+
+    def download(
+        self, cohort_id: str, refresh: bool = False
+    ) -> tuple[str, str, list[dict]]:
+        """下载 cohort 全部关联字段的数据。
+
+        Returns:
+            (cohort_name, cohort_id, data) 元组，data 为完整数据行列表。
+        """
+        cohort = self._dx.get_cohort(cohort_id, refresh=refresh)
+        df = self._dx.download_cohort(cohort_id, refresh=refresh)
+        return cohort.name, cohort_id, df.to_dict(orient="records")

@@ -64,7 +64,9 @@ class CohortDetail(BaseModel):
 class ExtractFieldsRequest(BaseModel):
     """提取字段请求。"""
 
-    entity_fields: list[str] = Field(description='要提取的字段列表（"entity.field_name" 格式）。')
+    entity_fields: list[str] = Field(
+        description='要提取的字段列表（"entity.field_name" 格式）。'
+    )
     refresh: bool = Field(default=False, description="是否跳过缓存。")
     limit: int = Field(default=100, ge=1, le=100, description="返回条数上限。")
     offset: int = Field(default=0, ge=0, description="偏移量。")
@@ -77,3 +79,13 @@ class ExtractFieldsResponse(BaseModel):
     total: int = Field(description="总记录数。")
     limit: int = Field(description="每页条数。")
     offset: int = Field(description="偏移量。")
+
+
+class CohortDownloadResponse(BaseModel):
+    """下载队列全部字段数据响应。"""
+
+    cohort_id: str = Field(description="队列 ID。")
+    cohort_name: str = Field(description="队列名称。")
+    row_count: int = Field(description="数据行数。")
+    field_count: int = Field(description="字段数。")
+    data: list[dict] = Field(description="完整数据行列表。")
