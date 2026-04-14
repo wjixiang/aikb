@@ -65,9 +65,9 @@ export interface UnifiedAgentConfig {
 
   /**
    * External persistence service instance.
-   * If provided, the container will use this instead of creating its own.
+   * Required for agent container to function.
    */
-  persistenceService?: IPersistenceService;
+  persistenceService: IPersistenceService;
 
   /**
    * External session manager instance.
@@ -122,9 +122,9 @@ export interface AgentCreationOptions {
 
   /**
    * External persistence service instance.
-   * If provided, the container will use this instead of creating its own.
+   * Required for agent container to function.
    */
-  persistenceService?: IPersistenceService;
+  persistenceService: IPersistenceService;
 
   /**
    * External session manager instance.
@@ -149,6 +149,8 @@ export const defaultUnifiedConfig: UnifiedAgentConfig = {
   persistence: {
     // enabled: true,
   },
+  // persistenceService must be provided at runtime - this default allows type checking only
+  persistenceService: undefined as unknown as IPersistenceService,
 };
 
 export function mergeWithDefaults(

@@ -107,6 +107,7 @@ export class AgentContainer {
             memory: { ...this.config.memory, ...storedConfig.memory },
             persistence: storedConfig.persistence ?? this.config.persistence,
             components: this.config.components,
+            persistenceService: this.config.persistenceService,
           };
         }
         this.logger?.info(
