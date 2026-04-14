@@ -17,8 +17,11 @@ import { a2aRoutes } from './routes/a2a.js';
 import { taskRoutes } from './routes/tasks.js';
 import { healthRoutes } from './routes/health.js';
 import { loadConfig } from './config.js';
+import { initLogger, closePgPool } from '@shared/logger';
 envconfig();
 const config = loadConfig();
+
+await initLogger({ name: 'swarm-runtime', level: config.server.logLevel });
 
 const runtimeConfig: AgentRuntimeConfig = {
   defaultApiConfig: config.api as any,
@@ -132,6 +135,9 @@ const shutdown = async (signal: string) => {
 
   await fastify.close();
   fastify.log.info('   Fastify server closed');
+
+  await closePgPool();
+  fastify.log.info('   Logger PG pool closed');
 
   process.exit(0);
 };

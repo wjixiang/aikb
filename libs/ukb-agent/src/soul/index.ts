@@ -42,19 +42,30 @@ const SOP_CONTENT = `# UK Biobank 数据探索 Agent
 
 **筛选条件 (filters) 格式说明**：
 - key 格式为 \`"entity$field"\`，如 \`"participant$p131286"\`、\`"participant$sex"\`
-- value 为条件数组，每个条件包含 \`condition\` 和 \`values\`
-- \`condition\` 类型：\`"in"\`（包含）、\`"not-in"\`（不包含）、\`"exists"\`（存在/非空）、\`"not-exists"\`（不存在/空值）
-- 示例：
+- value 为条件数组，每个条件包含 \`condition\` 和可选的 \`values\`
+- \`condition\` 类型：
+  - 值比较：\`"is"\`（等于）、\`"is-not"\`（不等于）、\`"in"\`（包含）、\`"not-in"\`（不包含）
+  - 数值比较：\`"greater-than"\`、\`"greater-than-eq"\`、\`"less-than"\`、\`"less-than-eq"\`、\`"between"\`
+  - 空值检查（无需 values）：\`"exists"\`（字段非空）、\`"is-empty"\`（字段为空）
+  - 文本：\`"contains"\`
+- 空值检查示例：
   \`\`\`json
   {
-    "participant$p131286": [{"condition": "exists", "values": []}],
-    "participant$sex": [{"condition": "in", "values": [0, 1]}]
+    "participant$p670_i0": [{"condition": "exists"}],
+    "participant$p20049_i0_a0": [{"condition": "is-empty"}]
+  }
+  \`\`\`
+- 值比较示例：
+  \`\`\`json
+  {
+    "participant$sex": [{"condition": "in", "values": [0, 1]}],
+    "participant$p21003_i0": [{"condition": "greater-than", "values": [50]}]
   }
   \`\`\`
 
 ### 提取和分析数据
 当用户需要获取具体数据时：
-1. 如果有队列，使用 \`extract_cohort_data\` 提取字段数据
+1. 如果有队列，使用 \`preview_cohort_data\` 预览字段数据
 2. 如果没有队列，使用 \`query_database\` 直接查询
 3. 使用 \`query_association\` 进行生物标志物-结局关联分析
 4. 使用 \`export_data\` 导出结果

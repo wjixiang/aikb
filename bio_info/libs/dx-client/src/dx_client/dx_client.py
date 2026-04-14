@@ -874,7 +874,38 @@ class DXClient(IDXClient):
         folder: str = "/",
         description: str = "",
     ) -> DXCohortInfo:
-        """基于筛选条件在当前项目中创建 cohort。"""
+        """基于筛选条件在当前项目中创建 cohort。
+
+        Args:
+            name: Cohort 名称。
+            filters: 筛选条件，支持以下格式：
+
+                **FilterRule** (推荐)::
+
+                    FilterRule(field="participant.p131286", operator="is_not_null")
+                    FilterRule(field="participant.p31", operator="eq", value="male")
+                    FilterRule(field="participant.p21001_i0", operator="gt", value=70)
+
+                **RulesFilter** (多规则)::
+
+                    RulesFilter(logic="and", rules=[
+                        FilterRule(field="olink_instance_0.eid", operator="is_not_null"),
+                        FilterRule(field="participant.p131286", operator="is_not_null"),
+                    ])
+
+                **VizPhenoFilters** (vizserver 原生)::
+
+                    VizPhenoFilters(logic="and", pheno_filters=...)
+
+                支持的 operator: is_null, is_not_null, is_empty, not_empty, eq, neq,
+                is, is_not, in, not_in, contains, gt, gte, lt, lte, between。
+                空值检查类操作符 (is_null/is_not_null) 不需要 value。
+
+            entity_fields: 关联字段列表（如 ``["participant.eid", "participant.p31"]``）。
+            dataset_ref: 数据集引用，为 None 时自动查找。
+            folder: 目标文件夹。
+            description: 描述。
+        """
         from . import cohort as cohort_mod
 
         self._ensure_connected()
@@ -890,12 +921,24 @@ class DXClient(IDXClient):
         viz_info = cohort_mod.get_visualize_info(dataset_record_id, dataset_project)
         base_sql = viz_info.get("baseSql") or viz_info.get("base_sql")
 
-        # 3. 规范化 filters 并构建 payload
-        # vizserver raw-cohort-query 期望 filters 为 VizPhenoFilters 格式：
-        #   {"logic": "and", "pheno_filters": {"logic": "and", "compound": [...]}}
         normalized = cohort_mod.normalize_cohort_filters(filters)
+        filters_dict = normalized.model_dump(exclude_defaults=True)
+
+        filters_dict.setdefault("assay_filters", {"compound": [], "logic": "and"})
+
+        for comp in filters_dict.get("pheno_filters", {}).get("compound", []):
+            comp.setdefault(
+                "entity",
+                {
+                    "logic": "and",
+                    "name": "participant",
+                    "operator": "exists",
+                    "children": [],
+                },
+            )
+
         filter_payload: dict[str, Any] = {
-            "filters": normalized.model_dump(),
+            "filters": filters_dict,
             "project_context": dataset_project,
         }
         if base_sql is not None:
@@ -903,13 +946,12 @@ class DXClient(IDXClient):
 
         sql = cohort_mod.generate_cohort_sql(viz_info, filter_payload)
 
-        # 5. 创建 cohort record（details.filters 保存完整结构供 UI 使用）
         record_payload = cohort_mod.build_cohort_record_payload(
             name=name,
             folder=folder,
             project=project_id,
             viz_info=viz_info,
-            filters=normalized.model_dump(),
+            filters=filters_dict,
             sql=sql,
             description=description,
             entity_fields=entity_fields,

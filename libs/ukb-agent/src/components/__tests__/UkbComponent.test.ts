@@ -27,7 +27,7 @@ describe('UkbComponent', () => {
     expect(toolDefs).toHaveProperty('query_field_dict');
     expect(toolDefs).toHaveProperty('list_cohorts');
     expect(toolDefs).toHaveProperty('create_cohort');
-    expect(toolDefs).toHaveProperty('extract_cohort_data');
+    expect(toolDefs).toHaveProperty('preview_cohort_data');
     expect(toolDefs).toHaveProperty('query_association');
     expect(toolDefs).toHaveProperty('export_data');
   });

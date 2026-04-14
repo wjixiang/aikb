@@ -5,9 +5,24 @@ import type { UkbMcpClient } from '../../client/UkbMcpClient.js';
 
 // ── Vizserver native pheno_filters schema ──────────────────────────────
 
+const VIZ_CONDITIONS = [
+  'is',
+  'is-not',
+  'in',
+  'not-in',
+  'contains',
+  'greater-than',
+  'greater-than-eq',
+  'less-than',
+  'less-than-eq',
+  'between',
+  'is-empty',
+  'exists',
+] as const;
+
 const VizFilterConditionSchema = z.object({
-  condition: z.string().describe(
-    '条件类型：exists, is, in, not-in, greater-than, less-than, between 等',
+  condition: z.enum(VIZ_CONDITIONS).describe(
+    '条件类型：is, is-not, in, not-in, contains, greater-than, greater-than-eq, less-than, less-than-eq, between, is-empty（字段为空）, exists（字段非空）',
   ),
   values: z.unknown().optional(),
 });
@@ -82,19 +97,28 @@ const FILTER_GUIDE = [
   '  可用: any, not-any, all, not-all（注意：不能用 is / in）',
   '  示例: {"participant.p6138_i0": [{"condition": "any", "values": [1, 2]}]}',
   '- date_categorical_sparse / double_categorical_sparse（稀疏日期/稀疏数值，如 participant.p131286 高血压诊断日期）：',
-  '  可用: is, is-not, in, not-in（注意：稀疏字段不支持 exists / not-exists / greater-than / less-than / between）',
+  '  可用: is, is-not, in, not-in（注意：稀疏字段不支持 exists / is-empty / greater-than / less-than / between）',
   '  示例: {"participant.p131286": [{"condition": "in", "values": ["2018-01-01", "2019-01-01"]}]}',
   '',
+  '【空值检查】',
+  '- exists（字段非空/存在）：不需要 values，示例: {"participant.p670_i0": [{"condition": "exists"}]}',
+  '- is-empty（字段为空/不存在）：不需要 values，示例: {"participant.p20049_i0_a0": [{"condition": "is-empty"}]}',
+  '- 注意：exists / is-empty 仅适用于非稀疏字段（integer, string, date 等常规类型）',
+  '',
   '【禁止事项】',
-  '- exists / not-exists 条件在所有字段类型上均不支持，禁止使用',
+  '- 禁止使用 not-exists 条件（已移除，请用 is-empty 代替）',
   '- 日期字段（date）不支持 greater-than / less-than / between，请用 in 代替',
   '- 多选/层级字段不支持 is / in，请用 any / all',
+  '- 需要 values 的条件（is, is-not, in 等）不能传空 values',
   '',
   '【完整示例】筛选女性且年龄50-60岁且2018年后确诊高血压的参与者：',
   '{"logic":"and","pheno_filters":{"logic":"and","compound":[{"name":"phenotype","logic":"and","filters":{"participant.p31":[{"condition":"is","values":0}],"participant.p21003_i0":[{"condition":"between","values":[50,60]}],"participant.p131286":[{"condition":"greater-than-eq","values":["2018-01-01"]}]}}]}}',
   '',
   '也支持简化 rules 格式，系统会自动转换：',
   '{"logical":"AND","rules":[{"field":"participant.p31","operator":"eq","value":0},{"field":"participant.p21003_i0","operator":"between","values":[50,60]}]}',
+  '',
+  'rules 格式中的空值检查（无需 value）：',
+  '{"logical":"AND","rules":[{"field":"participant.p670_i0","operator":"is_not_null"},{"field":"participant.p20049_i0_a0","operator":"is_null"}]}',
 ].join('\n');
 
 export const CreateCohortToolDef: ToolDef = {

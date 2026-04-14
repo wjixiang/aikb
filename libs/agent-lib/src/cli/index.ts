@@ -70,7 +70,7 @@ program
     state.verbose = options['verbose'] || false;
 
     // Initialize logger
-    initLogger(state.logLevel, state.verbose);
+    initLogger({ name: 'agent-cli', level: state.logLevel }, state.verbose);
   });
 
 // ============================================================

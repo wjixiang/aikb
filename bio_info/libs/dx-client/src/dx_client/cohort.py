@@ -22,6 +22,7 @@ from .dx_models import (
     FilterRule,
     RulesFilter,
     VizCompoundFilterEntry,
+    VizCondition,
     VizFilterCondition,
     VizPhenoFilters,
     VizPhenoFiltersInner,
@@ -29,11 +30,32 @@ from .dx_models import (
 
 logger = logging.getLogger(__name__)
 
-# ── Operator → vizserver condition 映射 ──────────────────────────────────
+# ── Operator → VizCondition 映射 ────────────────────────────────────────
+#
+# LLM / 调用方传入的 operator 会映射到固定的 VizCondition 类型。
+# 不再使用 "exists" / "not-exists"，统一为 is-empty / not-empty。
+# 对于需要 values 的条件（is, is-not, in, not-in 等），values 必须非空。
 
-_OP_TO_CONDITION: dict[str, str] = {
+_NO_VALUE_CONDITIONS: set[str] = {"is-empty", "exists"}
+_CONDITIONS_REQUIRING_VALUES: set[str] = {
+    "is",
+    "is-not",
+    "in",
+    "not-in",
+    "contains",
+    "greater-than",
+    "greater-than-eq",
+    "less-than",
+    "less-than-eq",
+    "between",
+}
+
+_OP_TO_CONDITION: dict[str, VizCondition] = {
+    "is_null": "is-empty",
     "is_not_null": "exists",
-    "is_null": "not-exists",
+    "is_empty": "is-empty",
+    "not_empty": "exists",
+    "empty": "is-empty",
     "eq": "is",
     "equals": "is",
     "is": "is",
@@ -48,10 +70,9 @@ _OP_TO_CONDITION: dict[str, str] = {
     "lt": "less-than",
     "lte": "less-than-eq",
     "between": "between",
-    "any": "any",
-    "not_any": "not-any",
-    "all": "all",
-    "not_empty": "not-empty",
+    "any": "in",
+    "not_any": "not-in",
+    "all": "in",
 }
 
 
@@ -59,8 +80,28 @@ def _rule_to_vizserver_filter(rule: FilterRule) -> dict[str, list[VizFilterCondi
     """将单条 FilterRule 转为 vizserver filters dict。"""
     field = _ensure_vizserver_key(rule.field)
     operator = rule.operator or rule.type or "is"
-    condition = _OP_TO_CONDITION.get(operator, operator)
-    values = rule.value if rule.value is not None else (rule.values or [])
+
+    # 先尝试查映射表
+    condition: VizCondition | None = _OP_TO_CONDITION.get(operator)
+
+    if condition is None:
+        raise DXCohortError(
+            f"Unsupported filter operator '{operator}'. "
+            f"Supported: {sorted(_OP_TO_CONDITION.keys())}"
+        )
+
+    if condition in _NO_VALUE_CONDITIONS:
+        values: list[Any] = []
+        return {field: [VizFilterCondition(condition=condition)]}
+    elif condition in _CONDITIONS_REQUIRING_VALUES:
+        values = rule.value if rule.value is not None else (rule.values or [])
+        if not values:
+            raise DXCohortError(
+                f"Filter operator '{operator}' (condition '{condition}') requires non-empty values. "
+                f"For null/empty checks use 'is_null' or 'is_not_null' instead."
+            )
+    else:
+        values = rule.value if rule.value is not None else (rule.values or [])
 
     return {field: [VizFilterCondition(condition=condition, values=values)]}
 

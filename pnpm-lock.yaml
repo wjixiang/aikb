@@ -573,6 +573,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.0.1
         version: 5.2.5
+      '@shared/logger':
+        specifier: workspace:*
+        version: link:../../libs/shared-logger
       agent-lib:
         specifier: workspace:*
         version: link:../../libs/agent-lib

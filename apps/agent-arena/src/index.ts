@@ -1,9 +1,13 @@
 import 'reflect-metadata';
 import { program } from 'commander';
+import { initLogger, closePgPool } from '@shared/logger';
 import { runCommand } from './commands/run.js';
 import { testCommand } from './commands/test.js';
 import { listCommand } from './commands/list.js';
-// Config is loaded lazily by the singleton on first access
+import { getConfig } from './lib/config.js';
+
+const cfg = getConfig();
+initLogger({ name: 'agent-arena', level: 'info' }).catch(() => {});
 
 program
   .name('agent-arena')

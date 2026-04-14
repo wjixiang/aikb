@@ -37,7 +37,9 @@ import {
   handleCreateCohort,
   CloseCohortToolDef,
   handleCloseCohort,
-  ExtractCohortDataToolDef,
+  PreviewCohortDataToolDef,
+  handlePreviewCohortData,
+  renderCohortDataAsMarkdown,
   QueryDatabaseToolDef,
   QueryAssociationToolDef,
   handleQueryAssociation,
@@ -99,7 +101,7 @@ export class UkbComponent extends ToolComponent<UkbState> {
 - 浏览和查询 UKB 数据库的表和字段
 - 搜索字段字典（按名称、描述、概念等）
 - 创建和管理研究队列（cohort）
-- 从队列中提取指定字段的数据
+- 从队列中预览指定字段的数据
 - 执行生物标志物与结局的关联分析
 - 导出数据为 CSV 或 Parquet 格式
 
@@ -108,12 +110,14 @@ export class UkbComponent extends ToolComponent<UkbState> {
 - 错误："eid"、"p31"、"p131286"（缺少 entity 前缀，会导致 422 错误）
 
 【筛选条件】创建队列时，必须根据字段的数据类型（type）选择正确的 condition：
-- 数值型（integer/double）：is, in, greater-than, less-than, between
-- 字符串型（string）：is, in, contains
-- 日期型（date）：is, in（不支持 greater-than/less-than/between）
+- 数值型（integer/double）：is, is-not, in, not-in, greater-than, greater-than-eq, less-than, less-than-eq, between
+- 字符串型（string）：is, is-not, in, not-in, contains
+- 日期型（date）：is, is-not, in, not-in（不支持 greater-than/less-than/between）
 - 多选/层级型（multi/hierarchical）：any, all（不支持 is/in）
-- 稀疏型（sparse）：is, in（不支持 exists/not-exists）
-- 禁止使用 exists / not-exists 条件（在所有字段类型上均不支持）
+- 稀疏型（sparse）：is, is-not, in, not-in（不支持 exists/is-empty/greater-than/less-than/between）
+- 空值检查（非稀疏字段）：exists（字段非空，无需 values）、is-empty（字段为空，无需 values）
+- 禁止使用 not-exists 条件（已移除，请用 is-empty 代替）
+- 需要 values 的条件（is, is-not, in 等）不能传空 values
 
 【字段字典搜索（query_field_dict）】请发送原始关键词，不要写 SQL！
 - 正确：condition: "olink"
@@ -163,7 +167,7 @@ export class UkbComponent extends ToolComponent<UkbState> {
       get_cohort: GetCohortToolDef,
       create_cohort: CreateCohortToolDef,
       close_cohort: CloseCohortToolDef,
-      extract_cohort_data: ExtractCohortDataToolDef,
+      preview_cohort_data: PreviewCohortDataToolDef,
       query_database: QueryDatabaseToolDef,
       query_association: QueryAssociationToolDef,
       export_data: ExportDataToolDef,
@@ -354,31 +358,25 @@ export class UkbComponent extends ToolComponent<UkbState> {
     return handleCloseCohort(this.client, params);
   }
 
-  async onExtract_cohort_data(
+  async onPreview_cohort_data(
     params: ExtractFieldsRequest & { cohort_id: string },
-  ): Promise<ToolCallResult<unknown>> {
-    try {
-      const result = await this.client.extractCohortFields(params.cohort_id, {
-        entity_fields: params.entity_fields,
-        ...(params.refresh && { refresh: params.refresh }),
-        ...(params.limit && { limit: params.limit }),
-        ...(params.offset && { offset: params.offset }),
-      });
-      this.reactive.lastQueryResult = result.data as unknown as Record<string, unknown>;
+  ): Promise<ToolCallResult<string>> {
+    const result = await handlePreviewCohortData(this.client, params);
+    if (result.success && result.data) {
+      const { data, total, limit, offset } = result.data;
+      this.reactive.lastQueryResult = data as unknown as Record<string, unknown>;
       return {
         success: true,
-        data: result.data,
-        summary: `提取到 ${result.total} 条，当前 ${result.offset + 1}-${Math.min(result.offset + result.limit, result.total)} 条`,
-      };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return {
-        success: false,
-        data: null,
-        error: message,
-        summary: `提取队列数据失败: ${message}`,
+        data: renderCohortDataAsMarkdown(data, total, offset, limit),
+        summary: result.summary ?? '',
       };
     }
+    return {
+      success: result.success,
+      data: '',
+      error: result.error ?? '',
+      summary: result.summary ?? '',
+    };
   }
 
   async onQuery_database(

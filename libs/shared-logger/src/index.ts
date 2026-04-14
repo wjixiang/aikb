@@ -1,5 +1,5 @@
 import pino from 'pino';
-import { Writable, Transform } from 'stream';
+import { Writable } from 'stream';
 import pg from 'pg';
 import pinoPretty from 'pino-pretty';
 
@@ -16,12 +16,23 @@ export interface SharedLoggerOptions {
 let rootLogger: pino.Logger | undefined;
 let pgPool: pg.Pool | undefined;
 let initPromise: Promise<unknown> | undefined;
+let flushTimer: ReturnType<typeof setInterval> | undefined;
 
 const { Pool } = pg;
 
+const VALID_TABLE_NAME = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+function sanitizeTableName(name: string): string {
+  if (!VALID_TABLE_NAME.test(name)) {
+    throw new Error(`Invalid log table name: "${name}". Only alphanumeric characters and underscores are allowed.`);
+  }
+  return name;
+}
+
 async function ensureLogTable(pool: pg.Pool, tableName: string): Promise<void> {
+  const safeName = sanitizeTableName(tableName);
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS ${tableName} (
+    CREATE TABLE IF NOT EXISTS ${safeName} (
       time timestamp NOT NULL,
       level varchar NOT NULL,
       module varchar DEFAULT '',
@@ -29,6 +40,9 @@ async function ensureLogTable(pool: pg.Pool, tableName: string): Promise<void> {
       extra jsonb
     )
   `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_${safeName}_time ON ${safeName} (time)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_${safeName}_level ON ${safeName} (level)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_${safeName}_module ON ${safeName} (module)`);
 }
 
 export async function initLogger(options?: SharedLoggerOptions, verbose?: boolean): Promise<pino.Logger> {
@@ -38,12 +52,16 @@ export async function initLogger(options?: SharedLoggerOptions, verbose?: boolea
   let pgConnection: string | undefined;
   let pgTable = 'app_logs';
 
-  if (options) {
+  if (options && typeof options === 'object') {
     level = options.level;
     name = options.name || 'app';
     enablePretty = options.enablePretty !== false;
     pgConnection = options.pgConnection ?? process.env.LOG_DB_URL;
     pgTable = options.pgTable || process.env.LOG_DB_TABLE || 'app_logs';
+  } else if (typeof options === 'string') {
+    level = options;
+    pgConnection = process.env.LOG_DB_URL;
+    pgTable = process.env.LOG_DB_TABLE || 'app_logs';
   } else {
     pgConnection = process.env.LOG_DB_URL;
     pgTable = process.env.LOG_DB_TABLE || 'app_logs';
@@ -58,7 +76,6 @@ export async function initLogger(options?: SharedLoggerOptions, verbose?: boolea
     const prettyStream = pinoPretty({ colorize: true }) as unknown as Writable;
     const pgStream = createPgStream(pgTable);
     const splitStream = new SplitStream([prettyStream, pgStream]);
-
     rootLogger = pino({ name, level: level || 'debug', timestamp: pino.stdTimeFunctions.isoTime, formatters: { level: (label) => ({ level: label }) } }, splitStream);
   } else if (enablePretty) {
     rootLogger = pino({ name, level: level || 'debug', timestamp: pino.stdTimeFunctions.isoTime, formatters: { level: (label) => ({ level: label }) }, transport: { target: 'pino-pretty', options: { colorize: true } } });
@@ -96,6 +113,7 @@ function createPgStream(tableName: string): Writable {
   let buffer: LogEntry[] = [];
   const flushInterval = 1000;
   const batchSize = 100;
+  const safeName = sanitizeTableName(tableName);
 
   const flush = async () => {
     if (buffer.length === 0 || !pgPool) return;
@@ -106,7 +124,7 @@ function createPgStream(tableName: string): Writable {
     const client = await pgPool.connect();
     try {
       await client.query(
-        `INSERT INTO ${tableName} (time, level, module, msg, extra)
+        `INSERT INTO ${safeName} (time, level, module, msg, extra)
          SELECT * FROM UNNEST($1::timestamp[], $2::varchar[], $3::varchar[], $4::text[], $5::jsonb[])`,
         [
           entries.map((e) => e.time),
@@ -127,7 +145,7 @@ function createPgStream(tableName: string): Writable {
     }
   };
 
-  setInterval(flush, flushInterval);
+  flushTimer = setInterval(flush, flushInterval);
 
   return new Writable({
     write(chunk: string | Buffer, _encoding: BufferEncoding, callback: (error?: Error | null) => void) {
@@ -184,6 +202,10 @@ export function createChildLogger(parent: pino.Logger, bindings: Record<string, 
 }
 
 export async function closePgPool(): Promise<void> {
+  if (flushTimer) {
+    clearInterval(flushTimer);
+    flushTimer = undefined;
+  }
   if (pgPool) {
     await pgPool.end();
     pgPool = undefined;

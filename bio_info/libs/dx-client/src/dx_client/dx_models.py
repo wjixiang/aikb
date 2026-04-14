@@ -268,13 +268,39 @@ class VizFieldMapping(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+VizCondition = Literal[
+    "is",
+    "is-not",
+    "in",
+    "not-in",
+    "contains",
+    "greater-than",
+    "greater-than-eq",
+    "less-than",
+    "less-than-eq",
+    "between",
+    "is-empty",
+    "exists",
+]
+"""Vizserver 支持的固定条件类型。
+
+- ``is`` / ``is-not``: 等于 / 不等于（需提供 values）
+- ``in`` / ``not-in``: 属于 / 不属于列表（需提供 values）
+- ``contains``: 文本包含（需提供 values）
+- ``greater-than`` / ``greater-than-eq`` / ``less-than`` / ``less-than-eq``: 比较（需提供 values）
+- ``between``: 区间（需提供两个 values）
+- ``is-empty``: 字段为空/不存在（无 values）
+- ``exists``: 字段存在/非空（无 values）
+"""
+
+
 class VizFilterCondition(BaseModel):
     """Vizserver 叶级过滤条件。"""
 
     model_config = ConfigDict(populate_by_name=True)
 
-    condition: str = Field(
-        description="条件类型：exists, is, in, not-in, greater-than, less-than, between 等",
+    condition: VizCondition = Field(
+        description="条件类型",
     )
     values: list[Any] | Any = Field(default_factory=list, description="条件值或值列表")
 
@@ -282,10 +308,10 @@ class VizFilterCondition(BaseModel):
 class VizCompoundFilterEntry(BaseModel):
     """pheno_filters.compound 中的单条条目。"""
 
-    name: str = Field(description="分组名称，通常为 \"phenotype\"")
+    name: str = Field(description='分组名称，通常为 "phenotype"')
     logic: Literal["and", "or"] = Field(description="组内逻辑组合")
     filters: dict[str, list[VizFilterCondition]] = Field(
-        description="字段过滤条件，key 为 \"entity$field\" 格式",
+        description='字段过滤条件，key 为 "entity$field" 格式',
     )
 
 
@@ -327,11 +353,25 @@ class FilterRule(BaseModel):
     """单条筛选规则（LLM 常用格式）。
 
     兼容 ``operator`` / ``type`` 两种键名表示条件操作符。
+
+    支持的 operator：
+
+    - **空值检查**（无需 value）：``is_null``, ``is_not_null``, ``is_empty``, ``not_empty``
+    - **等于/不等于**（需 value）：``eq``, ``neq``, ``is``, ``is_not``, ``equals``, ``not_equals``
+    - **列表**（需 values）：``in``, ``not_in``
+    - **文本**（需 value）：``contains``
+    - **比较**（需 value）：``gt``, ``gte``, ``lt``, ``lte``
+    - **区间**（需 2 个 values）：``between``
     """
 
-    field: str = Field(description="字段名，\"entity.field_name\" 格式")
-    operator: str = Field(default="is", description="操作符：is_not_null, eq, gt, in 等")
-    type: str | None = Field(default=None, description="操作符别名（与 operator 二选一）")
+    field: str = Field(description='字段名，"entity.field_name" 格式')
+    operator: str = Field(
+        default="is",
+        description="操作符：is_null, is_not_null, eq, neq, in, not_in, gt, gte, lt, lte, between, contains 等",
+    )
+    type: str | None = Field(
+        default=None, description="操作符别名（与 operator 二选一）"
+    )
     value: Any = Field(default=None, description="条件值（单值）")
     values: list[Any] | None = Field(default=None, description="条件值（列表）")
 

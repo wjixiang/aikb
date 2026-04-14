@@ -1,9 +1,24 @@
 // ==================== Cohort Filter Types ====================
 // Mirrors Python dx_models.py: CohortFilters = VizPhenoFilters | RulesFilter | FilterRule
 
+/** Vizserver 支持的固定条件类型。 */
+export type VizCondition =
+  | 'is'
+  | 'is-not'
+  | 'in'
+  | 'not-in'
+  | 'contains'
+  | 'greater-than'
+  | 'greater-than-eq'
+  | 'less-than'
+  | 'less-than-eq'
+  | 'between'
+  | 'is-empty'
+  | 'exists';
+
 /** Vizserver 叶级过滤条件。 */
 export interface VizFilterCondition {
-  condition: string;
+  condition: VizCondition;
   values?: unknown[] | unknown;
 }
 
