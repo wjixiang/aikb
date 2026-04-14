@@ -64,8 +64,6 @@ import type {
   RuntimeControlAgentOptions,
   RuntimeStats,
   RuntimeControlProviderSettings,
-  ConversationTaskInfo,
-  TaskCallbacks,
 } from './types.js';
 import { AgentStatus } from './types.js';
 import type { IAgentRegistry } from './AgentRegistry.js';
@@ -288,25 +286,6 @@ export interface IAgentRuntime {
    */
   getStats(): Promise<RuntimeStats>;
 
-  // ============================================
-  // Task Integration
-  // ============================================
-
-  /**
-   * Set task callbacks for tracking task state changes.
-   * Called when conversation events (ACK, completed, failed) occur.
-   */
-  setTaskCallbacks(callbacks: TaskCallbacks): void;
-
-  /**
-   * Register a Runtime Task ID for a conversation.
-   * This allows the runtime to notify task state changes via callbacks.
-   */
-  registerConversationTask(
-    conversationId: string,
-    runtimeTaskId: string,
-    taskId: string,
-  ): void;
 }
 
 /**
@@ -372,15 +351,6 @@ export class AgentRuntime implements IAgentRuntime {
   private running: boolean = false;
 
   // ============================================
-  // Task Integration
-  // ============================================
-
-  /** Map of conversationId to Runtime Task info */
-  private conversationTaskMap: Map<string, ConversationTaskInfo> = new Map();
-
-  /** Callbacks for task state updates */
-  private taskCallbacks: TaskCallbacks = {};
-
   // ============================================
   // Event Subscription Cleanup
   // ============================================
@@ -1045,83 +1015,6 @@ export class AgentRuntime implements IAgentRuntime {
   }
 
   // ============================================
-  // Task Integration Implementation
-  // ============================================
-
-  /**
-   * Set task callbacks for tracking task state changes.
-   */
-  setTaskCallbacks(callbacks: TaskCallbacks): void {
-    this.taskCallbacks = callbacks;
-  }
-
-  /**
-   * Register a Runtime Task ID for a conversation.
-   */
-  registerConversationTask(
-    conversationId: string,
-    runtimeTaskId: string,
-    taskId: string,
-  ): void {
-    this.conversationTaskMap.set(conversationId, {
-      runtimeTaskId,
-      taskId,
-    });
-    console.log(
-      `[AgentRuntime] Registered task for conversation ${conversationId}: ${runtimeTaskId} (A2A taskId: ${taskId})`,
-    );
-  }
-
-  /**
-   * Handle task callbacks for conversation events.
-   */
-  private handleTaskCallback(event: { type: string; payload: unknown }): void {
-    const payload = event.payload as {
-      conversationId?: string;
-      result?: unknown;
-      error?: string;
-    };
-
-    if (!payload.conversationId) return;
-
-    const taskInfo = this.conversationTaskMap.get(payload.conversationId);
-    if (!taskInfo) {
-      return;
-    }
-
-    switch (event.type) {
-      case 'conversation:ack':
-        if (this.taskCallbacks.onTaskProcessing) {
-          console.log(
-            `[AgentRuntime] Task ${taskInfo.runtimeTaskId} processing (ACK received)`,
-          );
-          this.taskCallbacks.onTaskProcessing(taskInfo);
-        }
-        break;
-
-      case 'conversation:completed':
-        if (this.taskCallbacks.onTaskCompleted) {
-          console.log(
-            `[AgentRuntime] Task ${taskInfo.runtimeTaskId} completed`,
-          );
-          this.taskCallbacks.onTaskCompleted(taskInfo, payload.result);
-        }
-        break;
-
-      case 'conversation:failed':
-        if (this.taskCallbacks.onTaskFailed) {
-          console.log(
-            `[AgentRuntime] Task ${taskInfo.runtimeTaskId} failed: ${payload.error}`,
-          );
-          this.taskCallbacks.onTaskFailed(
-            taskInfo,
-            payload.error || 'Unknown error',
-          );
-        }
-        break;
-    }
-  }
-
   // ============================================
   // RuntimeControlClient Factory (Internal)
   // ============================================
