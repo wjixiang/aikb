@@ -64,11 +64,6 @@ export type ConversationId = string;
  */
 export type A2ATaskId = string;
 
-/**
- * Runtime Task ID - database primary key for task persistence
- */
-export type RuntimeTaskId = string;
-
 // =============================================================================
 // IRuntimeControlClient (Simplified - No Permissions)
 // =============================================================================
@@ -123,7 +118,6 @@ export interface IRuntimeControlClient {
 export interface AgentSoul {
   sop?: unknown;
   config?: Record<string, unknown>;
-  taskId?: string;
   name?: string;
   type?: string;
   description?: string;

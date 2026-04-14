@@ -37,8 +37,3 @@ export type ComponentState = Prisma.ComponentStateModel
  * 
  */
 export type AgentInstance = Prisma.AgentInstanceModel
-/**
- * Model RuntimeTask
- * 
- */
-export type RuntimeTask = Prisma.RuntimeTaskModel

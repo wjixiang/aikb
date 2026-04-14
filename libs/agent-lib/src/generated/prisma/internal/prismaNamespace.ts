@@ -387,8 +387,7 @@ export const ModelName = {
   AgentSession: 'AgentSession',
   AgentMemory: 'AgentMemory',
   ComponentState: 'ComponentState',
-  AgentInstance: 'AgentInstance',
-  RuntimeTask: 'RuntimeTask'
+  AgentInstance: 'AgentInstance'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -404,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agentSession" | "agentMemory" | "componentState" | "agentInstance" | "runtimeTask"
+    modelProps: "agentSession" | "agentMemory" | "componentState" | "agentInstance"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -704,80 +703,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    RuntimeTask: {
-      payload: Prisma.$RuntimeTaskPayload<ExtArgs>
-      fields: Prisma.RuntimeTaskFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.RuntimeTaskFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.RuntimeTaskFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>
-        }
-        findFirst: {
-          args: Prisma.RuntimeTaskFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.RuntimeTaskFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>
-        }
-        findMany: {
-          args: Prisma.RuntimeTaskFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>[]
-        }
-        create: {
-          args: Prisma.RuntimeTaskCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>
-        }
-        createMany: {
-          args: Prisma.RuntimeTaskCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.RuntimeTaskCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>[]
-        }
-        delete: {
-          args: Prisma.RuntimeTaskDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>
-        }
-        update: {
-          args: Prisma.RuntimeTaskUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>
-        }
-        deleteMany: {
-          args: Prisma.RuntimeTaskDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.RuntimeTaskUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.RuntimeTaskUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>[]
-        }
-        upsert: {
-          args: Prisma.RuntimeTaskUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$RuntimeTaskPayload>
-        }
-        aggregate: {
-          args: Prisma.RuntimeTaskAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateRuntimeTask>
-        }
-        groupBy: {
-          args: Prisma.RuntimeTaskGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.RuntimeTaskGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.RuntimeTaskCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.RuntimeTaskCountAggregateOutputType> | number
-        }
-      }
-    }
   }
 } & {
   other: {
@@ -877,25 +802,6 @@ export const AgentInstanceScalarFieldEnum = {
 } as const
 
 export type AgentInstanceScalarFieldEnum = (typeof AgentInstanceScalarFieldEnum)[keyof typeof AgentInstanceScalarFieldEnum]
-
-
-export const RuntimeTaskScalarFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  description: 'description',
-  input: 'input',
-  priority: 'priority',
-  status: 'status',
-  targetInstanceId: 'targetInstanceId',
-  output: 'output',
-  error: 'error',
-  createdAt: 'createdAt',
-  startedAt: 'startedAt',
-  completedAt: 'completedAt',
-  expiresAt: 'expiresAt'
-} as const
-
-export type RuntimeTaskScalarFieldEnum = (typeof RuntimeTaskScalarFieldEnum)[keyof typeof RuntimeTaskScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1120,7 +1026,6 @@ export type GlobalOmitConfig = {
   agentMemory?: Prisma.AgentMemoryOmit
   componentState?: Prisma.ComponentStateOmit
   agentInstance?: Prisma.AgentInstanceOmit
-  runtimeTask?: Prisma.RuntimeTaskOmit
 }
 
 /* Types for Logging */
