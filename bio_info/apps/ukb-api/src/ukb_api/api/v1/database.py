@@ -7,16 +7,16 @@ import io
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
-from ukb_mcp.api.deps import get_dx_client
-from ukb_mcp.domain.database.models import (
+from ukb_api.api.deps import get_dx_client
+from ukb_api.domain.database.models import (
     DatabaseFieldInfo,
     DatabaseInfo,
     DatabaseQueryRequest,
     DatabaseTableInfo,
     EntityInfo,
 )
-from ukb_mcp.domain.database.service import DatabaseService
-from ukb_mcp.service.fieldStorageService import FieldStorageService, get_field_storage
+from ukb_api.domain.database.service import DatabaseService
+from ukb_api.service.fieldStorageService import FieldStorageService, get_field_storage
 from dx_client import IDXClient
 
 router = APIRouter(prefix="/databases", tags=["databases"])

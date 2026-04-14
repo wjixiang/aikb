@@ -9,6 +9,7 @@ export * from './GetCohortTool.js';
 export * from './CreateCohortTool.js';
 export * from './CloseCohortTool.js';
 export * from './PreviewCohortDataTool.js';
+export * from './DownloadCohortTool.js';
 export * from './QueryDatabaseTool.js';
 export * from './QueryAssociationTool.js';
 export * from './ExportDataTool.js';

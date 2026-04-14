@@ -5,8 +5,8 @@ from __future__ import annotations
 from dx_client.dx_exceptions import DXCohortError
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from ukb_mcp.api.deps import get_dx_client
-from ukb_mcp.domain.cohort.models import (
+from ukb_api.api.deps import get_dx_client
+from ukb_api.domain.cohort.models import (
     CohortCreateRequest,
     CohortDetail,
     CohortDownloadResponse,
@@ -15,7 +15,7 @@ from ukb_mcp.domain.cohort.models import (
     ExtractFieldsRequest,
     ExtractFieldsResponse,
 )
-from ukb_mcp.domain.cohort.service import CohortService
+from ukb_api.domain.cohort.service import CohortService
 from dx_client import IDXClient
 
 router = APIRouter(prefix="/cohort", tags=["cohort"])

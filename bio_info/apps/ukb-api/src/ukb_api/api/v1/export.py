@@ -7,9 +7,9 @@ import io
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from ukb_mcp.api.deps import get_dx_client
-from ukb_mcp.domain.export.models import ExportRequest
-from ukb_mcp.domain.export.service import ExportService
+from ukb_api.api.deps import get_dx_client
+from ukb_api.domain.export.models import ExportRequest
+from ukb_api.domain.export.service import ExportService
 from dx_client import IDXClient
 
 router = APIRouter(prefix="/export", tags=["export"])

@@ -40,6 +40,8 @@ import {
   PreviewCohortDataToolDef,
   handlePreviewCohortData,
   renderCohortDataAsMarkdown,
+  DownloadCohortToolDef,
+  handleDownloadCohort,
   QueryDatabaseToolDef,
   QueryAssociationToolDef,
   handleQueryAssociation,
@@ -168,6 +170,7 @@ export class UkbComponent extends ToolComponent<UkbState> {
       create_cohort: CreateCohortToolDef,
       close_cohort: CloseCohortToolDef,
       preview_cohort_data: PreviewCohortDataToolDef,
+      download_cohort: DownloadCohortToolDef,
       query_database: QueryDatabaseToolDef,
       query_association: QueryAssociationToolDef,
       export_data: ExportDataToolDef,
@@ -377,6 +380,13 @@ export class UkbComponent extends ToolComponent<UkbState> {
       error: result.error ?? '',
       summary: result.summary ?? '',
     };
+  }
+
+  async onDownload_cohort(params: {
+    cohort_id: string;
+    refresh?: boolean;
+  }): Promise<ToolCallResult<unknown>> {
+    return handleDownloadCohort(this.client, params);
   }
 
   async onQuery_database(

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from ukb_mcp.service.fieldStorageService import FieldStorageService
+from ukb_api.service.fieldStorageService import FieldStorageService
 
 
 @pytest.fixture

@@ -1,12 +1,11 @@
 [project]
-name = "ukb-mcp"
+name = "ukb-api"
 version = "0.1.0"
-description = "UK Biobank data service with REST API and MCP interface"
+description = "UK Biobank data service with REST API"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.135.3",
-    "mcp[cli]>=1.27.0",
     "dx-client",
     "pandas>=2.2.0",
     "pydantic-settings>=2.7.0",
@@ -17,11 +16,11 @@ dependencies = [
 ]
 
 [project.scripts]
-ukb-mcp = "ukb_mcp.cli:main"
+ukb-api = "ukb_api.cli:main"
 
 
 [tool.fastapi]
-entrypoint = "ukb_mcp.main:app"
+entrypoint = "ukb_api.main:app"
 host = "0.0.0.0"
 port = 8000
 

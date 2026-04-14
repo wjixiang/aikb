@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from ukb_mcp.api.deps import get_dx_client
-from ukb_mcp.domain.association.models import AssociationQuery
-from ukb_mcp.domain.association.service import AssociationService
+from ukb_api.api.deps import get_dx_client
+from ukb_api.domain.association.models import AssociationQuery
+from ukb_api.domain.association.service import AssociationService
 from dx_client import IDXClient
 
 router = APIRouter(prefix="/association", tags=["association"])

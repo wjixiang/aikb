@@ -177,3 +177,11 @@ export interface FieldDictResponse {
   page_size: number;
   data: FieldDictItem[];
 }
+
+export interface CohortDownloadResponse {
+  cohort_id: string;
+  cohort_name: string;
+  row_count: number;
+  field_count: number;
+  data: Record<string, unknown>[];
+}

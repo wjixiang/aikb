@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_BASE_DIR = Path(__file__).resolve().parent.parent.parent  # apps/ukb-mcp/
+_BASE_DIR = Path(__file__).resolve().parent.parent.parent  # apps/ukb-api/
 
 
 class Settings(BaseSettings):

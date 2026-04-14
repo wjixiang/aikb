@@ -6,8 +6,8 @@ import duckdb
 from fastapi import Depends
 
 from dx_client import IDXClient
-from ukb_mcp.api.deps import get_dx_client
-from ukb_mcp.config import get_settings
+from ukb_api.api.deps import get_dx_client
+from ukb_api.config import get_settings
 
 
 def get_field_storage(
@@ -34,15 +34,18 @@ def _is_bare_keyword(text: str) -> bool:
 
 def _build_keyword_condition(text: str) -> str:
     """将裸关键词转为 SQL WHERE 条件（所有文本列 OR LIKE）。"""
-    escaped = (
-        text.replace("\\", "\\\\")
-        .replace("%", "\\%")
-        .replace("_", "\\_")
-    )
+    escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     pattern = f"'%{escaped}%'"
     cols = [
-        "entity", "name", "type", "title", "description",
-        "coding_name", "concept", "folder_path", "units",
+        "entity",
+        "name",
+        "type",
+        "title",
+        "description",
+        "coding_name",
+        "concept",
+        "folder_path",
+        "units",
     ]
     conditions = " OR ".join(f"(CAST({col} AS VARCHAR) LIKE {pattern})" for col in cols)
     return f"({conditions})"

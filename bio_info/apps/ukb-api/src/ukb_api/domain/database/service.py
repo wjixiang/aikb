@@ -9,7 +9,7 @@ import pandas as pd
 from dx_client import IDXClient
 
 if TYPE_CHECKING:
-    from ukb_mcp.service.fieldStorageService import FieldStorageService
+    from ukb_api.service.fieldStorageService import FieldStorageService
 
 logger = logging.getLogger(__name__)
 

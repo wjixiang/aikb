@@ -1,8 +1,8 @@
 from dx_client import IDXClient
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from ukb_mcp.api.deps import get_dx_client
-from ukb_mcp.service.fieldStorageService import get_field_storage
+from ukb_api.api.deps import get_dx_client
+from ukb_api.service.fieldStorageService import get_field_storage
 
 router = APIRouter(prefix="/manage")
 

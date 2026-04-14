@@ -1,4 +1,4 @@
-"""ukb-mcp CLI — 预热数据等离线工具。"""
+"""ukb-api CLI — 预热数据等离线工具。"""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from dx_client import DXClient, DXClientConfig, DXConfigError
-from ukb_mcp.config import get_settings
+from ukb_api.config import get_settings
 
 
 def cmd_warm(args: argparse.Namespace) -> None:
@@ -87,7 +87,7 @@ def cmd_warm(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="ukb-mcp",
+        prog="ukb-api",
         description="UK Biobank 数据服务 CLI",
     )
     sub = parser.add_subparsers(dest="command")

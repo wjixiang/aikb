@@ -2,6 +2,7 @@ import type {
   AssociationQuery,
   CohortCreateRequest,
   CohortDetail,
+  CohortDownloadResponse,
   CohortInfo,
   CohortListItem,
   DatabaseFieldInfo,
@@ -214,6 +215,18 @@ export class UkbMcpClient {
       'POST',
       `/api/v1/cohort/${cohortId}/extract`,
       body,
+    );
+  }
+
+  async downloadCohort(
+    cohortId: string,
+    params?: { refresh?: boolean },
+  ): Promise<CohortDownloadResponse> {
+    const sp = new URLSearchParams();
+    if (params?.refresh) sp.set('refresh', 'true');
+    return this.request(
+      'GET',
+      `/api/v1/cohort/${cohortId}/download${sp.toString() ? `?${sp}` : ''}`,
     );
   }
 

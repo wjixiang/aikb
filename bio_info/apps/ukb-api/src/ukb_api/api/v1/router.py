@@ -8,6 +8,7 @@ from .export import router as export_router
 from .database import router as database_router
 from .field import router as field_router
 from .manage import router as manage_router
+from .file import router as file_router
 
 v1_router = APIRouter(prefix="/api/v1")
 v1_router.include_router(cohort_router)
@@ -16,3 +17,4 @@ v1_router.include_router(export_router)
 v1_router.include_router(database_router)
 v1_router.include_router(field_router)
 v1_router.include_router(manage_router)
+v1_router.include_router(file_router)

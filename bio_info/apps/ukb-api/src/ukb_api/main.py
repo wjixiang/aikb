@@ -7,8 +7,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from ukb_mcp.api.v1.router import v1_router
-from ukb_mcp.config import Settings, get_settings
+from ukb_api.api.v1.router import v1_router
+from ukb_api.config import Settings, get_settings
 from dx_client import DXClient, DXClientConfig, DXConfigError, IDXClient
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     settings = get_settings()
     uvicorn.run(
-        "ukb_mcp.main:app",
+        "ukb_api.main:app",
         host=settings.server_host,
         port=settings.server_port,
         reload=True,
