@@ -2,7 +2,7 @@
  * PostgreSQL 持久化服务实现
  */
 
-import { injectable, inject, optional } from 'inversify';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import type {
   IPersistenceService,
@@ -11,20 +11,28 @@ import type {
   InstanceMetadata,
 } from './types.js';
 import type { Message, WorkspaceContextEntry } from '../memory/types.js';
-import { TYPES } from '../di/types.js';
 import { AgentStatus } from '../common/types.js';
 import { getLogger } from '@shared/logger';
 
-@injectable()
 export class PostgresPersistenceService implements IPersistenceService {
   private config: PersistenceConfig;
   private logger = getLogger('PostgresPersistenceService');
+  private prisma: PrismaClient;
 
-  constructor(
-    @inject(TYPES.PrismaClient) private prisma: PrismaClient,
-    @inject(TYPES.PersistenceConfig) @optional() config?: PersistenceConfig,
-  ) {
+  constructor(config?: PersistenceConfig) {
     this.config = { autoCommit: true, ...config };
+    const databaseUrl =
+      this.config.databaseUrl ||
+      process.env['AGENT_DATABASE_URL'] ||
+      process.env['DATABASE_URL'];
+    if (!databaseUrl) {
+      throw new Error(
+        'Database connection URL is required. Set AGENT_DATABASE_URL or DATABASE_URL environment variable.',
+      );
+    }
+    this.logger.info({ databaseUrl: databaseUrl.replace(/\/\/.*:.*@/, '//***:***@') }, '[PersistenceService] Connecting to database');
+    const adapter = new PrismaPg({ connectionString: databaseUrl });
+    this.prisma = new PrismaClient({ adapter });
     this.logger.info('[PersistenceService] Initialized');
   }
 
@@ -246,16 +254,36 @@ export class PostgresPersistenceService implements IPersistenceService {
     instanceId: string,
     data: Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>,
   ): Promise<void> {
-    await this.prisma.agentInstance.create({
-      data: {
-        instanceId,
-        status: data.status,
-        config: data.config as object,
-        name: data.name,
-        agentType: data.agentType,
-        completedAt: data.completedAt,
-      },
-    });
+    try {
+      const configJson = data.config != null ? JSON.parse(JSON.stringify(data.config)) : null;
+      await this.prisma.agentInstance.create({
+        data: {
+          instanceId,
+          status: data.status,
+          config: configJson,
+          name: data.name,
+          agentType: data.agentType,
+          completedAt: data.completedAt,
+        },
+      });
+    } catch (error: any) {
+      this.logger.error(
+        {
+          instanceId,
+          status: data.status,
+          name: data.name,
+          agentType: data.agentType,
+          completedAt: data.completedAt,
+          configType: typeof data.config,
+          errorCode: error?.code,
+          errorMeta: error?.meta,
+          errorMessage: error?.message,
+          errorStack: error?.stack,
+        },
+        '[PersistenceService] Failed to create agentInstance',
+      );
+      throw error;
+    }
 
     this.logger.info(
       { instanceId, name: data.name, agentType: data.agentType },

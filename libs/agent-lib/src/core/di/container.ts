@@ -11,7 +11,6 @@ import { ToolManager } from '../tools/ToolManager.js';
 import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
-import { AgentSessionManager } from '../session/AgentSessionManager.js';
 import type { ApiClient } from 'llm-api-client';
 import type { IVirtualWorkspace } from '../../components/core/types.js';
 import type { IMemoryModule } from '../memory/types.js';
@@ -145,7 +144,13 @@ export class AgentContainer {
         TYPES.IPersistenceService,
       );
       // Exclude non-serializable fields from config
-      const { components, apiClient, ...serializableConfig } = this.config;
+      const {
+        components,
+        apiClient,
+        persistenceService: _persistenceService,
+        hooks,
+        ...serializableConfig
+      } = this.config;
       await persistenceService.saveInstanceMetadata(this.instanceId, {
         status: AgentStatus.Sleeping,
         config: serializableConfig,

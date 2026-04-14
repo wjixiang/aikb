@@ -25,64 +25,42 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - bib-network
+      - main-network
 
-  # Shard databases (for parallel sync)
-  # db-shard-0:
-  #   image: pgvector/pgvector:pg16-trixie
-  #   restart: always
-  #   environment:
-  #     POSTGRES_PASSWORD: fl5ox03
-  #     POSTGRES_USER: admin
-  #     POSTGRES_DB: bib_shard_0
-  #   ports:
-  #     - "5433:5432"
-  #   volumes:
-  #     - postgres_shard_0:/var/lib/postgresql/data
-  #   networks:
-  #     - bib-network
-
-  # db-shard-1:
-  #   image: pgvector/pgvector:pg16-trixie
-  #   restart: always
-  #   environment:
-  #     POSTGRES_PASSWORD: fl5ox03
-  #     POSTGRES_USER: admin
-  #     POSTGRES_DB: bib_shard_1
-  #   ports:
-  #     - "5434:5432"
-  #   volumes:
-  #     - postgres_shard_1:/var/lib/postgresql/data
-  #   networks:
-  #     - bib-network
-
-  # db-shard-2:
-  #   image: pgvector/pgvector:pg16-trixie
-  #   restart: always
-  #   environment:
-  #     POSTGRES_PASSWORD: fl5ox03
-  #     POSTGRES_USER: admin
-  #     POSTGRES_DB: bib_shard_2
-  #   ports:
-  #     - "5435:5432"
-  #   volumes:
-  #     - postgres_shard_2:/var/lib/postgresql/data
-  #   networks:
-  #     - bib-network
-
-  # db-shard-3:
-  #   image: pgvector/pgvector:pg16-trixie
-  #   restart: always
-  #   environment:
-  #     POSTGRES_PASSWORD: fl5ox03
-  #     POSTGRES_USER: admin
-  #     POSTGRES_DB: bib_shard_3
-  #   ports:
-  #     - "5436:5432"
-  #   volumes:
-  #     - postgres_shard_3:/var/lib/postgresql/data
-  #   networks:
-  #     - bib-network
+  spark-iceberg:
+    image: tabulario/spark-iceberg
+    container_name: spark-iceberg
+    networks:
+      - main-network:
+    depends_on:
+      - rest
+      - rustfs
+    volumes:
+      - ./warehouse:/home/iceberg/warehouse
+      - ./notebooks:/home/iceberg/notebooks/notebooks
+    environment:
+      - AWS_ACCESS_KEY_ID=te5kyYAi155ZNJ681oxj
+      - AWS_SECRET_ACCESS_KEY=ZrfqNqCHzwubj8J6JngsG8zUwNt3p7iTuoDUdn8P
+      - AWS_REGION=us-east-1
+    ports:
+      - 8888:8888
+      - 8080:8080
+      - 10000:10000
+      - 10001:10001
+  rest:
+    image: apache/iceberg-rest-fixture
+    container_name: iceberg-rest
+    networks:
+      - main-network
+    ports:
+      - 8181:8181
+    environment:
+      - AWS_ACCESS_KEY_ID=te5kyYAi155ZNJ681oxj
+      - AWS_SECRET_ACCESS_KEY=ZrfqNqCHzwubj8J6JngsG8zUwNt3p7iTuoDUdn8P
+      - AWS_REGION=us-east-1
+      - CATALOG_WAREHOUSE=s3://warehouse/
+      - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
+      - CATALOG_S3_ENDPOINT=http://rustfs:9000
 
   rustfs:
     image: rustfs/rustfs:latest
@@ -94,55 +72,16 @@ services:
       - rustfs_data:/data
       - rustfs_logs:/logs
     networks:
-      - bib-network
-
-  # litellm:
-  #   image: docker.litellm.ai/berriai/litellm:main-latest
-  #   restart: always
-  #   ports:
-  #     - '4000:4000'
-  #   volumes:
-  #     - ./litellm_config.yaml:/app/config.yaml
-  #   environment:
-  #     - MINIMAX_API_KEY=${MINIMAX_API_KEY}
-  #     - ZAI_API_KEY=${ZAI_API_KEY}
-  #     - ZAI_TRY_API_KEY=${ZAI_TRY_API_KEY}
-  #     - KIMI_API_KEY=${KIMI_API_KEY}
-  #     - LITELLM_ANTHROPIC_DISABLE_URL_SUFFIX=true
-  #     - LITELLM_OPENAI_DISABLE_URL_SUFFIX=true
-  #   command: --config /app/config.yaml --detailed_debug
-  #   networks:
-  #     - bib-network
-  #
-  mineru:
-    image: opendatalab/mineru:latest
-    container_name: mineru
-    restart: always
-    ports:
-      - '30000:30000'
-      - '7860:7860'
-      - '8000:8000'
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    volumes:
-      - mineru_data:/data
-    ipc: host
-    shm_size: '32g'
-    networks:
-      - bib-network
+      - main-network
 
 networks:
-  bib-network:
+  main-network:
     driver: bridge
 
 volumes:
   redis_data:
   redis_logs:
   postgres_data:
-  postgres_shard_0:
-  postgres_shard_1:
-  postgres_shard_2:
-  postgres_shard_3:
   rustfs_data:
   rustfs_logs:
   mineru_data:

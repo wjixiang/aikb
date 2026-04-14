@@ -5,7 +5,6 @@ import type { VirtualWorkspaceConfig } from '../../components/core/types.js';
 import type { ApiClient } from 'llm-api-client';
 import type { ObservableAgentCallbacks } from './ObservableAgent.js';
 import type { IPersistenceService } from '../persistence/types.js';
-import type { ISessionManager } from '../session/ISessionManager.js';
 import {
   AgentContainer,
   type AgentCreationOptions,
@@ -46,7 +45,6 @@ export interface AgentFactoryOptions extends AgentBlueprint {
   observers?: ObservableAgentCallbacks;
   apiClient: ApiClient;
   persistenceService: IPersistenceService;
-  sessionManager?: ISessionManager;
 }
 
 /**

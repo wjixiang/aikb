@@ -5,7 +5,7 @@ import type { PersistenceConfig, IPersistenceService } from '../persistence/type
 import type { ToolComponent } from '../../components/core/toolComponent.js';
 import type { ApiClient } from 'llm-api-client';
 import type { HookConfig } from '../hooks/types.js';
-import type { ISessionManager } from '../session/ISessionManager.js';
+
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
@@ -58,12 +58,6 @@ export interface UnifiedAgentConfig {
    * Required for agent container to function.
    */
   persistenceService: IPersistenceService;
-
-  /**
-   * External session manager instance.
-   * If provided, the container will use this instead of creating its own.
-   */
-  sessionManager?: ISessionManager;
 }
 
 export interface AgentCreationOptions {
@@ -107,12 +101,6 @@ export interface AgentCreationOptions {
    * Required for agent container to function.
    */
   persistenceService: IPersistenceService;
-
-  /**
-   * External session manager instance.
-   * If provided, the container will use this instead of creating its own.
-   */
-  sessionManager?: ISessionManager;
 }
 
 export const defaultUnifiedConfig: UnifiedAgentConfig = {
@@ -176,8 +164,6 @@ export function mergeWithDefaults(
     apiClient: partial.apiClient,
     // Pass external persistence service (not merged with defaults, passed as-is)
     persistenceService: partial.persistenceService,
-    // Pass external session manager (not merged with defaults, passed as-is)
-    sessionManager: partial.sessionManager,
   };
   return result;
 }

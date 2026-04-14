@@ -275,12 +275,6 @@ export const TYPES = {
   IPersistenceService: Symbol('IPersistenceService'),
 
   /**
-   * ISessionManager - Session management for agent lifecycle
-   * @scope Request - One instance per agent
-   */
-  ISessionManager: Symbol('ISessionManager'),
-
-  /**
    * PrismaClient - Prisma ORM client
    * @scope Singleton - Shared across all agents
    */

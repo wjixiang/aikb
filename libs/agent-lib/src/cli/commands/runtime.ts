@@ -10,8 +10,6 @@ import { ClientPool } from 'llm-api-client';
 import { createAgentRuntime } from '../../core/runtime/index.js';
 import type { AgentRuntimeConfig } from '../../core/runtime/types.js';
 import { PostgresPersistenceService } from '../../core/persistence/PostgresPersistenceService.js';
-import { PrismaClient } from '../../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { getApiKey, getEnv } from '../lib/config.js';
 import { log } from '../lib/logger.js';
 import {
@@ -153,10 +151,9 @@ async function runtimeStart(options: {
   log.info('Using in-memory message bus');
 
   // Create persistence service
-  const databaseUrl = getEnv('AGENT_DATABASE_URL') || 'postgresql://localhost:5432/agent_db';
-  const adapter = new PrismaPg({ connectionString: databaseUrl });
-  const prisma = new PrismaClient({ adapter });
-  const persistenceService = new PostgresPersistenceService(prisma);
+  const persistenceService = new PostgresPersistenceService({
+    databaseUrl: getEnv('AGENT_DATABASE_URL'),
+  });
 
   // Create runtime with apiClient and persistenceService in config
   const runtime = createAgentRuntime({

@@ -17,8 +17,6 @@ import {
 } from 'agent-soul-hub';
 import type { AgentBlueprint } from '../../core/agent/AgentFactory.js';
 import { PostgresPersistenceService } from '../../core/persistence/PostgresPersistenceService.js';
-import { PrismaClient } from '../../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
 
 const createEpidemiologyAgentSoul = (): AgentBlueprint =>
   _createEpidemiologyAgentSoul() as unknown as AgentBlueprint;
@@ -47,10 +45,9 @@ interface TestResult {
 const testResults: TestResult[] = [];
 
 function createPersistenceService() {
-  const databaseUrl = getEnv('AGENT_DATABASE_URL') || 'postgresql://localhost:5432/agent_db';
-  const adapter = new PrismaPg({ connectionString: databaseUrl });
-  const prisma = new PrismaClient({ adapter });
-  return new PostgresPersistenceService(prisma);
+  return new PostgresPersistenceService({
+    databaseUrl: getEnv('AGENT_DATABASE_URL'),
+  });
 }
 
 /**
