@@ -9,10 +9,8 @@ services:
       - redis_data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
       - redis_logs:/logs
-    #配置文件启动
     command: redis-server /usr/local/etc/redis/redis.conf
 
-  # Master database (for final merged data)
   db-master:
     image: pgvector/pgvector:pg16-trixie
     restart: always
@@ -26,24 +24,25 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - main-network
-
   spark-iceberg:
     image: tabulario/spark-iceberg
     container_name: spark-iceberg
+    # build: spark/
     networks:
-      - main-network:
+      iceberg_net:
     depends_on:
       - rest
-      - rustfs
+      - minio
+      - mc
     volumes:
       - ./warehouse:/home/iceberg/warehouse
       - ./notebooks:/home/iceberg/notebooks/notebooks
     environment:
-      - AWS_ACCESS_KEY_ID=te5kyYAi155ZNJ681oxj
-      - AWS_SECRET_ACCESS_KEY=ZrfqNqCHzwubj8J6JngsG8zUwNt3p7iTuoDUdn8P
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
       - AWS_REGION=us-east-1
     ports:
-      - 8888:8888
+      - 8889:8888
       - 8080:8080
       - 10000:10000
       - 10001:10001
@@ -51,17 +50,63 @@ services:
     image: apache/iceberg-rest-fixture
     container_name: iceberg-rest
     networks:
-      - main-network
+      iceberg_net:
+    depends_on:
+      - mc
     ports:
       - 8181:8181
     environment:
-      - AWS_ACCESS_KEY_ID=te5kyYAi155ZNJ681oxj
-      - AWS_SECRET_ACCESS_KEY=ZrfqNqCHzwubj8J6JngsG8zUwNt3p7iTuoDUdn8P
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
       - AWS_REGION=us-east-1
       - CATALOG_WAREHOUSE=s3://warehouse/
       - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
-      - CATALOG_S3_ENDPOINT=http://rustfs:9000
-
+      - CATALOG_S3_ENDPOINT=http://minio:9000
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_DOMAIN=minio
+    networks:
+      iceberg_net:
+        aliases:
+          - warehouse.minio
+    ports:
+      - 9901:9001
+      - 9900:9000
+    command: ["server", "/data", "--console-address", ":9001"]
+  mc:
+    depends_on:
+      - minio
+    image: minio/mc
+    container_name: mc
+    networks:
+      iceberg_net:
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+    entrypoint: |
+      /bin/sh -c "
+      until (/usr/bin/mc alias set minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc rm -r --force minio/warehouse;
+      /usr/bin/mc mb minio/warehouse;
+      /usr/bin/mc policy set public minio/warehouse;
+      tail -f /dev/null
+      "
+  # garage:
+  #   image: dxflrs/garage:v2.2.0
+  #   ports:
+  #     - '3900:3900'
+  #     - '3901:3901'
+  #     - '3902:3902'
+  #     - '3903:3903'
+  #   volumes:
+  #     - /etc/garage.toml:/etc/garage.toml
+  #     - /mnt/disk2/garage/meta:/var/lib/garage/meta
+  #     - /mnt/disk2/garage/data:/var/lib/garage/data
   rustfs:
     image: rustfs/rustfs:latest
     restart: always
@@ -69,7 +114,8 @@ services:
       - '9000:9000'
       - '9001:9001'
     volumes:
-      - rustfs_data:/data
+      - rustfs_disk2:/data
+      - rustfs_disk1:/data/disk1
       - rustfs_logs:/logs
     networks:
       - main-network
@@ -77,11 +123,25 @@ services:
 networks:
   main-network:
     driver: bridge
+  iceberg_net:
+    driver: bridge
 
 volumes:
   redis_data:
   redis_logs:
   postgres_data:
-  rustfs_data:
+  iceberg_catalog_data:
+  rustfs_disk1:
+    driver: local
+    driver_opts:
+      type: none
+      device: /mnt/disk1/rustfs
+      o: bind
+  rustfs_disk2:
+    driver: local
+    driver_opts:
+      type: none
+      device: /mnt/disk2/rustfs
+      o: bind
   rustfs_logs:
   mineru_data:
