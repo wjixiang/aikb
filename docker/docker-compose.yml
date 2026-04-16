@@ -30,9 +30,9 @@ services:
     container_name: iceberg-catalog-db
     restart: always
     environment:
-      POSTGRES_PASSWORD: fl5ox03
-      POSTGRES_USER: admin
-      POSTGRES_DB: iceberg
+      POSTGRES_PASSWORD: ${ICEBERG_DB_PASSWORD}
+      POSTGRES_USER: ${ICEBERG_DB_USER}
+      POSTGRES_DB: ${ICEBERG_DB_NAME}
     volumes:
       - iceberg_catalog_db_data:/var/lib/postgresql/data
     networks:
@@ -43,8 +43,8 @@ services:
     container_name: minio
     restart: always
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
     networks:
@@ -52,8 +52,8 @@ services:
         aliases:
           - warehouse.minio
     ports:
-      - 9901:9001
-      - 9900:9000
+      - ${MINIO_PORT_CONSOLE}:9001
+      - ${MINIO_PORT_API}:9000
     command: ["server", "/data", "--console-address", ":9001"]
 
   mc:
@@ -64,12 +64,12 @@ services:
     networks:
       iceberg_net:
     environment:
-      AWS_ACCESS_KEY_ID: admin
-      AWS_SECRET_ACCESS_KEY: password
-      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${ICEBERG_S3_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${ICEBERG_S3_SECRET_ACCESS_KEY}
+      AWS_REGION: ${ICEBERG_S3_REGION}
     entrypoint: |
       /bin/sh -c "
-      until (/usr/bin/mc alias set minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
+      until (/usr/bin/mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}) do echo '...waiting...' && sleep 1; done;
       /usr/bin/mc mb --ignore-existing minio/warehouse;
       /usr/bin/mc anonymous set public minio/warehouse;
       tail -f /dev/null
@@ -85,20 +85,20 @@ services:
     networks:
       - iceberg_net
     ports:
-      - 8181:8181
+      - ${ICEBERG_REST_PORT}:8181
     environment:
-      - CATALOG_WAREHOUSE=s3://warehouse/
-      - CATALOG_URI=jdbc:postgresql://iceberg-catalog-db:5432/iceberg
-      - CATALOG_JDBC_USER=admin
-      - CATALOG_JDBC_PASSWORD=fl5ox03
+      - CATALOG_WAREHOUSE=${ICEBERG_S3_WAREHOUSE}
+      - CATALOG_URI=jdbc:postgresql://iceberg-catalog-db:5432/${ICEBERG_DB_NAME}
+      - CATALOG_JDBC_USER=${ICEBERG_DB_USER}
+      - CATALOG_JDBC_PASSWORD=${ICEBERG_DB_PASSWORD}
       - CATALOG_CATALOG__IMPL=org.apache.iceberg.jdbc.JdbcCatalog
       - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
-      - CATALOG_S3_ENDPOINT=http://minio:9000
+      - CATALOG_S3_ENDPOINT=${ICEBERG_S3_ENDPOINT}
       - CATALOG_S3_PATH__STYLE__ACCESS=true
-      - CATALOG_S3_ACCESS__KEY__ID=admin
-      - CATALOG_S3_SECRET__ACCESS__KEY=password
-      - CATALOG_S3_REGION=us-east-1
-      - AWS_REGION=us-east-1
+      - CATALOG_S3_ACCESS__KEY__ID=${ICEBERG_S3_ACCESS_KEY_ID}
+      - CATALOG_S3_SECRET__ACCESS__KEY=${ICEBERG_S3_SECRET_ACCESS_KEY}
+      - CATALOG_S3_REGION=${ICEBERG_S3_REGION}
+      - AWS_REGION=${ICEBERG_S3_REGION}
 
   spark-iceberg:
     image: tabulario/spark-iceberg
@@ -112,9 +112,9 @@ services:
       - ./warehouse:/home/iceberg/warehouse
       - ./notebooks:/home/iceberg/notebooks/notebooks
     environment:
-      - AWS_ACCESS_KEY_ID=admin
-      - AWS_SECRET_ACCESS_KEY=password
-      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=${ICEBERG_S3_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${ICEBERG_S3_SECRET_ACCESS_KEY}
+      - AWS_REGION=${ICEBERG_S3_REGION}
     ports:
       - 8889:8888
       - 8080:8080

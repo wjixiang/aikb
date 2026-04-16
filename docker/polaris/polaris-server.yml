@@ -2,9 +2,9 @@ polaris:
   persistence:
     type: relational-jdbc
     jdbc:
-      connection-url: jdbc:postgresql://iceberg-catalog-db:5432/iceberg
-      username: admin
-      password: fl5ox03
+      connection-url: jdbc:postgresql://iceberg-catalog-db:5432/${ICEBERG_DB_NAME:-iceberg}
+      username: ${ICEBERG_DB_USER:-admin}
+      password: ${ICEBERG_DB_PASSWORD:-fl5ox03}
   realm-context:
     require-header: false
     default-realm: POLARIS
