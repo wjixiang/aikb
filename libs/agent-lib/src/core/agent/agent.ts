@@ -9,9 +9,7 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { DefaultToolCallConverter } from 'llm-api-client';
 import { AgentError, NoToolsUsedError } from '../common/errors.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
-import type { MemoryModuleConfig } from '../memory/types.js';
-import type {
-  ApiClient,
+import type {  ApiClient,
   ChatCompletionTool,
   ToolCall,
 } from 'llm-api-client';
@@ -34,8 +32,6 @@ export interface AgentConfig {
   maxRetryAttempts: number;
   maxIterations: number;
   consecutiveMistakeLimit: number;
-  // Memory module configuration (now required, with defaults)
-  memory?: Partial<MemoryModuleConfig>;
 }
 
 export const defaultAgentConfig: AgentConfig = {

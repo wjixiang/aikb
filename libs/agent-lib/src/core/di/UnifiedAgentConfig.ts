@@ -9,101 +9,79 @@ import type { HookConfig } from '../hooks/types.js';
 import { defaultAgentConfig } from '../agent/agent.js';
 import { defaultMemoryConfig } from '../memory/MemoryModule.js';
 
-/** Component registration for DI injection */
 export interface DIComponentRegistration {
-  /** Component class (will be instantiated by factory with DI) */
   componentClass?: new (...args: any[]) => ToolComponent;
-  /** Pre-instantiated component (bypasses DI resolution) */
   componentInstance?: ToolComponent;
 }
 
-export interface UnifiedAgentConfig {
+// ==================== Agent Identity ====================
+
+export interface AgentIdentity {
+  name?: string;
+  type?: string;
+  description?: string;
+  version?: string;
+  capabilities?: string[];
+  skills?: string[];
+  endpoint?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export type PartialAgentIdentity = Partial<AgentIdentity>;
+
+// ==================== AgentConfigBundle (serializable) ====================
+
+export interface AgentConfigBundle {
   agent: {
     sop: SOP;
     config: AgentConfig;
     taskId?: string;
-    name?: string; // Agent 友好名称
-    type?: string; // Agent 类型标识
-    description?: string; // Agent 描述
-    // A2A service discovery fields
-    version?: string;
-    capabilities?: string[];
-    skills?: string[];
-    endpoint?: string;
-    metadata?: Record<string, unknown>;
-  };
+  } & AgentIdentity;
   workspace: VirtualWorkspaceConfig;
   memory: MemoryModuleConfig;
   persistence?: PersistenceConfig;
-
-  /**
-   * Components to register with the agent's workspace
-   * These will be automatically registered when the agent is created.
-   */
-  components?: DIComponentRegistration[];
-
-  /**
-   * Hook configuration for lifecycle events
-   */
-  hooks?: HookConfig;
-
-  /**
-   * ApiClient instance for LLM API calls.
-   * This replaces the previous clientPool pattern.
-   */
-  apiClient?: ApiClient;
-
-  /**
-   * External persistence service instance.
-   * Required for agent container to function.
-   */
-  persistenceService: IPersistenceService;
 }
 
-export interface AgentCreationOptions {
+export interface PartialAgentConfigBundle {
   agent?: {
     sop?: SOP;
     config?: Partial<AgentConfig>;
     taskId?: string;
-    name?: string; // Agent 友好名称
-    type?: string; // Agent 类型标识
-    description?: string; // Agent 描述
-    // A2A service discovery fields
-    version?: string;
-    capabilities?: string[];
-    skills?: string[];
-    endpoint?: string;
-    metadata?: Record<string, unknown>;
-  };
+  } & PartialAgentIdentity;
   workspace?: Partial<VirtualWorkspaceConfig>;
   memory?: Partial<MemoryModuleConfig>;
   persistence?: Partial<PersistenceConfig>;
-  observers?: any;
-
-  /**
-   * Components to register with the agent's workspace
-   * These will be automatically registered when the agent is created.
-   */
-  components?: DIComponentRegistration[];
-
-  /**
-   * Hook configuration for lifecycle events
-   */
-  hooks?: HookConfig;
-
-  /**
-   * ApiClient instance for LLM API calls.
-   */
-  apiClient?: ApiClient;
-
-  /**
-   * External persistence service instance.
-   * Required for agent container to function.
-   */
-  persistenceService: IPersistenceService;
 }
 
-export const defaultUnifiedConfig: UnifiedAgentConfig = {
+// ==================== AgentDependencies (runtime instances) ====================
+
+export interface AgentDependencies {
+  apiClient: ApiClient;
+  persistenceService: IPersistenceService;
+  components?: DIComponentRegistration[];
+  hooks?: HookConfig;
+}
+
+export type PartialAgentDependencies = {
+  apiClient?: ApiClient;
+  persistenceService?: IPersistenceService;
+  components?: DIComponentRegistration[];
+  hooks?: HookConfig;
+};
+
+// ==================== UnifiedAgentConfig ====================
+
+export interface UnifiedAgentConfig extends AgentConfigBundle, AgentDependencies {}
+
+export interface AgentCreationOptions
+  extends PartialAgentConfigBundle,
+    PartialAgentDependencies {
+  observers?: any;
+}
+
+// ==================== Defaults ====================
+
+const defaultConfigBundle: AgentConfigBundle = {
   agent: {
     sop: 'Default SOP',
     config: defaultAgentConfig,
@@ -116,54 +94,71 @@ export const defaultUnifiedConfig: UnifiedAgentConfig = {
     alwaysRenderAllComponents: false,
   },
   memory: defaultMemoryConfig,
-  persistence: {
-    // enabled: true,
-  },
-  // persistenceService must be provided at runtime - this default allows type checking only
+  persistence: {},
+};
+
+export const defaultUnifiedConfig: UnifiedAgentConfig = {
+  ...defaultConfigBundle,
+  apiClient: undefined as unknown as ApiClient,
   persistenceService: undefined as unknown as IPersistenceService,
 };
+
+// ==================== Merge helpers ====================
+
+function mergeAgentIdentity(
+  base: AgentIdentity,
+  override?: PartialAgentIdentity,
+): AgentIdentity {
+  if (!override) return base;
+  return {
+    name: override.name ?? base.name,
+    type: override.type ?? base.type,
+    description: override.description ?? base.description,
+    version: override.version ?? base.version,
+    capabilities: override.capabilities ?? base.capabilities,
+    skills: override.skills ?? base.skills,
+    endpoint: override.endpoint ?? base.endpoint,
+    metadata: override.metadata ?? base.metadata,
+  };
+}
+
+export function mergeConfigBundle(
+  partial?: PartialAgentConfigBundle,
+): AgentConfigBundle {
+  return {
+    agent: {
+      sop: partial?.agent?.sop ?? defaultConfigBundle.agent.sop,
+      config: {
+        ...defaultConfigBundle.agent.config,
+        ...partial?.agent?.config,
+      },
+      taskId: partial?.agent?.taskId ?? defaultConfigBundle.agent.taskId,
+      ...mergeAgentIdentity(defaultConfigBundle.agent, partial?.agent),
+    },
+    workspace: {
+      ...defaultConfigBundle.workspace,
+      ...partial?.workspace,
+    },
+    memory: {
+      ...defaultConfigBundle.memory,
+      ...partial?.memory,
+    },
+    persistence:
+      partial?.persistence !== undefined
+        ? { ...partial.persistence }
+        : defaultConfigBundle.persistence,
+  };
+}
 
 export function mergeWithDefaults(
   partial: AgentCreationOptions,
 ): UnifiedAgentConfig {
-  const result: UnifiedAgentConfig = {
-    agent: {
-      sop: partial.agent?.sop ?? defaultUnifiedConfig.agent.sop,
-      config: {
-        ...defaultUnifiedConfig.agent.config,
-        ...partial.agent?.config,
-      },
-      taskId: partial.agent?.taskId ?? defaultUnifiedConfig.agent.taskId,
-      name: partial.agent?.name,
-      type: partial.agent?.type,
-      description: partial.agent?.description,
-      // A2A service discovery fields
-      version: partial.agent?.version,
-      capabilities: partial.agent?.capabilities,
-      skills: partial.agent?.skills,
-      endpoint: partial.agent?.endpoint,
-      metadata: partial.agent?.metadata,
-    },
-    workspace: {
-      ...defaultUnifiedConfig.workspace,
-      ...partial.workspace,
-    },
-    memory: {
-      ...defaultUnifiedConfig.memory,
-      ...partial.memory,
-    },
-    persistence:
-      partial.persistence !== undefined
-        ? { ...partial.persistence }
-        : defaultUnifiedConfig.persistence,
-    // Pass components from top-level options
+  const { observers: _observers, ...configAndDeps } = partial;
+  return {
+    ...mergeConfigBundle(configAndDeps),
+    apiClient: partial.apiClient!,
+    persistenceService: partial.persistenceService!,
     components: partial.components,
-    // Pass hooks from top-level options
     hooks: partial.hooks,
-    // Pass ApiClient for LLM API calls
-    apiClient: partial.apiClient,
-    // Pass external persistence service (not merged with defaults, passed as-is)
-    persistenceService: partial.persistenceService,
   };
-  return result;
 }

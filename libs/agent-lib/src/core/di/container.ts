@@ -21,7 +21,8 @@ import type { Logger } from '@shared/logger';
 import {
   type UnifiedAgentConfig,
   type AgentCreationOptions,
-  defaultUnifiedConfig,
+  type AgentConfigBundle,
+  type AgentDependencies,
   mergeWithDefaults,
 } from './UnifiedAgentConfig.js';
 import type { TestOverrides } from './types.js';
@@ -45,8 +46,8 @@ import { ToolComponent } from '../../components/core/toolComponent.js';
 export class AgentContainer {
   private container: Container;
   public instanceId: string;
-  private config: UnifiedAgentConfig;
-  private persistenceService?: IPersistenceService;
+  private configBundle: AgentConfigBundle;
+  private dependencies: AgentDependencies;
   private agentInstance: Agent | null = null;
   private isRestoring = false;
   private initPromise: Promise<void> | null = null;
@@ -64,18 +65,26 @@ export class AgentContainer {
       defaultScope: 'Singleton',
     });
 
-    this.persistenceService = options.persistenceService;
+    const unified = mergeWithDefaults(options);
+    this.configBundle = {
+      agent: unified.agent,
+      workspace: unified.workspace,
+      memory: unified.memory,
+      persistence: unified.persistence,
+    };
+    this.dependencies = {
+      apiClient: unified.apiClient,
+      persistenceService: unified.persistenceService,
+      components: unified.components,
+      hooks: unified.hooks,
+    };
 
     if (instanceId) {
-      // Restore agent: setup bindings first to get persistence service
       this.instanceId = instanceId;
-      this.config = mergeWithDefaults(options); // Use provided options as base
       this.isRestoring = true;
       this.setupBindings();
       this.initPromise = this.restoreInstanceMetadata();
     } else {
-      // Create new agent
-      this.config = mergeWithDefaults(options);
       this.instanceId = crypto.randomUUID();
       this.setupBindings();
       this.initPromise = this.persistInstanceMetadata();
@@ -95,17 +104,13 @@ export class AgentContainer {
         this.instanceId,
       );
       if (metadata) {
-        // Restore config from stored metadata (merge with current options to preserve components)
         if (metadata.config) {
-          // Deep merge to ensure all required fields are present
-          const storedConfig = metadata.config as Partial<UnifiedAgentConfig>;
-          this.config = {
-            agent: { ...this.config.agent, ...storedConfig.agent },
-            workspace: { ...this.config.workspace, ...storedConfig.workspace },
-            memory: { ...this.config.memory, ...storedConfig.memory },
-            persistence: storedConfig.persistence ?? this.config.persistence,
-            components: this.config.components,
-            persistenceService: this.config.persistenceService,
+          const stored = metadata.config as Partial<AgentConfigBundle>;
+          this.configBundle = {
+            agent: { ...this.configBundle.agent, ...stored.agent },
+            workspace: { ...this.configBundle.workspace, ...stored.workspace },
+            memory: { ...this.configBundle.memory, ...stored.memory },
+            persistence: stored.persistence ?? this.configBundle.persistence,
           };
         }
         this.logger?.info(
@@ -143,19 +148,11 @@ export class AgentContainer {
       const persistenceService = this.container.get<IPersistenceService>(
         TYPES.IPersistenceService,
       );
-      // Exclude non-serializable fields from config
-      const {
-        components,
-        apiClient,
-        persistenceService: _persistenceService,
-        hooks,
-        ...serializableConfig
-      } = this.config;
       await persistenceService.saveInstanceMetadata(this.instanceId, {
         status: AgentStatus.Sleeping,
-        config: serializableConfig,
-        name: this.config.agent.name,
-        agentType: this.config.agent.type,
+        config: this.configBundle,
+        name: this.configBundle.agent.name,
+        agentType: this.configBundle.agent.type,
       });
     } catch (error) {
       getLogger('AgentContainer').warn(
@@ -191,21 +188,21 @@ export class AgentContainer {
     // Agent configuration
     this.container
       .bind(TYPES.AgentConfig)
-      .toConstantValue(this.config.agent.config);
+      .toConstantValue(this.configBundle.agent.config);
     this.container
       .bind(TYPES.AgentPrompt)
-      .toConstantValue(this.config.agent.sop);
+      .toConstantValue(this.configBundle.agent.sop);
     this.container
       .bind(TYPES.VirtualWorkspaceConfig)
-      .toConstantValue(this.config.workspace);
+      .toConstantValue(this.configBundle.workspace);
     this.container
       .bind(TYPES.MemoryModuleConfig)
-      .toConstantValue(this.config.memory);
+      .toConstantValue(this.configBundle.memory);
 
-    if (this.config.agent.taskId) {
+    if (this.configBundle.agent.taskId) {
       this.container
         .bind<string>(TYPES.TaskId)
-        .toConstantValue(this.config.agent.taskId);
+        .toConstantValue(this.configBundle.agent.taskId);
     }
 
     // Memory instance ID for persistence
@@ -232,28 +229,26 @@ export class AgentContainer {
     // HookModule - bind config first, then module
     this.container
       .bind(TYPES.HookConfig)
-      .toConstantValue(this.config.hooks ?? {});
+      .toConstantValue(this.dependencies.hooks ?? {});
     this.container.bind(TYPES.HookModule).to(HookModule).inSingletonScope();
 
-    // ApiClient - injected directly via DI
-    if (!this.config.apiClient) {
+    if (!this.dependencies.apiClient) {
       throw new Error(
         'apiClient is required to create agents. Provide apiClient in AgentRuntimeConfig.',
       );
     }
     this.container
       .bind<ApiClient>(TYPES.ApiClient)
-      .toConstantValue(this.config.apiClient);
+      .toConstantValue(this.dependencies.apiClient);
 
-    // Persistence Service - external injection required
-    if (!this.persistenceService) {
+    if (!this.dependencies.persistenceService) {
       throw new Error(
         'persistenceService is required to create agents. Provide persistenceService in AgentRuntimeConfig.',
       );
     }
     this.container
       .bind<IPersistenceService>(TYPES.IPersistenceService)
-      .toConstantValue(this.persistenceService);
+      .toConstantValue(this.dependencies.persistenceService);
 
     // Container reference
     this.container
@@ -267,8 +262,8 @@ export class AgentContainer {
       .toConstantValue(this.lazySleepControl);
 
     // Bind custom component classes if provided
-    if (this.config.components && this.config.components.length > 0) {
-      for (const reg of this.config.components) {
+    if (this.dependencies.components && this.dependencies.components.length > 0) {
+      for (const reg of this.dependencies.components) {
         if (reg.componentInstance) {
           this.container
             .bind<ToolComponent>(reg.componentInstance.constructor as any)
@@ -282,11 +277,11 @@ export class AgentContainer {
     // Build the ToolComponents array by resolving component instances
     // This uses toDynamicValue to ensure components are created after all dependencies are bound
     const buildToolComponents = (): ToolComponent[] => {
-      if (!this.config.components || this.config.components.length === 0) {
+      if (!this.dependencies.components || this.dependencies.components.length === 0) {
         return [];
       }
 
-      return this.config.components.map((reg) =>
+      return this.dependencies.components.map((reg) =>
         reg.componentInstance
           ? reg.componentInstance
           : (this.container.get(
@@ -343,16 +338,20 @@ export class AgentContainer {
           type: HookType.AGENT_CREATED,
           timestamp: new Date(),
           instanceId: this.instanceId,
-          name: this.config.agent.name,
-          agentType: this.config.agent.type,
+          name: this.configBundle.agent.name,
+          agentType: this.configBundle.agent.type,
         });
       }
     }
     return this.agentInstance;
   }
 
-  getConfig(): UnifiedAgentConfig {
-    return this.config;
+  getConfig(): AgentConfigBundle {
+    return this.configBundle;
+  }
+
+  getDependencies(): AgentDependencies {
+    return this.dependencies;
   }
 
   getContainer(): Container {
@@ -403,8 +402,10 @@ export class AgentContainer {
 export type {
   AgentCreationOptions,
   UnifiedAgentConfig,
+  AgentConfigBundle,
+  AgentDependencies,
 } from './UnifiedAgentConfig.js';
 export {
-  defaultUnifiedConfig,
   mergeWithDefaults,
+  mergeConfigBundle,
 } from './UnifiedAgentConfig.js';

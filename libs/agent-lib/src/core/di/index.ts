@@ -11,9 +11,11 @@ export {
   AgentContainer,
   type AgentCreationOptions,
   type UnifiedAgentConfig,
+  type AgentConfigBundle,
+  type AgentDependencies,
 } from './container.js';
 export {
-  defaultUnifiedConfig,
   mergeWithDefaults,
+  mergeConfigBundle,
 } from './UnifiedAgentConfig.js';
 export type { TestOverrides } from './types.js';

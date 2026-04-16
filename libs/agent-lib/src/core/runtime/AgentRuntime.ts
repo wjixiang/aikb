@@ -45,7 +45,7 @@
 
 import type { Agent } from '../agent/agent.js';
 import { AgentContainer } from '../di/container.js';
-import type { AgentCreationOptions, UnifiedAgentConfig } from '../di/container.js';
+import type { AgentCreationOptions, AgentConfigBundle } from '../di/container.js';
 import { TYPES } from '../di/types.js';
 import type { HookModule } from '../hooks/HookModule.js';
 import type { ApiClient } from 'llm-api-client';
@@ -471,26 +471,26 @@ export class AgentRuntime implements IAgentRuntime {
     }
 
     // Register in registry
-    const unifiedConfig = container.getConfig();
+    const configBundle = container.getConfig();
     const agentName =
-      unifiedConfig.agent.name || unifiedConfig.agent.type || 'agent';
+      configBundle.agent.name || configBundle.agent.type || 'agent';
     const alias = generateAgentAlias(agentName);
     const metadata: AgentMetadata = {
       instanceId,
       alias,
       status: AgentStatus.Sleeping,
-      name: unifiedConfig.agent.name,
-      agentType: unifiedConfig.agent.type,
-      description: unifiedConfig.agent.description,
-      config: unifiedConfig as unknown as Record<string, unknown>,
+      name: configBundle.agent.name,
+      agentType: configBundle.agent.type,
+      description: configBundle.agent.description,
+      config: configBundle as unknown as Record<string, unknown>,
       createdAt: new Date(),
       updatedAt: new Date(),
       parentInstanceId,
-      version: unifiedConfig.agent.version,
-      capabilities: unifiedConfig.agent.capabilities,
-      skills: unifiedConfig.agent.skills,
-      endpoint: unifiedConfig.agent.endpoint ?? instanceId,
-      metadata: unifiedConfig.agent.metadata,
+      version: configBundle.agent.version,
+      capabilities: configBundle.agent.capabilities,
+      skills: configBundle.agent.skills,
+      endpoint: configBundle.agent.endpoint ?? instanceId,
+      metadata: configBundle.agent.metadata,
     };
     this.registry.register(metadata);
 
@@ -679,18 +679,12 @@ export class AgentRuntime implements IAgentRuntime {
     }
 
     // Build options from stored config
-    const storedConfig = metadata.config as Partial<UnifiedAgentConfig> | undefined;
+    const storedConfig = metadata.config as Partial<AgentConfigBundle> | undefined;
     const options: AgentCreationOptions = {
-      agent: {
-        ...(storedConfig?.agent || {}),
-        name: metadata.name,
-        type: metadata.agentType,
-      },
+      agent: storedConfig?.agent,
       workspace: storedConfig?.workspace,
       memory: storedConfig?.memory,
       persistence: storedConfig?.persistence,
-      components: storedConfig?.components,
-      hooks: storedConfig?.hooks,
       apiClient: this.apiClient,
       persistenceService: this.persistenceService,
     };

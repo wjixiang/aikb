@@ -8,10 +8,8 @@ import type { IPersistenceService } from '../persistence/types.js';
 import {
   AgentContainer,
   type AgentCreationOptions,
-  type UnifiedAgentConfig,
 } from '../di/container.js';
 import {
-  defaultUnifiedConfig,
   type DIComponentRegistration,
 } from '../di/UnifiedAgentConfig.js';
 
