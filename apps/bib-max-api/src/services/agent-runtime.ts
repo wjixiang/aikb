@@ -61,7 +61,14 @@ export function getRuntime(): IAgentRuntime {
 }
 
 export function getCopilotAgentId(): string {
-  if (!copilotAgentId) throw new Error('Copilot agent not created');
+  if (!copilotAgentId) {
+    const reason = !config.llm.clients.length
+      ? 'No LLM client configured (set LLM_CLIENTS or LLM_API_KEY env var)'
+      : !config.agent.databaseUrl
+        ? 'AGENT_DATABASE_URL not configured'
+        : 'Agent runtime initialization failed';
+    throw new Error(`Copilot agent not created: ${reason}`);
+  }
   return copilotAgentId;
 }
 

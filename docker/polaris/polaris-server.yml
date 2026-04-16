@@ -1,16 +1,10 @@
-s3:
-  endpoint: http://rustfs:9000
-  path-style-access: true
-  access-key-id: te5kyYAi155ZNJ681oxj
-  secret-access-key: ZrfqNqCHzwubj8J6JngsG8zUwNt3p7iTuoDUdn8P
-
-catalog:
-  warehouse: s3://warehouse/
-
-realm: polaris
-
-database:
-  type: postgresql
-  jdbc-url: jdbc:postgresql://iceberg-catalog-db:5432/iceberg
-  user: admin
-  password: fl5ox03
+polaris:
+  persistence:
+    type: relational-jdbc
+    jdbc:
+      connection-url: jdbc:postgresql://iceberg-catalog-db:5432/iceberg
+      username: admin
+      password: fl5ox03
+  realm-context:
+    require-header: false
+    default-realm: POLARIS
