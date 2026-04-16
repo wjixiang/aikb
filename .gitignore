@@ -92,3 +92,5 @@ storybook-static
 *storybook.log
 
 
+reference/notebook/
+reference/rustlings/
