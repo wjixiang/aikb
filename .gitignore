@@ -94,3 +94,23 @@ storybook-static
 
 reference/notebook/
 reference/rustlings/
+
+# Data files (not for version control)
+data-analysis/
+*.csv
+*.xlsx
+*.tar.gz
+
+# Docker binaries
+docker/bin/
+
+# Generated WASM
+apps/case-hub/src/generated/prisma/query_compiler_bg.wasm
+apps/case-hub/src/generated/prisma/query_compiler_bg.wasm-base64.js
+
+# Uploaded / test media
+apps/medquiz-web/public/avatars/
+
+# Test artifacts
+libs/mineru-client/tests/*.zip
+libs/file-renderer/*.pdf
