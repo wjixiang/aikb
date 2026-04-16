@@ -332,7 +332,6 @@ export class AgentContainer {
       // Restore state if this is a restored instance
       if (this.isRestoring) {
         await this.agentInstance.restoreMemory();
-        await this.agentInstance.restoreSessionState();
         await this.agentInstance.restoreComponentStates();
         this.isRestoring = false;
       }

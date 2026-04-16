@@ -51,7 +51,6 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  AgentSession: 'AgentSession',
   AgentMemory: 'AgentMemory',
   ComponentState: 'ComponentState',
   AgentInstance: 'AgentInstance'
@@ -73,28 +72,6 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const AgentSessionScalarFieldEnum = {
-  id: 'id',
-  instanceId: 'instanceId',
-  status: 'status',
-  abortReason: 'abortReason',
-  abortSource: 'abortSource',
-  config: 'config',
-  totalTokensIn: 'totalTokensIn',
-  totalTokensOut: 'totalTokensOut',
-  totalCost: 'totalCost',
-  toolUsage: 'toolUsage',
-  consecutiveMistakeCount: 'consecutiveMistakeCount',
-  collectedErrors: 'collectedErrors',
-  exportResult: 'exportResult',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  completedAt: 'completedAt'
-} as const
-
-export type AgentSessionScalarFieldEnum = (typeof AgentSessionScalarFieldEnum)[keyof typeof AgentSessionScalarFieldEnum]
-
-
 export const AgentMemoryScalarFieldEnum = {
   id: 'id',
   instanceId: 'instanceId',
@@ -110,7 +87,7 @@ export type AgentMemoryScalarFieldEnum = (typeof AgentMemoryScalarFieldEnum)[key
 
 export const ComponentStateScalarFieldEnum = {
   id: 'id',
-  sessionId: 'sessionId',
+  instanceId: 'instanceId',
   componentId: 'componentId',
   stateData: 'stateData',
   createdAt: 'createdAt',
@@ -124,9 +101,18 @@ export const AgentInstanceScalarFieldEnum = {
   id: 'id',
   instanceId: 'instanceId',
   status: 'status',
+  abortReason: 'abortReason',
+  abortSource: 'abortSource',
   config: 'config',
   name: 'name',
   agentType: 'agentType',
+  totalTokensIn: 'totalTokensIn',
+  totalTokensOut: 'totalTokensOut',
+  totalCost: 'totalCost',
+  toolUsage: 'toolUsage',
+  consecutiveMistakeCount: 'consecutiveMistakeCount',
+  collectedErrors: 'collectedErrors',
+  exportResult: 'exportResult',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   completedAt: 'completedAt'
@@ -143,19 +129,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
 export const NullableJsonNullValueInput = {
   DbNull: DbNull,
   JsonNull: JsonNull
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
-
-
-export const JsonNullValueInput = {
-  JsonNull: JsonNull
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

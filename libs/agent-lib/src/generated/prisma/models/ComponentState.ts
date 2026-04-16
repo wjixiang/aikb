@@ -26,7 +26,7 @@ export type AggregateComponentState = {
 
 export type ComponentStateMinAggregateOutputType = {
   id: string | null
-  sessionId: string | null
+  instanceId: string | null
   componentId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -34,7 +34,7 @@ export type ComponentStateMinAggregateOutputType = {
 
 export type ComponentStateMaxAggregateOutputType = {
   id: string | null
-  sessionId: string | null
+  instanceId: string | null
   componentId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -42,7 +42,7 @@ export type ComponentStateMaxAggregateOutputType = {
 
 export type ComponentStateCountAggregateOutputType = {
   id: number
-  sessionId: number
+  instanceId: number
   componentId: number
   stateData: number
   createdAt: number
@@ -53,7 +53,7 @@ export type ComponentStateCountAggregateOutputType = {
 
 export type ComponentStateMinAggregateInputType = {
   id?: true
-  sessionId?: true
+  instanceId?: true
   componentId?: true
   createdAt?: true
   updatedAt?: true
@@ -61,7 +61,7 @@ export type ComponentStateMinAggregateInputType = {
 
 export type ComponentStateMaxAggregateInputType = {
   id?: true
-  sessionId?: true
+  instanceId?: true
   componentId?: true
   createdAt?: true
   updatedAt?: true
@@ -69,7 +69,7 @@ export type ComponentStateMaxAggregateInputType = {
 
 export type ComponentStateCountAggregateInputType = {
   id?: true
-  sessionId?: true
+  instanceId?: true
   componentId?: true
   stateData?: true
   createdAt?: true
@@ -151,7 +151,7 @@ export type ComponentStateGroupByArgs<ExtArgs extends runtime.Types.Extensions.I
 
 export type ComponentStateGroupByOutputType = {
   id: string
-  sessionId: string
+  instanceId: string
   componentId: string
   stateData: runtime.JsonValue
   createdAt: Date
@@ -181,41 +181,41 @@ export type ComponentStateWhereInput = {
   OR?: Prisma.ComponentStateWhereInput[]
   NOT?: Prisma.ComponentStateWhereInput | Prisma.ComponentStateWhereInput[]
   id?: Prisma.StringFilter<"ComponentState"> | string
-  sessionId?: Prisma.StringFilter<"ComponentState"> | string
+  instanceId?: Prisma.StringFilter<"ComponentState"> | string
   componentId?: Prisma.StringFilter<"ComponentState"> | string
   stateData?: Prisma.JsonFilter<"ComponentState">
   createdAt?: Prisma.DateTimeFilter<"ComponentState"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ComponentState"> | Date | string
-  session?: Prisma.XOR<Prisma.AgentSessionScalarRelationFilter, Prisma.AgentSessionWhereInput>
+  instance?: Prisma.XOR<Prisma.AgentInstanceScalarRelationFilter, Prisma.AgentInstanceWhereInput>
 }
 
 export type ComponentStateOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   componentId?: Prisma.SortOrder
   stateData?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  session?: Prisma.AgentSessionOrderByWithRelationInput
+  instance?: Prisma.AgentInstanceOrderByWithRelationInput
 }
 
 export type ComponentStateWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  sessionId_componentId?: Prisma.ComponentStateSessionIdComponentIdCompoundUniqueInput
+  instanceId_componentId?: Prisma.ComponentStateInstanceIdComponentIdCompoundUniqueInput
   AND?: Prisma.ComponentStateWhereInput | Prisma.ComponentStateWhereInput[]
   OR?: Prisma.ComponentStateWhereInput[]
   NOT?: Prisma.ComponentStateWhereInput | Prisma.ComponentStateWhereInput[]
-  sessionId?: Prisma.StringFilter<"ComponentState"> | string
+  instanceId?: Prisma.StringFilter<"ComponentState"> | string
   componentId?: Prisma.StringFilter<"ComponentState"> | string
   stateData?: Prisma.JsonFilter<"ComponentState">
   createdAt?: Prisma.DateTimeFilter<"ComponentState"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ComponentState"> | Date | string
-  session?: Prisma.XOR<Prisma.AgentSessionScalarRelationFilter, Prisma.AgentSessionWhereInput>
-}, "id" | "sessionId_componentId">
+  instance?: Prisma.XOR<Prisma.AgentInstanceScalarRelationFilter, Prisma.AgentInstanceWhereInput>
+}, "id" | "instanceId_componentId">
 
 export type ComponentStateOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
   componentId?: Prisma.SortOrder
   stateData?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -230,7 +230,7 @@ export type ComponentStateScalarWhereWithAggregatesInput = {
   OR?: Prisma.ComponentStateScalarWhereWithAggregatesInput[]
   NOT?: Prisma.ComponentStateScalarWhereWithAggregatesInput | Prisma.ComponentStateScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"ComponentState"> | string
-  sessionId?: Prisma.StringWithAggregatesFilter<"ComponentState"> | string
+  instanceId?: Prisma.StringWithAggregatesFilter<"ComponentState"> | string
   componentId?: Prisma.StringWithAggregatesFilter<"ComponentState"> | string
   stateData?: Prisma.JsonWithAggregatesFilter<"ComponentState">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ComponentState"> | Date | string
@@ -243,12 +243,12 @@ export type ComponentStateCreateInput = {
   stateData: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  session: Prisma.AgentSessionCreateNestedOneWithoutComponentStatesInput
+  instance: Prisma.AgentInstanceCreateNestedOneWithoutComponentStatesInput
 }
 
 export type ComponentStateUncheckedCreateInput = {
   id?: string
-  sessionId: string
+  instanceId: string
   componentId: string
   stateData: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -261,12 +261,12 @@ export type ComponentStateUpdateInput = {
   stateData?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  session?: Prisma.AgentSessionUpdateOneRequiredWithoutComponentStatesNestedInput
+  instance?: Prisma.AgentInstanceUpdateOneRequiredWithoutComponentStatesNestedInput
 }
 
 export type ComponentStateUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   componentId?: Prisma.StringFieldUpdateOperationsInput | string
   stateData?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -275,7 +275,7 @@ export type ComponentStateUncheckedUpdateInput = {
 
 export type ComponentStateCreateManyInput = {
   id?: string
-  sessionId: string
+  instanceId: string
   componentId: string
   stateData: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -292,11 +292,41 @@ export type ComponentStateUpdateManyMutationInput = {
 
 export type ComponentStateUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
   componentId?: Prisma.StringFieldUpdateOperationsInput | string
   stateData?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ComponentStateInstanceIdComponentIdCompoundUniqueInput = {
+  instanceId: string
+  componentId: string
+}
+
+export type ComponentStateCountOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
+  componentId?: Prisma.SortOrder
+  stateData?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+}
+
+export type ComponentStateMaxOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
+  componentId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+}
+
+export type ComponentStateMinOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  instanceId?: Prisma.SortOrder
+  componentId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type ComponentStateListRelationFilter = {
@@ -309,79 +339,49 @@ export type ComponentStateOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type ComponentStateSessionIdComponentIdCompoundUniqueInput = {
-  sessionId: string
-  componentId: string
-}
-
-export type ComponentStateCountOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
-  componentId?: Prisma.SortOrder
-  stateData?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-}
-
-export type ComponentStateMaxOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
-  componentId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-}
-
-export type ComponentStateMinOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  sessionId?: Prisma.SortOrder
-  componentId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-}
-
-export type ComponentStateCreateNestedManyWithoutSessionInput = {
-  create?: Prisma.XOR<Prisma.ComponentStateCreateWithoutSessionInput, Prisma.ComponentStateUncheckedCreateWithoutSessionInput> | Prisma.ComponentStateCreateWithoutSessionInput[] | Prisma.ComponentStateUncheckedCreateWithoutSessionInput[]
-  connectOrCreate?: Prisma.ComponentStateCreateOrConnectWithoutSessionInput | Prisma.ComponentStateCreateOrConnectWithoutSessionInput[]
-  createMany?: Prisma.ComponentStateCreateManySessionInputEnvelope
+export type ComponentStateCreateNestedManyWithoutInstanceInput = {
+  create?: Prisma.XOR<Prisma.ComponentStateCreateWithoutInstanceInput, Prisma.ComponentStateUncheckedCreateWithoutInstanceInput> | Prisma.ComponentStateCreateWithoutInstanceInput[] | Prisma.ComponentStateUncheckedCreateWithoutInstanceInput[]
+  connectOrCreate?: Prisma.ComponentStateCreateOrConnectWithoutInstanceInput | Prisma.ComponentStateCreateOrConnectWithoutInstanceInput[]
+  createMany?: Prisma.ComponentStateCreateManyInstanceInputEnvelope
   connect?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
 }
 
-export type ComponentStateUncheckedCreateNestedManyWithoutSessionInput = {
-  create?: Prisma.XOR<Prisma.ComponentStateCreateWithoutSessionInput, Prisma.ComponentStateUncheckedCreateWithoutSessionInput> | Prisma.ComponentStateCreateWithoutSessionInput[] | Prisma.ComponentStateUncheckedCreateWithoutSessionInput[]
-  connectOrCreate?: Prisma.ComponentStateCreateOrConnectWithoutSessionInput | Prisma.ComponentStateCreateOrConnectWithoutSessionInput[]
-  createMany?: Prisma.ComponentStateCreateManySessionInputEnvelope
+export type ComponentStateUncheckedCreateNestedManyWithoutInstanceInput = {
+  create?: Prisma.XOR<Prisma.ComponentStateCreateWithoutInstanceInput, Prisma.ComponentStateUncheckedCreateWithoutInstanceInput> | Prisma.ComponentStateCreateWithoutInstanceInput[] | Prisma.ComponentStateUncheckedCreateWithoutInstanceInput[]
+  connectOrCreate?: Prisma.ComponentStateCreateOrConnectWithoutInstanceInput | Prisma.ComponentStateCreateOrConnectWithoutInstanceInput[]
+  createMany?: Prisma.ComponentStateCreateManyInstanceInputEnvelope
   connect?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
 }
 
-export type ComponentStateUpdateManyWithoutSessionNestedInput = {
-  create?: Prisma.XOR<Prisma.ComponentStateCreateWithoutSessionInput, Prisma.ComponentStateUncheckedCreateWithoutSessionInput> | Prisma.ComponentStateCreateWithoutSessionInput[] | Prisma.ComponentStateUncheckedCreateWithoutSessionInput[]
-  connectOrCreate?: Prisma.ComponentStateCreateOrConnectWithoutSessionInput | Prisma.ComponentStateCreateOrConnectWithoutSessionInput[]
-  upsert?: Prisma.ComponentStateUpsertWithWhereUniqueWithoutSessionInput | Prisma.ComponentStateUpsertWithWhereUniqueWithoutSessionInput[]
-  createMany?: Prisma.ComponentStateCreateManySessionInputEnvelope
+export type ComponentStateUpdateManyWithoutInstanceNestedInput = {
+  create?: Prisma.XOR<Prisma.ComponentStateCreateWithoutInstanceInput, Prisma.ComponentStateUncheckedCreateWithoutInstanceInput> | Prisma.ComponentStateCreateWithoutInstanceInput[] | Prisma.ComponentStateUncheckedCreateWithoutInstanceInput[]
+  connectOrCreate?: Prisma.ComponentStateCreateOrConnectWithoutInstanceInput | Prisma.ComponentStateCreateOrConnectWithoutInstanceInput[]
+  upsert?: Prisma.ComponentStateUpsertWithWhereUniqueWithoutInstanceInput | Prisma.ComponentStateUpsertWithWhereUniqueWithoutInstanceInput[]
+  createMany?: Prisma.ComponentStateCreateManyInstanceInputEnvelope
   set?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
   disconnect?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
   delete?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
   connect?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
-  update?: Prisma.ComponentStateUpdateWithWhereUniqueWithoutSessionInput | Prisma.ComponentStateUpdateWithWhereUniqueWithoutSessionInput[]
-  updateMany?: Prisma.ComponentStateUpdateManyWithWhereWithoutSessionInput | Prisma.ComponentStateUpdateManyWithWhereWithoutSessionInput[]
+  update?: Prisma.ComponentStateUpdateWithWhereUniqueWithoutInstanceInput | Prisma.ComponentStateUpdateWithWhereUniqueWithoutInstanceInput[]
+  updateMany?: Prisma.ComponentStateUpdateManyWithWhereWithoutInstanceInput | Prisma.ComponentStateUpdateManyWithWhereWithoutInstanceInput[]
   deleteMany?: Prisma.ComponentStateScalarWhereInput | Prisma.ComponentStateScalarWhereInput[]
 }
 
-export type ComponentStateUncheckedUpdateManyWithoutSessionNestedInput = {
-  create?: Prisma.XOR<Prisma.ComponentStateCreateWithoutSessionInput, Prisma.ComponentStateUncheckedCreateWithoutSessionInput> | Prisma.ComponentStateCreateWithoutSessionInput[] | Prisma.ComponentStateUncheckedCreateWithoutSessionInput[]
-  connectOrCreate?: Prisma.ComponentStateCreateOrConnectWithoutSessionInput | Prisma.ComponentStateCreateOrConnectWithoutSessionInput[]
-  upsert?: Prisma.ComponentStateUpsertWithWhereUniqueWithoutSessionInput | Prisma.ComponentStateUpsertWithWhereUniqueWithoutSessionInput[]
-  createMany?: Prisma.ComponentStateCreateManySessionInputEnvelope
+export type ComponentStateUncheckedUpdateManyWithoutInstanceNestedInput = {
+  create?: Prisma.XOR<Prisma.ComponentStateCreateWithoutInstanceInput, Prisma.ComponentStateUncheckedCreateWithoutInstanceInput> | Prisma.ComponentStateCreateWithoutInstanceInput[] | Prisma.ComponentStateUncheckedCreateWithoutInstanceInput[]
+  connectOrCreate?: Prisma.ComponentStateCreateOrConnectWithoutInstanceInput | Prisma.ComponentStateCreateOrConnectWithoutInstanceInput[]
+  upsert?: Prisma.ComponentStateUpsertWithWhereUniqueWithoutInstanceInput | Prisma.ComponentStateUpsertWithWhereUniqueWithoutInstanceInput[]
+  createMany?: Prisma.ComponentStateCreateManyInstanceInputEnvelope
   set?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
   disconnect?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
   delete?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
   connect?: Prisma.ComponentStateWhereUniqueInput | Prisma.ComponentStateWhereUniqueInput[]
-  update?: Prisma.ComponentStateUpdateWithWhereUniqueWithoutSessionInput | Prisma.ComponentStateUpdateWithWhereUniqueWithoutSessionInput[]
-  updateMany?: Prisma.ComponentStateUpdateManyWithWhereWithoutSessionInput | Prisma.ComponentStateUpdateManyWithWhereWithoutSessionInput[]
+  update?: Prisma.ComponentStateUpdateWithWhereUniqueWithoutInstanceInput | Prisma.ComponentStateUpdateWithWhereUniqueWithoutInstanceInput[]
+  updateMany?: Prisma.ComponentStateUpdateManyWithWhereWithoutInstanceInput | Prisma.ComponentStateUpdateManyWithWhereWithoutInstanceInput[]
   deleteMany?: Prisma.ComponentStateScalarWhereInput | Prisma.ComponentStateScalarWhereInput[]
 }
 
-export type ComponentStateCreateWithoutSessionInput = {
+export type ComponentStateCreateWithoutInstanceInput = {
   id?: string
   componentId: string
   stateData: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -389,7 +389,7 @@ export type ComponentStateCreateWithoutSessionInput = {
   updatedAt?: Date | string
 }
 
-export type ComponentStateUncheckedCreateWithoutSessionInput = {
+export type ComponentStateUncheckedCreateWithoutInstanceInput = {
   id?: string
   componentId: string
   stateData: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -397,30 +397,30 @@ export type ComponentStateUncheckedCreateWithoutSessionInput = {
   updatedAt?: Date | string
 }
 
-export type ComponentStateCreateOrConnectWithoutSessionInput = {
+export type ComponentStateCreateOrConnectWithoutInstanceInput = {
   where: Prisma.ComponentStateWhereUniqueInput
-  create: Prisma.XOR<Prisma.ComponentStateCreateWithoutSessionInput, Prisma.ComponentStateUncheckedCreateWithoutSessionInput>
+  create: Prisma.XOR<Prisma.ComponentStateCreateWithoutInstanceInput, Prisma.ComponentStateUncheckedCreateWithoutInstanceInput>
 }
 
-export type ComponentStateCreateManySessionInputEnvelope = {
-  data: Prisma.ComponentStateCreateManySessionInput | Prisma.ComponentStateCreateManySessionInput[]
+export type ComponentStateCreateManyInstanceInputEnvelope = {
+  data: Prisma.ComponentStateCreateManyInstanceInput | Prisma.ComponentStateCreateManyInstanceInput[]
   skipDuplicates?: boolean
 }
 
-export type ComponentStateUpsertWithWhereUniqueWithoutSessionInput = {
+export type ComponentStateUpsertWithWhereUniqueWithoutInstanceInput = {
   where: Prisma.ComponentStateWhereUniqueInput
-  update: Prisma.XOR<Prisma.ComponentStateUpdateWithoutSessionInput, Prisma.ComponentStateUncheckedUpdateWithoutSessionInput>
-  create: Prisma.XOR<Prisma.ComponentStateCreateWithoutSessionInput, Prisma.ComponentStateUncheckedCreateWithoutSessionInput>
+  update: Prisma.XOR<Prisma.ComponentStateUpdateWithoutInstanceInput, Prisma.ComponentStateUncheckedUpdateWithoutInstanceInput>
+  create: Prisma.XOR<Prisma.ComponentStateCreateWithoutInstanceInput, Prisma.ComponentStateUncheckedCreateWithoutInstanceInput>
 }
 
-export type ComponentStateUpdateWithWhereUniqueWithoutSessionInput = {
+export type ComponentStateUpdateWithWhereUniqueWithoutInstanceInput = {
   where: Prisma.ComponentStateWhereUniqueInput
-  data: Prisma.XOR<Prisma.ComponentStateUpdateWithoutSessionInput, Prisma.ComponentStateUncheckedUpdateWithoutSessionInput>
+  data: Prisma.XOR<Prisma.ComponentStateUpdateWithoutInstanceInput, Prisma.ComponentStateUncheckedUpdateWithoutInstanceInput>
 }
 
-export type ComponentStateUpdateManyWithWhereWithoutSessionInput = {
+export type ComponentStateUpdateManyWithWhereWithoutInstanceInput = {
   where: Prisma.ComponentStateScalarWhereInput
-  data: Prisma.XOR<Prisma.ComponentStateUpdateManyMutationInput, Prisma.ComponentStateUncheckedUpdateManyWithoutSessionInput>
+  data: Prisma.XOR<Prisma.ComponentStateUpdateManyMutationInput, Prisma.ComponentStateUncheckedUpdateManyWithoutInstanceInput>
 }
 
 export type ComponentStateScalarWhereInput = {
@@ -428,14 +428,14 @@ export type ComponentStateScalarWhereInput = {
   OR?: Prisma.ComponentStateScalarWhereInput[]
   NOT?: Prisma.ComponentStateScalarWhereInput | Prisma.ComponentStateScalarWhereInput[]
   id?: Prisma.StringFilter<"ComponentState"> | string
-  sessionId?: Prisma.StringFilter<"ComponentState"> | string
+  instanceId?: Prisma.StringFilter<"ComponentState"> | string
   componentId?: Prisma.StringFilter<"ComponentState"> | string
   stateData?: Prisma.JsonFilter<"ComponentState">
   createdAt?: Prisma.DateTimeFilter<"ComponentState"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ComponentState"> | Date | string
 }
 
-export type ComponentStateCreateManySessionInput = {
+export type ComponentStateCreateManyInstanceInput = {
   id?: string
   componentId: string
   stateData: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -443,7 +443,7 @@ export type ComponentStateCreateManySessionInput = {
   updatedAt?: Date | string
 }
 
-export type ComponentStateUpdateWithoutSessionInput = {
+export type ComponentStateUpdateWithoutInstanceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   componentId?: Prisma.StringFieldUpdateOperationsInput | string
   stateData?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -451,7 +451,7 @@ export type ComponentStateUpdateWithoutSessionInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ComponentStateUncheckedUpdateWithoutSessionInput = {
+export type ComponentStateUncheckedUpdateWithoutInstanceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   componentId?: Prisma.StringFieldUpdateOperationsInput | string
   stateData?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -459,7 +459,7 @@ export type ComponentStateUncheckedUpdateWithoutSessionInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ComponentStateUncheckedUpdateManyWithoutSessionInput = {
+export type ComponentStateUncheckedUpdateManyWithoutInstanceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   componentId?: Prisma.StringFieldUpdateOperationsInput | string
   stateData?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -471,62 +471,62 @@ export type ComponentStateUncheckedUpdateManyWithoutSessionInput = {
 
 export type ComponentStateSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  sessionId?: boolean
+  instanceId?: boolean
   componentId?: boolean
   stateData?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["componentState"]>
 
 export type ComponentStateSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  sessionId?: boolean
+  instanceId?: boolean
   componentId?: boolean
   stateData?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["componentState"]>
 
 export type ComponentStateSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  sessionId?: boolean
+  instanceId?: boolean
   componentId?: boolean
   stateData?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["componentState"]>
 
 export type ComponentStateSelectScalar = {
   id?: boolean
-  sessionId?: boolean
+  instanceId?: boolean
   componentId?: boolean
   stateData?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ComponentStateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "componentId" | "stateData" | "createdAt" | "updatedAt", ExtArgs["result"]["componentState"]>
+export type ComponentStateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "instanceId" | "componentId" | "stateData" | "createdAt" | "updatedAt", ExtArgs["result"]["componentState"]>
 export type ComponentStateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }
 export type ComponentStateIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }
 export type ComponentStateIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  session?: boolean | Prisma.AgentSessionDefaultArgs<ExtArgs>
+  instance?: boolean | Prisma.AgentInstanceDefaultArgs<ExtArgs>
 }
 
 export type $ComponentStatePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ComponentState"
   objects: {
-    session: Prisma.$AgentSessionPayload<ExtArgs>
+    instance: Prisma.$AgentInstancePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    sessionId: string
+    instanceId: string
     componentId: string
     stateData: runtime.JsonValue
     createdAt: Date
@@ -925,7 +925,7 @@ readonly fields: ComponentStateFieldRefs;
  */
 export interface Prisma__ComponentStateClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  session<T extends Prisma.AgentSessionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentSessionDefaultArgs<ExtArgs>>): Prisma.Prisma__AgentSessionClient<runtime.Types.Result.GetResult<Prisma.$AgentSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  instance<T extends Prisma.AgentInstanceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstanceDefaultArgs<ExtArgs>>): Prisma.Prisma__AgentInstanceClient<runtime.Types.Result.GetResult<Prisma.$AgentInstancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -956,7 +956,7 @@ export interface Prisma__ComponentStateClient<T, Null = never, ExtArgs extends r
  */
 export interface ComponentStateFieldRefs {
   readonly id: Prisma.FieldRef<"ComponentState", 'String'>
-  readonly sessionId: Prisma.FieldRef<"ComponentState", 'String'>
+  readonly instanceId: Prisma.FieldRef<"ComponentState", 'String'>
   readonly componentId: Prisma.FieldRef<"ComponentState", 'String'>
   readonly stateData: Prisma.FieldRef<"ComponentState", 'Json'>
   readonly createdAt: Prisma.FieldRef<"ComponentState", 'DateTime'>

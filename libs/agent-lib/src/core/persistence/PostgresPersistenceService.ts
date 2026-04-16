@@ -6,7 +6,6 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import type {
   IPersistenceService,
-  AgentSessionData,
   PersistenceConfig,
   InstanceMetadata,
 } from './types.js';
@@ -36,158 +35,127 @@ export class PostgresPersistenceService implements IPersistenceService {
     this.logger.info('[PersistenceService] Initialized');
   }
 
-  async createSession(data: AgentSessionData): Promise<string> {
-    const session = await this.prisma.agentSession.create({
-      data: {
-        instanceId: data.instanceId,
-        status: data.status,
-        abortReason: data.abortReason,
-        abortSource: data.abortSource,
-        config: data.config as object,
-        totalTokensIn: data.totalTokensIn,
-        totalTokensOut: data.totalTokensOut,
-        totalCost: data.totalCost,
-        toolUsage: data.toolUsage as object,
-        consecutiveMistakeCount: data.consecutiveMistakeCount,
-        collectedErrors: data.collectedErrors,
-        completedAt: data.completedAt,
-      },
-    });
+  // ==================== AgentInstance 生命周期 ====================
+
+  async saveInstanceMetadata(
+    instanceId: string,
+    data: Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>,
+  ): Promise<void> {
+    try {
+      const configJson = data.config != null ? JSON.parse(JSON.stringify(data.config)) : null;
+      await this.prisma.agentInstance.create({
+        data: {
+          instanceId,
+          status: data.status,
+          abortReason: data.abortReason,
+          abortSource: data.abortSource,
+          config: configJson,
+          name: data.name,
+          agentType: data.agentType,
+          totalTokensIn: data.totalTokensIn ?? 0,
+          totalTokensOut: data.totalTokensOut ?? 0,
+          totalCost: data.totalCost ?? 0,
+          toolUsage: data.toolUsage as object,
+          consecutiveMistakeCount: data.consecutiveMistakeCount ?? 0,
+          collectedErrors: data.collectedErrors as object,
+          exportResult: data.exportResult as object,
+          completedAt: data.completedAt,
+        },
+      });
+    } catch (error: any) {
+      this.logger.error(
+        {
+          instanceId,
+          status: data.status,
+          name: data.name,
+          agentType: data.agentType,
+          completedAt: data.completedAt,
+          configType: typeof data.config,
+          errorCode: error?.code,
+          errorMeta: error?.meta,
+          errorMessage: error?.message,
+          errorStack: error?.stack,
+        },
+        '[PersistenceService] Failed to create agentInstance',
+      );
+      throw error;
+    }
 
     this.logger.info(
-      { instanceId: data.instanceId },
-      '[PersistenceService] Session created',
+      { instanceId, name: data.name, agentType: data.agentType },
+      '[PersistenceService] Instance metadata saved',
     );
-    return session.id;
   }
 
-  async getSession(instanceId: string): Promise<AgentSessionData | null> {
-    const session = await this.prisma.agentSession.findUnique({
+  async getInstanceMetadata(
+    instanceId: string,
+  ): Promise<InstanceMetadata | null> {
+    const instance = await this.prisma.agentInstance.findUnique({
       where: { instanceId },
     });
 
-    if (!session) {
+    if (!instance) {
       return null;
     }
 
     return {
-      instanceId: session.instanceId,
-      status: session.status as AgentSessionData['status'],
-      abortReason: session.abortReason ?? undefined,
-      abortSource: session.abortSource ?? undefined,
-      config: session.config as unknown as AgentSessionData['config'],
-      totalTokensIn: session.totalTokensIn,
-      totalTokensOut: session.totalTokensOut,
-      totalCost: session.totalCost,
-      toolUsage: session.toolUsage as AgentSessionData['toolUsage'],
-      consecutiveMistakeCount: session.consecutiveMistakeCount,
-      collectedErrors: session.collectedErrors as string[],
-      completedAt: session.completedAt ?? undefined,
+      instanceId: instance.instanceId,
+      status: instance.status as InstanceMetadata['status'],
+      abortReason: instance.abortReason ?? undefined,
+      abortSource: instance.abortSource ?? undefined,
+      config: instance.config as unknown,
+      name: instance.name ?? undefined,
+      agentType: instance.agentType ?? undefined,
+      totalTokensIn: instance.totalTokensIn,
+      totalTokensOut: instance.totalTokensOut,
+      totalCost: instance.totalCost,
+      toolUsage: instance.toolUsage as InstanceMetadata['toolUsage'],
+      consecutiveMistakeCount: instance.consecutiveMistakeCount,
+      collectedErrors: instance.collectedErrors as string[],
+      exportResult: instance.exportResult as Record<string, unknown>,
+      createdAt: instance.createdAt,
+      updatedAt: instance.updatedAt,
+      completedAt: instance.completedAt ?? undefined,
     };
   }
 
-  async updateSession(
+  async updateInstanceMetadata(
     instanceId: string,
-    data: Partial<AgentSessionData>,
+    data: Partial<
+      Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>
+    >,
   ): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {};
 
     if (data.status !== undefined) updateData.status = data.status;
-    if (data.abortReason !== undefined)
-      updateData.abortReason = data.abortReason;
-    if (data.abortSource !== undefined)
-      updateData.abortSource = data.abortSource;
+    if (data.abortReason !== undefined) updateData.abortReason = data.abortReason;
+    if (data.abortSource !== undefined) updateData.abortSource = data.abortSource;
     if (data.config !== undefined) updateData.config = data.config;
-    if (data.totalTokensIn !== undefined)
-      updateData.totalTokensIn = data.totalTokensIn;
-    if (data.totalTokensOut !== undefined)
-      updateData.totalTokensOut = data.totalTokensOut;
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.agentType !== undefined) updateData.agentType = data.agentType;
+    if (data.totalTokensIn !== undefined) updateData.totalTokensIn = data.totalTokensIn;
+    if (data.totalTokensOut !== undefined) updateData.totalTokensOut = data.totalTokensOut;
     if (data.totalCost !== undefined) updateData.totalCost = data.totalCost;
     if (data.toolUsage !== undefined) updateData.toolUsage = data.toolUsage;
-    if (data.consecutiveMistakeCount !== undefined)
-      updateData.consecutiveMistakeCount = data.consecutiveMistakeCount;
-    if (data.collectedErrors !== undefined)
-      updateData.collectedErrors = data.collectedErrors;
+    if (data.consecutiveMistakeCount !== undefined) updateData.consecutiveMistakeCount = data.consecutiveMistakeCount;
+    if (data.collectedErrors !== undefined) updateData.collectedErrors = data.collectedErrors;
+    if (data.exportResult !== undefined) updateData.exportResult = data.exportResult;
 
-    // 自动设置 completedAt for aborted sessions
+    // 自动设置 completedAt for aborted instances
     if (data.status === AgentStatus.Aborted) {
       updateData.completedAt = new Date();
     }
 
-    await this.prisma.agentSession.update({
+    await this.prisma.agentInstance.update({
       where: { instanceId },
       data: updateData,
     });
 
     this.logger.debug(
       { instanceId, fields: Object.keys(updateData) },
-      '[PersistenceService] Session updated',
+      '[PersistenceService] Instance metadata updated',
     );
-  }
-
-  async deleteSession(instanceId: string): Promise<void> {
-    await this.prisma.agentSession.delete({
-      where: { instanceId },
-    });
-
-    this.logger.info({ instanceId }, '[PersistenceService] Session deleted');
-  }
-
-  async listSessions(options?: {
-    status?: AgentSessionData['status'];
-    limit?: number;
-    offset?: number;
-  }): Promise<AgentSessionData[]> {
-    const sessions = await this.prisma.agentSession.findMany({
-      where: options?.status ? { status: options.status } : undefined,
-      take: options?.limit ?? 100,
-      skip: options?.offset ?? 0,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return sessions.map((s) => ({
-      instanceId: s.instanceId,
-      status: s.status as AgentSessionData['status'],
-      abortReason: s.abortReason ?? undefined,
-      abortSource: s.abortSource ?? undefined,
-      config: s.config as unknown as AgentSessionData['config'],
-      totalTokensIn: s.totalTokensIn,
-      totalTokensOut: s.totalTokensOut,
-      totalCost: s.totalCost,
-      toolUsage: s.toolUsage as AgentSessionData['toolUsage'],
-      consecutiveMistakeCount: s.consecutiveMistakeCount,
-      collectedErrors: s.collectedErrors as string[],
-      completedAt: s.completedAt ?? undefined,
-    }));
-  }
-
-  async getStats(): Promise<{
-    totalSessions: number;
-    byStatus: Record<string, number>;
-    totalCost: number;
-  }> {
-    const [total, statusGroups, costResult] = await Promise.all([
-      this.prisma.agentSession.count(),
-      this.prisma.agentSession.groupBy({
-        by: ['status'],
-        _count: { id: true },
-      }),
-      this.prisma.agentSession.aggregate({
-        _sum: { totalCost: true },
-      }),
-    ]);
-
-    const byStatus: Record<string, number> = {};
-    for (const group of statusGroups) {
-      byStatus[group.status] = group._count.id;
-    }
-
-    return {
-      totalSessions: total,
-      byStatus,
-      totalCost: costResult._sum.totalCost ?? 0,
-    };
   }
 
   // ==================== Memory 持久化 (Phase 2) ====================
@@ -248,102 +216,6 @@ export class PostgresPersistenceService implements IPersistenceService {
     };
   }
 
-  // ==================== AgentInstance 生命周期 ====================
-
-  async saveInstanceMetadata(
-    instanceId: string,
-    data: Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>,
-  ): Promise<void> {
-    try {
-      const configJson = data.config != null ? JSON.parse(JSON.stringify(data.config)) : null;
-      await this.prisma.agentInstance.create({
-        data: {
-          instanceId,
-          status: data.status,
-          config: configJson,
-          name: data.name,
-          agentType: data.agentType,
-          completedAt: data.completedAt,
-        },
-      });
-    } catch (error: any) {
-      this.logger.error(
-        {
-          instanceId,
-          status: data.status,
-          name: data.name,
-          agentType: data.agentType,
-          completedAt: data.completedAt,
-          configType: typeof data.config,
-          errorCode: error?.code,
-          errorMeta: error?.meta,
-          errorMessage: error?.message,
-          errorStack: error?.stack,
-        },
-        '[PersistenceService] Failed to create agentInstance',
-      );
-      throw error;
-    }
-
-    this.logger.info(
-      { instanceId, name: data.name, agentType: data.agentType },
-      '[PersistenceService] Instance metadata saved',
-    );
-  }
-
-  async getInstanceMetadata(
-    instanceId: string,
-  ): Promise<InstanceMetadata | null> {
-    const instance = await this.prisma.agentInstance.findUnique({
-      where: { instanceId },
-    });
-
-    if (!instance) {
-      return null;
-    }
-
-    return {
-      instanceId: instance.instanceId,
-      status: instance.status as InstanceMetadata['status'],
-      config: instance.config as unknown,
-      name: instance.name ?? undefined,
-      agentType: instance.agentType ?? undefined,
-      createdAt: instance.createdAt,
-      updatedAt: instance.updatedAt,
-      completedAt: instance.completedAt ?? undefined,
-    };
-  }
-
-  async updateInstanceMetadata(
-    instanceId: string,
-    data: Partial<
-      Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>
-    >,
-  ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: any = {};
-
-    if (data.status !== undefined) updateData.status = data.status;
-    if (data.config !== undefined) updateData.config = data.config;
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.agentType !== undefined) updateData.agentType = data.agentType;
-
-    // 自动设置 completedAt for aborted instances
-    if (data.status === AgentStatus.Aborted) {
-      updateData.completedAt = new Date();
-    }
-
-    await this.prisma.agentInstance.update({
-      where: { instanceId },
-      data: updateData,
-    });
-
-    this.logger.debug(
-      { instanceId, fields: Object.keys(updateData) },
-      '[PersistenceService] Instance metadata updated',
-    );
-  }
-
   // ==================== ComponentState 持久化 (Phase 3) ====================
 
   async saveComponentState(
@@ -351,24 +223,24 @@ export class PostgresPersistenceService implements IPersistenceService {
     componentId: string,
     stateData: unknown,
   ): Promise<void> {
-    // First, get the internal session ID from instanceId
-    const session = await this.prisma.agentSession.findUnique({
+    // Verify instance exists
+    const instance = await this.prisma.agentInstance.findUnique({
       where: { instanceId },
     });
 
-    if (!session) {
-      throw new Error(`Session not found for instance: ${instanceId}`);
+    if (!instance) {
+      throw new Error(`Instance not found: ${instanceId}`);
     }
 
     await this.prisma.componentState.upsert({
       where: {
-        sessionId_componentId: {
-          sessionId: session.id,
+        instanceId_componentId: {
+          instanceId,
           componentId,
         },
       },
       create: {
-        sessionId: session.id,
+        instanceId,
         componentId,
         stateData: stateData as object,
       },
@@ -387,7 +259,7 @@ export class PostgresPersistenceService implements IPersistenceService {
     instanceId: string,
     componentId: string,
   ): Promise<unknown | null> {
-    const session = await this.prisma.agentSession.findUnique({
+    const instance = await this.prisma.agentInstance.findUnique({
       where: { instanceId },
       include: {
         componentStates: {
@@ -396,7 +268,7 @@ export class PostgresPersistenceService implements IPersistenceService {
       },
     });
 
-    const componentState = session?.componentStates[0];
+    const componentState = instance?.componentStates[0];
     if (!componentState) {
       return null;
     }
@@ -407,19 +279,19 @@ export class PostgresPersistenceService implements IPersistenceService {
   async getAllComponentStates(
     instanceId: string,
   ): Promise<Record<string, unknown>> {
-    const session = await this.prisma.agentSession.findUnique({
+    const instance = await this.prisma.agentInstance.findUnique({
       where: { instanceId },
       include: {
         componentStates: true,
       },
     });
 
-    if (!session) {
+    if (!instance) {
       return {};
     }
 
     const result: Record<string, unknown> = {};
-    for (const cs of session.componentStates) {
+    for (const cs of instance.componentStates) {
       result[cs.componentId] = cs.stateData as unknown;
     }
 
@@ -430,17 +302,17 @@ export class PostgresPersistenceService implements IPersistenceService {
     instanceId: string,
     componentId: string,
   ): Promise<void> {
-    const session = await this.prisma.agentSession.findUnique({
+    const instance = await this.prisma.agentInstance.findUnique({
       where: { instanceId },
     });
 
-    if (!session) {
-      throw new Error(`Session not found for instance: ${instanceId}`);
+    if (!instance) {
+      throw new Error(`Instance not found: ${instanceId}`);
     }
 
     await this.prisma.componentState.deleteMany({
       where: {
-        sessionId: session.id,
+        instanceId,
         componentId,
       },
     });
@@ -457,7 +329,7 @@ export class PostgresPersistenceService implements IPersistenceService {
     instanceId: string,
     exportResult: Record<string, unknown>,
   ): Promise<void> {
-    await this.prisma.agentSession.update({
+    await this.prisma.agentInstance.update({
       where: { instanceId },
       data: { exportResult: exportResult as object },
     });

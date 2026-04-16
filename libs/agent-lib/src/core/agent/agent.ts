@@ -27,15 +27,7 @@ import type { IPersistenceService } from '../persistence/types.js';
 
 import { getLogger } from '@shared/logger';
 
-interface SessionState {
-  instanceId: string;
-  status: AgentStatus;
-  tokenUsage: TokenUsage;
-  toolUsage: ToolUsage;
-  consecutiveMistakeCount: number;
-  collectedErrors: string[];
-  abortInfo: AbortInfo | null;
-}
+
 
 export interface AgentConfig {
   apiRequestTimeout: number;
@@ -184,44 +176,7 @@ export class Agent {
     this.persistenceService = persistenceService;
   }
 
-  private getSessionState(): SessionState {
-    return {
-      instanceId: this.instanceId,
-      status: this._status,
-      tokenUsage: this._tokenUsage,
-      toolUsage: this._toolUsage,
-      consecutiveMistakeCount: this._consecutiveMistakeCount,
-      collectedErrors: this._collectedErrors,
-      abortInfo: this._abortInfo,
-    };
-  }
 
-  /**
-   * End the current session
-   * Updates both Session and Instance status to 'completed' or 'aborted'
-   */
-  public async endSession(reason?: string): Promise<void> {
-    if (!this.persistenceService) return;
-
-    const state = this.getSessionState();
-    const finalStatus =
-      reason === 'aborted' ? AgentStatus.Aborted : AgentStatus.Sleeping;
-
-    await this.persistenceService.updateSession(state.instanceId, {
-      status: finalStatus,
-      abortReason: reason,
-      abortSource: 'system',
-      totalTokensIn: state.tokenUsage.promptTokens,
-      totalTokensOut: state.tokenUsage.completionTokens,
-      toolUsage: state.toolUsage,
-      consecutiveMistakeCount: state.consecutiveMistakeCount,
-      collectedErrors: state.collectedErrors,
-    });
-
-    await this.persistenceService.updateInstanceMetadata(state.instanceId, {
-      status: finalStatus,
-    });
-  }
 
   /**
    * Save all component states to persistence (instance-level)
@@ -303,42 +258,7 @@ export class Agent {
     }
   }
 
-  /**
-   * Restore session state from persistence (token usage, error counts, etc.)
-   * Called after Agent instance is resolved during restore.
-   */
-  public async restoreSessionState(): Promise<void> {
-    if (!this.persistenceService) return;
 
-    try {
-      const data = await this.persistenceService.getSession(this.instanceId);
-      if (data) {
-        this._tokenUsage = {
-          promptTokens: data.totalTokensIn,
-          completionTokens: data.totalTokensOut,
-        };
-        this._toolUsage = (data.toolUsage as typeof this._toolUsage) || {};
-        this._consecutiveMistakeCount = data.consecutiveMistakeCount;
-        this._collectedErrors = data.collectedErrors || [];
-        this._abortInfo = data.abortReason
-          ? {
-              reason: data.abortReason,
-              timestamp: Date.now(),
-              source: (data.abortSource as 'user' | 'system' | 'error' | 'timeout' | 'manual') || 'manual',
-            }
-          : null;
-        this.logger.info(
-          { instanceId: this.instanceId },
-          '[Agent] Session state restored',
-        );
-      }
-    } catch (error) {
-      this.logger.error(
-        { error, instanceId: this.instanceId },
-        '[Agent] Failed to restore session state',
-      );
-    }
-  }
 
   // ==================== Memory Helpers ====================
 
@@ -435,32 +355,7 @@ export class Agent {
     return this.memoryModule;
   }
 
-  /**
-   * Persist session state directly via persistenceService
-   */
-  private async persistSessionState(): Promise<void> {
-    if (!this.persistenceService) return;
 
-    const state = this.getSessionState();
-    try {
-      await this.persistenceService.updateSession(state.instanceId, {
-        status: state.status,
-        abortReason: state.abortInfo?.reason,
-        abortSource: state.abortInfo?.source,
-        totalTokensIn: state.tokenUsage.promptTokens,
-        totalTokensOut: state.tokenUsage.completionTokens,
-        totalCost: 0,
-        toolUsage: state.toolUsage,
-        consecutiveMistakeCount: state.consecutiveMistakeCount,
-        collectedErrors: state.collectedErrors,
-      });
-    } catch (error) {
-      this.logger.debug(
-        { error, instanceId: state.instanceId },
-        '[Agent] Failed to persist session state',
-      );
-    }
-  }
 
   // ==================== Lifecycle Methods ====================
   // Lifecycle status: sleeping / running / aborted
@@ -477,7 +372,6 @@ export class Agent {
     });
 
     this._status = AgentStatus.Running;
-    void this.persistSessionState();
     this.persistInstanceStatus();
     // This ensures the message is properly associated with a Turn
 
@@ -506,9 +400,7 @@ export class Agent {
     });
 
     this._status = AgentStatus.Sleeping;
-    void this.persistSessionState();
     this.persistInstanceStatus();
-    void this.endSession();
 
     // Trigger agent:completed hook
     void this.hookModule.executeHooks(HookType.AGENT_COMPLETED, {
@@ -546,9 +438,7 @@ export class Agent {
       details,
     };
 
-    void this.persistSessionState();
     this.persistInstanceStatus();
-    void this.endSession('aborted');
 
     // Trigger agent:aborted hook
     void this.hookModule.executeHooks(HookType.AGENT_ABORTED, {
@@ -566,7 +456,6 @@ export class Agent {
    */
   public resetToSleeping(): void {
     this._status = AgentStatus.Sleeping;
-    void this.persistSessionState();
     this.persistInstanceStatus();
   }
 
@@ -589,7 +478,6 @@ export class Agent {
     // Save component states and memory before unloading
     await this.saveComponentStates();
 
-    void this.persistSessionState();
     this.persistInstanceStatus();
 
     void this.hookModule.executeHooks(HookType.AGENT_SLEEPING, {

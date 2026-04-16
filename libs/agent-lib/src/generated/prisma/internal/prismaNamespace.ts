@@ -384,7 +384,6 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
-  AgentSession: 'AgentSession',
   AgentMemory: 'AgentMemory',
   ComponentState: 'ComponentState',
   AgentInstance: 'AgentInstance'
@@ -403,84 +402,10 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agentSession" | "agentMemory" | "componentState" | "agentInstance"
+    modelProps: "agentMemory" | "componentState" | "agentInstance"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
-    AgentSession: {
-      payload: Prisma.$AgentSessionPayload<ExtArgs>
-      fields: Prisma.AgentSessionFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.AgentSessionFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.AgentSessionFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>
-        }
-        findFirst: {
-          args: Prisma.AgentSessionFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.AgentSessionFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>
-        }
-        findMany: {
-          args: Prisma.AgentSessionFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>[]
-        }
-        create: {
-          args: Prisma.AgentSessionCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>
-        }
-        createMany: {
-          args: Prisma.AgentSessionCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.AgentSessionCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>[]
-        }
-        delete: {
-          args: Prisma.AgentSessionDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>
-        }
-        update: {
-          args: Prisma.AgentSessionUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>
-        }
-        deleteMany: {
-          args: Prisma.AgentSessionDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.AgentSessionUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.AgentSessionUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>[]
-        }
-        upsert: {
-          args: Prisma.AgentSessionUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentSessionPayload>
-        }
-        aggregate: {
-          args: Prisma.AgentSessionAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateAgentSession>
-        }
-        groupBy: {
-          args: Prisma.AgentSessionGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AgentSessionGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.AgentSessionCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AgentSessionCountAggregateOutputType> | number
-        }
-      }
-    }
     AgentMemory: {
       payload: Prisma.$AgentMemoryPayload<ExtArgs>
       fields: Prisma.AgentMemoryFieldRefs
@@ -742,28 +667,6 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const AgentSessionScalarFieldEnum = {
-  id: 'id',
-  instanceId: 'instanceId',
-  status: 'status',
-  abortReason: 'abortReason',
-  abortSource: 'abortSource',
-  config: 'config',
-  totalTokensIn: 'totalTokensIn',
-  totalTokensOut: 'totalTokensOut',
-  totalCost: 'totalCost',
-  toolUsage: 'toolUsage',
-  consecutiveMistakeCount: 'consecutiveMistakeCount',
-  collectedErrors: 'collectedErrors',
-  exportResult: 'exportResult',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  completedAt: 'completedAt'
-} as const
-
-export type AgentSessionScalarFieldEnum = (typeof AgentSessionScalarFieldEnum)[keyof typeof AgentSessionScalarFieldEnum]
-
-
 export const AgentMemoryScalarFieldEnum = {
   id: 'id',
   instanceId: 'instanceId',
@@ -779,7 +682,7 @@ export type AgentMemoryScalarFieldEnum = (typeof AgentMemoryScalarFieldEnum)[key
 
 export const ComponentStateScalarFieldEnum = {
   id: 'id',
-  sessionId: 'sessionId',
+  instanceId: 'instanceId',
   componentId: 'componentId',
   stateData: 'stateData',
   createdAt: 'createdAt',
@@ -793,9 +696,18 @@ export const AgentInstanceScalarFieldEnum = {
   id: 'id',
   instanceId: 'instanceId',
   status: 'status',
+  abortReason: 'abortReason',
+  abortSource: 'abortSource',
   config: 'config',
   name: 'name',
   agentType: 'agentType',
+  totalTokensIn: 'totalTokensIn',
+  totalTokensOut: 'totalTokensOut',
+  totalCost: 'totalCost',
+  toolUsage: 'toolUsage',
+  consecutiveMistakeCount: 'consecutiveMistakeCount',
+  collectedErrors: 'collectedErrors',
+  exportResult: 'exportResult',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   completedAt: 'completedAt'
@@ -812,19 +724,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
 export const NullableJsonNullValueInput = {
   DbNull: DbNull,
   JsonNull: JsonNull
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
-
-
-export const JsonNullValueInput = {
-  JsonNull: JsonNull
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -887,6 +799,20 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 
 
 /**
+ * Reference to a field of type 'DateTime'
+ */
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime[]'
+ */
+export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -911,20 +837,6 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
-    
-
-
-/**
- * Reference to a field of type 'DateTime'
- */
-export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
-    
-
-
-/**
- * Reference to a field of type 'DateTime[]'
- */
-export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
     
 
 /**
@@ -1022,7 +934,6 @@ export type PrismaClientOptions = ({
   comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
-  agentSession?: Prisma.AgentSessionOmit
   agentMemory?: Prisma.AgentMemoryOmit
   componentState?: Prisma.ComponentStateOmit
   agentInstance?: Prisma.AgentInstanceOmit

@@ -12,49 +12,8 @@ datasource db {
   provider = "postgresql"
 }
 
-// ExpertInstance 已废弃，使用 AgentSession 替代
+// ExpertInstance 已废弃，使用 AgentInstance 替代
 // model ExpertInstance { ... }
-
-model AgentSession {
-  id              String   @id @default(uuid())
-  instanceId      String   // 关联 AgentInstance.instanceId
-
-  // 状态信息
-  status          String   @default("idle") // idle/running/completed/aborted
-  abortReason     String?
-  abortSource     String? // user/system/error/timeout/manual
-
-  // 配置 (JSON)
-  config          Json? // AgentConfig 序列化
-
-  // 统计信息
-  totalTokensIn   Int      @default(0)
-  totalTokensOut  Int      @default(0)
-  totalCost       Float    @default(0)
-
-  // 工具使用统计
-  toolUsage       Json? // Record<string, { attempts: number; failures: number }>
-
-  // 错误追踪
-  consecutiveMistakeCount Int @default(0)
-  collectedErrors Json? // string[]
-
-  // 导出结果 (Phase 4: Result Export Persistence)
-  exportResult    Json?    // Record<string, ExportResult>
-
-  // 时间戳
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  completedAt     DateTime?
-
-  // Relations
-  instance        AgentInstance @relation(fields: [instanceId], references: [instanceId], onDelete: Cascade)
-  componentStates ComponentState[]
-
-  @@unique([instanceId])  // 一个 AgentInstance 只有一条 Session 记录
-  @@index([status])
-  @@index([createdAt])
-}
 
 // Phase 2: Memory Persistence
 model AgentMemory {
@@ -73,8 +32,8 @@ model AgentMemory {
 // Phase 3: Component State Persistence
 model ComponentState {
   id              String   @id @default(uuid())
-  sessionId       String
-  session         AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  instanceId      String
+  instance        AgentInstance @relation(fields: [instanceId], references: [instanceId], onDelete: Cascade)
 
   componentId     String
   stateData       Json     // 组件特定状态
@@ -82,7 +41,7 @@ model ComponentState {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@unique([sessionId, componentId])
+  @@unique([instanceId, componentId])
 }
 
 // AgentContainer 实例元数据持久化
@@ -92,6 +51,8 @@ model AgentInstance {
 
   // 状态信息
   status          String   @default("idle") // idle/running/completed/aborted
+  abortReason     String?  // user/system/error/timeout/manual
+  abortSource     String?
 
   // 配置快照
   config          Json?    // UnifiedAgentConfig 序列化
@@ -100,14 +61,29 @@ model AgentInstance {
   name            String?   // Agent 友好名称
   agentType       String?   // Agent 类型标识 (如 'pubmed-retrieve')
 
+  // 统计信息
+  totalTokensIn   Int      @default(0)
+  totalTokensOut  Int      @default(0)
+  totalCost       Float    @default(0)
+
+  // 工具使用统计
+  toolUsage       Json? // Record<string, { attempts: number; failures: number }>
+
+  // 错误追踪
+  consecutiveMistakeCount Int @default(0)
+  collectedErrors Json? // string[]
+
+  // 导出结果
+  exportResult    Json?    // Record<string, ExportResult>
+
   // 时间戳
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   completedAt     DateTime?
 
   // Relations
-  sessions        AgentSession[]
   memory          AgentMemory?
+  componentStates ComponentState[]
 
   @@index([instanceId])
   @@index([status])
