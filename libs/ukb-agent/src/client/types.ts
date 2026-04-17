@@ -183,5 +183,6 @@ export interface CohortDownloadResponse {
   cohort_name: string;
   row_count: number;
   field_count: number;
-  data: Record<string, unknown>[];
+  namespace: string;
+  table_name: string;
 }
