@@ -1837,6 +1837,11 @@ export type AgentInstanceFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` AgentInstances.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of AgentInstances.
+   */
   distinct?: Prisma.AgentInstanceScalarFieldEnum | Prisma.AgentInstanceScalarFieldEnum[]
 }
 

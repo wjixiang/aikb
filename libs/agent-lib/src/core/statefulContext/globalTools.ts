@@ -1,5 +1,6 @@
 import z from 'zod';
-import { Tool } from './index.js';
+import type { Tool } from './index.js';
+import type { ToolDefinition } from '../tools/IToolManager.js';
 
 export const attempt_completion: Tool = {
   toolName: 'attempt_completion',
@@ -13,3 +14,13 @@ export const attempt_completion: Tool = {
     },
   ],
 };
+
+export const globalToolDefinitions: ToolDefinition[] = [
+  {
+    tool: attempt_completion,
+    handler: async (_params: any) => ({
+      success: true,
+      completed: true,
+    }),
+  },
+];

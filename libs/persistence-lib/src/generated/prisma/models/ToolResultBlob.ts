@@ -437,14 +437,6 @@ export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type ToolResultBlobCreateNestedManyWithoutInstanceInput = {
   create?: Prisma.XOR<Prisma.ToolResultBlobCreateWithoutInstanceInput, Prisma.ToolResultBlobUncheckedCreateWithoutInstanceInput> | Prisma.ToolResultBlobCreateWithoutInstanceInput[] | Prisma.ToolResultBlobUncheckedCreateWithoutInstanceInput[]
   connectOrCreate?: Prisma.ToolResultBlobCreateOrConnectWithoutInstanceInput | Prisma.ToolResultBlobCreateOrConnectWithoutInstanceInput[]
@@ -1289,6 +1281,11 @@ export type ToolResultBlobFindManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Skip the first `n` ToolResultBlobs.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of ToolResultBlobs.
+   */
   distinct?: Prisma.ToolResultBlobScalarFieldEnum | Prisma.ToolResultBlobScalarFieldEnum[]
 }
 

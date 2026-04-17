@@ -8,5 +8,10 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   outDir: 'dist',
-  external: ['pg'],
+  external: [
+    'pg',
+    '@prisma/client/runtime/*',
+    '@prisma/client/runtime',
+    '@prisma/client/runtime-utils',
+  ],
 })

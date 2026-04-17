@@ -8,7 +8,6 @@ import { LazySleepControl } from '../runtime/AgentSleepControl.js';
 import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
 import { ToolManager } from '../tools/ToolManager.js';
-import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
 import { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
 import type { ApiClient } from 'llm-api-client';
@@ -221,10 +220,6 @@ export class AgentContainer {
       .to(MemoryModule)
       .inSingletonScope();
     this.container.bind(TYPES.IToolManager).to(ToolManager).inSingletonScope();
-    this.container
-      .bind(GlobalToolProvider)
-      .toDynamicValue(() => new GlobalToolProvider())
-      .inSingletonScope();
 
     // HookModule - bind config first, then module
     this.container

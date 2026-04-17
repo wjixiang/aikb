@@ -82,9 +82,6 @@ export * from './types/index.js';
 // Hooks
 export * from './hooks/index.js';
 
-// Prisma
-export * from './prisma/index.js';
-
 // Persistence
 export * from './persistence/index.js';
 

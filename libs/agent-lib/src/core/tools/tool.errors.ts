@@ -1,6 +1,3 @@
-/**
- * Base error class for Tool-related errors
- */
 export abstract class ToolError extends Error {
     abstract readonly code: string;
     abstract readonly retryable: boolean;
@@ -14,9 +11,6 @@ export abstract class ToolError extends Error {
     }
 }
 
-/**
- * Error thrown when a tool is not found
- */
 export class ToolNotFoundError extends ToolError {
     readonly code = 'TOOL_NOT_FOUND';
     readonly retryable = true;
@@ -26,9 +20,6 @@ export class ToolNotFoundError extends ToolError {
     }
 }
 
-/**
- * Error thrown when tool execution fails
- */
 export class ToolExecutionError extends ToolError {
     readonly code = 'TOOL_EXECUTION_FAILED';
     readonly retryable = true;
@@ -42,9 +33,6 @@ export class ToolExecutionError extends ToolError {
     }
 }
 
-/**
- * Error thrown when tool parameters are invalid
- */
 export class ToolParameterError extends ToolError {
     readonly code = 'TOOL_PARAMETER_INVALID';
     readonly retryable = true;
@@ -59,9 +47,6 @@ export class ToolParameterError extends ToolError {
     }
 }
 
-/**
- * Error thrown when tool times out
- */
 export class ToolTimeoutError extends ToolError {
     readonly code = 'TOOL_TIMEOUT';
     readonly retryable = true;
@@ -72,41 +57,5 @@ export class ToolTimeoutError extends ToolError {
         cause?: Error,
     ) {
         super(`Tool '${toolName}' timed out after ${timeoutMs}ms`, cause);
-    }
-}
-
-/**
- * Error thrown when tool is not properly registered
- */
-export class ToolNotRegisteredError extends ToolError {
-    readonly code = 'TOOL_NOT_REGISTERED';
-    readonly retryable = true;
-
-    constructor(toolName: string, cause?: Error) {
-        super(`Tool '${toolName}' is not registered in the tool set`, cause);
-    }
-}
-
-/**
- * Error thrown when tool is disabled
- */
-export class ToolDisabledError extends ToolError {
-    readonly code = 'TOOL_DISABLED';
-    readonly retryable = false;
-
-    constructor(toolName: string, cause?: Error) {
-        super(`Tool '${toolName}' is disabled`, cause);
-    }
-}
-
-/**
- * Error thrown when provider is not found
- */
-export class ProviderNotFoundError extends ToolError {
-    readonly code = 'PROVIDER_NOT_FOUND';
-    readonly retryable = false;
-
-    constructor(providerId: string, cause?: Error) {
-        super(`Provider '${providerId}' not found`, cause);
     }
 }

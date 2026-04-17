@@ -20,3 +20,84 @@ model PersistedToolResult {
   @@index([instanceId])
   @@index([toolUseId])
 }
+
+model AgentMemory {
+  id              String   @id @default(uuid())
+  instanceId      String   @unique
+  instance        AgentInstance @relation(fields: [instanceId], references: [instanceId], onDelete: Cascade)
+
+  messages        Json
+  workspaceContexts Json?
+  config          Json?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ComponentState {
+  id              String   @id @default(uuid())
+  instanceId      String
+  instance        AgentInstance @relation(fields: [instanceId], references: [instanceId], onDelete: Cascade)
+
+  componentId     String
+  stateData       Json
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([instanceId, componentId])
+}
+
+model ToolResultBlob {
+  id              String   @id @default(uuid())
+  instanceId      String
+  instance        AgentInstance @relation(fields: [instanceId], references: [instanceId], onDelete: Cascade)
+
+  toolUseId      String
+  toolName       String
+  content        String
+  preview        String?
+  originalSize   Int
+
+  createdAt      DateTime @default(now())
+
+  @@unique([instanceId, toolUseId])
+  @@index([instanceId])
+}
+
+model AgentInstance {
+  id              String   @id @default(uuid())
+  instanceId      String   @unique
+
+  status          String   @default("idle")
+  abortReason     String?
+  abortSource     String?
+
+  config          Json?
+
+  name            String?
+  agentType       String?
+
+  totalTokensIn   Int      @default(0)
+  totalTokensOut  Int      @default(0)
+  totalCost       Float    @default(0)
+
+  toolUsage       Json?
+
+  consecutiveMistakeCount Int @default(0)
+  collectedErrors Json?
+
+  exportResult    Json?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+
+  memory          AgentMemory?
+  componentStates ComponentState[]
+  toolResultBlobs ToolResultBlob[]
+
+  @@index([instanceId])
+  @@index([status])
+  @@index([agentType])
+}

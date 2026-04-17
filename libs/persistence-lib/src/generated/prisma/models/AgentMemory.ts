@@ -338,14 +338,6 @@ export type AgentMemoryNullableScalarRelationFilter = {
   isNot?: Prisma.AgentMemoryWhereInput | null
 }
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
 export type AgentMemoryCreateNestedOneWithoutInstanceInput = {
   create?: Prisma.XOR<Prisma.AgentMemoryCreateWithoutInstanceInput, Prisma.AgentMemoryUncheckedCreateWithoutInstanceInput>
   connectOrCreate?: Prisma.AgentMemoryCreateOrConnectWithoutInstanceInput
@@ -1126,6 +1118,11 @@ export type AgentMemoryFindManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Skip the first `n` AgentMemories.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of AgentMemories.
+   */
   distinct?: Prisma.AgentMemoryScalarFieldEnum | Prisma.AgentMemoryScalarFieldEnum[]
 }
 

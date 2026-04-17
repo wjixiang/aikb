@@ -9,7 +9,7 @@ import chalk from 'chalk';
 import { ClientPool } from 'llm-api-client';
 import { createAgentRuntime } from '../../core/runtime/index.js';
 import type { AgentRuntimeConfig } from '../../core/runtime/types.js';
-import { PostgresPersistenceService } from '../../core/persistence/PostgresPersistenceService.js';
+import { PostgresPersistenceService } from 'persistence-lib';
 import { getApiKey, getEnv } from '../lib/config.js';
 import { log } from '../lib/logger.js';
 import {

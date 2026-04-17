@@ -9,19 +9,17 @@ import {
   type ToolComponent,
   tdiv,
   MdDiv,
-  MdHeading,
   MdParagraph,
+  MdHeading,
   type TUIElement,
   MdElement,
   renderToolSection,
   ExportOptions,
   ExportResult,
 } from '../../components/index.js';
-import { ToolSource } from '../tools/IToolProvider.js';
 import { TYPES } from '../di/types.js';
-import type { IToolManager } from '../tools/index.js';
-import { ComponentToolProvider } from '../tools/providers/ComponentToolProvider.js';
-import { GlobalToolProvider } from '../tools/providers/GlobalToolProvider.js';
+import type { IToolManager, ToolDefinition } from '../tools/index.js';
+import { globalToolDefinitions } from './globalTools.js';
 
 export const DefaultVirtualWorkspaceConfig: VirtualWorkspaceConfig = {
   id: 'default-workspace',
@@ -38,12 +36,10 @@ export class VirtualWorkspace implements IVirtualWorkspace {
   private toolManager: IToolManager;
   private externalRenderers: Map<string, () => Promise<TUIElement[]>> =
     new Map();
-  private globalToolProvider: GlobalToolProvider;
   private logger = getLogger('VirtualWorkspace');
 
   constructor(
     @inject(TYPES.IToolManager) toolManager: IToolManager,
-    @inject(GlobalToolProvider) globalToolProvider: GlobalToolProvider,
     @inject(TYPES.VirtualWorkspaceConfig)
     @optional()
     config: Partial<VirtualWorkspaceConfig> = {},
@@ -57,7 +53,6 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     };
 
     this.toolManager = toolManager;
-    this.globalToolProvider = globalToolProvider;
 
     if (diComponents && diComponents.length > 0) {
       this.components.push(...diComponents);
@@ -66,18 +61,22 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   @postConstruct()
   private init(): void {
-    for (const component of this.components) {
-      this._registerToolProvider(component);
+    for (const definition of globalToolDefinitions) {
+      this.toolManager.registerTool(definition);
     }
-    this.toolManager.registerProvider(this.globalToolProvider);
+    for (const component of this.components) {
+      this._registerComponentTools(component);
+    }
   }
 
-  protected _registerToolProvider(component: ToolComponent): void {
-    const provider = new ComponentToolProvider(
-      component.componentId,
-      component,
-    );
-    this.toolManager.registerProvider(provider);
+  private _registerComponentTools(component: ToolComponent): void {
+    for (const tool of component.toolSet.values()) {
+      this.toolManager.registerTool({
+        tool,
+        handler: (params) => component.handleToolCall(tool.toolName, params),
+        componentKey: component.componentId,
+      });
+    }
   }
 
   getToolManager(): IToolManager {
@@ -92,18 +91,12 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     return this.components.map((c) => c.componentId);
   }
 
-  private onToolAvailabilityChange?: (() => void) | undefined;
-
-  setOnToolAvailabilityChange(callback: () => void): void {
-    this.onToolAvailabilityChange = callback;
-  }
-
   async renderComponentToolsSection(): Promise<TUIElement | null> {
     const tools: Tool[] = [];
 
     for (const component of this.components) {
       for (const tool of component.toolSet.values()) {
-        if (this.toolManager.isToolEnabled(tool.toolName)) {
+        if (this.toolManager.hasTool(tool.toolName)) {
           tools.push(tool);
         }
       }
@@ -144,8 +137,8 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
     const allTools = this.toolManager.getAllTools();
     const globalTools = allTools
-      .filter((reg) => reg.source === ToolSource.GLOBAL)
-      .map((reg) => reg.tool);
+      .filter((d) => !d.componentKey)
+      .map((d) => d.tool);
 
     if (globalTools.length > 0) {
       const globalToolsSection = renderToolSection(globalTools);
@@ -307,35 +300,31 @@ export class VirtualWorkspace implements IVirtualWorkspace {
     componentKey: string | undefined;
     toolName: string;
     tool: Tool;
-    source: ToolSource;
+    source: any;
     enabled: boolean;
   }> {
-    const registrations = this.toolManager.getAllTools();
-    return registrations.map((reg) => ({
-      componentKey:
-        reg.source === ToolSource.COMPONENT
-          ? reg.providerId.replace('component:', '')
-          : undefined,
-      toolName: reg.tool.toolName,
-      tool: reg.tool,
-      source: reg.source,
-      enabled: reg.enabled,
+    const definitions = this.toolManager.getAllTools();
+    return definitions.map((d) => ({
+      componentKey: d.componentKey,
+      toolName: d.tool.toolName,
+      tool: d.tool,
+      source: d.componentKey ? 'component' : 'global',
+      enabled: true,
     }));
   }
 
   getGlobalTools(): Map<string, Tool> {
     const globalToolsMap = new Map<string, Tool>();
-    const allTools = this.toolManager.getAllTools();
-    for (const registration of allTools) {
-      if (registration.source === ToolSource.GLOBAL) {
-        globalToolsMap.set(registration.tool.toolName, registration.tool);
+    for (const definition of this.toolManager.getAllTools()) {
+      if (!definition.componentKey) {
+        globalToolsMap.set(definition.tool.toolName, definition.tool);
       }
     }
     return globalToolsMap;
   }
 
   isToolAvailable(toolName: string): boolean {
-    return this.toolManager.isToolEnabled(toolName);
+    return this.toolManager.hasTool(toolName);
   }
 
   getAvailableTools(): Tool[] {
@@ -344,15 +333,15 @@ export class VirtualWorkspace implements IVirtualWorkspace {
 
   getToolSource(
     toolName: string,
-  ): { source: ToolSource; owner: string } | null {
-    const source = this.toolManager.getToolSource(toolName);
-    if (source) {
-      return {
-        source: source.source,
-        owner: source.providerId,
-      };
+  ): { source: string; owner: string } | null {
+    const info = this.toolManager.getToolSource(toolName);
+    if (!info) {
+      return null;
     }
-    return null;
+    return {
+      source: info.componentKey ? 'component' : 'global',
+      owner: info.componentKey ?? 'global',
+    };
   }
 
   async exportResult(

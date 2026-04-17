@@ -2,40 +2,35 @@ import { describe, it, expect } from 'vitest';
 import { VirtualWorkspace } from '../../statefulContext/index.js';
 import { DefaultToolCallConverter } from 'llm-api-client';
 import { ToolManager } from '../../tools/index.js';
-import { ComponentToolProvider } from '../../tools/providers/ComponentToolProvider.js';
-import { ComponentRegistry } from '../../../components/ComponentRegistry.js';
-import { GlobalToolProvider } from '../../tools/providers/GlobalToolProvider.js';
 import { z } from 'zod';
 
 function createTestWorkspace(
   config: Partial<{ id: string; name: string }> = {},
 ): VirtualWorkspace {
-  const toolManager = new ToolManager();
-  const componentRegistry = new ComponentRegistry();
-  const globalToolProvider = new GlobalToolProvider();
-
-  return new VirtualWorkspace(
-    toolManager,
-    componentRegistry,
-    globalToolProvider,
-    config,
+  const toolManager = new ToolManager(
+    {
+      executeHooks: async () => {},
+      registerHook: () => {},
+      unregisterHook: () => {},
+      getRegisteredHooks: () => [],
+    } as any,
+    'test-instance-id',
   );
+
+  return new VirtualWorkspace(toolManager, config);
 }
 
 describe('Agent Tool Coordination - Unit Tests', () => {
   describe('Workspace Tool Conversion', () => {
     it('should convert workspace tools to OpenAI format', () => {
-      const toolManager = new ToolManager();
-      const componentRegistry = new ComponentRegistry();
-      const globalToolProvider = new GlobalToolProvider();
-      const workspace = new VirtualWorkspace(
-        toolManager,
-        componentRegistry,
-        globalToolProvider,
+      const toolManager = new ToolManager(
         {
-          id: 'test-workspace',
-          name: 'Test Workspace',
-        },
+          executeHooks: async () => {},
+          registerHook: () => {},
+          unregisterHook: () => {},
+          getRegisteredHooks: () => [],
+        } as any,
+        'test-instance-id',
       );
 
       const mockTool = {
@@ -48,25 +43,22 @@ describe('Agent Tool Coordination - Unit Tests', () => {
       };
 
       const mockComponent = {
+        componentId: 'search-component',
         toolSet: new Map([['search_database', mockTool]]),
-        render: async () => ({
-          render: () => '',
-          renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-          addChild: () => {},
-        }),
-        renderToolSection: () => ({
-          render: () => '',
-          renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-          addChild: () => {},
-        }),
+        renderImply: async () => [],
         handleToolCall: async () => ({ success: true }),
       };
 
-      const componentProvider = new ComponentToolProvider(
-        'search-component',
-        mockComponent as any,
-      );
-      toolManager.registerProvider(componentProvider);
+      toolManager.registerTool({
+        tool: mockTool,
+        handler: (params) => mockComponent.handleToolCall(mockTool.toolName, params),
+        componentKey: 'search-component',
+      });
+
+      const workspace = new VirtualWorkspace(toolManager, {
+        id: 'test-workspace',
+        name: 'Test Workspace',
+      }, [mockComponent as any]);
 
       const allTools = workspace.getAllTools();
       const componentTools = allTools.filter((t) => t.source === 'component');
@@ -94,77 +86,57 @@ describe('Agent Tool Coordination - Unit Tests', () => {
     });
 
     it('should handle multiple tools from multiple components', () => {
-      const toolManager = new ToolManager();
-      const componentRegistry = new ComponentRegistry();
-      const globalToolProvider = new GlobalToolProvider();
-      const workspace = new VirtualWorkspace(
-        toolManager,
-        componentRegistry,
-        globalToolProvider,
+      const toolManager = new ToolManager(
         {
-          id: 'multi-workspace',
-          name: 'Multi Tool Workspace',
-        },
+          executeHooks: async () => {},
+          registerHook: () => {},
+          unregisterHook: () => {},
+          getRegisteredHooks: () => [],
+        } as any,
+        'test-instance-id',
       );
 
+      const mockTool1 = {
+        toolName: 'tool1',
+        desc: 'First tool',
+        paramsSchema: z.object({ param1: z.string() }),
+      };
+
+      const mockTool2 = {
+        toolName: 'tool2',
+        desc: 'Second tool',
+        paramsSchema: z.object({ param2: z.number() }),
+      };
+
       const component1 = {
-        toolSet: new Map([
-          [
-            'tool1',
-            {
-              toolName: 'tool1',
-              desc: 'First tool',
-              paramsSchema: z.object({ param1: z.string() }),
-            },
-          ],
-        ]),
-        render: async () => ({
-          render: () => '',
-          renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-          addChild: () => {},
-        }),
-        renderToolSection: () => ({
-          render: () => '',
-          renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-          addChild: () => {},
-        }),
+        componentId: 'component1',
+        toolSet: new Map([['tool1', mockTool1]]),
+        renderImply: async () => [],
         handleToolCall: async () => ({ success: true }),
       };
 
       const component2 = {
-        toolSet: new Map([
-          [
-            'tool2',
-            {
-              toolName: 'tool2',
-              desc: 'Second tool',
-              paramsSchema: z.object({ param2: z.number() }),
-            },
-          ],
-        ]),
-        render: async () => ({
-          render: () => '',
-          renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-          addChild: () => {},
-        }),
-        renderToolSection: () => ({
-          render: () => '',
-          renderWithWidth: () => ({ content: '', width: 0, height: 0 }),
-          addChild: () => {},
-        }),
+        componentId: 'component2',
+        toolSet: new Map([['tool2', mockTool2]]),
+        renderImply: async () => [],
         handleToolCall: async () => ({ success: true }),
       };
 
-      const componentProvider1 = new ComponentToolProvider(
-        'component1',
-        component1 as any,
-      );
-      const componentProvider2 = new ComponentToolProvider(
-        'component2',
-        component2 as any,
-      );
-      toolManager.registerProvider(componentProvider1);
-      toolManager.registerProvider(componentProvider2);
+      toolManager.registerTool({
+        tool: mockTool1,
+        handler: (params) => component1.handleToolCall(mockTool1.toolName, params),
+        componentKey: 'component1',
+      });
+      toolManager.registerTool({
+        tool: mockTool2,
+        handler: (params) => component2.handleToolCall(mockTool2.toolName, params),
+        componentKey: 'component2',
+      });
+
+      const workspace = new VirtualWorkspace(toolManager, {
+        id: 'multi-workspace',
+        name: 'Multi Tool Workspace',
+      });
 
       const allTools = workspace.getAllTools();
       const componentTools = allTools.filter((t) => t.source === 'component');

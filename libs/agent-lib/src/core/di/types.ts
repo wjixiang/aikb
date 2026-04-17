@@ -148,28 +148,6 @@ export const TYPES = {
    */
   IToolManager: Symbol('IToolManager'),
 
-  /**
-   * IToolProvider interface
-   * @scope Transient - New instance per registration
-   */
-  IToolProvider: Symbol('IToolProvider'),
-
-  /**
-   * IGlobalToolProvider concrete
-   * @scope Singleton - Shared across all agents
-   */
-  IGlobalToolProvider: Symbol('IGlobalToolProvider'),
-
-  /**
-   * IComponentToolProvider concrete
-   * @scope Transient - New instance per component
-   */
-  IComponentToolProvider: Symbol('IComponentToolProvider'),
-
-  /**
-   * @scope Transient - New instance per strategy
-   */
-
   // ==================== Tool Components ====================
 
   /**
@@ -273,12 +251,6 @@ export const TYPES = {
    * @scope Request - Shared within an agent creation request
    */
   IPersistenceService: Symbol('IPersistenceService'),
-
-  /**
-   * PrismaClient - Prisma ORM client
-   * @scope Singleton - Shared across all agents
-   */
-  PrismaClient: Symbol('PrismaClient'),
 
   /**
    * PersistenceConfig - Persistence service configuration

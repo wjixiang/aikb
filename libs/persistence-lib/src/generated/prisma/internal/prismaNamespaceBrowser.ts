@@ -51,7 +51,11 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  PersistedToolResult: 'PersistedToolResult'
+  PersistedToolResult: 'PersistedToolResult',
+  AgentMemory: 'AgentMemory',
+  ComponentState: 'ComponentState',
+  ToolResultBlob: 'ToolResultBlob',
+  AgentInstance: 'AgentInstance'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -83,6 +87,69 @@ export const PersistedToolResultScalarFieldEnum = {
 export type PersistedToolResultScalarFieldEnum = (typeof PersistedToolResultScalarFieldEnum)[keyof typeof PersistedToolResultScalarFieldEnum]
 
 
+export const AgentMemoryScalarFieldEnum = {
+  id: 'id',
+  instanceId: 'instanceId',
+  messages: 'messages',
+  workspaceContexts: 'workspaceContexts',
+  config: 'config',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AgentMemoryScalarFieldEnum = (typeof AgentMemoryScalarFieldEnum)[keyof typeof AgentMemoryScalarFieldEnum]
+
+
+export const ComponentStateScalarFieldEnum = {
+  id: 'id',
+  instanceId: 'instanceId',
+  componentId: 'componentId',
+  stateData: 'stateData',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ComponentStateScalarFieldEnum = (typeof ComponentStateScalarFieldEnum)[keyof typeof ComponentStateScalarFieldEnum]
+
+
+export const ToolResultBlobScalarFieldEnum = {
+  id: 'id',
+  instanceId: 'instanceId',
+  toolUseId: 'toolUseId',
+  toolName: 'toolName',
+  content: 'content',
+  preview: 'preview',
+  originalSize: 'originalSize',
+  createdAt: 'createdAt'
+} as const
+
+export type ToolResultBlobScalarFieldEnum = (typeof ToolResultBlobScalarFieldEnum)[keyof typeof ToolResultBlobScalarFieldEnum]
+
+
+export const AgentInstanceScalarFieldEnum = {
+  id: 'id',
+  instanceId: 'instanceId',
+  status: 'status',
+  abortReason: 'abortReason',
+  abortSource: 'abortSource',
+  config: 'config',
+  name: 'name',
+  agentType: 'agentType',
+  totalTokensIn: 'totalTokensIn',
+  totalTokensOut: 'totalTokensOut',
+  totalCost: 'totalCost',
+  toolUsage: 'toolUsage',
+  consecutiveMistakeCount: 'consecutiveMistakeCount',
+  collectedErrors: 'collectedErrors',
+  exportResult: 'exportResult',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  completedAt: 'completedAt'
+} as const
+
+export type AgentInstanceScalarFieldEnum = (typeof AgentInstanceScalarFieldEnum)[keyof typeof AgentInstanceScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -91,10 +158,42 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

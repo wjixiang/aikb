@@ -1157,6 +1157,11 @@ export type ComponentStateFindManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Skip the first `n` ComponentStates.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of ComponentStates.
+   */
   distinct?: Prisma.ComponentStateScalarFieldEnum | Prisma.ComponentStateScalarFieldEnum[]
 }
 

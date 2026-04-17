@@ -368,22 +368,13 @@ export class AgentRegistry implements IAgentRegistry {
   }
 
   async syncFromDatabase(): Promise<void> {
-    if (!this.persistenceService || !this.container) {
+    if (!this.persistenceService) {
       return;
     }
 
     try {
-      // Access Prisma client directly to query AgentInstance table
-      const { TYPES } = await import('../di/types.js');
-      const prisma = this.container.get<
-        import('../../generated/prisma/client.js').PrismaClient
-      >(TYPES.PrismaClient);
+      const instances = await this.persistenceService.listAgents({ take: 1000 });
 
-      const instances = await prisma.agentInstance.findMany({
-        take: 1000,
-      });
-
-      // Clear and repopulate registry
       this.agents.clear();
 
       for (const instance of instances) {
@@ -391,13 +382,13 @@ export class AgentRegistry implements IAgentRegistry {
         this.agents.set(instance.instanceId, {
           instanceId: instance.instanceId,
           alias,
-          status: instance.status as AgentStatus,
+          status: instance.status,
           config: instance.config as Record<string, unknown>,
-          name: instance.name ?? undefined,
-          agentType: instance.agentType ?? undefined,
+          name: instance.name,
+          agentType: instance.agentType,
           createdAt: instance.createdAt,
           updatedAt: instance.updatedAt,
-          completedAt: instance.completedAt ?? undefined,
+          completedAt: instance.completedAt,
         });
       }
     } catch (error) {

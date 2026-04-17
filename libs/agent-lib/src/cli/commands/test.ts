@@ -16,7 +16,7 @@ import {
   createDiagnosisAgentSoul as _createDiagnosisAgentSoul,
 } from 'agent-soul-hub';
 import type { AgentBlueprint } from '../../core/agent/AgentFactory.js';
-import { PostgresPersistenceService } from '../../core/persistence/PostgresPersistenceService.js';
+import { PostgresPersistenceService } from 'persistence-lib';
 
 const createEpidemiologyAgentSoul = (): AgentBlueprint =>
   _createEpidemiologyAgentSoul() as unknown as AgentBlueprint;

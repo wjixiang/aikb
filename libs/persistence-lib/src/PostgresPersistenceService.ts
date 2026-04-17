@@ -3,14 +3,16 @@
  */
 
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaClient } from './generated/prisma/client.js';
+import type { AgentInstanceModel } from './generated/prisma/models/AgentInstance.js';
 import type {
   IPersistenceService,
   PersistenceConfig,
   InstanceMetadata,
+  Message,
+  WorkspaceContextEntry,
 } from './types.js';
-import type { Message, WorkspaceContextEntry } from '../memory/types.js';
-import { AgentStatus } from '../common/types.js';
+import { AgentStatus } from './types.js';
 import { getLogger } from '@shared/logger';
 
 export class PostgresPersistenceService implements IPersistenceService {
@@ -34,8 +36,6 @@ export class PostgresPersistenceService implements IPersistenceService {
     this.prisma = new PrismaClient({ adapter });
     this.logger.info('[PersistenceService] Initialized');
   }
-
-  // ==================== AgentInstance 生命周期 ====================
 
   async saveInstanceMetadata(
     instanceId: string,
@@ -125,8 +125,7 @@ export class PostgresPersistenceService implements IPersistenceService {
       Omit<InstanceMetadata, 'instanceId' | 'createdAt' | 'updatedAt'>
     >,
   ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (data.status !== undefined) updateData.status = data.status;
     if (data.abortReason !== undefined) updateData.abortReason = data.abortReason;
@@ -142,7 +141,6 @@ export class PostgresPersistenceService implements IPersistenceService {
     if (data.collectedErrors !== undefined) updateData.collectedErrors = data.collectedErrors;
     if (data.exportResult !== undefined) updateData.exportResult = data.exportResult;
 
-    // 自动设置 completedAt for aborted instances
     if (data.status === AgentStatus.Aborted) {
       updateData.completedAt = new Date();
     }
@@ -158,8 +156,6 @@ export class PostgresPersistenceService implements IPersistenceService {
     );
   }
 
-  // ==================== Memory 持久化 (Phase 2) ====================
-
   async saveMemory(
     instanceId: string,
     memory: {
@@ -168,7 +164,6 @@ export class PostgresPersistenceService implements IPersistenceService {
       config: unknown;
     },
   ): Promise<void> {
-    // Verify instance exists
     const instance = await this.prisma.agentInstance.findUnique({
       where: { instanceId },
     });
@@ -216,14 +211,11 @@ export class PostgresPersistenceService implements IPersistenceService {
     };
   }
 
-  // ==================== ComponentState 持久化 (Phase 3) ====================
-
   async saveComponentState(
     instanceId: string,
     componentId: string,
     stateData: unknown,
   ): Promise<void> {
-    // Verify instance exists
     const instance = await this.prisma.agentInstance.findUnique({
       where: { instanceId },
     });
@@ -323,8 +315,6 @@ export class PostgresPersistenceService implements IPersistenceService {
     );
   }
 
-  // ==================== Result Export 持久化 (Phase 4) ====================
-
   async saveExportResult(
     instanceId: string,
     exportResult: Record<string, unknown>,
@@ -339,8 +329,6 @@ export class PostgresPersistenceService implements IPersistenceService {
       '[PersistenceService] Export result saved',
     );
   }
-
-  // ==================== Tool Result Blob 持久化 (Phase 5) ====================
 
   private readonly TOOL_RESULT_PREVIEW_SIZE = 2000;
 
@@ -402,7 +390,6 @@ export class PostgresPersistenceService implements IPersistenceService {
         instanceId_toolUseId: { instanceId, toolUseId },
       },
     }).catch(() => {
-      // Ignore if not found
     });
 
     this.logger.debug(
@@ -432,5 +419,45 @@ export class PostgresPersistenceService implements IPersistenceService {
     }
 
     return result;
+  }
+
+  async listAgents(filter?: {
+    status?: string;
+    agentType?: string;
+    take?: number;
+  }): Promise<InstanceMetadata[]> {
+    const where: Record<string, unknown> = {};
+    if (filter?.status) {
+      where.status = filter.status;
+    }
+    if (filter?.agentType) {
+      where.agentType = filter.agentType;
+    }
+
+    const instances = await this.prisma.agentInstance.findMany({
+      where,
+      take: filter?.take ?? 1000,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return instances.map((instance: AgentInstanceModel) => ({
+      instanceId: instance.instanceId,
+      status: instance.status as InstanceMetadata['status'],
+      abortReason: instance.abortReason ?? undefined,
+      abortSource: instance.abortSource ?? undefined,
+      config: instance.config as unknown,
+      name: instance.name ?? undefined,
+      agentType: instance.agentType ?? undefined,
+      totalTokensIn: instance.totalTokensIn,
+      totalTokensOut: instance.totalTokensOut,
+      totalCost: instance.totalCost,
+      toolUsage: instance.toolUsage as InstanceMetadata['toolUsage'],
+      consecutiveMistakeCount: instance.consecutiveMistakeCount,
+      collectedErrors: instance.collectedErrors as string[],
+      exportResult: instance.exportResult as Record<string, unknown>,
+      createdAt: instance.createdAt,
+      updatedAt: instance.updatedAt,
+      completedAt: instance.completedAt ?? undefined,
+    }));
   }
 }
