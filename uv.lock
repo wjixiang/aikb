@@ -1224,7 +1224,7 @@ name = "jupyter-backend"
 version = "0.1.0"
 source = { editable = "python-apps/jupyter-server" }
 dependencies = [
-    { name = "fastapi" },
+    { name = "fastapi", extra = ["standard"] },
     { name = "ipykernel" },
     { name = "jupyter-client" },
     { name = "pydantic" },
@@ -1241,7 +1241,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", specifier = ">=0.115" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.115" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
     { name = "ipykernel", specifier = ">=6.0" },
     { name = "jupyter-client", specifier = ">=8.0" },

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import sys
 from contextlib import asynccontextmanager
 
@@ -12,6 +13,15 @@ from jupyter_backend.api.health import router as health_router
 from jupyter_backend.api.kernels import router as kernels_router
 from jupyter_backend.config import settings
 from jupyter_backend.kernel.manager import kernel_pool
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Jupyter Backend Server")
+    parser.add_argument("--host", default=None, help=f"Bind host (default: {settings.host})")
+    parser.add_argument(
+        "--port", type=int, default=None, help=f"Bind port (default: {settings.port})"
+    )
+    return parser.parse_args()
 
 
 @asynccontextmanager
@@ -44,12 +54,26 @@ def create_app() -> FastAPI:
 
 
 def main() -> None:
+    args = _parse_args()
     sys.exit(
         uvicorn.run(
             "jupyter_backend.app:create_app",
             factory=True,
-            host=settings.host,
-            port=settings.port,
+            host=args.host or settings.host,
+            port=args.port or settings.port,
+        )
+    )
+
+
+def dev() -> None:
+    args = _parse_args()
+    sys.exit(
+        uvicorn.run(
+            "jupyter_backend.app:create_app",
+            factory=True,
+            host=args.host or settings.host,
+            port=args.port or settings.port,
+            reload=True,
         )
     )
 

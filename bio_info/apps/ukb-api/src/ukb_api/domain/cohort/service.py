@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dx_client import CohortFilters, DXCohortInfo, DXRecordInfo, IDXClient
+from dx_client.dx_models import CohortDownloadResult
 
 
 class CohortService:
@@ -30,7 +31,7 @@ class CohortService:
 
     def get_cohort(self, cohort_id: str, refresh: bool = False) -> DXRecordInfo:
         """获取 cohort record 详情。"""
-        return self._dx.get_cohort(cohort_id, refresh=refresh)
+        return self._dx.get_cohort(cohort_id)
 
     def find_cohort(
         self,
@@ -87,14 +88,8 @@ class CohortService:
         records = df.iloc[offset : offset + limit].to_dict(orient="records")
         return records, total
 
-    def download(
-        self, cohort_id: str, refresh: bool = False
-    ) -> tuple[str, str, list[dict]]:
-        """下载 cohort 全部关联字段的数据。
+    def download(self, cohort_id: str, refresh: bool = False) -> CohortDownloadResult:
+        """下载 cohort 全部关联字段的数据。下载结果会直接进入Iceberg Data Lake"""
 
-        Returns:
-            (cohort_name, cohort_id, data) 元组，data 为完整数据行列表。
-        """
-        cohort = self._dx.get_cohort(cohort_id, refresh=refresh)
-        df = self._dx.download_cohort(cohort_id, refresh=refresh)
-        return cohort.name, cohort_id, df.to_dict(orient="records")
+        result = self._dx.download_cohort(cohort_id)
+        return result

@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from dx_client.dx_models import CohortDownloadResult
 import pandas as pd
 
 
@@ -56,8 +57,6 @@ class IDXClient(ABC):
     def get_project(
         self,
         project_id: str,
-        *,
-        refresh: bool = False,
     ) -> DXProject:
         """获取项目详情。"""
 
@@ -126,12 +125,7 @@ class IDXClient(ABC):
         """列出当前项目中的记录。"""
 
     @abstractmethod
-    def get_record(
-        self,
-        record_id: str,
-        *,
-        refresh: bool = False,
-    ) -> DXRecordInfo:
+    def get_record(self, record_id: str) -> DXRecordInfo:
         """获取记录详情（含 details 内容）。"""
 
     # ── 通用搜索 ──────────────────────────────────────────────────────────
@@ -161,12 +155,7 @@ class IDXClient(ABC):
         """列出当前项目中的 database 数据对象。"""
 
     @abstractmethod
-    def get_database(
-        self,
-        database_id: str,
-        *,
-        refresh: bool = False,
-    ) -> DXDatabaseInfo:
+    def get_database(self, database_id: str) -> DXDatabaseInfo:
         """获取 database 数据对象详情。"""
 
     @abstractmethod
@@ -208,11 +197,7 @@ class IDXClient(ABC):
 
     @abstractmethod
     def get_database_schema(
-        self,
-        database_id: str,
-        table_name: str | None = None,
-        *,
-        refresh: bool = False,
+        self, database_id: str, table_name: str | None = None
     ) -> list[DXDatabaseTable]:
         """查看数据库中可用的数据表。
 
@@ -245,12 +230,7 @@ class IDXClient(ABC):
         """
 
     @abstractmethod
-    def get_data_dictionary(
-        self,
-        dataset_ref: str | None = None,
-        *,
-        refresh: bool = False,
-    ) -> pd.DataFrame:
+    def get_data_dictionary(self, dataset_ref: str | None = None) -> pd.DataFrame:
         """提取数据集的完整数据字典。
 
         Args:
@@ -383,8 +363,6 @@ class IDXClient(ABC):
     def get_cohort(
         self,
         cohort_id: str,
-        *,
-        refresh: bool = False,
     ) -> DXRecordInfo:
         """获取 cohort record 详情。
 
@@ -444,12 +422,7 @@ class IDXClient(ABC):
         """
 
     @abstractmethod
-    def get_cohort_viz_info(
-        self,
-        cohort_id: str,
-        *,
-        refresh: bool = False,
-    ) -> dict[str, Any]:
+    def get_cohort_viz_info(self, cohort_id: str) -> dict[str, Any]:
         """获取 cohort 的 vizserver viz_info。
 
         包含 url、dataset、recordTypes、baseSql、filters 等字段，
@@ -512,6 +485,12 @@ class IDXClient(ABC):
 
         Raises:
             DXCohortError: vizserver 请求失败或 cohort 无关联字段。
+        """
+
+    @abstractmethod
+    def download_cohort(self, cohort_id: str) -> CohortDownloadResult:
+        """
+        下载cohort数据到Iceberg数据湖
         """
 
     # ── Job 操作 ──────────────────────────────────────────────────────

@@ -465,3 +465,8 @@ class VizQueryResult(BaseModel):
         description="查询结果行列表，每行 dict 的 key = 字段别名，value = 字段值",
     )
     sql: str | None = Field(None, description="生成的 SQL（return_query=True 时返回）")
+
+
+class CohortDownloadResult(BaseModel):
+    namespace: str
+    table_name: str

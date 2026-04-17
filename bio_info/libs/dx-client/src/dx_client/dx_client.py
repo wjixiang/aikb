@@ -23,6 +23,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, List
 
+from dx_client.lib.iceberg import upload_pddf_iceberg
 import dxpy
 import pandas as pd
 from dxpy import DXRecord
@@ -40,6 +41,7 @@ from .dx_exceptions import (
     DXJobError,
 )
 from .dx_models import (
+    CohortDownloadResult,
     CohortFilters,
     DXClientConfig,
     DXCohortInfo,
@@ -317,7 +319,7 @@ class DXClient(IDXClient):
         target_project = project_id or self._require_project()
         file_name = name or local_path.name
         try:
-            dxfile = dxpy.upload_dxfile(
+            dxfile = dxpy.upload_local_file(
                 local_path,
                 project=target_project,
                 folder=folder,
@@ -329,7 +331,12 @@ class DXClient(IDXClient):
                 target_project,
                 folder,
             )
-            return self.describe_file(dxfile.get_id(), refresh=True)
+            file_id = dxfile.get_id()
+            if file_id is None:
+                raise DXClientError(
+                    f"Failed to get ID for uploaded file '{local_path}'"
+                )
+            return self.describe_file(file_id, refresh=True)
         except DxPyDXError as e:
             self._handle_dx_error(e, f"Failed to upload file '{local_path}'")
             raise
@@ -1043,8 +1050,6 @@ class DXClient(IDXClient):
     def get_cohort(
         self,
         cohort_id: str,
-        *,
-        refresh: bool = False,
     ) -> DXRecordInfo:
         """获取 cohort record 详情。
 
@@ -1129,7 +1134,7 @@ class DXClient(IDXClient):
             self._handle_dx_error(e, f"Failed to close cohort '{cohort_id}'")
             raise
         # Return updated cohort info
-        return self.get_cohort(cohort_id, refresh=True)
+        return self.get_cohort(cohort_id)
 
     def extract_cohort_fields(
         self,
@@ -1196,9 +1201,7 @@ class DXClient(IDXClient):
     def download_cohort(
         self,
         cohort_id: str,
-        *,
-        refresh: bool = False,
-    ) -> pd.DataFrame:
+    ) -> CohortDownloadResult:
         """下载 cohort 的所有关联字段数据。
 
         从 cohort record 的 ``details.fields`` 中读取字段列表，通过 vizserver API 提取数据。
@@ -1209,20 +1212,8 @@ class DXClient(IDXClient):
         self._ensure_connected()
         project_id = self._require_project()
 
-        # 从 cohort record 读取 details.fields
-        try:
-            desc: dict[str, Any] = dxpy.describe(  # type: ignore[assignment]
-                cohort_id,
-                fields={"properties", "details"},
-                default_fields=True,
-            )
-        except Exception as e:
-            raise DXCohortError(
-                f"Failed to describe cohort '{cohort_id}': {e}",
-                dx_error=e,
-            ) from e
-
-        details: dict[str, Any] = desc.get("details") or {}
+        cohort_info = self.get_cohort(cohort_id)
+        details: dict[str, Any] = cohort_info.details or {}
         entity_fields: list[str] = details.get("fields", [])
         entity_fields = convert_fields(entity_fields)
 
@@ -1269,7 +1260,13 @@ class DXClient(IDXClient):
             len(entity_fields),
             cohort_id,
         )
-        return df
+        try:
+            table_name = cohort_info.name.replace(" ", "_")
+            upload_pddf_iceberg(namespace="ukb", table_name=table_name, df=df)
+        except Exception as e:
+            raise e
+
+        return CohortDownloadResult(namespace="ukb", table_name=table_name)
 
     def get_cohort_viz_info(
         self,

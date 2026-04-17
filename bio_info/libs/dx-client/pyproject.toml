@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "duckdb==1.4.4",
     "pyarrow>=23.0.1",
+    "pyiceberg>=0.11.1",
 ]
 
 [build-system]

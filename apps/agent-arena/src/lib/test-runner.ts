@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { createAgentRuntime } from 'agent-lib/core';
 import type { AgentBlueprint } from 'agent-lib/core';
-import { PostgresPersistenceService } from 'agent-lib';
+import { PostgresPersistenceService } from 'persistence-lib';
 import { ClientPool } from 'llm-api-client';
 import type { ProviderSettings } from 'llm-api-client';
 import { createAgentSoulByToken, getAllAgentSouls } from 'agent-soul-hub';

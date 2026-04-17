@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Lightweight Jupyter kernel server with REST API for agent integration"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115",
+    "fastapi[standard]>=0.115",
     "uvicorn[standard]>=0.30",
     "jupyter-client>=8.0",
     "ipykernel>=6.0",
@@ -28,6 +28,7 @@ packages = ["src/jupyter_backend"]
 
 [project.scripts]
 jupyter-backend = "jupyter_backend.app:main"
+jupyter-backend-dev = "jupyter_backend.app:dev"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
