@@ -10,5 +10,6 @@
  */
 export type * from './models/AgentMemory'
 export type * from './models/ComponentState'
+export type * from './models/ToolResultBlob'
 export type * from './models/AgentInstance'
 export type * from './commonInputTypes'

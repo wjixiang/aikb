@@ -386,6 +386,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   AgentMemory: 'AgentMemory',
   ComponentState: 'ComponentState',
+  ToolResultBlob: 'ToolResultBlob',
   AgentInstance: 'AgentInstance'
 } as const
 
@@ -402,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agentMemory" | "componentState" | "agentInstance"
+    modelProps: "agentMemory" | "componentState" | "toolResultBlob" | "agentInstance"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -554,6 +555,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ToolResultBlob: {
+      payload: Prisma.$ToolResultBlobPayload<ExtArgs>
+      fields: Prisma.ToolResultBlobFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ToolResultBlobFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ToolResultBlobFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>
+        }
+        findFirst: {
+          args: Prisma.ToolResultBlobFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ToolResultBlobFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>
+        }
+        findMany: {
+          args: Prisma.ToolResultBlobFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>[]
+        }
+        create: {
+          args: Prisma.ToolResultBlobCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>
+        }
+        createMany: {
+          args: Prisma.ToolResultBlobCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ToolResultBlobCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>[]
+        }
+        delete: {
+          args: Prisma.ToolResultBlobDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>
+        }
+        update: {
+          args: Prisma.ToolResultBlobUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>
+        }
+        deleteMany: {
+          args: Prisma.ToolResultBlobDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ToolResultBlobUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ToolResultBlobUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>[]
+        }
+        upsert: {
+          args: Prisma.ToolResultBlobUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToolResultBlobPayload>
+        }
+        aggregate: {
+          args: Prisma.ToolResultBlobAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateToolResultBlob>
+        }
+        groupBy: {
+          args: Prisma.ToolResultBlobGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ToolResultBlobGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ToolResultBlobCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ToolResultBlobCountAggregateOutputType> | number
+        }
+      }
+    }
     AgentInstance: {
       payload: Prisma.$AgentInstancePayload<ExtArgs>
       fields: Prisma.AgentInstanceFieldRefs
@@ -690,6 +765,20 @@ export const ComponentStateScalarFieldEnum = {
 } as const
 
 export type ComponentStateScalarFieldEnum = (typeof ComponentStateScalarFieldEnum)[keyof typeof ComponentStateScalarFieldEnum]
+
+
+export const ToolResultBlobScalarFieldEnum = {
+  id: 'id',
+  instanceId: 'instanceId',
+  toolUseId: 'toolUseId',
+  toolName: 'toolName',
+  content: 'content',
+  preview: 'preview',
+  originalSize: 'originalSize',
+  createdAt: 'createdAt'
+} as const
+
+export type ToolResultBlobScalarFieldEnum = (typeof ToolResultBlobScalarFieldEnum)[keyof typeof ToolResultBlobScalarFieldEnum]
 
 
 export const AgentInstanceScalarFieldEnum = {
@@ -936,6 +1025,7 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   agentMemory?: Prisma.AgentMemoryOmit
   componentState?: Prisma.ComponentStateOmit
+  toolResultBlob?: Prisma.ToolResultBlobOmit
   agentInstance?: Prisma.AgentInstanceOmit
 }
 

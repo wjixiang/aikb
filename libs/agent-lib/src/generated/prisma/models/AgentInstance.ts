@@ -318,6 +318,7 @@ export type AgentInstanceWhereInput = {
   completedAt?: Prisma.DateTimeNullableFilter<"AgentInstance"> | Date | string | null
   memory?: Prisma.XOR<Prisma.AgentMemoryNullableScalarRelationFilter, Prisma.AgentMemoryWhereInput> | null
   componentStates?: Prisma.ComponentStateListRelationFilter
+  toolResultBlobs?: Prisma.ToolResultBlobListRelationFilter
 }
 
 export type AgentInstanceOrderByWithRelationInput = {
@@ -341,6 +342,7 @@ export type AgentInstanceOrderByWithRelationInput = {
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   memory?: Prisma.AgentMemoryOrderByWithRelationInput
   componentStates?: Prisma.ComponentStateOrderByRelationAggregateInput
+  toolResultBlobs?: Prisma.ToolResultBlobOrderByRelationAggregateInput
 }
 
 export type AgentInstanceWhereUniqueInput = Prisma.AtLeast<{
@@ -367,6 +369,7 @@ export type AgentInstanceWhereUniqueInput = Prisma.AtLeast<{
   completedAt?: Prisma.DateTimeNullableFilter<"AgentInstance"> | Date | string | null
   memory?: Prisma.XOR<Prisma.AgentMemoryNullableScalarRelationFilter, Prisma.AgentMemoryWhereInput> | null
   componentStates?: Prisma.ComponentStateListRelationFilter
+  toolResultBlobs?: Prisma.ToolResultBlobListRelationFilter
 }, "id" | "instanceId">
 
 export type AgentInstanceOrderByWithAggregationInput = {
@@ -440,6 +443,7 @@ export type AgentInstanceCreateInput = {
   completedAt?: Date | string | null
   memory?: Prisma.AgentMemoryCreateNestedOneWithoutInstanceInput
   componentStates?: Prisma.ComponentStateCreateNestedManyWithoutInstanceInput
+  toolResultBlobs?: Prisma.ToolResultBlobCreateNestedManyWithoutInstanceInput
 }
 
 export type AgentInstanceUncheckedCreateInput = {
@@ -463,6 +467,7 @@ export type AgentInstanceUncheckedCreateInput = {
   completedAt?: Date | string | null
   memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutInstanceInput
   componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutInstanceInput
+  toolResultBlobs?: Prisma.ToolResultBlobUncheckedCreateNestedManyWithoutInstanceInput
 }
 
 export type AgentInstanceUpdateInput = {
@@ -486,6 +491,7 @@ export type AgentInstanceUpdateInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   memory?: Prisma.AgentMemoryUpdateOneWithoutInstanceNestedInput
   componentStates?: Prisma.ComponentStateUpdateManyWithoutInstanceNestedInput
+  toolResultBlobs?: Prisma.ToolResultBlobUpdateManyWithoutInstanceNestedInput
 }
 
 export type AgentInstanceUncheckedUpdateInput = {
@@ -509,6 +515,7 @@ export type AgentInstanceUncheckedUpdateInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutInstanceNestedInput
   componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutInstanceNestedInput
+  toolResultBlobs?: Prisma.ToolResultBlobUncheckedUpdateManyWithoutInstanceNestedInput
 }
 
 export type AgentInstanceCreateManyInput = {
@@ -676,16 +683,18 @@ export type AgentInstanceUpdateOneRequiredWithoutComponentStatesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AgentInstanceUpdateToOneWithWhereWithoutComponentStatesInput, Prisma.AgentInstanceUpdateWithoutComponentStatesInput>, Prisma.AgentInstanceUncheckedUpdateWithoutComponentStatesInput>
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
+export type AgentInstanceCreateNestedOneWithoutToolResultBlobsInput = {
+  create?: Prisma.XOR<Prisma.AgentInstanceCreateWithoutToolResultBlobsInput, Prisma.AgentInstanceUncheckedCreateWithoutToolResultBlobsInput>
+  connectOrCreate?: Prisma.AgentInstanceCreateOrConnectWithoutToolResultBlobsInput
+  connect?: Prisma.AgentInstanceWhereUniqueInput
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
+export type AgentInstanceUpdateOneRequiredWithoutToolResultBlobsNestedInput = {
+  create?: Prisma.XOR<Prisma.AgentInstanceCreateWithoutToolResultBlobsInput, Prisma.AgentInstanceUncheckedCreateWithoutToolResultBlobsInput>
+  connectOrCreate?: Prisma.AgentInstanceCreateOrConnectWithoutToolResultBlobsInput
+  upsert?: Prisma.AgentInstanceUpsertWithoutToolResultBlobsInput
+  connect?: Prisma.AgentInstanceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgentInstanceUpdateToOneWithWhereWithoutToolResultBlobsInput, Prisma.AgentInstanceUpdateWithoutToolResultBlobsInput>, Prisma.AgentInstanceUncheckedUpdateWithoutToolResultBlobsInput>
 }
 
 export type FloatFieldUpdateOperationsInput = {
@@ -720,6 +729,7 @@ export type AgentInstanceCreateWithoutMemoryInput = {
   updatedAt?: Date | string
   completedAt?: Date | string | null
   componentStates?: Prisma.ComponentStateCreateNestedManyWithoutInstanceInput
+  toolResultBlobs?: Prisma.ToolResultBlobCreateNestedManyWithoutInstanceInput
 }
 
 export type AgentInstanceUncheckedCreateWithoutMemoryInput = {
@@ -742,6 +752,7 @@ export type AgentInstanceUncheckedCreateWithoutMemoryInput = {
   updatedAt?: Date | string
   completedAt?: Date | string | null
   componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutInstanceInput
+  toolResultBlobs?: Prisma.ToolResultBlobUncheckedCreateNestedManyWithoutInstanceInput
 }
 
 export type AgentInstanceCreateOrConnectWithoutMemoryInput = {
@@ -780,6 +791,7 @@ export type AgentInstanceUpdateWithoutMemoryInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   componentStates?: Prisma.ComponentStateUpdateManyWithoutInstanceNestedInput
+  toolResultBlobs?: Prisma.ToolResultBlobUpdateManyWithoutInstanceNestedInput
 }
 
 export type AgentInstanceUncheckedUpdateWithoutMemoryInput = {
@@ -802,6 +814,7 @@ export type AgentInstanceUncheckedUpdateWithoutMemoryInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutInstanceNestedInput
+  toolResultBlobs?: Prisma.ToolResultBlobUncheckedUpdateManyWithoutInstanceNestedInput
 }
 
 export type AgentInstanceCreateWithoutComponentStatesInput = {
@@ -824,6 +837,7 @@ export type AgentInstanceCreateWithoutComponentStatesInput = {
   updatedAt?: Date | string
   completedAt?: Date | string | null
   memory?: Prisma.AgentMemoryCreateNestedOneWithoutInstanceInput
+  toolResultBlobs?: Prisma.ToolResultBlobCreateNestedManyWithoutInstanceInput
 }
 
 export type AgentInstanceUncheckedCreateWithoutComponentStatesInput = {
@@ -846,6 +860,7 @@ export type AgentInstanceUncheckedCreateWithoutComponentStatesInput = {
   updatedAt?: Date | string
   completedAt?: Date | string | null
   memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutInstanceInput
+  toolResultBlobs?: Prisma.ToolResultBlobUncheckedCreateNestedManyWithoutInstanceInput
 }
 
 export type AgentInstanceCreateOrConnectWithoutComponentStatesInput = {
@@ -884,6 +899,7 @@ export type AgentInstanceUpdateWithoutComponentStatesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   memory?: Prisma.AgentMemoryUpdateOneWithoutInstanceNestedInput
+  toolResultBlobs?: Prisma.ToolResultBlobUpdateManyWithoutInstanceNestedInput
 }
 
 export type AgentInstanceUncheckedUpdateWithoutComponentStatesInput = {
@@ -906,6 +922,115 @@ export type AgentInstanceUncheckedUpdateWithoutComponentStatesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutInstanceNestedInput
+  toolResultBlobs?: Prisma.ToolResultBlobUncheckedUpdateManyWithoutInstanceNestedInput
+}
+
+export type AgentInstanceCreateWithoutToolResultBlobsInput = {
+  id?: string
+  instanceId: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  name?: string | null
+  agentType?: string | null
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  memory?: Prisma.AgentMemoryCreateNestedOneWithoutInstanceInput
+  componentStates?: Prisma.ComponentStateCreateNestedManyWithoutInstanceInput
+}
+
+export type AgentInstanceUncheckedCreateWithoutToolResultBlobsInput = {
+  id?: string
+  instanceId: string
+  status?: string
+  abortReason?: string | null
+  abortSource?: string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  name?: string | null
+  agentType?: string | null
+  totalTokensIn?: number
+  totalTokensOut?: number
+  totalCost?: number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completedAt?: Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedCreateNestedOneWithoutInstanceInput
+  componentStates?: Prisma.ComponentStateUncheckedCreateNestedManyWithoutInstanceInput
+}
+
+export type AgentInstanceCreateOrConnectWithoutToolResultBlobsInput = {
+  where: Prisma.AgentInstanceWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgentInstanceCreateWithoutToolResultBlobsInput, Prisma.AgentInstanceUncheckedCreateWithoutToolResultBlobsInput>
+}
+
+export type AgentInstanceUpsertWithoutToolResultBlobsInput = {
+  update: Prisma.XOR<Prisma.AgentInstanceUpdateWithoutToolResultBlobsInput, Prisma.AgentInstanceUncheckedUpdateWithoutToolResultBlobsInput>
+  create: Prisma.XOR<Prisma.AgentInstanceCreateWithoutToolResultBlobsInput, Prisma.AgentInstanceUncheckedCreateWithoutToolResultBlobsInput>
+  where?: Prisma.AgentInstanceWhereInput
+}
+
+export type AgentInstanceUpdateToOneWithWhereWithoutToolResultBlobsInput = {
+  where?: Prisma.AgentInstanceWhereInput
+  data: Prisma.XOR<Prisma.AgentInstanceUpdateWithoutToolResultBlobsInput, Prisma.AgentInstanceUncheckedUpdateWithoutToolResultBlobsInput>
+}
+
+export type AgentInstanceUpdateWithoutToolResultBlobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memory?: Prisma.AgentMemoryUpdateOneWithoutInstanceNestedInput
+  componentStates?: Prisma.ComponentStateUpdateManyWithoutInstanceNestedInput
+}
+
+export type AgentInstanceUncheckedUpdateWithoutToolResultBlobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  instanceId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  abortReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  abortSource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  config?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  totalTokensIn?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTokensOut?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.FloatFieldUpdateOperationsInput | number
+  toolUsage?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  consecutiveMistakeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  collectedErrors?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  exportResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  memory?: Prisma.AgentMemoryUncheckedUpdateOneWithoutInstanceNestedInput
+  componentStates?: Prisma.ComponentStateUncheckedUpdateManyWithoutInstanceNestedInput
 }
 
 
@@ -915,10 +1040,12 @@ export type AgentInstanceUncheckedUpdateWithoutComponentStatesInput = {
 
 export type AgentInstanceCountOutputType = {
   componentStates: number
+  toolResultBlobs: number
 }
 
 export type AgentInstanceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   componentStates?: boolean | AgentInstanceCountOutputTypeCountComponentStatesArgs
+  toolResultBlobs?: boolean | AgentInstanceCountOutputTypeCountToolResultBlobsArgs
 }
 
 /**
@@ -936,6 +1063,13 @@ export type AgentInstanceCountOutputTypeDefaultArgs<ExtArgs extends runtime.Type
  */
 export type AgentInstanceCountOutputTypeCountComponentStatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ComponentStateWhereInput
+}
+
+/**
+ * AgentInstanceCountOutputType without action
+ */
+export type AgentInstanceCountOutputTypeCountToolResultBlobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ToolResultBlobWhereInput
 }
 
 
@@ -960,6 +1094,7 @@ export type AgentInstanceSelect<ExtArgs extends runtime.Types.Extensions.Interna
   completedAt?: boolean
   memory?: boolean | Prisma.AgentInstance$memoryArgs<ExtArgs>
   componentStates?: boolean | Prisma.AgentInstance$componentStatesArgs<ExtArgs>
+  toolResultBlobs?: boolean | Prisma.AgentInstance$toolResultBlobsArgs<ExtArgs>
   _count?: boolean | Prisma.AgentInstanceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agentInstance"]>
 
@@ -1030,6 +1165,7 @@ export type AgentInstanceOmit<ExtArgs extends runtime.Types.Extensions.InternalA
 export type AgentInstanceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memory?: boolean | Prisma.AgentInstance$memoryArgs<ExtArgs>
   componentStates?: boolean | Prisma.AgentInstance$componentStatesArgs<ExtArgs>
+  toolResultBlobs?: boolean | Prisma.AgentInstance$toolResultBlobsArgs<ExtArgs>
   _count?: boolean | Prisma.AgentInstanceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AgentInstanceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1040,6 +1176,7 @@ export type $AgentInstancePayload<ExtArgs extends runtime.Types.Extensions.Inter
   objects: {
     memory: Prisma.$AgentMemoryPayload<ExtArgs> | null
     componentStates: Prisma.$ComponentStatePayload<ExtArgs>[]
+    toolResultBlobs: Prisma.$ToolResultBlobPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1456,6 +1593,7 @@ export interface Prisma__AgentInstanceClient<T, Null = never, ExtArgs extends ru
   readonly [Symbol.toStringTag]: "PrismaPromise"
   memory<T extends Prisma.AgentInstance$memoryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstance$memoryArgs<ExtArgs>>): Prisma.Prisma__AgentMemoryClient<runtime.Types.Result.GetResult<Prisma.$AgentMemoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   componentStates<T extends Prisma.AgentInstance$componentStatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstance$componentStatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ComponentStatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  toolResultBlobs<T extends Prisma.AgentInstance$toolResultBlobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgentInstance$toolResultBlobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ToolResultBlobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1931,6 +2069,30 @@ export type AgentInstance$componentStatesArgs<ExtArgs extends runtime.Types.Exte
   take?: number
   skip?: number
   distinct?: Prisma.ComponentStateScalarFieldEnum | Prisma.ComponentStateScalarFieldEnum[]
+}
+
+/**
+ * AgentInstance.toolResultBlobs
+ */
+export type AgentInstance$toolResultBlobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ToolResultBlob
+   */
+  select?: Prisma.ToolResultBlobSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ToolResultBlob
+   */
+  omit?: Prisma.ToolResultBlobOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ToolResultBlobInclude<ExtArgs> | null
+  where?: Prisma.ToolResultBlobWhereInput
+  orderBy?: Prisma.ToolResultBlobOrderByWithRelationInput | Prisma.ToolResultBlobOrderByWithRelationInput[]
+  cursor?: Prisma.ToolResultBlobWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ToolResultBlobScalarFieldEnum | Prisma.ToolResultBlobScalarFieldEnum[]
 }
 
 /**

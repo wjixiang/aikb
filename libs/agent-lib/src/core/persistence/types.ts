@@ -129,4 +129,39 @@ export interface IPersistenceService {
     instanceId: string,
     exportResult: Record<string, unknown>,
   ): Promise<void>;
+
+  // ==================== Tool Result Blob 持久化 (Phase 5) ====================
+
+  /**
+   * 保存工具结果 Blob（upsert）
+   * @returns 预览内容及原始大小
+   */
+  saveToolResultBlob(
+    instanceId: string,
+    toolUseId: string,
+    toolName: string,
+    content: string,
+  ): Promise<{ preview: string; originalSize: number }>;
+
+  /**
+   * 获取工具结果 Blob 完整内容
+   */
+  getToolResultBlob(
+    instanceId: string,
+    toolUseId: string,
+  ): Promise<string | null>;
+
+  /**
+   * 删除工具结果 Blob
+   */
+  deleteToolResultBlob(instanceId: string, toolUseId: string): Promise<void>;
+
+  /**
+   * 批量获取工具结果 Blob
+   * @returns Map<toolUseId, content>
+   */
+  getToolResultBlobs(
+    instanceId: string,
+    toolUseIds: string[],
+  ): Promise<Map<string, string>>;
 }

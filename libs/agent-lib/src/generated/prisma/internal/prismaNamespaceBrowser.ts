@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   AgentMemory: 'AgentMemory',
   ComponentState: 'ComponentState',
+  ToolResultBlob: 'ToolResultBlob',
   AgentInstance: 'AgentInstance'
 } as const
 
@@ -95,6 +96,20 @@ export const ComponentStateScalarFieldEnum = {
 } as const
 
 export type ComponentStateScalarFieldEnum = (typeof ComponentStateScalarFieldEnum)[keyof typeof ComponentStateScalarFieldEnum]
+
+
+export const ToolResultBlobScalarFieldEnum = {
+  id: 'id',
+  instanceId: 'instanceId',
+  toolUseId: 'toolUseId',
+  toolName: 'toolName',
+  content: 'content',
+  preview: 'preview',
+  originalSize: 'originalSize',
+  createdAt: 'createdAt'
+} as const
+
+export type ToolResultBlobScalarFieldEnum = (typeof ToolResultBlobScalarFieldEnum)[keyof typeof ToolResultBlobScalarFieldEnum]
 
 
 export const AgentInstanceScalarFieldEnum = {

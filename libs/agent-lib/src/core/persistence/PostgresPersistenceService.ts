@@ -339,4 +339,98 @@ export class PostgresPersistenceService implements IPersistenceService {
       '[PersistenceService] Export result saved',
     );
   }
+
+  // ==================== Tool Result Blob 持久化 (Phase 5) ====================
+
+  private readonly TOOL_RESULT_PREVIEW_SIZE = 2000;
+
+  async saveToolResultBlob(
+    instanceId: string,
+    toolUseId: string,
+    toolName: string,
+    content: string,
+  ): Promise<{ preview: string; originalSize: number }> {
+    const preview = content.substring(0, this.TOOL_RESULT_PREVIEW_SIZE);
+    const originalSize = content.length;
+
+    await this.prisma.toolResultBlob.upsert({
+      where: {
+        instanceId_toolUseId: { instanceId, toolUseId },
+      },
+      create: {
+        instanceId,
+        toolUseId,
+        toolName,
+        content,
+        preview,
+        originalSize,
+      },
+      update: {
+        content,
+        preview,
+        originalSize,
+      },
+    });
+
+    this.logger.debug(
+      { instanceId, toolUseId, toolName, originalSize, previewSize: preview.length },
+      '[PersistenceService] Tool result blob saved',
+    );
+
+    return { preview, originalSize };
+  }
+
+  async getToolResultBlob(
+    instanceId: string,
+    toolUseId: string,
+  ): Promise<string | null> {
+    const blob = await this.prisma.toolResultBlob.findUnique({
+      where: {
+        instanceId_toolUseId: { instanceId, toolUseId },
+      },
+    });
+
+    return blob?.content ?? null;
+  }
+
+  async deleteToolResultBlob(
+    instanceId: string,
+    toolUseId: string,
+  ): Promise<void> {
+    await this.prisma.toolResultBlob.delete({
+      where: {
+        instanceId_toolUseId: { instanceId, toolUseId },
+      },
+    }).catch(() => {
+      // Ignore if not found
+    });
+
+    this.logger.debug(
+      { instanceId, toolUseId },
+      '[PersistenceService] Tool result blob deleted',
+    );
+  }
+
+  async getToolResultBlobs(
+    instanceId: string,
+    toolUseIds: string[],
+  ): Promise<Map<string, string>> {
+    if (toolUseIds.length === 0) {
+      return new Map();
+    }
+
+    const blobs = await this.prisma.toolResultBlob.findMany({
+      where: {
+        instanceId,
+        toolUseId: { in: toolUseIds },
+      },
+    });
+
+    const result = new Map<string, string>();
+    for (const blob of blobs) {
+      result.set(blob.toolUseId, blob.content);
+    }
+
+    return result;
+  }
 }

@@ -44,6 +44,24 @@ model ComponentState {
   @@unique([instanceId, componentId])
 }
 
+// Phase 5: Tool Result Blob Storage
+model ToolResultBlob {
+  id              String   @id @default(uuid())
+  instanceId      String
+  instance        AgentInstance @relation(fields: [instanceId], references: [instanceId], onDelete: Cascade)
+
+  toolUseId      String   // 工具调用唯一ID
+  toolName       String   // 工具名称
+  content        String   // 完整内容
+  preview        String?  // 预览内容（截断）
+  originalSize   Int      // 原始大小（字节）
+
+  createdAt      DateTime @default(now())
+
+  @@unique([instanceId, toolUseId])
+  @@index([instanceId])
+}
+
 // AgentContainer 实例元数据持久化
 model AgentInstance {
   id              String   @id @default(uuid())
@@ -84,6 +102,7 @@ model AgentInstance {
   // Relations
   memory          AgentMemory?
   componentStates ComponentState[]
+  toolResultBlobs ToolResultBlob[]
 
   @@index([instanceId])
   @@index([status])

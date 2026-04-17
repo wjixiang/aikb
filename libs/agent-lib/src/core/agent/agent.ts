@@ -9,7 +9,8 @@ import { VirtualWorkspace } from '../statefulContext/virtualWorkspace.js';
 import { DefaultToolCallConverter } from 'llm-api-client';
 import { AgentError, NoToolsUsedError } from '../common/errors.js';
 import { MemoryModule } from '../memory/MemoryModule.js';
-import type {  ApiClient,
+import type {
+  ApiClient,
   ChatCompletionTool,
   ToolCall,
 } from 'llm-api-client';
@@ -22,6 +23,7 @@ import { ToolComponent } from '../statefulContext/index.js';
 import type { HookModule } from '../hooks/HookModule.js';
 import { HookType } from '../hooks/types.js';
 import type { IPersistenceService } from '../persistence/types.js';
+import { ToolResultOffloader } from '../utils/toolResultOffloader.js';
 
 import { getLogger } from '@shared/logger';
 
@@ -130,6 +132,9 @@ export class Agent {
   // Persistence service (for component states - instance-level)
   private persistenceService?: IPersistenceService;
 
+  // Tool result offloader for large result handling
+  private toolResultOffloader: ToolResultOffloader;
+
   private persistInstanceStatus(): void {
     if (!this.persistenceService) return;
     void this.persistenceService.updateInstanceMetadata(this.instanceId, {
@@ -170,6 +175,10 @@ export class Agent {
     this.toolManager = toolManager;
     this.hookModule = hookModule;
     this.persistenceService = persistenceService;
+    this.toolResultOffloader = new ToolResultOffloader(
+      persistenceService,
+      instanceId,
+    );
   }
 
 
@@ -861,6 +870,21 @@ export class Agent {
           resultContent = result || '(empty string)';
         } else {
           resultContent = this.safeStringify(result);
+        }
+
+        // Process through offloader for large result handling
+        const processedResult = await this.toolResultOffloader.processResult(
+          toolCall.id,
+          toolCall.name,
+          resultContent,
+        );
+        resultContent = processedResult.content;
+
+        if (processedResult.wasPersisted) {
+          this.logger.debug(
+            { toolName: toolCall.name, originalSize: processedResult.originalSize },
+            '[Agent] Large tool result offloaded',
+          );
         }
 
         this.logger.debug(

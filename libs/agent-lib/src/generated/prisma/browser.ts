@@ -28,6 +28,11 @@ export type AgentMemory = Prisma.AgentMemoryModel
  */
 export type ComponentState = Prisma.ComponentStateModel
 /**
+ * Model ToolResultBlob
+ * 
+ */
+export type ToolResultBlob = Prisma.ToolResultBlobModel
+/**
  * Model AgentInstance
  * 
  */

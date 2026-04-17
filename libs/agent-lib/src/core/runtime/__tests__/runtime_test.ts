@@ -15,6 +15,10 @@ const mockPersistenceService: IPersistenceService = {
   getAllComponentStates: async () => ({}),
   deleteComponentState: async () => {},
   saveExportResult: async () => {},
+  saveToolResultBlob: async () => ({ preview: '', originalSize: 0 }),
+  getToolResultBlob: async () => null,
+  deleteToolResultBlob: async () => {},
+  getToolResultBlobs: async () => new Map(),
 };
 
 const runtime = new AgentRuntime({ apiClient: pool, persistenceService: mockPersistenceService })
