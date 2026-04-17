@@ -176,14 +176,15 @@ def download_cohort(
     service: CohortService = Depends(get_cohort_service),
 ) -> CohortDownloadResponse:
     """
-    下载队列全部关联字段的完整数据。
-    注意：目前基于vizserver下载数据，对fields的数量存在潜在限制
+    下载队列全部关联字段的完整数据至 Iceberg Data Lake。
+    返回数据存储位置信息。
     """
-    cohort_name, cid, data = service.download(cohort_id, refresh=refresh)
+    result = service.download(cohort_id, refresh=refresh)
     return CohortDownloadResponse(
-        cohort_id=cid,
-        cohort_name=cohort_name,
-        row_count=len(data),
-        field_count=len(data[0]) if data else 0,
-        data=data,
+        cohort_id=result.cohort_id,
+        cohort_name=result.cohort_name,
+        row_count=result.row_count,
+        field_count=result.field_count,
+        namespace=result.namespace,
+        table_name=result.table_name,
     )

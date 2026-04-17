@@ -82,10 +82,11 @@ class ExtractFieldsResponse(BaseModel):
 
 
 class CohortDownloadResponse(BaseModel):
-    """下载队列全部字段数据响应。"""
+    """下载队列全部字段数据至 Iceberg Data Lake 的响应。"""
 
     cohort_id: str = Field(description="队列 ID。")
     cohort_name: str = Field(description="队列名称。")
     row_count: int = Field(description="数据行数。")
     field_count: int = Field(description="字段数。")
-    data: list[dict] = Field(description="完整数据行列表。")
+    namespace: str = Field(description="Iceberg namespace。")
+    table_name: str = Field(description="Iceberg table name。")

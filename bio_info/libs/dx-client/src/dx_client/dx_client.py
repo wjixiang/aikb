@@ -1266,7 +1266,14 @@ class DXClient(IDXClient):
         except Exception as e:
             raise e
 
-        return CohortDownloadResult(namespace="ukb", table_name=table_name)
+        return CohortDownloadResult(
+            cohort_id=cohort_id,
+            cohort_name=cohort_info.name,
+            namespace="ukb",
+            table_name=table_name,
+            row_count=len(df),
+            field_count=len(entity_fields),
+        )
 
     def get_cohort_viz_info(
         self,

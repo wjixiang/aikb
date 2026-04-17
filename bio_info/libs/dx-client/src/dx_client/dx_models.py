@@ -468,5 +468,9 @@ class VizQueryResult(BaseModel):
 
 
 class CohortDownloadResult(BaseModel):
+    cohort_id: str
+    cohort_name: str
     namespace: str
     table_name: str
+    row_count: int
+    field_count: int
