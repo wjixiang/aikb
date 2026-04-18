@@ -101,7 +101,7 @@ pnpm start:dev
 
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
-| `STORAGE_TYPE` | 存储类型 (local/s3/minio) | `local` |
+| `STORAGE_TYPE` | 存储类型 (local/s3/garage) | `local` |
 | `STORAGE_PATH` | 本地存储路径 | `./storage/cases` |
 | `STORAGE_MAX_SIZE` | 最大文件大小 (字节) | `10485760` (10MB) |
 

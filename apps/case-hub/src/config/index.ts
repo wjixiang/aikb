@@ -57,7 +57,7 @@ export interface AppConfigSimple {
  * 存储配置接口（简化版）
  */
 export interface StorageConfigSimple {
-  type: 'local' | 's3' | 'minio';
+  type: 'local' | 's3' | 'garage';
   basePath?: string;
   bucket?: string;
   endpoint?: string;

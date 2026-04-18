@@ -38,10 +38,10 @@ impl Default for IcebergConfig {
         Self {
             catalog_uri: "http://192.168.123.98:8181".to_string(),
             warehouse: "s3://warehouse".to_string(),
-            s3_endpoint: "http://localhost:9900".to_string(),
-            s3_region: "us-east-1".to_string(),
-            s3_access_key_id: "admin".to_string(),
-            s3_secret_access_key: "password".to_string(),
+            s3_endpoint: "http://localhost:3900".to_string(),
+            s3_region: "garage".to_string(),
+            s3_access_key_id: "GK8ce6384a8b85bdf9d02544ef".to_string(),
+            s3_secret_access_key: "40514871820daa868256d43858ebb2c27984badc6417906315c45ff82eb0c6e7".to_string(),
         }
     }
 }

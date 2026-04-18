@@ -26,11 +26,11 @@ services:
       - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/filerenderer}
 
       # S3 配置
-      - S3_ENDPOINT=${S3_ENDPOINT:-minio:9000}
-      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID:-minioadmin}
-      - S3_ACCESS_KEY_SECRET=${S3_ACCESS_KEY_SECRET:-minioadmin}
+      - S3_ENDPOINT=${S3_ENDPOINT:-garage:3900}
+      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID:-GK8ce6384a8b85bdf9d02544ef}
+      - S3_ACCESS_KEY_SECRET=${S3_ACCESS_KEY_SECRET:-40514871820daa868256d43858ebb2c27984badc6417906315c45ff82eb0c6e7}
       - S3_BUCKET=${S3_BUCKET:-agentfs}
-      - S3_REGION=${S3_REGION:-us-east-1}
+      - S3_REGION=${S3_REGION:-garage}
       - S3_FORCE_PATH_STYLE=${S3_FORCE_PATH_STYLE:-true}
 
       # 服务器配置
@@ -54,8 +54,6 @@ services:
       - DEBUG=${DEBUG:-false}
     depends_on:
       postgres:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     volumes:
       - ./logs:/app/logs
@@ -111,63 +109,22 @@ services:
           memory: 256M
 
   # ===========================================================================
-  # MinIO 对象存储
+  # Garage 对象存储
   # ===========================================================================
-  minio:
-    image: minio/minio:latest
-    container_name: file-renderer-minio
+  garage:
+    image: dxflrs/garage:v2.0.0
+    container_name: file-renderer-garage
     restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - MINIO_BROWSER=on
     volumes:
-      - minio_data:/data
+      - ./garage/garage.toml:/etc/garage.toml
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "3900:3900"
+      - "3901:3901"
+      - "3903:3903"
     networks:
       - file-renderer-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-
-  # ===========================================================================
-  # MinIO 初始化 (创建 bucket)
-  # ===========================================================================
-  minio-init:
-    image: minio/mc:latest
-    container_name: file-renderer-minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      echo 'Waiting for MinIO to be ready...';
-      sleep 5;
-      /usr/bin/mc config host add myminio http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
-      echo 'Creating bucket...';
-      /usr/bin/mc mb myminio/${S3_BUCKET:-agentfs} || true;
-      echo 'Setting bucket policy...';
-      /usr/bin/mc policy set public myminio/${S3_BUCKET:-agentfs} || true;
-      echo 'MinIO initialization completed';
-      exit 0;
-      "
-    networks:
-      - file-renderer-network
-    restart: "no"
 
   # ===========================================================================
   # (可选) Redis 缓存
@@ -214,7 +171,9 @@ services:
 volumes:
   postgres_data:
     driver: local
-  minio_data:
+  garage_meta:
+    driver: local
+  garage_data:
     driver: local
   # redis_data:
   #   driver: local

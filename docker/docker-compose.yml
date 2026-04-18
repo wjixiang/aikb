@@ -39,25 +39,6 @@ services:
     networks:
       - iceberg_net
 
-  minio:
-    image: minio/minio
-    container_name: minio
-    restart: always
-    env_file: ../.env
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    volumes:
-      - minio_data:/data
-    networks:
-      iceberg_net:
-        aliases:
-          - warehouse.minio
-    ports:
-      - ${MINIO_PORT_CONSOLE}:9001
-      - ${MINIO_PORT_API}:9000
-    command: ["server", "/data", "--console-address", ":9001"]
-  
   garage:
     image: dxflrs/garage:v2.0.0
     container_name: garage
@@ -66,6 +47,8 @@ services:
       - ./garage/meta:/var/lib/garage/meta
       - ./garage/data:/mnt/disk1
     restart: unless-stopped
+    networks:
+      iceberg_net:
     ports:
       - 3900:3900
       - 3901:3901
@@ -78,31 +61,13 @@ services:
     restart: unless-stopped
     volumes:
       - ./garage/garage.toml:/etc/garage.toml:ro
+    networks:
+      iceberg_net:
     ports:
       - 3909:3909
     environment:
       API_BASE_URL: "http://garage:3903"
       S3_ENDPOINT_URL: "http://garage:3900"
-
-  mc:
-    depends_on:
-      - minio
-    image: minio/mc
-    container_name: mc
-    networks:
-      iceberg_net:
-    env_file: ../.env
-    environment:
-      AWS_ACCESS_KEY_ID: ${ICEBERG_S3_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${ICEBERG_S3_SECRET_ACCESS_KEY}
-      AWS_REGION: ${ICEBERG_S3_REGION}
-    entrypoint: |
-      /bin/sh -c "
-      until (/usr/bin/mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}) do echo '...waiting...' && sleep 1; done;
-      /usr/bin/mc mb --ignore-existing minio/warehouse;
-      /usr/bin/mc anonymous set public minio/warehouse;
-      tail -f /dev/null
-      "
 
   iceberg-rest:
     image: tabulario/iceberg-rest:latest
@@ -110,7 +75,7 @@ services:
     restart: always
     depends_on:
       - iceberg-catalog-db
-      - minio
+      - garage
     networks:
       - iceberg_net
     env_file: ../.env
@@ -137,7 +102,7 @@ services:
       iceberg_net:
     depends_on:
       - iceberg-rest
-      - minio
+      - garage
     volumes:
       - ./warehouse:/home/iceberg/warehouse
       - ./notebooks:/home/iceberg/notebooks/notebooks
@@ -173,6 +138,5 @@ volumes:
   redis_data:
   redis_logs:
   postgres_data:
-  minio_data:
   iceberg_catalog_db_data:
   mineru_data:

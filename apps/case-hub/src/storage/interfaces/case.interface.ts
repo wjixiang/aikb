@@ -168,7 +168,7 @@ export interface FileStorageInfo {
  */
 export interface StorageConfig {
     /** 存储类型 */
-    type: "local" | "s3" | "minio";
+    type: "local" | "s3" | "garage";
     /** 本地存储路径 */
     localPath?: string;
     /** 最大文件大小 (字节) */

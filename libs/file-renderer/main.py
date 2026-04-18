@@ -8,7 +8,7 @@ Features:
 - 多格式文件创建（Text, JSON, Markdown, HTML, XML, CSV, PDF, TeX, Binary）
 - PDF解析和分页读取
 - Markdown编辑和预览
-- S3兼容存储（阿里云OSS、MinIO等）
+- S3兼容存储（阿里云OSS、Garage等）
 """
 
 from contextlib import asynccontextmanager
@@ -194,7 +194,7 @@ app = FastAPI(
 
     ## 技术架构
 
-    - **存储层**: S3兼容对象存储（阿里云OSS、MinIO等）
+    - **存储层**: S3兼容对象存储（阿里云OSS、Garage等）
     - **转换层**: docling 文件格式转换
     - **API层**: FastAPI + Pydantic
     - **数据库**: PostgreSQL（文件元数据）

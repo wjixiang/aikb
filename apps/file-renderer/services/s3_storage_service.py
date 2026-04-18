@@ -1,7 +1,7 @@
 """
 S3 Storage Service
 
-Provides S3/MinIO storage operations for the document processing pipeline.
+Provides S3/Garage storage operations for the document processing pipeline.
 """
 
 import logging
@@ -27,13 +27,17 @@ class S3StorageService:
         if self._client is None:
             s3_config = Config(
                 s3={
-                    "addressing_style": "path" if settings.s3.force_path_style else "virtual",
+                    "addressing_style": "path"
+                    if settings.s3.force_path_style
+                    else "virtual",
                 },
                 signature_version="s3v4",
             )
             self._client = boto3.client(
                 "s3",
-                endpoint_url=settings.s3.endpoint if settings.s3.endpoint.startswith("http") else f"http://{settings.s3.endpoint}",
+                endpoint_url=settings.s3.endpoint
+                if settings.s3.endpoint.startswith("http")
+                else f"http://{settings.s3.endpoint}",
                 aws_access_key_id=settings.s3.access_key_id,
                 aws_secret_access_key=settings.s3.access_key_secret,
                 region_name=settings.s3.region,
@@ -110,7 +114,9 @@ class S3StorageService:
                 # 403 on head_object can happen with certain S3 configs;
                 # fall through to get_object check
                 try:
-                    self.client.get_object(Bucket=settings.s3.bucket, Key=key, Range="bytes=0-0")
+                    self.client.get_object(
+                        Bucket=settings.s3.bucket, Key=key, Range="bytes=0-0"
+                    )
                     return True
                 except ClientError:
                     return False

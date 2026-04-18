@@ -34,10 +34,10 @@
    - 建议启用连接池
 
 2. **S3 兼容对象存储**
-   - 阿里云 OSS
-   - MinIO
-   - AWS S3
-   - 其他 S3 兼容服务
+    - 阿里云 OSS
+    - Garage
+    - AWS S3
+    - 其他 S3 兼容服务
 
 3. **(可选) Redis**
    - 用于分布式缓存
@@ -94,7 +94,7 @@ curl http://localhost:8000/health
 
 ### Docker Compose 部署
 
-#### 完整部署（含 PostgreSQL 和 MinIO）
+#### 完整部署（含 PostgreSQL 和 Garage）
 
 ```yaml
 # docker-compose.yml
@@ -112,11 +112,11 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/filerenderer
-      - S3_ENDPOINT=minio:9000
-      - S3_ACCESS_KEY_ID=minioadmin
-      - S3_ACCESS_KEY_SECRET=minioadmin
+      - S3_ENDPOINT=garage:3900
+      - S3_ACCESS_KEY_ID=GK8ce6384a8b85bdf9d02544ef
+      - S3_ACCESS_KEY_SECRET=40514871820daa868256d43858ebb2c27984badc6417906315c45ff82eb0c6e7
       - S3_BUCKET=agentfs
-      - S3_REGION=us-east-1
+      - S3_REGION=garage
       - S3_FORCE_PATH_STYLE=true
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8000
@@ -124,8 +124,6 @@ services:
       - DEBUG=false
     depends_on:
       postgres:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     volumes:
       - ./logs:/app/logs
@@ -159,47 +157,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # MinIO 对象存储
-  minio:
-    image: minio/minio:latest
-    container_name: file-renderer-minio
+  # Garage 对象存储
+  garage:
+    image: dxflrs/garage:v2.0.0
+    container_name: file-renderer-garage
     restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
     volumes:
-      - minio_data:/data
+      - ./garage/garage.toml:/etc/garage.toml
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    networks:
-      - file-renderer-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  # MinIO 初始化（创建 bucket）
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      sleep 10;
-      /usr/bin/mc config host add myminio http://minio:9000 minioadmin minioadmin;
-      /usr/bin/mc mb myminio/agentfs || true;
-      /usr/bin/mc policy set public myminio/agentfs || true;
-      exit 0;
-      "
+      - "3900:3900"
     networks:
       - file-renderer-network
 
 volumes:
   postgres_data:
-  minio_data:
+  garage_meta:
+  garage_data:
 
 networks:
   file-renderer-network:

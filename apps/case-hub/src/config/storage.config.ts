@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config';
 
-export type StorageType = 'local' | 's3' | 'minio';
+export type StorageType = 'local' | 's3' | 'garage';
 
 export interface StorageConfig {
   type: StorageType;

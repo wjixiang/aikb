@@ -50,7 +50,9 @@ async fn main() -> Result<()> {
         .await?;
     // df.limit(0, Option::from(10)).unwrap().show().await.unwrap();
 
-    hpt_cov_df.schema().columns().iter().for_each(|c| println!("{}", c.name()));
+    // hpt_cov_df.schema().columns().iter().for_each(|c| println!("{}", c.name()));
+
+    hpt_cov_df.limit(0, Some(10)).unwrap().show().await;
 
     Ok(())
 }

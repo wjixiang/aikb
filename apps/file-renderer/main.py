@@ -111,7 +111,7 @@ app = FastAPI(
     ## Configuration
 
     - `CONVERSION_ENABLE_OCR=true`: Enable OCR for scanned PDFs
-    - `S3_ENDPOINT`: S3/MinIO endpoint
+    - `S3_ENDPOINT`: S3/Garage endpoint
     - `TASK_MAX_WORKERS=4`: Thread pool size for background tasks
     - `DATABASE_URL`: PostgreSQL connection string
     """,

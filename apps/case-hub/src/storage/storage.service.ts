@@ -41,7 +41,7 @@ export class StorageService {
             (this.configService.get<string>("STORAGE_TYPE") as
                 | "local"
                 | "s3"
-                | "minio") || "local";
+                | "garage") || "local";
         const maxSize = parseInt(
             this.configService.get<string>("STORAGE_MAX_SIZE") || "10485760",
             10

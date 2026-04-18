@@ -29,7 +29,7 @@ export interface PresignedUrlResult {
 // ============ 存储配置 ============
 
 export interface S3StorageConfig {
-  /** 自定义端点（MinIO / R2），留空则使用 AWS 默认 */
+  /** 自定义端点（Garage / R2），留空则使用 AWS 默认 */
   endpoint?: string;
   /** S3 区域 */
   region: string;
@@ -37,7 +37,7 @@ export interface S3StorageConfig {
   bucket: string;
   accessKeyId: string;
   secretAccessKey: string;
-  /** MinIO 等自托管服务需要设为 true */
+  /** Garage 等自托管服务需要设为 true */
   forcePathStyle?: boolean;
   /** 可选的公开访问基础 URL（用于拼接公开链接） */
   publicUrl?: string;

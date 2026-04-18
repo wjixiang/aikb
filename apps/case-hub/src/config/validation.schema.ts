@@ -27,11 +27,11 @@ export const validationSchema = z.object({
     LOG_FORMAT: z.enum(["json", "pretty"]).default("pretty"),
 
     // 文件存储配置
-    STORAGE_TYPE: z.enum(["local", "s3", "minio"]).default("local"),
+    STORAGE_TYPE: z.enum(["local", "s3", "garage"]).default("local"),
     STORAGE_PATH: z.string().default("./storage/cases"),
     STORAGE_MAX_SIZE: z.string().default("10485760"), // 10MB
 
-    // S3/MinIO 配置 (当 STORAGE_TYPE 为 s3 或 minio 时使用)
+    // S3/Garage 配置 (当 STORAGE_TYPE 为 s3 或 garage 时使用)
     S3_ENDPOINT: z.string().optional(),
     S3_REGION: z.string().default("us-east-1"),
     S3_BUCKET: z.string().default("case-hub"),
