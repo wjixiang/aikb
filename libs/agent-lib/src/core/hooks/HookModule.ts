@@ -40,6 +40,9 @@ import type {
 
 /**
  * HookModule - Manages all hooks for an agent container
+ * 
+ * This module wraps all availiable API of agent container and exposes 
+ * them to ToolComponent
  */
 @injectable()
 export class HookModule {

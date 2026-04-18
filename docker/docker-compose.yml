@@ -29,7 +29,7 @@ services:
     image: postgres:16
     container_name: iceberg-catalog-db
     restart: always
-    env_file: ../../.env
+    env_file: ../.env
     environment:
       POSTGRES_PASSWORD: ${ICEBERG_DB_PASSWORD}
       POSTGRES_USER: ${ICEBERG_DB_USER}
@@ -43,7 +43,7 @@ services:
     image: minio/minio
     container_name: minio
     restart: always
-    env_file: ../../.env
+    env_file: ../.env
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -57,6 +57,32 @@ services:
       - ${MINIO_PORT_CONSOLE}:9001
       - ${MINIO_PORT_API}:9000
     command: ["server", "/data", "--console-address", ":9001"]
+  
+  garage:
+    image: dxflrs/garage:v2.0.0
+    container_name: garage
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml
+      - ./garage/meta:/var/lib/garage/meta
+      - ./garage/data:/mnt/disk1
+    restart: unless-stopped
+    ports:
+      - 3900:3900
+      - 3901:3901
+      - 3902:3902
+      - 3903:3903
+
+  webui:
+    image: khairul169/garage-webui:latest
+    container_name: garage-webui
+    restart: unless-stopped
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
+    ports:
+      - 3909:3909
+    environment:
+      API_BASE_URL: "http://garage:3903"
+      S3_ENDPOINT_URL: "http://garage:3900"
 
   mc:
     depends_on:
@@ -65,7 +91,7 @@ services:
     container_name: mc
     networks:
       iceberg_net:
-    env_file: ../../.env
+    env_file: ../.env
     environment:
       AWS_ACCESS_KEY_ID: ${ICEBERG_S3_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${ICEBERG_S3_SECRET_ACCESS_KEY}
@@ -87,7 +113,7 @@ services:
       - minio
     networks:
       - iceberg_net
-    env_file: ../../.env
+    env_file: ../.env
     ports:
       - ${ICEBERG_REST_PORT}:8181
     environment:
@@ -115,7 +141,7 @@ services:
     volumes:
       - ./warehouse:/home/iceberg/warehouse
       - ./notebooks:/home/iceberg/notebooks/notebooks
-    env_file: ../../.env
+    env_file: ../.env
     environment:
       - AWS_ACCESS_KEY_ID=${ICEBERG_S3_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${ICEBERG_S3_SECRET_ACCESS_KEY}
@@ -125,19 +151,17 @@ services:
       - 8080:8080
       - 10000:10000
       - 10001:10001
-
-  rustfs:
-    image: rustfs/rustfs:latest
-    restart: always
-    ports:
-      - '9000:9000'
-      - '9001:9001'
-    volumes:
-      - rustfs_disk2:/data
-      - rustfs_disk1:/data/disk1
-      - rustfs_logs:/logs
-    networks:
-      - main-network
+    command: >
+      bash -c "
+      /opt/spark/bin/start-thriftserver.sh --master local[*] \
+        --conf spark.sql.catalog.demo=org.apache.iceberg.spark.SparkCatalog \
+        --conf spark.sql.catalog.demo.catalog-impl=org.apache.iceberg.rest.RESTCatalog \
+        --conf spark.sql.catalog.demo.uri=http://iceberg-rest:8181 \
+        --conf spark.sql.default_catalog=demo \
+        --hiveconf hive.server2.thrift.port=10000 & \
+      jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root & \
+      tail -f /dev/null
+      "
 
 networks:
   main-network:
@@ -151,17 +175,4 @@ volumes:
   postgres_data:
   minio_data:
   iceberg_catalog_db_data:
-  rustfs_disk1:
-    driver: local
-    driver_opts:
-      type: none
-      device: /mnt/disk1/rustfs
-      o: bind
-  rustfs_disk2:
-    driver: local
-    driver_opts:
-      type: none
-      device: /mnt/disk2/rustfs
-      o: bind
-  rustfs_logs:
   mineru_data:

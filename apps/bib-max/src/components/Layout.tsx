@@ -22,21 +22,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <SidebarProvider defaultOpen={false}>
         <AppSidebar />
         <SidebarInset>
-          <div className="flex h-svh">
-            <div className="flex flex-1 overflow-hidden">
-              <main className={cn("flex-1", fullscreen ? "overflow-hidden" : "overflow-auto p-4 md:p-6")}>
-                {!fullscreen && (
-                  <header className="mb-4 flex items-center gap-2">
-                    <SidebarTrigger />
-                  </header>
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            <main className={cn("flex-1", fullscreen ? "overflow-hidden" : "overflow-auto p-4 md:p-6")}>
+              {!fullscreen && (
+                <header className="mb-4 flex items-center gap-2">
+                  <SidebarTrigger />
+                </header>
                 )}
-                {children}
-              </main>
-              {/* Desktop: inline ChatPanel in flex flow */}
-              {!isMobile && <ChatPanel />}
-            </div>
+              {children}
+            </main>
+            {!isMobile && <ChatPanel />}
           </div>
-          {/* Mobile: ChatPanel renders its own FAB + Sheet */}
           {isMobile && <ChatPanel />}
         </SidebarInset>
       </SidebarProvider>

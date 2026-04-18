@@ -114,3 +114,5 @@ apps/medquiz-web/public/avatars/
 # Test artifacts
 libs/mineru-client/tests/*.zip
 libs/file-renderer/*.pdf
+
+garage

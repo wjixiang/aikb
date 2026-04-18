@@ -25,7 +25,7 @@ class S3Settings(BaseSettings):
     )
 
     endpoint: str = Field(
-        default="192.168.123.98:9000",
+        default="192.168.123.98:9900",
         description="S3 endpoint (without protocol)",
     )
     access_key_id: str = Field(

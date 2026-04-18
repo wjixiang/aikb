@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"name": "aikb",
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.analysis.extraPaths": [
+			".venv/lib/python3.12/site-packages"
+		],
+		"editor.formatOnPaste": true,
+		"editor.formatOnSave": true,
+		"typescript.tsdk": "node_modules/typescript/lib",
+		"typescript.enablePromptUseWorkspaceTsdk": true,
+		"typescript.preferences.includePackageJsonAutoImports": "off",
+		"python-envs.pythonProjects": [
+			{
+				"path": "libs/shared-types",
+				"envManager": "ms-python.python:venv",
+				"packageManager": "ms-python.python:pip"
+			}
+		]
+	}
+}
