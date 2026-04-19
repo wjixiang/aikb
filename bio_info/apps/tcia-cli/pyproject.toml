@@ -10,6 +10,7 @@ dependencies = [
     "typer>=0.15.0",
     "rich>=13.0.0",
     "pydicom>=3.0.2",
+    "datalake",
 ]
 
 [project.scripts]
