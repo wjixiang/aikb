@@ -46,6 +46,7 @@ services:
       - ./garage/garage.toml:/etc/garage.toml
       - ./garage/meta:/var/lib/garage/meta
       - ./garage/data:/mnt/disk1
+      - /mnt/disk2/garage/data:/mnt/disk2
     restart: unless-stopped
     networks:
       iceberg_net:

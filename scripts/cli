@@ -1,7 +1,4 @@
 #!/bin/bash
-set -e
-
-cd "$(dirname "$0")/.."
 
 start_ukb_mcp() {
     echo "Starting ukb-mcp server..."
@@ -12,8 +9,16 @@ start_ukb_mcp() {
 }
 
 activate_venv(){
-    cd bio_info
-    source .venv/bin/activate
+    source /mnt/disk1/project/project/aikb/bio_info/.venv/bin/activate
+}
+
+enter_repl(){
+    set -a  
+    source /mnt/disk1/project/project/aikb/bio_info/.venv/bin/activate
+    source /mnt/disk1/project/project/aikb/.env
+    cd /mnt/disk1/project/project/aikb/bio_info
+    export PYTHONPATH="$(pwd)/libs/datalake/src:$(pwd)/libs/dx-client/src:$(pwd)/libs/gwas-client/src:$(pwd)/libs/mono-cell/src:$(pwd)/libs/pride-client/src:$(pwd)/libs/pwas/src:$(pwd)/libs/pymr/src:$(pwd)/libs/rediomics/src:$PYTHONPATH"
+    uv run --active python -i -c "import datalake as dk"
 }
 
 case "$1" in
@@ -21,12 +26,16 @@ case "$1" in
         start_ukb_mcp
         ;;
     venv)
+        activate_venv
+        ;;
+    repl)
+        enter_repl
         ;;
     *)
         echo "Usage: $0 <task>"
         echo ""
         echo "Available tasks:"
         echo "  ukb-mcp    Start UK Biobank MCP server"
-        exit 1
+        echo "  venv    Activate bio_info venv"
         ;;
 esac

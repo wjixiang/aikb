@@ -1,58 +1,49 @@
 mod catalog;
 mod config;
-
-use std::sync::Arc;
+mod logistic;
 
 use anyhow::Result;
-use datafusion::catalog::{CatalogProviderList, MemoryCatalogProviderList};
-use datafusion::execution::context::SessionContext;
-use iceberg::NamespaceIdent;
-use iceberg_datafusion::IcebergCatalogProvider;
-
-use config::IcebergConfig;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config: IcebergConfig = IcebergConfig::default();
-    let rest_catalog = catalog::create_rest_catalog(&config).await?;
-
-    let ukb_ns = NamespaceIdent::from_vec(vec!["ukb".to_string()])?;
-    let tables = catalog::list_tables_in_namespace(&rest_catalog, &ukb_ns).await?;
-    println!("Tables in 'ukb': {:#?}", tables);
-
-    let all_tables = catalog::list_all_tables(&rest_catalog).await?;
-    println!("All tables: {:#?}", all_tables);
-
-    let catalog_provider =
-        IcebergCatalogProvider::try_new(Arc::new(rest_catalog)).await?;
-
-    let catalog_list = MemoryCatalogProviderList::new();
-    catalog_list.register_catalog("iceberg".to_string(), Arc::new(catalog_provider));
-
-    let ctx = SessionContext::new();
-    ctx.register_catalog_list(Arc::new(catalog_list));
-
-    let olink_df = ctx
-        .sql("SELECT * FROM iceberg.ukb.olink_instance_0")
-        .await?;
     
-    let hpt_cov_df = ctx
-        .sql("SELECT * FROM iceberg.ukb.hypertension_cohort")
-        .await?;
-
-    let df = ctx
+    let ctx = catalog::get_ctx().await?;
+    
+    let hp_cov_df = ctx
         .sql("
         SELECT *
-        FROM iceberg.ukb.olink_instance_0 a
-        JOIN iceberg.ukb.hypertension_cohort b
-        ON a.eid = b.\"participant.eid\"
+        FROM iceberg.ukb.hpt_cov_clean
         ")
         .await?;
-    // df.limit(0, Option::from(10)).unwrap().show().await.unwrap();
+    
+    let olink_df = ctx
+        .sql("
+        SELECT * FROM iceberg.ukb.olink_instance_0
+        ").await?;
 
-    // hpt_cov_df.schema().columns().iter().for_each(|c| println!("{}", c.name()));
+    // df.limit(0, Some(10)).unwrap().show().await;
+    let cols = hp_cov_df.schema().columns();
+    println!("{:#?}", &cols[..10]);
 
-    hpt_cov_df.limit(0, Some(10)).unwrap().show().await;
+    let df1 = ctx.sql("
+        SELECT * 
+        FROM iceberg.ukb.hpt_cov_clean a
+        INNER JOIN iceberg.ukb.olink_instance_0 b
+        ON a.\"participant.eid\" = b.eid
+    ").await?;
+
+    // df1.limit(0, Some(10))?.show().await;
+    let exp_field = "a1bg".to_string();
+    let outcome_field = "hpt".to_string();
+    let cov_fields: Vec<&str> = vec![
+        "sex",
+        "age",
+        "bmi",
+        "smoking_current",
+        "smoking_past",
+        "smoking_pack_years",
+        "education",
+        "income"];
 
     Ok(())
 }
