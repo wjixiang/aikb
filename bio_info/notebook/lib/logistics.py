@@ -6,7 +6,7 @@ import polars as pl
 import statsmodels.api as sm
 from tqdm import tqdm
 
-from catalog import get_catalog, scan_table
+from datalake import get_catalog, scan_table
 
 COVARIANCE_FIELDS = [
     "sex",

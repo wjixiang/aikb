@@ -25,8 +25,17 @@ case "$1" in
     ukb-mcp)
         start_ukb_mcp
         ;;
+    jupyter)
+        set -a  
+        source /mnt/disk1/project/project/aikb/.env
+        uv run --with jupyter jupyter lab
+        ;;
     venv)
         activate_venv
+        ;;
+    env)
+        set -a  
+        source /mnt/disk1/project/project/aikb/.env
         ;;
     repl)
         enter_repl

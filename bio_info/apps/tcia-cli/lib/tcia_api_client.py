@@ -3,6 +3,8 @@ from __future__ import annotations
 import pandas as pd
 from tcia_utils import nbia
 
+from functools import lru_cache
+
 
 def _to_df(result: object) -> pd.DataFrame:
     """Normalize tcia_utils output (list[dict] or DataFrame) to DataFrame."""
@@ -22,34 +24,42 @@ class TCIAApiClient:
     """
 
     # ---- Collections ----
-
+    @lru_cache
     def get_collections(self) -> pd.DataFrame:
         return _to_df(nbia.getCollections())
 
+    @lru_cache
     def get_collection_descriptions(self) -> pd.DataFrame:
         return _to_df(nbia.getCollectionDescriptions(removeHtml=True))
 
+    @lru_cache
     def get_collection_patient_counts(self) -> pd.DataFrame:
         return _to_df(nbia.getCollectionPatientCounts())
 
     # ---- Patients ----
-
+    @lru_cache
     def get_patients(self, collection: str) -> pd.DataFrame:
         return _to_df(nbia.getPatient(collection=collection))
 
+    @lru_cache
     def get_patients_by_modality(self, collection: str, modality: str) -> pd.DataFrame:
-        return _to_df(nbia.getPatientByCollectionAndModality(collection=collection, modality=modality))
+        return _to_df(
+            nbia.getPatientByCollectionAndModality(
+                collection=collection, modality=modality
+            )
+        )
 
+    @lru_cache
     def get_new_patients(self, collection: str, date: str) -> pd.DataFrame:
         return _to_df(nbia.getNewPatientsInCollection(collection=collection, date=date))
 
     # ---- Studies ----
-
+    @lru_cache
     def get_studies(self, collection: str, patient_id: str = "") -> pd.DataFrame:
         return _to_df(nbia.getStudy(collection=collection, patientId=patient_id))
 
     # ---- Series ----
-
+    @lru_cache
     def get_series(
         self,
         collection: str = "",
@@ -61,16 +71,18 @@ class TCIAApiClient:
         manufacturer: str = "",
         model: str = "",
     ) -> pd.DataFrame:
-        return _to_df(nbia.getSeries(
-            collection=collection,
-            patientId=patient_id,
-            studyUid=study_uid,
-            seriesUid=series_uid,
-            modality=modality,
-            bodyPart=body_part,
-            manufacturer=manufacturer,
-            manufacturerModel=model,
-        ))
+        return _to_df(
+            nbia.getSeries(
+                collection=collection,
+                patientId=patient_id,
+                studyUid=study_uid,
+                seriesUid=series_uid,
+                modality=modality,
+                bodyPart=body_part,
+                manufacturer=manufacturer,
+                manufacturerModel=model,
+            )
+        )
 
     def get_series_size(self, series_uid: str) -> pd.DataFrame:
         return _to_df(nbia.getSeriesSize(seriesUid=series_uid))
@@ -141,18 +153,20 @@ class TCIAApiClient:
         limit: int = 10,
         offset: int = 0,
     ) -> pd.DataFrame:
-        return _to_df(nbia.getSimpleSearch(
-            collections=collections or [],
-            modalities=modalities or [],
-            bodyParts=body_parts or [],
-            manufacturers=manufacturers or [],
-            fromDate=from_date,
-            toDate=to_date,
-            patients=patients or [],
-            minStudies=min_studies,
-            start=offset,
-            size=limit,
-        ))
+        return _to_df(
+            nbia.getSimpleSearch(
+                collections=collections or [],
+                modalities=modalities or [],
+                bodyParts=body_parts or [],
+                manufacturers=manufacturers or [],
+                fromDate=from_date,
+                toDate=to_date,
+                patients=patients or [],
+                minStudies=min_studies,
+                start=offset,
+                size=limit,
+            )
+        )
 
     # ---- Reports ----
 

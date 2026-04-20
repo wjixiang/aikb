@@ -16,4 +16,9 @@
             "packageManager": "ms-python.python:pip"
         }
     ],
+    "python.testing.pytestArgs": [
+        "bio_info"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
 }

@@ -1,6 +1,6 @@
 import typer
 
-from lib.commands import collections, patients, series, download, search, report, dicom
+from lib.commands import tcia_collections, patients, series, download, search, report, dicom
 
 app = typer.Typer(
     name="tcia",
@@ -8,7 +8,7 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-app.add_typer(collections.app, name="collections")
+app.add_typer(tcia_collections.app, name="collections")
 app.add_typer(patients.app, name="patients")
 app.add_typer(series.app, name="series")
 app.add_typer(download.app, name="download")

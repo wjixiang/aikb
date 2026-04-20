@@ -11,6 +11,11 @@ dependencies = [
     "rich>=13.0.0",
     "pydicom>=3.0.2",
     "datalake",
+    "joblib>=1.5.3",
+    "pyiceberg>=0.11.1",
+    "boto3>=1.42.91",
+    "minio>=7.2.20",
+    "pyarrow>=23.0.1",
 ]
 
 [project.scripts]

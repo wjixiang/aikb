@@ -21,6 +21,8 @@ from rich.progress import (
 from lib.output import print_error, print_success
 from lib.tcia_api_client import TCIAApiClient
 
+from datalake import get_catalog
+
 app = typer.Typer(help="Download DICOM images from TCIA")
 console = Console()
 
@@ -28,12 +30,20 @@ console = Console()
 @app.command("series")
 def download_series(
     uids: list[str] = typer.Argument(help="Series Instance UID(s)"),
-    output_dir: str = typer.Option("tciaDownload", "-o", "--output", help="Download directory"),
+    output_dir: str = typer.Option(
+        "tciaDownload", "-o", "--output", help="Download directory"
+    ),
     zip_flag: bool = typer.Option(False, "--zip", help="Keep as ZIP (do not extract)"),
     hash_flag: bool = typer.Option(False, "--hash", help="Verify with MD5 hash"),
     workers: int = typer.Option(10, "--workers", "-w", help="Max parallel downloads"),
-    number: int = typer.Option(0, "--number", "-n", help="Limit images per series (0 = all)"),
-    organize: bool = typer.Option(True, "--organize/--no-organize", help="Organize into Collection/Patient/Series dirs and add .dcm extension"),
+    number: int = typer.Option(
+        0, "--number", "-n", help="Limit images per series (0 = all)"
+    ),
+    organize: bool = typer.Option(
+        True,
+        "--organize/--no-organize",
+        help="Organize into Collection/Patient/Series dirs and add .dcm extension",
+    ),
 ):
     """Download one or more DICOM series."""
     client = TCIAApiClient()
@@ -42,14 +52,20 @@ def download_series(
     already_done = {uid for uid in uids if _series_exists(output_dir, uid)}
     pending_uids = [uid for uid in uids if uid not in already_done]
     if already_done:
-        console.print(f"[dim]Skipping {len(already_done)} already downloaded series.[/dim]")
+        console.print(
+            f"[dim]Skipping {len(already_done)} already downloaded series.[/dim]"
+        )
     if not pending_uids:
         print_success("All series already downloaded.")
         return
 
-    console.print(f"[bold]Downloading {len(pending_uids)} series to {output_dir}...[/bold]")
+    console.print(
+        f"[bold]Downloading {len(pending_uids)} series to {output_dir}...[/bold]"
+    )
     try:
-        _download_with_progress(client, pending_uids, output_dir, zip_flag, hash_flag, workers, number)
+        _download_with_progress(
+            client, pending_uids, output_dir, zip_flag, hash_flag, workers, number
+        )
         print_success("Download complete.")
 
         if organize and not zip_flag:
@@ -60,6 +76,7 @@ def download_series(
                     meta_parts.append(meta_df)
             if meta_parts:
                 import pandas as pd
+
                 meta_df = pd.concat(meta_parts, ignore_index=True)
                 collections = meta_df["Collection"].dropna().unique()
                 organized = 0
@@ -67,7 +84,9 @@ def download_series(
                     coll_df = meta_df[meta_df["Collection"] == coll]
                     organized += _organize_series(output_dir, coll, coll_df)
                 if organized:
-                    print_success(f"Organized {organized} series into Collection/Patient/Series/ structure.")
+                    print_success(
+                        f"Organized {organized} series into Collection/Patient/Series/ structure."
+                    )
     except Exception as e:
         print_error(str(e))
         raise typer.Exit(1)
@@ -76,14 +95,26 @@ def download_series(
 @app.command("collection")
 def download_collection(
     collection: str = typer.Option(..., "-c", "--collection", help="Collection name"),
-    modality: str = typer.Option("", "-m", "--modality", help="Filter by modality (e.g. CT, MR)"),
-    output_dir: str = typer.Option("tciaDownload", "-o", "--output", help="Download directory"),
+    modality: str = typer.Option(
+        "", "-m", "--modality", help="Filter by modality (e.g. CT, MR)"
+    ),
+    output_dir: str = typer.Option(
+        "tciaDownload", "-o", "--output", help="Download directory"
+    ),
     zip_flag: bool = typer.Option(False, "--zip", help="Keep as ZIP (do not extract)"),
     hash_flag: bool = typer.Option(False, "--hash", help="Verify with MD5 hash"),
     workers: int = typer.Option(10, "--workers", "-w", help="Max parallel downloads"),
-    limit: int = typer.Option(0, "--limit", "-n", help="Max series to download (0 = all)"),
-    organize: bool = typer.Option(True, "--organize/--no-organize", help="Organize into Collection/Patient/Series dirs and add .dcm extension"),
-    dry_run: bool = typer.Option(False, "--dry-run", help="List series to download without downloading"),
+    limit: int = typer.Option(
+        0, "--limit", "-n", help="Max series to download (0 = all)"
+    ),
+    organize: bool = typer.Option(
+        True,
+        "--organize/--no-organize",
+        help="Organize into Collection/Patient/Series dirs and add .dcm extension",
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="List series to download without downloading"
+    ),
 ):
     """Download all series from a collection."""
     client = TCIAApiClient()
@@ -105,7 +136,19 @@ def download_collection(
 
     if dry_run:
         from lib.output import print_table
-        print_table(df.head(len(uids)), columns=["PatientID", "Modality", "BodyPartExamined", "ImageCount", "FileSize", "SeriesInstanceUID"], title="Series to download")
+
+        print_table(
+            df.head(len(uids)),
+            columns=[
+                "PatientID",
+                "Modality",
+                "BodyPartExamined",
+                "ImageCount",
+                "FileSize",
+                "SeriesInstanceUID",
+            ],
+            title="Series to download",
+        )
         return
 
     confirm = typer.confirm(f"Download {len(uids)} series?")
@@ -115,34 +158,58 @@ def download_collection(
     try:
         # 过滤已下载的 series（flat 目录 + organized 目录）
         already_flat = {uid for uid in uids if _series_exists(output_dir, uid)}
-        already_organized = _series_exists_organized(output_dir, collection, df) if organize and not zip_flag else set()
+        already_organized = (
+            _series_exists_organized(output_dir, collection, df)
+            if organize and not zip_flag
+            else set()
+        )
         already_done = already_flat | already_organized
         pending_uids = [uid for uid in uids if uid not in already_done]
 
         if already_done:
-            console.print(f"[dim]Skipping {len(already_done)} already downloaded series.[/dim]")
+            console.print(
+                f"[dim]Skipping {len(already_done)} already downloaded series.[/dim]"
+            )
         if not pending_uids:
             print_success("All series already downloaded.")
             return
 
         console.print(f"[bold]To download:[/bold] {len(pending_uids)}\n")
 
-        uid_sizes = dict(zip(df["SeriesInstanceUID"], df["FileSize"].fillna(0))) if "FileSize" in df.columns else {}
+        uid_sizes = (
+            dict(zip(df["SeriesInstanceUID"], df["FileSize"].fillna(0)))
+            if "FileSize" in df.columns
+            else {}
+        )
         pending_sizes = {uid: uid_sizes.get(uid, 0) for uid in pending_uids}
-        _download_with_progress(client, pending_uids, output_dir, zip_flag, hash_flag, workers, uid_sizes=pending_sizes)
-        print_success(f"Download complete. {len(pending_uids)} series saved to {output_dir}")
+        _download_with_progress(
+            client,
+            pending_uids,
+            output_dir,
+            zip_flag,
+            hash_flag,
+            workers,
+            uid_sizes=pending_sizes,
+        )
+        print_success(
+            f"Download complete. {len(pending_uids)} series saved to {output_dir}"
+        )
 
         if organize and not zip_flag:
             df_filtered = df[df["SeriesInstanceUID"].isin(pending_uids)]
             organized = _organize_series(output_dir, collection, df_filtered)
             if organized:
-                print_success(f"Organized {organized} series into {collection}/Patient/Series/ structure.")
+                print_success(
+                    f"Organized {organized} series into {collection}/Patient/Series/ structure."
+                )
     except Exception as e:
         print_error(str(e))
         raise typer.Exit(1)
 
 
-def _count_done_bytes(uid_set: set[str], output_dir: str, uid_sizes: dict[str, float]) -> float:
+def _count_done_bytes(
+    uid_set: set[str], output_dir: str, uid_sizes: dict[str, float]
+) -> float:
     """统计输出目录中已完成 series 对应的字节数。"""
     done_bytes = 0.0
     if os.path.isdir(output_dir):
@@ -212,7 +279,9 @@ def _download_with_progress(
                 current_bytes = _count_done_bytes(uid_set, output_dir, uid_sizes)
                 progress.update(task, completed=max(current_bytes, existing_bytes))
             else:
-                current_count = sum(1 for uid in uid_set if _series_exists(output_dir, uid))
+                current_count = sum(
+                    1 for uid in uid_set if _series_exists(output_dir, uid)
+                )
                 progress.update(task, completed=max(current_count, existing_count))
 
         if error:

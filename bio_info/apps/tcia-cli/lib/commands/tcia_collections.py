@@ -40,17 +40,21 @@ def describe_collection(
     desc_df = client.get_collection_descriptions()
     count_df = client.get_collection_patient_counts()
 
-    match = desc_df[desc_df.iloc[:, 0].astype(str).str.contains(name, case=False, na=False)]
+    match = desc_df[
+        desc_df.iloc[:, 0].astype(str).str.contains(name, case=False, na=False)
+    ]
     if match.empty:
         print_error(f"Collection '{name}' not found.")
         raise typer.Exit(1)
 
-    counts = count_df[count_df.iloc[:, 0].astype(str).str.contains(name, case=False, na=False)]
+    counts = count_df[
+        count_df.iloc[:, 0].astype(str).str.contains(name, case=False, na=False)
+    ]
 
     if json_output:
         result = match.iloc[0].to_dict()
         if not counts.empty:
-            result["PatientCount"] = int(counts.iloc[0, 1])
+            result["PatientCount"] = counts.iat[0, 1]
         print_json([result])
     else:
         row = match.iloc[0]
@@ -60,4 +64,4 @@ def describe_collection(
             val_clean = re.sub(r"<[^>]+>", "", val_str)
             console.print(f"  {col}: {val_clean}")
         if not counts.empty:
-            console.print(f"\n[bold]Patient count:[/bold] {int(counts.iloc[0, 1])}")
+            console.print(f"\n[bold]Patient count:[/bold] {int(str(counts.iat[0, 1]))}")
