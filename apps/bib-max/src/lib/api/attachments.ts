@@ -8,12 +8,18 @@ import type {
 
 const BASE = "/api/items";
 
+const S3_ORIGIN = "http://192.168.123.98:3900";
+
+function rewriteS3Url(url: string): string {
+  return url.replace(S3_ORIGIN, "/s3");
+}
+
 export const attachmentsApi = {
   getUploadUrl(itemId: string, fileName: string, contentType: string): Promise<PresignedUploadResult> {
     return apiClient.post<PresignedUploadResult>(
       `${BASE}/${itemId}/attachments/upload-url`,
       { fileName, contentType },
-    );
+    ).then((res) => ({ ...res, url: rewriteS3Url(res.url) }));
   },
 
   confirmUpload(itemId: string, data: ConfirmUploadInput): Promise<Attachment> {
@@ -25,7 +31,8 @@ export const attachmentsApi = {
   },
 
   getDownloadUrl(itemId: string, id: string): Promise<PresignedUrlResult> {
-    return apiClient.get<PresignedUrlResult>(`${BASE}/${itemId}/attachments/${id}/download`);
+    return apiClient.get<PresignedUrlResult>(`${BASE}/${itemId}/attachments/${id}/download`)
+      .then((res) => ({ ...res, url: rewriteS3Url(res.url) }));
   },
 
   remove(itemId: string, id: string): Promise<{ success: boolean; id: string }> {

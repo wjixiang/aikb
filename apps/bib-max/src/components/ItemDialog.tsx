@@ -18,6 +18,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -260,6 +261,7 @@ export function ItemDialog({ open, onOpenChange, item, allTags, onSaved }: Props
       <DialogContent className="max-h-[85vh] sm:max-w-xl flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{item ? "Edit Item" : "New Item"}</DialogTitle>
+          <DialogDescription />
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto">

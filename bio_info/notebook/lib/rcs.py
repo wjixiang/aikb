@@ -49,6 +49,8 @@ OLINK_TABLE = "ukb.olink_instance_0"
 COV_TABLE = "ukb.hpt_cov_clean"
 # RCS 检验结果存储表
 RESULT_TABLE = "ukb.pwas_rcs_nonlinearity"
+# RCS 曲线结果存储表
+RCS_CURVE_TABLE = "ukb.pwas_rcs_curve"
 
 # 结果表 Schema
 RESULT_SCHEMA = pa.schema(
@@ -490,7 +492,7 @@ def batch_rcs_curve_predict(
     n_knots: int = 4,
     n_grid: int = 100,
     n_jobs: int = -1,
-    curve_table_name: str = "ukb.pwas_rcs_curve",
+    curve_table_name: str = RCS_CURVE_TABLE,
     quantile_table_name: str = "ukb.pwas_rcs_quantile_table",
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     """

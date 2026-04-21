@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -164,6 +165,7 @@ export function TagsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Tag" : "New Tag"}</DialogTitle>
+            <DialogDescription />
           </DialogHeader>
           <form
             onSubmit={(e) => {

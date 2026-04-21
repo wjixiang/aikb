@@ -21,6 +21,11 @@ export default defineConfig({
         target: "http://192.168.123.98:5000",
         changeOrigin: true,
       },
+      "/s3": {
+        target: "http://192.168.123.98:3900",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/s3/, ""),
+      },
     },
   },
 })
