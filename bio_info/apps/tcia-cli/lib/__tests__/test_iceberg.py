@@ -1,8 +1,6 @@
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from ..iceberg import extract_dcm_path
 
 

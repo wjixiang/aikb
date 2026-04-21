@@ -1,13 +1,13 @@
-import { describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import { createStorageService } from "../index.js";
 
-describe("s3 e2e test: use RustFS", () => {
+describe("s3 e2e test: Garage storage", () => {
     const s3Service = createStorageService({
-        region: "cn-east-1",
-        bucket: "knowledge-base",
-        accessKeyId: "aVzc02Qxp3MBUko97wJ4",
-        secretAccessKey: "MVHtKLSIRvNnfPduEopJT5DaBrAbxmz3W9QXw6i7",
-        endpoint: "http://192.168.123.98:9000",
+        region: "us-east-1",
+        bucket: "bib-max",
+        accessKeyId: "admin",
+        secretAccessKey: "password",
+        endpoint: "http://192.168.123.98:9900",
         forcePathStyle: true
     })
 

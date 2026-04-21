@@ -24,6 +24,8 @@ def get_catalog() -> Catalog:
                 "s3.endpoint": os.environ["ICEBERG_S3_ENDPOINT_PUBLIC"],
                 "s3.access-key-id": os.environ["ICEBERG_S3_ACCESS_KEY_ID"],
                 "s3.secret-access-key": os.environ["ICEBERG_S3_SECRET_ACCESS_KEY"],
+                "s3.connect-timeout": "30",
+                "s3.request-timeout": "120",
             },
         )
     return _catalog

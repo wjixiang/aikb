@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Container } from 'inversify';
 import { AgentContainer } from '../container.js';
-import { TYPES } from '../types.js';
 import { Agent } from '../../agent/agent.js';
 import { VirtualWorkspace } from '../../statefulContext/virtualWorkspace.js';
 import { MemoryModule } from '../../memory/MemoryModule.js';
