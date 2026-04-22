@@ -8,7 +8,7 @@ dependencies = [ "pydantic>=2.12.5" ]
 
 
 [tool.uv.workspace]
-members = [ "libs/*", "apps/*", "replication/*" ]
+members = [ "libs/*", "apps/*", "replication/*", "notebook" ]
 
 
 [tool.uv.sources.gwas-client]
@@ -28,4 +28,7 @@ workspace = true
 
 
 [tool.uv.sources.datalake]
+workspace = true
+
+[tool.uv.sources.stats]
 workspace = true

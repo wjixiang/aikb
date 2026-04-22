@@ -1,18 +1,32 @@
-// Import the framework and instantiate it
-import Fastify from 'fastify'
+import Fastify from 'fastify';
+import { loadConfig } from './config.js';
+import runtimePlugin from './plugins/runtime.js';
+import { agentRoutes } from './routes/agents.js';
+import { eventRoutes } from './routes/events.js';
+import { healthRoutes } from './routes/health.js';
+
+const appConfig = loadConfig();
+
 const fastify = Fastify({
-    logger: true
-})
+  logger: {
+    level: appConfig.logLevel,
+  },
+});
 
-// Declare a route
-fastify.get('/', async function handler(request, reply) {
-    return { hello: 'world' }
-})
+async function start() {
+  try {
+    await fastify.register(runtimePlugin, { config: appConfig });
 
-// Run the server!
-try {
-    await fastify.listen({ port: 3000 })
-} catch (err) {
-    fastify.log.error(err)
-    process.exit(1)
+    await fastify.register(agentRoutes);
+    await fastify.register(eventRoutes);
+    await fastify.register(healthRoutes);
+
+    await fastify.listen({ port: appConfig.port, host: appConfig.host });
+    fastify.log.info(`Server listening on ${appConfig.host}:${appConfig.port}`);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
 }
+
+start();
