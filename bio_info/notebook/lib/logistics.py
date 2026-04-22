@@ -2,12 +2,22 @@ import gc
 from typing import List
 
 import numpy as np
+import pyarrow as pa
 import polars as pl
 import statsmodels.api as sm
 
-from datalake import get_catalog, scan_table
-
+from datalake import (
+    AnalysisStatus,
+    Study,
+    create_analysis,
+    create_study_if_not_exist,
+    get_catalog,
+    scan_table,
+    update_analysis,
+)
 from joblib import Parallel, delayed
+
+import narwhals as nw
 
 COVARIANCE_FIELDS = [
     "sex",
@@ -24,7 +34,21 @@ OUTCOME_FIELD = "hpt"
 
 OLINK_TABLE = "ukb.olink_instance_0"
 COV_TABLE = "ukb.hpt_cov_clean"
-RESULT_TABLE = "result.logistic"
+RESULT_TABLE = "method.stats.regression.logistic.binary_logistic"
+
+RESULT_SCHEMA = pa.schema(
+    [
+        ("analysis.id", pa.string(), False),
+        ("exposure", pa.string(), False),
+        ("variable", pa.string(), False),
+        ("coef", pa.float64(), False),
+        ("std_err", pa.float64(), False),
+        ("z", pa.float64(), False),
+        ("pvalue", pa.float64(), False),
+        ("ci_lower", pa.float64(), False),
+        ("ci_upper", pa.float64(), False),
+    ]
+)
 
 
 def load_data() -> pl.DataFrame:
@@ -68,7 +92,10 @@ def _logistic_reg_worker(
 
 
 def extract_result(
-    result, exposure_field: str, covariance_fields: List[str]
+    result,
+    analysis_id: str,
+    exposure_field: str,
+    covariance_fields: List[str],
 ) -> list[dict]:
     params = result.params
     bse = result.bse
@@ -81,6 +108,7 @@ def extract_result(
     for idx, var in enumerate(var_names):
         rows.append(
             {
+                "analysis.id": analysis_id,
                 "exposure": exposure_field,
                 "variable": var,
                 "coef": float(params[idx]),
@@ -95,6 +123,7 @@ def extract_result(
 
 
 def _process_single_exposure(
+    analysis_id: str,
     exposure_name: str,
     exposure_col: np.ndarray,
     cov_matrix: np.ndarray,
@@ -105,7 +134,7 @@ def _process_single_exposure(
         result = _logistic_reg_worker(exposure_col, cov_matrix, outcome)
         if result is None:
             return None
-        return extract_result(result, exposure_name, covariance_fields)
+        return extract_result(result, analysis_id, exposure_name, covariance_fields)
     except Exception as e:
         print(f"Failed for {exposure_name}: {e}")
         return None
@@ -116,64 +145,83 @@ def batch_logistic(
     exposure_fields: List[str],
     outcome_field: str,
     covariance_fields: List[str],
+    study: Study,
+    analysis_desc: str = "",
     n_jobs: int = -1,
 ):
     """
     Execute batch logistic regression with given list of exposure fields and single outcome field.
     Data is pre-collected into numpy arrays; large arrays are memory-mapped across worker processes.
+    Results are written to a shared flat table indexed by analysis.id and study_name.
     """
-    catalog = get_catalog()
+    analysis = create_analysis(study_id=study.id, desc=analysis_desc)
+    print(f"Analysis created: {analysis.id}")
 
-    if RESULT_TABLE in [f"{ns}.{name}" for ns, name in catalog.list_tables("ukb")]:
-        catalog.drop_table(RESULT_TABLE)
+    update_analysis(analysis.id, status=AnalysisStatus.RUNNING)
 
-    cov_matrix = (
-        df.select(pl.col(covariance_fields).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
-    outcome = (
-        df.select(pl.col(outcome_field).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
+    try:
+        catalog = get_catalog()
+        catalog.create_table_if_not_exists(RESULT_TABLE, schema=RESULT_SCHEMA)
 
-    all_exposure_data = (
-        df.select(pl.col(exposure_fields).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
-    exposure_cols = [all_exposure_data[:, i] for i in range(all_exposure_data.shape[1])]
-
-    results = Parallel(n_jobs=n_jobs, verbose=10, max_nbytes=1e6)(
-        delayed(_process_single_exposure)(
-            name, col, cov_matrix, outcome, covariance_fields
+        cov_matrix = (
+            df.select(pl.col(covariance_fields).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
         )
-        for name, col in zip(exposure_fields, exposure_cols)
-    )
+        outcome = (
+            df.select(pl.col(outcome_field).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
+        )
 
-    valid_results = [r for r in results if r is not None]
+        all_exposure_data = (
+            df.select(pl.col(exposure_fields).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
+        )
+        exposure_cols = [
+            all_exposure_data[:, i] for i in range(all_exposure_data.shape[1])
+        ]
 
-    if not valid_results:
-        print("No valid results.")
-        return
+        results = Parallel(n_jobs=n_jobs, verbose=10, max_nbytes=1e6)(
+            delayed(_process_single_exposure)(
+                analysis.id,
+                name,
+                col,
+                cov_matrix,
+                outcome,
+                covariance_fields,
+            )
+            for name, col in zip(exposure_fields, exposure_cols)
+        )
 
-    all_rows = []
-    for rows in valid_results:
-        all_rows.extend(rows)
+        valid_results = [r for r in results if r is not None]
 
-    result_df = pl.DataFrame(all_rows)
-    result_table = catalog.create_table(
-        RESULT_TABLE, schema=result_df.schema.to_arrow()
-    )
-    result_df.write_iceberg(result_table, "append")
-    del result_df
-    gc.collect()
+        if not valid_results:
+            print("No valid results.")
+            update_analysis(analysis.id, status=AnalysisStatus.FAILED)
+            return
 
-    print("Done.")
+        all_rows = []
+        for rows in valid_results:
+            all_rows.extend(rows)
+
+        result_df = pl.DataFrame(all_rows)
+        arrow_table = result_df.to_arrow().cast(RESULT_SCHEMA)
+        result_table = catalog.load_table(RESULT_TABLE)
+        result_table.append(arrow_table)
+        del result_df
+        gc.collect()
+
+        update_analysis(analysis.id, status=AnalysisStatus.COMPLETED)
+        print("Done.")
+    except Exception as e:
+        print(f"Batch failed: {e}")
+        update_analysis(analysis.id, status=AnalysisStatus.FAILED)
+        raise
 
 
 if __name__ == "__main__":
@@ -182,9 +230,17 @@ if __name__ == "__main__":
     protein_fields = get_protein_fields(df)
     print(f"Total proteins: {len(protein_fields)}")
 
+    # retrieve study
+    study = create_study_if_not_exist(
+        study_name="hpt_protein_association",
+        desc="Binary logistic regression: OLINK proteins vs hypertension",
+    )
+
     batch_logistic(
         df=df,
         exposure_fields=protein_fields,
         outcome_field=OUTCOME_FIELD,
         covariance_fields=COVARIANCE_FIELDS,
+        study=study,
+        analysis_desc="Binary logistic regression: OLINK proteins vs hypertension",
     )
