@@ -7,17 +7,14 @@ import polars as pl
 import statsmodels.api as sm
 
 from datalake import (
+    Analysis,
     AnalysisStatus,
-    Study,
-    create_analysis,
     create_study_if_not_exist,
     get_catalog,
     scan_table,
     update_analysis,
 )
 from joblib import Parallel, delayed
-
-import narwhals as nw
 
 COVARIANCE_FIELDS = [
     "sex",
@@ -145,8 +142,7 @@ def batch_logistic(
     exposure_fields: List[str],
     outcome_field: str,
     covariance_fields: List[str],
-    study: Study,
-    analysis_desc: str = "",
+    analysis: Analysis,
     n_jobs: int = -1,
 ):
     """
@@ -154,9 +150,6 @@ def batch_logistic(
     Data is pre-collected into numpy arrays; large arrays are memory-mapped across worker processes.
     Results are written to a shared flat table indexed by analysis.id and study_name.
     """
-    analysis = create_analysis(study_id=study.id, desc=analysis_desc)
-    print(f"Analysis created: {analysis.id}")
-
     update_analysis(analysis.id, status=AnalysisStatus.RUNNING)
 
     try:
@@ -235,12 +228,17 @@ if __name__ == "__main__":
         study_name="hpt_protein_association",
         desc="Binary logistic regression: OLINK proteins vs hypertension",
     )
+    from datalake import create_analysis
+
+    analysis = create_analysis(
+        study_id=study.id,
+        desc="Binary logistic regression: OLINK proteins vs hypertension",
+    )
 
     batch_logistic(
         df=df,
         exposure_fields=protein_fields,
         outcome_field=OUTCOME_FIELD,
         covariance_fields=COVARIANCE_FIELDS,
-        study=study,
-        analysis_desc="Binary logistic regression: OLINK proteins vs hypertension",
+        analysis=analysis,
     )

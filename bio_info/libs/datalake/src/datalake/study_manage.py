@@ -130,9 +130,21 @@ def _ensure_study_tables():
     catalog = get_catalog()
     catalog.create_namespace_if_not_exists(STUDY_NAME_SPACE)
     catalog.create_table_if_not_exists(STUDY_RECORD_TABLE, schema=STUDY_RECORD_SCHEMA)
-    catalog.create_table_if_not_exists(
-        ANALYSIS_RECORD_TABLE, schema=ANALYSIS_RECORD_SCHEMA
-    )
+
+    # Migrate old analysis table schema (study_name -> study_id) if needed
+    try:
+        existing = catalog.load_table(ANALYSIS_RECORD_TABLE)
+        existing_schema = existing.schema()
+        field_names = {f.name for f in existing_schema.fields}
+        if "study_name" in field_names and "study_id" not in field_names:
+            catalog.drop_table(ANALYSIS_RECORD_TABLE)
+            catalog.create_table_if_not_exists(
+                ANALYSIS_RECORD_TABLE, schema=ANALYSIS_RECORD_SCHEMA
+            )
+    except Exception:
+        catalog.create_table_if_not_exists(
+            ANALYSIS_RECORD_TABLE, schema=ANALYSIS_RECORD_SCHEMA
+        )
 
 
 # ── Study CRUD ──────────────────────────────────────────────
@@ -163,24 +175,24 @@ def create_study_if_not_exist(
     _ensure_study_tables()
 
     study_tb = scan_table(STUDY_RECORD_TABLE)
-    existed_record = (
-        study_tb.sql(f'SELECT * FROM self WHERE study_name = "{study_name}" LIMIT 1')
+    existed_rows = (
+        study_tb.sql(f"SELECT * FROM self WHERE study_name = '{study_name}' LIMIT 1")
         .collect()
-        .to_series()
+        .to_dicts()
     )
 
-    if len(existed_record) > 0:
-        # Study already existed, return it directly
+    if len(existed_rows) > 0:
+        row = existed_rows[0]
         return Study(
-            id=existed_record[0][0],
-            study_name=existed_record[1][0],
-            describe=existed_record[2][0],
-            status=StudyStatus(existed_record[3][0]),
-            create_ts=existed_record[4][0],
-            update_ts=existed_record[5][0],
-            activate_ts=existed_record[6][0],
-            complete_ts=existed_record[7][0],
-            create_by=existed_record[8][0],
+            id=row["id"],
+            study_name=row["study_name"],
+            describe=row["describe"],
+            status=StudyStatus(row["status"]),
+            create_ts=row["create_ts"],
+            update_ts=row["update_ts"],
+            activate_ts=row["activate_ts"],
+            complete_ts=row["complete_ts"],
+            create_by=row["create_by"],
         )
 
     now = _now()
@@ -196,7 +208,7 @@ def create_study_if_not_exist(
         complete_ts=None,
         create_by=create_by,
     )
-    record = study.model_dump(mode="json")
+    record = study.model_dump()
     tb = get_catalog().load_table(STUDY_RECORD_TABLE)
     tb.append(pa.Table.from_pylist([record], schema=STUDY_RECORD_SCHEMA))
     return study
@@ -258,7 +270,7 @@ def update_study(
         if status in (StudyStatus.COMPLETED, StudyStatus.ABANDONED):
             updated_study.complete_ts = now
 
-    record = updated_study.model_dump(mode="json")
+    record = updated_study.model_dump()
     tb = get_catalog().load_table(STUDY_RECORD_TABLE)
     tb.append(pa.Table.from_pylist([record], schema=STUDY_RECORD_SCHEMA))
     return True
@@ -304,7 +316,7 @@ def create_analysis(
         complete_ts=None,
         create_by=create_by,
     )
-    record = analysis.model_dump(mode="json")
+    record = analysis.model_dump()
     tb = get_catalog().load_table(ANALYSIS_RECORD_TABLE)
     tb.append(pa.Table.from_pylist([record], schema=ANALYSIS_RECORD_SCHEMA))
     return analysis
@@ -371,7 +383,7 @@ def update_analysis(
         ):
             updated_analysis.complete_ts = now
 
-    record = updated_analysis.model_dump(mode="json")
+    record = updated_analysis.model_dump()
     tb = get_catalog().load_table(ANALYSIS_RECORD_TABLE)
     tb.append(pa.Table.from_pylist([record], schema=ANALYSIS_RECORD_SCHEMA))
     return True

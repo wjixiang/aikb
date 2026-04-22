@@ -1,5 +1,6 @@
 from .catalog import get_catalog, scan_table
 from .study_manage import (
+    Analysis,
     AnalysisStatus,
     ANALYSIS_RECORD_SCHEMA,
     STUDY_RECORD_SCHEMA,
@@ -20,6 +21,7 @@ from .study_manage import (
 __all__ = [
     "get_catalog",
     "scan_table",
+    "Analysis",
     "Study",
     "StudyStatus",
     "AnalysisStatus",

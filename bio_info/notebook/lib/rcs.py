@@ -28,7 +28,15 @@ import statsmodels.api as sm
 from scipy.stats import chi2
 from joblib import Parallel, delayed
 
-from datalake import get_catalog, scan_table
+from datalake import (
+    Analysis,
+    AnalysisStatus,
+    create_analysis,
+    create_study_if_not_exist,
+    get_catalog,
+    scan_table,
+    update_analysis,
+)
 
 # 协变量字段（与 logistics.py 保持一致）
 COVARIANCE_FIELDS = [
@@ -48,15 +56,19 @@ OUTCOME_FIELD = "hpt"
 OLINK_TABLE = "ukb.olink_instance_0"
 COV_TABLE = "ukb.hpt_cov_clean"
 # RCS 检验结果存储表
-RESULT_TABLE = "ukb.pwas_rcs_nonlinearity"
+RESULT_TABLE = "method.stats.regression.rcs.nonlinearity"
 # RCS 曲线结果存储表
-RCS_CURVE_TABLE = "ukb.pwas_rcs_curve"
+RCS_CURVE_TABLE = "method.stats.regression.rcs.curve"
+# RCS 分位数参考表
+QUANTILE_TABLE = "method.stats.regression.rcs.quantile"
 
 # 结果表 Schema
 RESULT_SCHEMA = pa.schema(
     [
+        # analysis id
+        pa.field("analysis_id", pa.string(), False),
         # exposure 字段名（如蛋白质名称）
-        pa.field("exposure", pa.string()),
+        pa.field("exposure", pa.string(), False),
         # 线性模型（Reduced model）的对数似然值
         pa.field("llf_linear", pa.float64()),
         # RCS 模型（Full model）的对数似然值
@@ -136,6 +148,7 @@ def rcs(x, knots=None, n_knots=4):
 
 
 def _rcs_test_single(
+    analysis_id: str,
     exposure_name: str,
     exposure_col: np.ndarray,
     cov_matrix: np.ndarray,
@@ -189,6 +202,7 @@ def _rcs_test_single(
         p_nonlinearity = chi2.sf(lr_stat, df=n_nonlinear)
 
         return {
+            "analysis_id": analysis_id,
             "exposure": exposure_name,
             "llf_linear": result_linear.llf,
             "llf_rcs": result_rcs.llf,
@@ -207,6 +221,7 @@ def _rcs_test_single(
 def batch_rcs_test(
     df: pl.DataFrame,
     exposure_fields: List[str],
+    analysis: Analysis,
     outcome_field: str = OUTCOME_FIELD,
     covariance_fields: List[str] = COVARIANCE_FIELDS,
     n_knots: int = 4,
@@ -222,6 +237,7 @@ def batch_rcs_test(
     Args:
         df: 包含 exposure、结局、协变量的完整数据
         exposure_fields: 需要检验的 exposure 字段列表
+        analysis: Analysis 对象，管理此次检验的生命周期
         outcome_field: 二分类结局字段名
         covariance_fields: 协变量字段列表
         n_knots: RCS 节点数量 (默认 4)
@@ -231,59 +247,70 @@ def batch_rcs_test(
     Returns:
         检验结果 DataFrame，每行对应一个 exposure
     """
-    catalog = get_catalog()
+    update_analysis(analysis.id, status=AnalysisStatus.RUNNING)
 
-    # 提取协变量和结局为 numpy 数组，统一处理缺失值
-    cov_matrix = (
-        df.select(pl.col(covariance_fields).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
-    outcome = (
-        df.select(pl.col(outcome_field).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
+    try:
+        catalog = get_catalog()
+        catalog.create_table_if_not_exists(result_table_name, schema=RESULT_SCHEMA)
 
-    # 一次性提取所有 exposure 数据为矩阵，避免反复 collect
-    all_exposure_data = (
-        df.select(pl.col(exposure_fields).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
-    exposure_cols = [all_exposure_data[:, i] for i in range(all_exposure_data.shape[1])]
+        # 提取协变量和结局为 numpy 数组，统一处理缺失值
+        cov_matrix = (
+            df.select(pl.col(covariance_fields).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
+        )
+        outcome = (
+            df.select(pl.col(outcome_field).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
+        )
 
-    # 并行执行 RCS 检验
-    results = Parallel(n_jobs=n_jobs, verbose=10, max_nbytes=1e6)(
-        delayed(_rcs_test_single)(name, col, cov_matrix, outcome, n_knots)
-        for name, col in zip(exposure_fields, exposure_cols)
-    )
+        # 一次性提取所有 exposure 数据为矩阵，避免反复 collect
+        all_exposure_data = (
+            df.select(pl.col(exposure_fields).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
+        )
+        exposure_cols = [
+            all_exposure_data[:, i] for i in range(all_exposure_data.shape[1])
+        ]
 
-    valid_results = [r for r in results if r is not None]
-    if not valid_results:
-        print("No valid results.")
-        raise Exception("RCS test error: No valid results")
+        # 并行执行 RCS 检验
+        results = Parallel(n_jobs=n_jobs, verbose=10, max_nbytes=1e6)(
+            delayed(_rcs_test_single)(
+                analysis.id, name, col, cov_matrix, outcome, n_knots
+            )
+            for name, col in zip(exposure_fields, exposure_cols)
+        )
 
-    result_df = pl.DataFrame(valid_results, schema=RESULT_SCHEMA)
+        valid_results = [r for r in results if r is not None]
+        if not valid_results:
+            print("No valid results.")
+            update_analysis(analysis.id, status=AnalysisStatus.FAILED)
+            return pl.DataFrame()
 
-    # 写入 Iceberg 结果表（若已存在则重建）
-    if result_table_name in [f"{ns}.{name}" for ns, name in catalog.list_tables("ukb")]:
-        catalog.drop_table(result_table_name)
-    result_table = catalog.create_table(result_table_name, schema=RESULT_SCHEMA)
-    result_df.write_iceberg(result_table, "append")
+        result_df = pl.DataFrame(valid_results)
+        arrow_table = result_df.to_arrow().cast(RESULT_SCHEMA)
+        result_table = catalog.load_table(result_table_name)
+        result_table.append(arrow_table)
 
-    n_linear = result_df.filter(pl.col("is_linear").eq(1)).height
-    n_total = result_df.height
-    print(
-        f"Done. {n_linear}/{n_total} exposures satisfy linearity assumption (p > 0.05)"
-    )
+        n_linear = result_df.filter(pl.col("is_linear").eq(True)).height
+        n_total = result_df.height
+        print(
+            f"Done. {n_linear}/{n_total} exposures satisfy linearity assumption (p > 0.05)"
+        )
 
-    del all_exposure_data
-    gc.collect()
-    return result_df
+        update_analysis(analysis.id, status=AnalysisStatus.COMPLETED)
+        del all_exposure_data
+        gc.collect()
+        return result_df
+    except Exception as e:
+        print(f"RCS test failed: {e}")
+        update_analysis(analysis.id, status=AnalysisStatus.FAILED)
+        raise
 
 
 def load_data(
@@ -334,6 +361,7 @@ def get_exposure_fields(
 
 
 def rcs_predict_single(
+    analysis_id: str,
     exposure_col: np.ndarray,
     cov_matrix: np.ndarray,
     outcome: np.ndarray,
@@ -460,6 +488,7 @@ def rcs_predict_single(
             )
 
         return {
+            "analysis_id": analysis_id,
             "curve": curve_data,
             "quantile_table": quantile_table,
             "knots": knots_used.tolist(),
@@ -487,13 +516,14 @@ def _get_knots(x: np.ndarray, n_knots: int = 4) -> np.ndarray:
 def batch_rcs_curve_predict(
     df: pl.DataFrame,
     exposure_fields: List[str],
+    analysis: Analysis,
     outcome_field: str = OUTCOME_FIELD,
     covariance_fields: List[str] = COVARIANCE_FIELDS,
     n_knots: int = 4,
     n_grid: int = 100,
     n_jobs: int = -1,
     curve_table_name: str = RCS_CURVE_TABLE,
-    quantile_table_name: str = "ukb.pwas_rcs_quantile_table",
+    quantile_table_name: str = QUANTILE_TABLE,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     """
     批量拟合 RCS 模型并生成预测曲线数据和分位数参考表，写入 Iceberg。
@@ -501,6 +531,7 @@ def batch_rcs_curve_predict(
     Args:
         df: 包含 exposure、结局、协变量的完整数据
         exposure_fields: 需要处理的 exposure 字段列表
+        analysis: Analysis 对象，管理此次预测的生命周期
         outcome_field: 二分类结局字段名
         covariance_fields: 协变量字段列表
         n_knots: RCS 节点数量 (默认 4)
@@ -512,77 +543,119 @@ def batch_rcs_curve_predict(
     Returns:
         (curve_df, quantile_df) 元组
     """
-    catalog = get_catalog()
+    update_analysis(analysis.id, status=AnalysisStatus.RUNNING)
 
-    cov_matrix = (
-        df.select(pl.col(covariance_fields).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
-    outcome = (
-        df.select(pl.col(outcome_field).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
+    try:
+        catalog = get_catalog()
+        catalog.create_table_if_not_exists(
+            curve_table_name,
+            schema=pa.schema(
+                [
+                    pa.field("analysis_id", pa.string(), False),
+                    pa.field("exposure", pa.string(), False),
+                    pa.field("x", pa.float64(), False),
+                    pa.field("log_or", pa.float64(), False),
+                    pa.field("or", pa.float64(), False),
+                    pa.field("or_ci_lower", pa.float64(), False),
+                    pa.field("or_ci_upper", pa.float64(), False),
+                ]
+            ),
+        )
+        catalog.create_table_if_not_exists(
+            quantile_table_name,
+            schema=pa.schema(
+                [
+                    pa.field("analysis_id", pa.string(), False),
+                    pa.field("exposure", pa.string(), False),
+                    pa.field("quantile", pa.int32(), False),
+                    pa.field("x_val", pa.float64(), False),
+                    pa.field("or", pa.float64(), False),
+                    pa.field("ci_lower", pa.float64(), False),
+                    pa.field("ci_upper", pa.float64(), False),
+                    pa.field("p_overall", pa.float64(), False),
+                    pa.field("p_nonlinear", pa.float64(), False),
+                    pa.field("n_valid", pa.int32(), False),
+                ]
+            ),
+        )
 
-    all_exposure_data = (
-        df.select(pl.col(exposure_fields).cast(pl.Float64))
-        .fill_nan(np.nan)
-        .fill_null(np.nan)
-        .to_numpy()
-    )
-    exposure_cols = [all_exposure_data[:, i] for i in range(all_exposure_data.shape[1])]
+        cov_matrix = (
+            df.select(pl.col(covariance_fields).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
+        )
+        outcome = (
+            df.select(pl.col(outcome_field).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
+        )
 
-    results = Parallel(n_jobs=n_jobs, verbose=10, max_nbytes=1e6)(
-        delayed(rcs_predict_single)(col, cov_matrix, outcome, n_knots, n_grid)
-        for col in exposure_cols
-    )
+        all_exposure_data = (
+            df.select(pl.col(exposure_fields).cast(pl.Float64))
+            .fill_nan(np.nan)
+            .fill_null(np.nan)
+            .to_numpy()
+        )
+        exposure_cols = [
+            all_exposure_data[:, i] for i in range(all_exposure_data.shape[1])
+        ]
 
-    curve_rows = []
-    quantile_rows = []
-    failed = 0
-    for name, res in zip(exposure_fields, results):
-        if res is None:
-            failed += 1
-            continue
-        for pt in res["curve"]:
-            curve_rows.append({"exposure": name, **pt})
-        for qt in res["quantile_table"]:
-            quantile_rows.append(
-                {
-                    "exposure": name,
-                    "p_overall": res["p_overall"],
-                    "p_nonlinear": res["p_nonlinear"],
-                    "n_valid": res["n_valid"],
-                    **qt,
-                }
+        results = Parallel(n_jobs=n_jobs, verbose=10, max_nbytes=1e6)(
+            delayed(rcs_predict_single)(
+                analysis.id, col, cov_matrix, outcome, n_knots, n_grid
             )
+            for col in exposure_cols
+        )
 
-    if not curve_rows:
-        raise RuntimeError("RCS curve prediction: no valid results")
+        curve_rows = []
+        quantile_rows = []
+        failed = 0
+        for name, res in zip(exposure_fields, results):
+            if res is None:
+                failed += 1
+                continue
+            for pt in res["curve"]:
+                curve_rows.append(
+                    {"analysis_id": res["analysis_id"], "exposure": name, **pt}
+                )
+            for qt in res["quantile_table"]:
+                quantile_rows.append(
+                    {
+                        "analysis_id": res["analysis_id"],
+                        "exposure": name,
+                        "p_overall": res["p_overall"],
+                        "p_nonlinear": res["p_nonlinear"],
+                        "n_valid": res["n_valid"],
+                        **qt,
+                    }
+                )
 
-    curve_df = pl.DataFrame(curve_rows)
-    quantile_df = pl.DataFrame(quantile_rows)
+        if not curve_rows:
+            update_analysis(analysis.id, status=AnalysisStatus.FAILED)
+            return pl.DataFrame(), pl.DataFrame()
 
-    for tbl_name, tbl_df in [
-        (curve_table_name, curve_df),
-        (quantile_table_name, quantile_df),
-    ]:
-        existing = [f"{ns}.{name}" for ns, name in catalog.list_tables("ukb")]
-        if tbl_name in existing:
-            catalog.drop_table(tbl_name)
-        catalog.create_table(tbl_name, schema=tbl_df.schema.to_arrow())
-        tbl_df.write_iceberg(catalog.load_table(tbl_name), "append")
+        curve_df = pl.DataFrame(curve_rows)
+        quantile_df = pl.DataFrame(quantile_rows)
 
-    print(
-        f"Done. {len(exposure_fields) - failed}/{len(exposure_fields)} proteins predicted. Failed: {failed}"
-    )
+        curve_table = catalog.load_table(curve_table_name)
+        curve_table.append(curve_df.to_arrow())
+        quantile_table = catalog.load_table(quantile_table_name)
+        quantile_table.append(quantile_df.to_arrow())
 
-    del all_exposure_data
-    gc.collect()
-    return curve_df, quantile_df
+        print(
+            f"Done. {len(exposure_fields) - failed}/{len(exposure_fields)} proteins predicted. Failed: {failed}"
+        )
+
+        update_analysis(analysis.id, status=AnalysisStatus.COMPLETED)
+        del all_exposure_data
+        gc.collect()
+        return curve_df, quantile_df
+    except Exception as e:
+        print(f"RCS curve prediction failed: {e}")
+        update_analysis(analysis.id, status=AnalysisStatus.FAILED)
+        raise
 
 
 if __name__ == "__main__":
@@ -590,9 +663,34 @@ if __name__ == "__main__":
     exposure_fields = get_exposure_fields(df)
     print(f"Total exposures: {len(exposure_fields)}")
 
+    study = create_study_if_not_exist(
+        study_name="hpt_protein_association",
+        desc="RCS nonlinear test: OLINK proteins vs hypertension",
+    )
+
+    # RCS nonlinearity test
+    analysis_test = create_analysis(
+        study_id=study.id,
+        desc="RCS nonlinearity test: OLINK proteins vs hypertension",
+    )
     batch_rcs_test(
         df=df,
         exposure_fields=exposure_fields,
+        analysis=analysis_test,
+        outcome_field=OUTCOME_FIELD,
+        covariance_fields=COVARIANCE_FIELDS,
+        n_knots=4,
+    )
+
+    # RCS curve prediction
+    analysis_curve = create_analysis(
+        study_id=study.id,
+        desc="RCS curve prediction: OLINK proteins vs hypertension",
+    )
+    batch_rcs_curve_predict(
+        df=df,
+        exposure_fields=exposure_fields,
+        analysis=analysis_curve,
         outcome_field=OUTCOME_FIELD,
         covariance_fields=COVARIANCE_FIELDS,
         n_knots=4,
